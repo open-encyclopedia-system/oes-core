@@ -1,0 +1,243 @@
+
+/*body {*/
+    /*font-family: Arial, sans-serif !important;*/
+/*}*/
+
+.oes-wf-transisition-buttons {
+    display: flex;
+    margin-bottom: 30px;
+}
+
+.oes-wf-transition-btn {
+    margin-right: 20px;
+    margin-right: 20px;
+    font-size: 18px;
+    padding: 10px 20px;
+    border-radius: 10px;
+}
+
+.oes-wf-transition-disabled {
+    background: lightcoral;
+}
+
+.oes-wf-status-title {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.acf-field-group-workflow-1field-oes-wf-transition {
+    display: none !important;
+}
+
+.wp-admin .hide-acf-field {
+    opacity: .5;
+    background: #333;
+}
+
+.wp-admin [data-key$="_system_tab"] {
+    /*display: none !important;*/
+}
+
+.wp-admin [data-key$="_verify_confirm_tab"] {
+    display: none !important;
+}
+
+.wp_attachment_details.edit-form-section {
+    overflow: hidden;
+    height: 0;
+}
+
+#side-sortables .postbox:not(#submitdiv) {
+    /*display: none !important;*/
+}
+
+/*#acf-eo_article_version_text {*/
+/*background: green;*/
+/*}*/
+
+.-empty_tab {
+    display: none !important;
+}
+
+.-sys_tab, [data-placement='sys_tab'] {
+    display: none !important;
+}
+
+.-hidden_tab, [data-placement='hidden_tab'] {
+    display: none !important;
+}
+
+.oes-role-administrator [data-placement='sys_tab'],
+.oes-role-administrator [data-placement='hidden_tab'],
+.oes-role-administrator .-sys_tab,
+.oes-role-administrator .-hidden_tab {
+    display: block !important;
+}
+
+[data-key$='__sys_accordion'] {
+    /*display: none !important;*/
+}
+
+.filter.-post_type,
+.filter.-taxonomy {
+    /*visibility: hidden;*/
+}
+
+.row-actions .inline {
+    display: none;
+}
+
+:not(.oes-role-administrator) .row-actions span.inline {
+    display: none;
+}
+
+:not(.oes-role-administrator) .wp-admin .wp-heading-inline {
+    visibility: hidden;
+}
+
+body.oes-role-oes_tagging #acf-eo_article_version_main {
+    display: none;
+}
+
+#all_topicsdiv {
+    height: 500px !important;
+}
+
+#all_topics-all {
+    max-height: 380px !important;
+}
+
+#adminmenu div.separator {
+    background: gray;
+}
+
+/*#acf-eo_contributor_user {*/
+/*display: none !important;*/
+/*}*/
+/**/
+/*.oes-role-administrator #acf-eo_contributor_user,*/
+/*.oes-role-oes_adm #acf-eo_contributor_user {*/
+/*display: block !important;*/
+/*}*/
+
+/*.oes-not-initialized #acf-eo_article_version_text {*/
+/*opacity: .5;*/
+/*}*/
+
+/*.oes-not-initialized #acf-eo_article_version_main {*/
+/*opacity: .5;*/
+/*}*/
+
+/*.oes-not-initialized #acf-eo_article_version_bsb {*/
+/*opacity: .5;*/
+/*}*/
+
+/*:not(oes-role-administrator) .categorydiv .taxonomy-add-new {*/
+
+.categorydiv .taxonomy-add-new {
+    display: none;
+}
+
+body:not(.oes-role-administrator) #minor-publishing-actions {
+    display: none;
+}
+
+body:not(.oes-role-administrator) #misc-publishing-actions {
+    display: none;
+}
+
+#side-sortables .postbox {
+    display: none !important;
+}
+
+body:not(.oes-role-administrator) #side-sortables .postbox {
+    display: none;
+}
+
+body.oes-role-administrator #side-sortables .postbox {
+    display: block !important;
+}
+
+#side-sortables #submitdiv.postbox {
+    display: block !important;
+}
+
+body.oes-role-oes_adm #side-sortables #hc_help_topic_categoriesdiv.postbox {
+    display: block !important;
+}
+
+body.oes-role-oes_adm #side-sortables #pageparentdiv.postbox {
+    display: block !important;;
+}
+
+body:not(.oes-role-administrator) #side-sortables #all_topicsdiv.postbox {
+/*:not(.oes-role-administrator) #side-sortables #tagsdiv-affiliations.postbox {*/
+    display: block;
+}
+
+.metabox-holder .postbox-container .empty-container {
+    border-color: transparent;
+}
+
+.oes-acf-list-links-in-message {
+    max-height: 100px;
+    /*height: 400px;*/
+    overflow: auto;
+    background: #efefef;
+}
+
+.oes-acf-list-links-in-message li {
+    display:list-item;
+
+}
+
+:not(.oes-role-administrator).post-type-eo_link .row-actions .view {
+    display: none;
+}
+
+.post-type-eo_article_version #edit-slug-box {
+    display: none;
+}
+
+.oes-role-administrator.post-type-eo_article_version #edit-slug-box {
+    display: block;
+}
+
+/* disable grid-view switch in media library */
+
+#view-switch-grid {
+    display: none;
+}
+
+.oes-acf-locked {
+    background: #efefef;
+    cursor: not-allowed;
+}
+
+.wp-admin .form-field.term-slug-wrap,
+.wp-admin .form-field.term-description-wrap {
+    display: none;
+}
+
+/* */
+
+.attachment-details .setting[data-setting='caption'],
+.attachment-details .setting[data-setting='alt'],
+.attachment-details .setting[data-setting='description'] {
+    display: none;
+}
+
+.media-sidebar .compat-attachment-fields > tbody > tr {
+    display: none;
+}
+
+.media-sidebar .compat-attachment-fields > tbody > tr.acf-field,
+.media-sidebar .compat-attachment-fields > tbody > tr.acf-tab-wrap {
+    display: table-row;
+}
+
+.acf-gallery-side-data .acf-field[data-name='caption'],
+.acf-gallery-side-data .acf-field[data-name='alt'],
+.acf-gallery-side-data .acf-field[data-name='description'] {
+    display: none;
+}

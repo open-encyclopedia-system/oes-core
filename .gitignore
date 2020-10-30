@@ -1,0 +1,12 @@
+amw/store/
+importer/cache/
+importer/events/
+importer/*.data
+.sass_cache/
+solr/solr-config.php
+tmp/
+temp/
+zotero/
+/pubwf/post_types_bak/
+logs/
+vendor/
