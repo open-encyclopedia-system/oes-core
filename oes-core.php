@@ -1207,7 +1207,8 @@ function oes_upload_vendor_autoload()
     if ($done) {
         return;
     }
-    require_once(__DIR__ . "/vendor/autoload.php");
+    // TODO @m remove to avoid third party vendor content
+    // require_once(__DIR__ . "/vendor/autoload.php");
     $done = true;
 }
 

@@ -22,16 +22,17 @@
 
 <?php
 
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use Monolog\Handler\FirePHPHandler;
+/* TODO @m remove monolog to avoid third party vendor content, this makes this class useless - wait for refactoring. */
+//use Monolog\Logger;
+//use Monolog\Handler\StreamHandler;
+//use Monolog\Handler\FirePHPHandler;
 
 class Oes
 {
 
     static $ACTIVATE_LOGGING = true;
 
-    static $LOG_LEVEL = Logger::DEBUG;
+    //static $LOG_LEVEL = Logger::DEBUG;
 
     static $DEBUG_CACHING = false;
 
@@ -46,7 +47,7 @@ class Oes
 
     static function init()
     {
-        self::init_logging();
+        //TODO @m self::init_logging();
     }
 
     static function init_logging()
@@ -58,13 +59,13 @@ class Oes
 
         oes_upload_vendor_autoload();
 
-        self::$logger = new Logger('oes');
+        //TODO @m self::$logger = new Logger('oes');
 
-        self::$logger->pushHandler(new StreamHandler(__DIR__ . '/../logs/oes.debug.log', self::$LOG_LEVEL));
+        //TODO @m self::$logger->pushHandler(new StreamHandler(__DIR__ . '/../logs/oes.debug.log', self::$LOG_LEVEL));
 
-        self::$logger->pushHandler(new \Monolog\Handler\SlackWebhookHandler('https://hooks.slack.com/services/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', Logger::CRITICAL));
+        //TODO @m self::$logger->pushHandler(new \Monolog\Handler\SlackWebhookHandler('https:TODO', Logger::CRITICAL));
 
-        self::$logger->pushProcessor(new \Monolog\Processor\MemoryUsageProcessor);
+        //TODO @m self::$logger->pushProcessor(new \Monolog\Processor\MemoryUsageProcessor);
 
     }
 
@@ -155,8 +156,5 @@ class Oes
         }
         self::$logger->emergency($msg, $context);
     }
-
-    
-
 
 }
