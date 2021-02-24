@@ -569,7 +569,7 @@ class Oes_Plugin_Bootstrap
         add_action('init', function () {
 
             wp_enqueue_script("miniRun",
-                WP_PLUGIN_URL . "/oes/mini/mini-run.js", ['jquery'], "2");
+                oes_get_site_url(__DIR__ . "/mini/mini-run.js"), ['jquery'], "2");
 
             wp_localize_script('miniRun', 'wpApiSettings', array(
                 'root' => esc_url_raw(rest_url()),
@@ -1207,8 +1207,7 @@ function oes_upload_vendor_autoload()
     if ($done) {
         return;
     }
-    // TODO @m remove to avoid third party vendor content
-    // require_once(__DIR__ . "/vendor/autoload.php");
+    require_once(__DIR__ . "/vendor/autoload.php");
     $done = true;
 }
 
