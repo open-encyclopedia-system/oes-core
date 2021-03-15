@@ -1207,7 +1207,7 @@ function oes_upload_vendor_autoload()
     if ($done) {
         return;
     }
-    require_once(__DIR__ . "/vendor/autoload.php");
+    //require_once(__DIR__ . "/vendor/autoload.php");
     $done = true;
 }
 
