@@ -23,6 +23,8 @@ OES depends on the WordPress plguin ACF:
 We recommend using the WordPress plugin Classic Editor to create and edit posts:
 * Classic Editor, version 1.6., URL: https://wordpress.org/plugins/classic-editor/.
 
+OES requires the php extension apcu.
+
 ### Installation
 
 1. Install OES plugin and dependencies
