@@ -4097,7 +4097,7 @@ function x_apc_fetch($key, &$success, $domain = '')
     {
         Oes::cache_debug('x_apc_fetch', ['key' => $key]);
     }
-    return apcu_fetch($key, $success);
+    return function_exists('apcu_fetch') ? apcu_fetch($key, $success) : true;
 }
 
 function x_apc_store($key, $data, $ttl = 0, $domain = '')
@@ -4107,7 +4107,7 @@ function x_apc_store($key, $data, $ttl = 0, $domain = '')
     {
         Oes::cache_debug('x_apc_store', ['key' => $key, 'size' => strlen(serialize($data))]);
     }
-    return apcu_store($key, $data, $ttl);
+    return function_exists('apcu_store') ? apcu_store($key, $data, $ttl) : true;
 }
 
 function x_apc_delete($key, $domain = '')
@@ -4117,7 +4117,7 @@ function x_apc_delete($key, $domain = '')
     {
         Oes::cache_debug('x_apc_delete', ['key' => $key]);
     }
-    return apcu_delete($key);
+    return function_exists('apcu_delete') ? apcu_delete($key) : true;
 }
 
 //function x_implode($glue, $array)
