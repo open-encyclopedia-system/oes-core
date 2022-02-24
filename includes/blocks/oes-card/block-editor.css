@@ -1,0 +1,15 @@
+
+.oes-card {
+    padding:0;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.oes-card-img,
+.oes-card .card-body a {
+    position:static;
+    cursor: not-allowed;
+    pointer-events: none;
+}

@@ -1,0 +1,14 @@
+
+.oes-card {
+    padding:0;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.oes-featured-article-card a {
+    position:static;
+    cursor: not-allowed;
+    pointer-events: none;
+}

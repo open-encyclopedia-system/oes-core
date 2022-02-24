@@ -1,0 +1,186 @@
+/*----------------------------------------------------------------------------------------------------------------------
+CSS Styling for notes in frontend.
+----------------------------------------------------------------------------------------------------------------------*/
+
+.oes-note.admin-qtip span:after {
+    content: "\f348";
+    font:normal 1rem/1 dashicons;
+    color: #426890;
+    margin: 1em 0;
+}
+
+.oes-note.button-white span:after {
+    color:white;
+}
+
+.oes-note.padding-left {
+    padding-left:2px;
+}
+
+ol#oes-notes {
+    padding-left:0;
+    list-style-position:inside;
+}
+
+ol#oes-notes li {
+    padding: .5em 0;
+}
+
+#oes-note-to-top:after {
+    content: "\f102";
+    font-family: "FontAwesome", serif;
+    padding-left: 5px;
+    color:var(--oes-tertiary-background);
+}
+
+
+/*----------------------------------------------------------------------------------------------------------------------
+Notes for Gutenberg
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-notes-admin-button,
+.oes-notes-admin-button-paragraph {
+    background: url("note.png") 4px 5px no-repeat !important;
+    display: block;
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+}
+
+/* oesnote:first-of-type::before */
+.block-editor-rich-text__editable oesnote::before,
+.acf-block-preview oesnote::before {
+    content: "note";
+    color: #888;
+    font-size: 12px;
+    position: relative;
+    top: -5px;
+    margin-right: 3px;
+    margin-left: 3px;
+}
+
+oesnotep {
+    background: red;
+}
+
+oesnote oesnotep {
+    background: none;
+}
+
+oesnotep:before {
+    content: "paragraph without note!";
+    font-size: 12px;
+    position: relative;
+    top: -5px;
+    margin-right: 3px;
+    margin-left: 3px;
+    padding: 1px 2px;
+}
+
+oesnote oesnotep:before,
+oesnotep oesnotep:before {
+    content: "p";
+    color: white;
+    background-color:grey;
+}
+
+oesnote {
+    background: lightgrey;
+}
+
+.oes-note {
+    padding-left: 2px;
+    padding-right: 2px;
+    font-style:normal;
+}
+
+.oes-note--selected {
+    background: #eee;
+    border-radius: 2px;
+}
+
+.oes-note__connector {
+    background: #000;
+    position: absolute;
+    width: 0.9px; /* use 0.9px instead of 1px to ensure the element does not look 2 px thick in Firefox in some scenarios */
+}
+
+.oes-note a {
+    text-decoration: none;
+}
+
+.oes-note a:before{
+    content: '['
+}
+
+.oes-note a:after{
+    content: ']'
+}
+
+.oes-note__note {
+    display: none;
+    font-size: 80%;
+    color: #777;
+}
+
+.oes-note__note a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+}
+
+/* default tooltip style for desktop */
+.oes-note__note--tooltip {
+    position: absolute;
+    left: 0;
+    border: 1px solid #666;
+    background: #fff;
+    padding: 0.7em 1em;
+    border-radius: 3px;
+    max-width: 300px;
+    box-shadow: 1px 1px 1px #eee;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+/* default expandable style for mobile */
+.oes-note__note--expandable {
+    display: block;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.oes-notes-list {
+    list-style-type: none;
+    margin: 1em 0;
+    padding-left: 0;
+}
+
+.oes-notes-list li {
+    display: flex;
+    margin-bottom: 0.3em;
+}
+
+.oes-notes-list span {
+    font-size: 0.8em;
+    margin-right: 1.5em;
+    word-wrap: normal;
+    word-break: normal;
+    min-width:15px;
+}
+
+.oes-notes-list .note-columns-2 {
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.oes-notes-list .note-columns-2 >div {
+    width:45%;
+    padding:5px 10px;
+    border-right: 1px dashed lightgrey;
+}
+
+.oes-notes-list .note-columns-2 >div:last-child {
+    border-right: none;
+}

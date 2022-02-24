@@ -1,0 +1,35 @@
+/* overwrite select2 for acf */
+.acf-input .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    margin-left:0; /* 5px;*/
+    display: list-item;/*inline-block;*/
+    position:static; /*position: relative;*/
+}
+
+.acf-input .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    border:none;/*border-right: 1px solid #aaa;*/
+    padding: 0; /*0 4px;*/
+    position:static; /*position: absolute;*/
+}
+
+/* Expand for OES Settings */
+.oes-replace-select2-inside .select2-container {
+    width: 100% !important;
+}
+
+.oes-replace-select2-inside .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    padding-left: 15px;
+}
+
+.oes-replace-select2-inside .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    border: 1px solid var(--oes-active-blue);
+    background-color: white;
+}
+
+.oes-replace-select2-inside .select2-container--default .select2-selection--multiple .select2-selection__choice button {
+    border: none;
+    color: var(--oes-active-blue);
+}
+
+.oes-replace-select2-inside .select2-selection.select2-selection--multiple {
+    padding:0;
+}

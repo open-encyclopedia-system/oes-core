@@ -1,12 +1,11 @@
 <?php
+
 /**
- * OES - Open Encyclopedia System
- *
- * Plugin Name: Open Encyclopedia System Core
- * Plugin URI: http://www.open-encyclopedia-system.org
- * Description: Easily build online encyclopedias
- * Version: 0.5
- * Author: Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
+ * Plugin Name: OES Core
+ * Plugin URI: http://www.open-encyclopedia-system.org/
+ * Description: Building and maintaining online encyclopedias.
+ * Version: 2.0
+ * Author: Maren Strobl, Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
@@ -25,1282 +24,366 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-define('OES_PLUGIN_DIR', __DIR__);
-define('OES_PLUGIN_POST_TYPES_DIR', __DIR__ . '/post_types/');
-define('OES_PLUGIN_ZOTERO_PT_TEMPLATE', __DIR__ . '/post_types/pt_zotero_template.config.php');
-
-error_reporting(E_ALL & ~E_NOTICE);
-
-Oes_Plugin_Bootstrap::init_spl([
-    __DIR__ . "/lib/",
-    __DIR__ . "/lib/defaults/",
-]);
-
-Oes_Plugin_Bootstrap::addMiniBootstrapDir([
-    __DIR__ . "/mini/",
-]);
-
-//add_action( 'in_admin_footer', function() {
-//    wp_dequeue_script( 'autosave' );
-//});
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-class Oes_Plugin_Bootstrap
-{
+use OES\Admin\Assets;
 
-    static $miniBootstrapDirs = [];
-
-    static $miniProjectFile = false;
-    static $SplDirPaths = [];
-    var $registeredPostTypeConfigs = [];
-    var $initAms = false;
-    var $restrictWysiwygAddLinkQuery = false;
-    /**
-     * @var RegisteredTaxonomy[]
-     */
-    var $registeredTaxonomies = [];
-    var
-        $acfGoogleMapKey = false;
+/** --------------------------------------------------------------------------------------------------------------------
+ * The OES instance.
+ * -------------------------------------------------------------------------------------------------------------------*/
+if (!function_exists('OES')) {
 
     /**
-     * @return array
+     * The function returns the OES instance like a global variable everywhere inside the plugin.
+     * It initializes the OES plugin if not yet initialized.
+     *
+     * @param bool|string $projectPath The path to the OES Project plugin.
+     *
+     * @return OES_Core Returns the OES plugin instance.
      */
-    public static function getMiniBootstrapDirs(): array
+    function OES($projectPath = false): OES_Core
     {
-        return self::$miniBootstrapDirs;
-    }
+        global $oes;
 
-    /**
-     * @param array $miniBootstrapDirs
-     */
-    public static function setMiniBootstrapDirs(array $miniBootstrapDirs): void
-    {
-        self::$miniBootstrapDirs = $miniBootstrapDirs;
-    }
+        /* initialize and return the global instance. */
+        if (!isset($oes)) {
 
-    public static function addMiniBootstrapDir($dir)
-    {
-        if (is_array($dir)) {
-            foreach ($dir as $d) {
-                self::$miniBootstrapDirs[] = $d;
+            $oes = new OES_Core();
+
+            /* check if successful */
+            if ($oes->initialized) {
+
+                /* initialize the core */
+                $oes->initialize_core();
+
+                /* set global project variables */
+                if ($projectPath) {
+                    $oes->path_project_plugin = $projectPath;
+                    $oes->basename_project = basename($projectPath);
+                }
             }
-        } else {
-            self::$miniBootstrapDirs[] = $dir;
         }
+        return $oes;
     }
+}
+
+
+/** --------------------------------------------------------------------------------------------------------------------
+ * Add OES hook after plugin is loaded. (This grants full control over the execution order outside the WordPress hook.)
+ * -------------------------------------------------------------------------------------------------------------------*/
+add_action('plugins_loaded', function () {
 
     /**
-     * @return bool
+     * Fires after all plugins are loaded.
      */
-    public static function isMiniProjectFile(): bool
-    {
-        return self::$miniProjectFile;
-    }
+    do_action('oes/plugins_loaded');
+});
+
+
+/** --------------------------------------------------------------------------------------------------------------------
+ * This function will initialize the OES Core plugin.
+ * ---------------------------------------------------------------------------------------------------------------------
+ * @throws Exception
+ */
+if (!class_exists('OES_Core')) :
 
     /**
-     * @param bool $miniProjectFile
+     * Class OES_Core
+     *
+     * This function initialize the OES Core plugin.
      */
-    public static function setMiniProjectFile($miniProjectFile): void
+    class OES_Core
     {
-        self::$miniProjectFile = $miniProjectFile;
-    }
 
-    static function bootstrap_mini()
-    {
-        static $project;
-        if ($project) {
-            return $project;
+        /** @var string The OES Core plugin version. */
+        public string $version = '2.0';
+
+        /** @var bool The OES Core plugin was successfully initialized. False on error. */
+        public bool $initialized = true;
+
+        /** @var bool The ACF Pro plugin is active. Default is false. */
+        public bool $acf_pro = false;
+
+        /** @var array Store general errors. */
+        public array $errors = [];
+
+        /** @var string The basename of the OES Core plugin directory. Default is 'oes-core'. */
+        public string $basename = 'oes-core';
+
+        /** @var string The basename of the OES Project plugin directory. Default is empty. */
+        public string $basename_project = '';
+
+        /** @var string The path to the OES Core plugin directory. */
+        public string $path_core_plugin = __DIR__;
+
+        /** @var string The path to the OES Project plugin directory. */
+        public string $path_project_plugin = '';
+
+        /** @var array The path(s) to the OES Project plugin data model. */
+        public array $path_data_model = [];
+
+        /* @var array Information about registered OES post types. */
+        public array $post_types = [];
+
+        /* @var array Information about registered OES taxonomies. */
+        public array $taxonomies = [];
+
+        /* @var array The acf group IDs for media types. */
+        public array $media_groups = [];
+
+        /** @var bool Indicating if admin filter included. */
+        public bool $admin_filter = true;
+
+        /** @var array|Assets The OES Core and OES Project assets. See class 'Assets'. */
+        public $assets = [];
+
+        /** @var array The OES Core and OES Project admin pages. See class 'Menu_Page'. */
+        public array $admin_pages = [];
+
+        /** @var array The (static) pages for the theme. */
+        public array $theme_pages = [];
+
+        /** @var array The OES Core and OES Project blocks. See class 'Blocks'. */
+        public array $blocks = [];
+
+        /** @var array Project specific user roles. See class 'User_Role'. */
+        public array $user_roles = [];
+
+        /** @var array Project specific parameters. */
+        public array $project_params = [];
+
+        /** @var array Languages for multilingual posts. Default is english. */
+        public array $languages = ['language0' => ['label' => 'English']];
+
+        /** @var string The website main language (e.g. for navigation elements) */
+        public string $main_language = 'language0';
+
+        /** @var array Registered tools. */
+        public array $admin_tools = [];
+
+        /** @var array API configurations */
+        public array $apis = [];
+
+        /** @var array Notes configurations */
+        public array $notes = [];
+
+        /** @var bool The admin manual feature. Include feature if true. */
+        public bool $manual = true;
+
+        /** @var bool The task feature. Include feature if true. */
+        public bool $tasks = true;
+
+        /* @var string|int|bool The post ID of the OES object holding general configuration information. */
+        public $config_post = false;
+
+        /* @var array|bool Information for the theme page 'Index'. */
+        public $theme_index = false;
+
+        /* @var array General theme labels. */
+        public array $theme_labels = [];
+
+        /* @var array Search configuration. */
+        public array $search = [];
+
+        /** @var bool The dashboard feature. Include oes feature if true */
+        public bool $oes_dashboard = true;
+
+
+        /**
+         * OES_Core constructor.
+         * Check if ACF plugin is activated and set basename.
+         */
+        function __construct()
+        {
+            /* check if acf plugin exists */
+            if (!class_exists('ACF')) {
+                add_action('admin_notices', function () {
+                    echo '<div class="notice notice-warning is-dismissible"><p>' .
+                        __('The ACF plugin is not active.', 'oes') . '</p></div>';
+                });
+                $this->initialized = false;
+            } else {
+
+                /* check if acf pro plugin exists */
+                if (class_exists('acf_pro')) $this->acf_pro = true;
+
+                /* set plugin base name */
+                $this->basename = basename($this->path_core_plugin);
+            }
         }
-        $project = Oes_Mini_Bootstrap::bootstrap(self::$miniBootstrapDirs, self::$miniProjectFile);
-        return $project;
-    }
 
-    static function init_spl($dirpaths = [], $prepend = false)
-    {
 
-        static $count;
+        /**
+         * OES Initializing of the OES Core plugin functionalities and features.
+         */
+        function initialize_core()
+        {
+            /** Include functionalities for OES Core plugin processing. ------------------------------------------------
+             * This will include functions that are used throughout the OES Core plugin and the Project plugin.
+             * Especially include the function 'oes_include'.
+             */
+            require($this->path_core_plugin . '/includes/functions-utility.php');
+            oes_include('/includes/functions-text-processing.php');
+            oes_include('/includes/functions-post.php');
+            oes_include('/includes/functions-html.php');
 
-        static $registered;
+            /** Set up dashboard in the editorial layer --------------------------------------------------------------*/
+            if($this->oes_dashboard) oes_include('/includes/admin/dashboard.php');
 
-        if ($prepend) {
-            self::$SplDirPaths = array_merge($dirpaths, self::$SplDirPaths);
-        } else {
-            self::$SplDirPaths = array_merge(self::$SplDirPaths, $dirpaths);
+            /** Include messaging to display admin notices in the editorial layer --------------------------------------
+             * This will include messaging to display admin notices in the editorial layer.
+             */
+            oes_include('/includes/admin/notices.php');
+
+            /** Include admin manual feature -------------------------------------------------------------------------*/
+            if($this->manual) oes_include('/includes/admin/manual.php');
+
+            /** Include task feature ---------------------------------------------------------------------------------*/
+            if($this->tasks) oes_include('/includes/admin/tasks.php');
+
+            /** Include assets. Sets $this->assets. --------------------------------------------------------------------
+             * This will include all css and js needed inside the editorial layer for this OES Core plugin.
+             */
+            oes_include('/includes/admin/assets.class.php');
+
+            /** Include modification of columns for post types lists inside the editorial layer. -----------------------
+             * This will include modification of columns for post types lists inside the editorial layer.
+             */
+            if($this->admin_filter) oes_include('/includes/admin/columns.php');
+
+            /** Include admin pages inside the editorial layer ---------------------------------------------------------
+             * This will include admin pages inside the editorial layer for this OES Core plugin and the functionalities
+             * on these pages, e.g. settings options inside the editorial layer.
+             */
+            oes_include('/includes/admin/pages/page.class.php');
+
+            /* Include menu container pages. */
+            oes_include('/includes/admin/pages/container.class.php');
+
+            /** Initialize acf dependencies --------------------------------------------------------------------------*/
+            oes_include('/includes/acf/acf.php');
+            oes_include('/includes/acf/inheritance.class.php');
+
+            /** Include the feature 'OES Posts' which generates custom post types according to the OES Project data
+             * model. ------------------------------------------------------------------------------------------------*/
+            oes_include('/includes/datamodel/datamodel.class.php');
+
+            /** Include the versioning feature for OES post types. ---------------------------------------------------*/
+            oes_include('/includes/versioning/versioning.php');
+
+            /** Include note feature. --------------------------------------------------------------------------------*/
+            oes_include('/includes/notes/notes.php');
+
+            /** Include OES Core and OES Project blocks for the Gutenberg editor. ------------------------------------*/
+            oes_include('/includes/blocks/blocks.php');
+
+            /** Include theme classes ans functions. -----------------------------------------------------------------*/
+            oes_include('/includes/theme/object.class.php');
+            oes_include('/includes/theme/post.class.php');
+            oes_include('/includes/theme/taxonomy.class.php');
+            oes_include('/includes/theme/archive.class.php');
+            oes_include('/includes/theme/search.class.php');
+            oes_include('/includes/theme/functions-theme.php');
+            oes_include('/includes/theme/navigation.php');
+            oes_include('/includes/theme/figures.php');
+
+            /** Include LOD APIs. ------------------------------------------------------------------------------------*/
+            oes_include('/includes/api/rest-api.class.php');
+
+
+            /**
+             * Fires after OES Plugin has been initialized.
+             */
+            do_action('oes/initialized');
         }
 
-        if (!$registered) {
 
-            spl_autoload_register(function ($classname) {
-                foreach (self::$SplDirPaths as $dirpath) {
-                    $filepath = $dirpath . DIRECTORY_SEPARATOR . $classname . ".php";
-                    if (is_readable($filepath)) {
-                        require($filepath);
-                        return;
+        /**
+         * Initialize the OES Project plugin, including data model and project processing.
+         *
+         * @throws Exception
+         */
+        function initialize_project()
+        {
+            /* get general config post */
+            $generalConfigPost = get_posts([
+                    'post_type' => 'oes_object',
+                    'posts_per_page' => -1,
+                    'name' => 'oes_config',
+                    'post_status' => 'publish'
+                ]
+            );
+
+            /* set general configs from found post */
+            if(!empty($generalConfigPost)){
+
+                /* set config post parameter */
+                $this->config_post = $generalConfigPost[0]->ID ?? false;
+
+                /* get content */
+                $generalConfigContent = json_decode(get_post($generalConfigPost[0]->ID)->post_content ?? '{}', true);
+
+                /* check for languages */
+                if (isset($generalConfigContent['languages']))
+                    foreach ($generalConfigContent['languages'] as $languageKey => $language)
+                        $this->languages[
+                            (oes_starts_with($languageKey, 'language') ? '' : 'language') . $languageKey] =
+                            $language;
+
+                /* check for container */
+                if (isset($generalConfigContent['container']))
+                    foreach ($generalConfigContent['container'] as $containerID => $container)
+                        $this->admin_pages['container'][$containerID] = $container;
+            }
+
+
+            /* initialize data model */
+            if (isset($this->path_data_model)) {
+                $dataModel = new OES\Datamodel();
+                $dataModel->create_datamodel($this->path_data_model, $_POST['reload_json'] ?? false);
+            }
+
+            /* include theme pages */
+            if (!empty($this->theme_pages))
+                foreach ($this->theme_pages as $page) {
+
+                    /* skip if args not set */
+                    if (!isset($page['args'])) continue;
+
+                    /* initialize pages */
+                    $newPage = oes_initialize_single_page($page['args']);
+
+                    /* make front page if needed */
+                    if (isset($page['front_page']) && $page['front_page']) {
+                        if ($newPage && get_option('page_on_front') != $newPage->ID) {
+                            update_option('page_on_front', $newPage->ID);
+                            update_option('show_on_front', 'page');
+                        }
                     }
                 }
-            });
 
-            $registered = true;
-
+            /* include user roles */
+            oes_include('/includes/admin/rights.php');
         }
-
-    }
-
-    static function wpse_hide_cv_media_overlay_view($args)
-    {
-        // Bail if this is not the admin area.
-        if (!is_admin()) {
-            return;
-        }
-
-        // Modify the query.
-        $args['meta_query'] = [
-            [
-                'key' => 'is-user-upload-file',
-                'compare' => 'NOT EXISTS',
-            ]
-        ];
-
-        return $args;
-    }
-
-    static function wpse_hide_cv_media_list_view($query)
-    {
-        // Bail if this is not the admin area.
-        if (!is_admin()) {
-            return;
-        }
-
-        // Bail if this is not the main query.
-        if (!$query->is_main_query()) {
-            return;
-        }
-
-        // Only proceed if this the attachment upload screen.
-        $screen = get_current_screen();
-        if (!$screen || 'upload' !== $screen->id || 'attachment' !== $screen->post_type) {
-            return;
-        }
-
-        // Modify the query.
-        $query->set('meta_query', [
-                [
-                    'key' => 'uploaded_by',
-                    'compare' => 'NOT EXISTS',
-                ],
-            ]
-        );
-
-        return;
-    }
-
-    function init_zotero($apikey, $groupid)
-    {
-        $zotLibrary = new Oes_Zotero($apikey, "group", $groupid);
-
-        Oes_General_Config::setZoteroLibrary($zotLibrary);
-
-    }
-
-    function restrictWysiwygAddLinkQuery($postTypes = [])
-    {
-        $this->restrictWysiwygAddLinkQuery = $postTypes;
-    }
-
-    function registerTaxonomy($slug, $singularLabel, $pluralLabel, $attachToPostTypes = [])
-    {
-        $regTax = new RegisteredTaxonomy($slug, $singularLabel, $pluralLabel, $attachToPostTypes);
-        $this->registeredTaxonomies[$slug] = $regTax;
-        return $regTax;
-    }
-
-    function init()
-    {
-
-//        self::setMiniBootstrapDirs([
-//            __DIR__ . "/mini/",
-//            __DIR__ . "/pubwf/mini/"
-//        ]);
-
-
-        $this->init_libs_and_classes();
-
-        Oes::init();
-
-        $this->init_disable_rest();
-
-        $this->init_admin_columns();
-
-        $this->init_appearance_related();
-
-        $this->init_acf();
-
-        $this->init_dtm();
-
-        //        $this->init_indexing();
-
-        $this->init_ams();
-        $this->init_oes_mini();
-        $this->init_user_login_registration();
-        $this->init_wpUserRoles();
-
-        $this->init_indexing();
-
-        $this->init_search_processors();
-
-        $this->initAcfGoogleMapKey();
-
-//        $this->initSolr();
-
-        $this->initRegisteredTaxonomies();
-
-        $this->initRestrictWysiwygAddLinkQuery();
-
-        $this->initPostTypeConfigRegistration();
-
-    }
-
-    function init_libs_and_classes()
-    {
-
-        require_once(__DIR__ . "/oes-helper-functions.php");
-
-        include(__DIR__ . "/oes_functions.php");
-
-        include(__DIR__ . "/class-oes_plugin.php");
-
-        include(__DIR__ . "/class-oes-html-helper.php");
-
-//        include(__DIR__ . "/oes_comments.php");
-//        include(__DIR__ . "/Oes_Page_Sfb948.php");
-
-
-//        include(__DIR__ . "/importer/lib-redsys.php");
-
-        $oes_plugin = new Oes_Plugin();
-
-        $oes_plugin->set_upload_mimetypes();
-        $oes_plugin->register_hooks();
-        $oes_plugin->registerDateTimePickerAcfHooks();
-
-    }
-
-    function init_disable_rest()
-    {
-
-        remove_action('wp_head', 'rest_output_link_wp_head', 10);
-        remove_action('xmlrpc_rsd_apis', 'rest_output_rsd');
-
-        add_filter('rest_authentication_errors', function ($access) {
-
-            $requesturi = $_SERVER['REQUEST_URI'];
-
-            if (stripos($requesturi, '/contact-form-7/') !== false) {
-                return $access;
-            }
-
-            if (stripos($requesturi, '/oes/') !== false) {
-                return $access;
-            }
-
-            if (oes_is_current_user_admin()) {
-                return $access;
-            }
-            return new WP_Error('rest disabled ' . print_r($access, true));
-        });
-
-    }
-
-    function init_admin_columns()
-    {
-
-        add_action('ac/ready', function () {
-
-            ac_register_columns('eo_article_version', array(
-
-                array(
-                    'columns' => array(
-                        'title' => array(
-                            'type' => 'title',
-                            'label' => 'Title',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'edit' => 'off',
-                            'sort' => 'on',
-                            'name' => 'title',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5be37a6abbb20' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'Classification Group',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_main__u_article_classification_group',
-                            'edit' => 'off',
-                            'sort' => 'off',
-                            'filter' => 'on',
-                            'filter_label' => '',
-                            'name' => '5be37a6abbb20',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5cdc213d202a6' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'BSB Indexing Complete',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_main__bsb_ready',
-                            'edit' => 'off',
-                            'sort' => 'off',
-                            'filter' => 'on',
-                            'filter_label' => '',
-                            'name' => '5cdc213d202a6',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5cdc217ad6eb1' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'BSB Pending',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_main__bsb_pending',
-                            'edit' => 'off',
-                            'sort' => 'on',
-                            'filter' => 'off',
-                            'filter_label' => '',
-                            'name' => '5cdc217ad6eb1',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5cdc217ad70f9' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'BSB Pending Since',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_main__bsb_pending_since',
-                            'date_format' => 'acf',
-                            'edit' => 'off',
-                            'sort' => 'on',
-                            'filter' => 'off',
-                            'filter_label' => '',
-                            'filter_format' => '',
-                            'name' => '5cdc217ad70f9',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5cdd191a9cb55' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'Historical Persons Indexed',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_bsb__historical_persons_indexing_ready',
-                            'edit' => 'off',
-                            'sort' => 'off',
-                            'filter' => 'on',
-                            'filter_label' => '',
-                            'name' => '5cdd191a9cb55',
-                            'label_type' => '',
-                            'search' => ''
-                        ),
-                        '5cdd191a9d1d8' => array(
-                            'type' => 'column-acf_field',
-                            'label' => 'Person GND Ready (BSB)',
-                            'width' => '',
-                            'width_unit' => '%',
-                            'field' => 'eo_article_version_bsb__person_gnd_ready',
-                            'edit' => 'off',
-                            'sort' => 'off',
-                            'filter' => 'on',
-                            'filter_label' => '',
-                            'name' => '5cdd191a9d1d8',
-                            'label_type' => '',
-                            'search' => ''
-                        )
-                    ),
-                    'layout' => array(
-                        'id' => '5cdc20b8bf6de',
-                        'name' => 'EO Ready',
-                        'roles' => false,
-                        'users' => false,
-                        'read_only' => false
-                    )
-
-                )
-            ));
-        }
-        );
-
-    }
-
-    function init_appearance_related()
-    {
-
-        //
-
-        $this->initCptSettingsPages();
-
-        if (isset($_POST['acf'])) {
-
-            $acfPost = $_POST['acf'];
-
-            $changed = false;
-
-            foreach ($acfPost as $key => $val) {
-
-                $parts = explode('__', $key);
-
-                $last = array_pop($parts);
-
-                if (stripos($last, 'x_') === 0) {
-                    unset($acfPost[$key]);
-                    $changed = true;
-                } else if (stripos($last, 'wf_') === 0) {
-                    unset($acfPost[$key]);
-                    $changed = true;
-                }
-
-            }
-
-            if ($changed) {
-                $_POST['acf'] = $acfPost;
-            }
-
-        }
-
-
-        add_image_size('square64_CC', 64, 64, true);
-        add_image_size('square128_CC', 128, 128, true);
-
-        add_image_size('square64_TL', 64, 64, ['left', 'top']);
-        add_image_size('square128_TL', 128, 128, ['left', 'top']);
-
-        // Set the default content width.
-        $GLOBALS['content_width'] = 640;
-
-        foreach (array('post_content', 'post_excerpt', 'post_title', 'post_password') as $field) {
-
-            add_filter("edit_post_{$field}", function ($value, $postid) {
-                return normalizeFormC($value);
-            }, 100000, 2);
-
-            add_filter("edit_{$field}", function ($value, $postid) {
-                return normalizeFormC($value);
-            }, 100000, 2);
-
-            add_filter("pre_post_{$field}", function ($value, $postid) {
-                return normalizeFormC($value);
-            }, 100000);
-
-            add_filter("pre_{$field}", function ($value) {
-                return normalizeFormC($value);
-            }, 100000);
-
-            add_filter("post_{$field}", function ($value, $postid, $context) {
-                return normalizeFormC($value);
-            }, 100000, 3);
-
-            add_filter("{$field}", function ($value, $postid, $context) {
-                return normalizeFormC($value);
-            }, 100000, 3);
-
-        }
-
-        add_filter("acf/update_value", function ($value, $post_id, $field, $value2) {
-            if (is_string($value)) {
-                return normalizeFormC($value);
-            } else {
-                return $value;
-            }
-        }, 10000, 4);
-
-
-        add_filter("query_vars", function ($query_vars) {
-
-            $query_vars[] = '__sub';
-            $query_vars[] = '__subid';
-            $query_vars[] = '__article';
-            $query_vars[] = '__version';
-            $query_vars[] = 'version';
-
-            return $query_vars;
-
-        });
-
-        remove_action('wp_head', 'print_emoji_detection_script', 7);
-        remove_action('admin_print_scripts', 'print_emoji_detection_script');
-        remove_action('wp_print_styles', 'print_emoji_styles');
-        remove_action('admin_print_styles', 'print_emoji_styles');
-
-        add_filter("admin_body_class", function ($classes) {
-
-            $user = wp_get_current_user();
-
-            $roles = $user->roles;
-
-            foreach ($roles as $role) {
-                $classes .= ' oes-role-' . strtolower(str_replace(" ", "_", $role));
-            }
-
-            $classes .= ' oes-not-initialized';
-
-            global $post;
-
-            if ($post) {
-
-                $terms = wp_get_post_terms($post->ID, Oes_General_Config::$OES_SPECIAL_CATS);
-
-                /**
-                 * @var WP_Term $term
-                 */
-                foreach ($terms as $term) {
-                    $classes .= ' oes-term-' . strtolower(str_replace(" ", "_", $term->slug));
-                }
-
-            }
-
-
-            return $classes;
-
-        });
-
-        //
-
-        add_action('init', function () {
-
-            wp_enqueue_script("miniRun",
-                oes_get_site_url(__DIR__ . "/mini/mini-run.js"), ['jquery'], "2");
-
-            wp_localize_script('miniRun', 'wpApiSettings', array(
-                'root' => esc_url_raw(rest_url()),
-                'nonce' => wp_create_nonce('wp_rest')
-            ));
-
-            wp_enqueue_script("oes1",
-                oes_get_site_url(__DIR__ . '/oes1.js'), ['jquery'], "2");
-
-            if (hasparam("flush_rewrite_rules")) {
-                global $wp_rewrite;
-                $wp_rewrite->flush_rules(true);
-            }
-
-//            remove_filter('the_content', 'wpautop');
-//
-//            remove_filter('acf_the_content', 'wpautop');
-
-        });
-
-//        remove_filter('the_content', 'wpautop');
-
-
-        //
-
-        add_filter('jpeg_quality', function () {
-            return 100;
-        });
-
-        add_filter('pre_site_option_upload_space_check_disabled', function ($a, $b, $c, $d) {
-            return true;
-        }, 10, 4);
-
-        add_action('submitpost_box', function ($post) {
-            /**
-             * @var WP_Post $post
-             */
-
-
-            ?>
-            <style>
-
-                body {
-                    /*background: red;*/
-                }
-
-                .misc-pub-section.misc-pub-post-status {
-                    /*display: none;*/
-                }
-
-                .misc-pub-section.misc-pub-visibility {
-                    /*display: none;*/
-                }
-
-                #minor-publishing-actions {
-                    /*display: none;*/
-                }
-
-                #minor-publishing {
-                    /*display: none;*/
-                }
-
-                <?php if (false && $post->post_status != 'publish') {?>
-                #publishing-action #publish {
-                    display: none;
-                }
-
-                <?php } ?>
-
-                .misc-pub-section.misc-pub-post-status {
-                    /*display: none;*/
-                }
-            </style>
-            <?php if ($post->post_status != 'publish') { ?>
-                <script>
-                    jQuery(function () {
-                        jQuery('#save-post').appendTo(jQuery('#publishing-action'))
-                    })
-                </script>
-            <?php } ?>
-            <?php
-
-        });
-
-
-    }
-
-    function initCptSettingsPages()
-    {
-        $config = Oes_General_Config::$PROJECT_CONFIG;
-
-        if (empty($config)) {
-            return;
-        }
-
-        foreach ($config->getCptSettingsPageDefs() as $def) {
-            $this->addSettingsPage($def->slug, $def->label, $def->menuTitle, $def->parentPostType);
-        }
-    }
-
-    function addSettingsPage($slug, $pageTitle, $menuTitle = null, $parentPostType = 'page')
-    {
-
-        $menuslug = 'options_' . $slug;
-
-        if (empty($menuTitle)) {
-            $menuTitle = $pageTitle;
-        }
-
-        $parentSlug = 'edit.php?post_type=' . $parentPostType;
-
-        acf_add_options_page(array(
-            'page_title' => $pageTitle,
-            'menu_title' => $menuTitle,
-            'menu_slug' => $menuslug,
-            'capability' => 'edit_posts',
-            'parent_slug' => $parentSlug,
-            'post_id' => $menuslug,
-            'position' => false,
-            'icon_url' => 'dashicons-images-alt2',
-            'redirect' => false,
-        ));
-
-
-    }
-
-    function init_acf()
-    {
-
-        add_action('acf/init', function () {
-            acf_update_setting('show_admin', true);
-            acf_update_setting('stripslashes', true);
-        });
-
-        remove_filter('acf_the_content', 'wpautop');
-
-        add_action('acf/include_location_rules', function () {
-            include(__DIR__ . "/class-acf-location-post-taxonomy-oes.php");
-            include(__DIR__ . "/class-acf-field-message-oes.php");
-        });
-
-        add_action('acf/include_field_types', function () {
-            include(__DIR__ . "/class-acf-field-date_picker_oes.php");
-            include(__DIR__ . "/class-acf-field-file-oes.php");
-            include(__DIR__ . "/class-acf-field-url-oes.php");
-            include(__DIR__ . "/class-acf-field-button-group-oes.php");
-            include(__DIR__ . "/class-acf-field-date-text.php");
-        });
-
-        add_action('acf/input/admin_enqueue_scripts', function () {
-            wp_enqueue_script('plugin-oes-date-picker-oes', plugins_url('/acf-input-date-picker-oes.js', __FILE__), array('jquery'), '1.0');
-        });
-
-    }
-
-    function init_dtm()
-    {
-
-        Oes_Dtm::init();
-
-//        $this->initDtmPostTypes();
-
-    }
-
-    function init_ams()
-    {
-
-        if ($this->initAms) {
-            Oes_Plugin_Bootstrap::init_spl([
-                __DIR__ . "/ams/lib/",
-            ]);
-            $this->addAmsPostTypeConfigs();
-        }
-
-    }
-
-    function addAmsPostTypeConfigs()
-    {
-
-        $amsConfigFiles = [
-            __DIR__ . "/ams/post_types/pt_ams_issue.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_user.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_activity.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_comment.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_issueconfig.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_issueconfig_action.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_issueconfig_condition.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_issueconfig_actiongroup.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_option.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_message_tmpl.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_dialog_config.config.php",
-            __DIR__ . "/ams/post_types/pt_ams_settings.config.php",
-//                __DIR__ . "/ams/post_types/pt_ams_dialog.config.php",
-        ];
-
-        $this->registerPostTypeConfigs($amsConfigFiles);
-
-    }
-
-    function registerPostTypeConfigs(array $postTypeConfigs)
-    {
-
-        $this->registeredPostTypeConfigs = array_merge($this->registeredPostTypeConfigs, $postTypeConfigs);
-
-    }
-
-    function init_oes_mini()
-    {
 
 
         /**
-         * das ist dafür da damit wir z.b. regions und themes aussuchen können.
-         * damit das funktioniert muss die acf gruppe registriert worden sein. bei dynamischen formulargruppen
-         * registrieren wir sie im zuge einer aktion, aber nicht wieder formulargruppen für entities immer.
+         * Returns the plugin version or null if it doesn't exist.
          *
-         * acf/fields/post_object/query
+         * @return string|null Returns the version or null.
          */
-
-        add_action('wp_ajax_acf/fields/taxonomy/query', function () {
-
-            $fieldKey = rparam('field_key');
-
-//    error_log("dynform register $fieldKey");
-
-            list ($id1, $id2, $field) = explode('__', $fieldKey, 3);
-
-            if ($id2 != 'dynform1') {
-                return;
-            }
-
-//    error_log("register $id1 $id2");
-
-            Oes_Mini_App::registerDynAcfForm($id1, $id1 . "__" . $id2);
-
-        }, 1);
-
-        add_action('wp_ajax_acf/fields/post_object/query', function () {
-
-            $fieldKey = rparam('field_key');
-
-//    error_log("dynform register $fieldKey");
-
-            list ($id1, $id2, $field) = explode('__', $fieldKey, 3);
-
-            if ($id2 != 'dynform1') {
-                return;
-            }
-
-//    error_log("register $id1 $id2");
-
-            Oes_Mini_App::registerDynAcfForm($id1, $id1 . "__" . $id2);
-
-        }, 1);
-
-        add_action('wp_ajax_acf/fields/relationship/query', function () {
-
-            $fieldKey = rparam('field_key');
-
-//    error_log("dynform register $fieldKey");
-
-            list ($id1, $id2, $field) = explode('__', $fieldKey, 3);
-
-            if ($id2 != 'dynform1') {
-                return;
-            }
-
-//    error_log("register $id1 $id2");
-
-            Oes_Mini_App::registerDynAcfForm($id1, $id1 . "__" . $id2);
-
-        }, 1);
-
-    }
-
-    function init_user_login_registration()
-    {
-
-
-        /**
-         * hier geht es darum zu schauen ob ein user enabled ist oder nicht.
-         */
-        add_filter('authenticate', function ($user, $username, $password) {
-
-
-            if (empty($user)) {
-                return $user;
-            }
-
-            if (is_wp_error($user)) {
-                /**
-                 * @var WP_Error $user
-                 */
-                error_log("authenticate: " . $user->get_error_message());
-                return $user;
-            }
-
-            /**
-             * @var WP_User $user
-             */
-
-            $roles = $user->roles;
-
-            if (oes_has_admin_roles($roles)) {
-                return $user;
-            }
-
-            if (class_exists("dtm_sys_user_base")) {
-
-                $dtm = dtm_sys_user_base::init('user_' . $user->ID);
-
-                $status = $dtm->status;
-
-                if (!empty($status) && $status != Oes_General_Config::USER_STATUS_ENABLED) {
-                    return null;
-                }
-
-            }
-
-            return $user;
-
-        }, 100000, 3);
-
-    }
-
-    function init_wpUserRoles()
-    {
-
-        add_action('init', function () {
-
-            $result = add_role(
-                'oes_editorial_office',
-                __('Editorial Office (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_published_posts' => true,
-                    'delete_posts' => false, // Use false to explicitly deny
-                    'unfiltered_html' => false, // Use false to explicitly deny
-                    'manage_admin_columns' => true, // Use false to explicitly deny
-                    'upload_files' => true, // Use false to explicitly deny
-                )
-            );
-
-            $result = add_role(
-                Oes_General_Config::EO_OES_TAGGING_ROLE,
-                __('Tagging (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_published_posts' => true,
-                    'delete_posts' => false, // Use false to explicitly deny
-                )
-            );
-
-            $result = add_role(
-                'oes_user',
-                __('User (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_published_posts' => true,
-                    'delete_posts' => false, // Use false to explicitly deny
-                )
-            );
-
-            $result = add_role(
-                Oes_General_Config::EO_OES_ADMIN_ROLE,
-                __('Admin (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_pages' => true,
-                    'edit_others_pages' => true,
-                    'delete_pages' => true,
-                    'publish_pages' => true,
-                    'edit_others_posts' => true,
-                    'publish_posts' => true,
-                    'delete_posts' => true,
-                    'manage_categories' => true,
-                    'delete_others_posts' => true,
-                    'edit_published_posts' => true,
-                    'create_users' => true, // Use false to explicitly deny
-                    'edit_users' => true, // Use false to explicitly deny
-                    'list_users' => true, // Use false to explicitly deny
-                    'upload_files' => true, // Use false to explicitly deny
-                    'unfiltered_html' => true, // Use false to explicitly deny
-                    'delete_posts' => true, // Use false to explicitly deny
-                    'delete_published_posts' => true, // Use false to explicitly deny
-                    'delete_others_posts' => true, // Use false to explicitly deny
-                    'manage_admin_columns' => true, // Use false to explicitly deny
-                )
-            );
-
-            $result = add_role(
-                Oes_General_Config::EO_OES_MANAGING_EDITOR_ROLE,
-                __('Managing Editor (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_published_posts' => true,
-                    'delete_posts' => false, // Use false to explicitly deny
-                )
-            );
-
-            $result = add_role(
-                'oes_mgmt',
-                __('Management (OES)'),
-                array(
-                    'read' => true,  // true allows this capability
-                    'edit_posts' => true,
-                    'edit_published_posts' => true,
-                    'delete_posts' => false, // Use false to explicitly deny
-                )
-            );
-
-        });
-
-
-    }
-
-    function init_indexing()
-    {
-
-//        add_action('oes/dtm/resolve_before', function () {
-
-//            error_log("resetting indexing");
-
-//            oes_dtm_form_factory::$created_items = [];
-//            oes_dtm_form_factory::$updated_items = [];
-//            oes_dtm_form_factory::$deleted_items = [];
-
-//        });
-
-        /**
-         * wenn die DTM abgeschlossen ist, können wir uns ranmachen und die indizierung aller
-         * objekte vornehmen, die im zuge eines requests verändert wurden.
-         */
-        add_action('oes/dtm/resolve_done', function () {
-
-//            error_log("running indexing");
-
-            $collector = [];
-
-            foreach (oes_dtm_form_factory::$created_items as $id => $post_type) {
-                Oes::idx_debug("indexing created_item", ['id' => $id, 'post_type' => $post_type]);
-                $dtm = oes_dtm_form::init($id);
-                $dtm->indexSearchEngine();
-            }
-
-            foreach (oes_dtm_form_factory::$updated_items as $id => $post_type) {
-                Oes::idx_debug("indexing updated_item", ['id' => $id, 'post_type' => $post_type]);
-                $dtm = oes_dtm_form::init($id);
-                $dtm->indexSearchEngine();
-            }
-
-            Oes_Indexing::run_index();
-
-            oes_dtm_form_factory::$created_items = [];
-            oes_dtm_form_factory::$updated_items = [];
-            oes_dtm_form_factory::$deleted_items = [];
-
-        });
-
-
-        add_action('deleted_post', function ($post_ID) {
-            Oes_Indexing::del_item($post_ID);
-        }, 10, 1);
-
-        add_action('wp_trash_post', function ($post_ID) {
-            Oes_Indexing::del_item($post_ID);
-        }, 10, 1);
-
-    }
-
-    function init_search_processors()
-    {
-
-    }
-
-    function initAcfGoogleMapKey()
-    {
-        add_filter('acf/fields/google_map/api', function ($api) {
-            if ($this->acfGoogleMapKey) {
-                $api['key'] = $this->acfGoogleMapKey;
-            }
-            return $api;
-        });
-    }
-
-    function initRegisteredTaxonomies()
-    {
-        add_action('init', function () {
-
-            foreach ($this->registeredTaxonomies as $regTax) {
-
-                $labels = array(
-                    "name" => $regTax->plural,
-                    "singular_name" => $regTax->singular,
-                );
-
-                $args = array(
-                    "label" => $regTax->plural,
-                    "labels" => $labels,
-                    "public" => true,
-                    "hierarchical" => $regTax->hierarchical,
-                    "show_ui" => true,
-                    "show_in_menu" => true,
-                    "show_in_nav_menus" => $regTax->showInNavMenus,
-                    "query_var" => true,
-                    "rewrite" => array('slug' => $regTax->slug, 'with_front' => false),
-                    "show_admin_column" => false,
-                    "show_in_rest" => false,
-                    "rest_base" => "",
-                    "show_in_quick_edit" => false,
-                );
-
-                register_taxonomy($regTax->slug, $regTax->attachToPostTypes, $args);
-
-            }
-
-        });
-
-    }
-
-    function initRestrictWysiwygAddLinkQuery()
-    {
-        add_filter('wp_link_query_args', function ($query) {
-            if ($this->restrictWysiwygAddLinkQuery) {
-                $query['post_type'] = $this->restrictWysiwygAddLinkQuery;
-            }
-            return $query;
-        });
-    }
-
-    function initPostTypeConfigRegistration()
-    {
-
-        add_action('init', function () {
-
-            Oes_General_Config::$postTypeConfigFiles = $this->registeredPostTypeConfigs;
-
-            if (!Oes_General_Config::isDtmDisabled()) {
-                Oes_Wf_Factory::registerWfPostTypes(Oes_General_Config::$postTypeConfigFiles);
-            }
-
-        });
-
-    }
-
-    function setAcfGoogleMapKey($key)
-    {
-        $this->acfGoogleMapKey = $key;
-    }
-
-    function initDtmPostTypes()
-    {
-
-    }
-
-
-//
-
-
-    /**
-     * mit den nächsten beiden filtern würden wir user upload aus der media query entfernen können.
-     * @param $args
-     */
-//add_filter( 'ajax_query_attachments_args', 'wpse_hide_cv_media_overlay_view' );
-
-    function enableAms()
-    {
-        $this->initAms = true;
-    }
-
-//add_action( 'pre_get_posts', 'wpse_hide_cv_media_list_view' );
-
-    function enableSolr($solrConfigFile, $username = null, $password = null)
-    {
-        if (!file_exists($solrConfigFile)) {
-            throw new Exception("$solrConfigFile not found");
+        function get_version(): ?string
+        {
+            return $this->version ?? null;
         }
-
-        include($solrConfigFile);
-        $this->init_solr(SOLR_HOSTNAME, SOLR_PORT, SOLR_CORE, $username, $password);
     }
-
-    function init_solr($hostname, $port, $core, $username = null, $password = null)
-    {
-        include(__DIR__ . "/solr.php");
-        initsolr($hostname, $port, "default", $core, false, $username, $password);
-    }
-
-    function loadSolrConfigAndInit($solrDir)
-    {
-
-        if (!is_readable($solrDir)) {
-            throw new Exception("solr-config directory is not readable ($solrDir).");
-        }
-
-        /**
-         * solr habe ich hier noch auskommentiert
-         */
-        $solrconfig = $solrDir . '/solr-config-' . $_SERVER['HTTP_HOST'] . '.php';
-        if (file_exists($solrconfig)) {
-            include($solrconfig);
-        } else {
-            $solrconfig = $solrDir . '/solr-config.php';
-            if (file_exists($solrconfig)) {
-                include($solrconfig);
-            } else {
-                throw new Exception('solr not configured.');
-            }
-        }
-
-        $login = $pwd = null;
-
-        if (defined('SOLR_SERVER_USERNAME')) {
-            $login = SOLR_SERVER_USERNAME;
-        }
-
-        if (defined('SOLR_SERVER_PASSWORD')) {
-            $pwd = SOLR_SERVER_PASSWORD;
-        }
-
-        $this->init_solr(SOLR_HOSTNAME, SOLR_PORT, SOLR_CORE, $login, $pwd);
-
-    }
+endif;
 
 
-}
-
-function oes_upload_vendor_autoload()
-{
-    static $done;
-    if ($done) {
-        return;
-    }
-    //require_once(__DIR__ . "/vendor/autoload.php");
-    $done = true;
-}
-
-function oes_config_directory_path($file = "")
-{
-    return __DIR__ . "/config/$file";
-}
-
-function oesChangeResolver()
-{
-    static $obj;
-    if (isset($obj)) {
-        return $obj;
-    }
-    $obj = new OesChangeResolver();
-    return $obj;
-}
-
-function eI18n($str)
-{
-    dtm_oes_lokalisierung::__e($str);
-}
-
-function eI18nT($str)
-{
-    dtm_oes_lokalisierung::__eTable($str);
-}
-
-function eI18nO($str)
-{
-    dtm_oes_lokalisierung::__eOption($str);
-}
-
-function i18n($str, $returnOriginal = false)
-{
-    if (empty($str)) {
-        return '';
-    }
-    return dtm_oes_lokalisierung::__($str, $returnOriginal);
-}
-
-function i18nT($str)
-{
-    if (empty($str)) {
-        return '';
-    }
-    return dtm_oes_lokalisierung::__table($str);
-}
-
-function i18nO($str)
-{
-    return dtm_oes_lokalisierung::__option($str);
-}
-
-
-if (defined('WP_CLI') && WP_CLI) {
-    require_once(__DIR__ . '/oes-cli.php');
-}
-
-class RegisteredTaxonomy
-{
-    var $singular, $plural, $attachToPostTypes = [];
-
-    var $slug;
-
-    var $showInNavMenus = true;
-
-    var $hierarchical = true;
-
-    /**
-     * RegisteredTaxonomy constructor.
-     * @param $slug
-     * @param $singular
-     * @param $plural
-     * @param array $attachToPostTypes
-     * @param boolean $hierarchical
-     */
-    public function __construct($slug, $singular, $plural, array $attachToPostTypes, $hierarchical = true)
-    {
-        $this->slug = $slug;
-        $this->singular = $singular;
-        $this->plural = $plural;
-        $this->attachToPostTypes = $attachToPostTypes;
-        $this->hierarchical = $hierarchical;
-    }
-
-
-}
-
-add_action("plugins_loaded", function () {
-
-    $bootstrap = new Oes_Plugin_Bootstrap();
-    do_action(Oes_General_Config::ACTION_HOOK_OES_IS_READY, $bootstrap);
-    $bootstrap->init();
-
+/**
+ * Add favicon to WordPress admin pages.
+ */
+add_action('admin_head', function () {
+    echo '<link rel="icon" type="image/x-icon" href="' . plugin_dir_url(__FILE__) . 'assets/images/favicon.ico" />';
 });
