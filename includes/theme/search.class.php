@@ -339,10 +339,11 @@ function oes_search_where_statement(string $where): string
 
         /* include search in meta value, exclude search in post meta with meta keys starting with '_' */
         $prepareStatement = "(" .
+            "((" . $wpdb->posts . ".post_title LIKE $1) OR " .
             "(" . $wpdb->postmeta . ".meta_value LIKE $1) " .
             "AND (" . $wpdb->postmeta . ".meta_key NOT LIKE '" . '^_%' . "' ESCAPE '" . '^' . "') " .
             ($filterSearch ? "AND " . $wpdb->postmeta . ".meta_key IN (" . $filterSearch . ")" : "") .
-            ")";
+            "))";
 
         /* hook search into existing search (title is arbitrary) */
         $where = preg_replace(
