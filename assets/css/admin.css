@@ -373,7 +373,8 @@ table#oes-presentation-table td {
 #oes-tool-export .inside,
 #oes-tool-export-single .inside,
 #oes-tool-import .inside,
-#oes-tool-delete-posts .inside {
+#oes-tool-delete-posts .inside,
+#oes-tool-update-posts .inside {
     margin-bottom:50px;
 }
 
@@ -432,10 +433,6 @@ table#oes-presentation-table td {
 
 .oes-warning {
     background-color: yellow;
-}
-
-.block-editor-block-inspector .components-base-control {
-    padding: 0 15px 0 15px;
 }
 
 

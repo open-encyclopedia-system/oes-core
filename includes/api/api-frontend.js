@@ -1,13 +1,13 @@
-/* hide gnd boxes */
-jQuery(".oes-gnd-box-close").click(function () {
+/* hide LOD boxes */
+jQuery(".oes-lod-box-close").click(function () {
     this.parentNode.parentNode.parentNode.style.display = "none";
 });
 
 
 /* execute api request */
-jQuery(".oes-gndlink").on("click", function (event) {
+jQuery(".oes-lodlink").on("click", function (event) {
 
-    var id = this.dataset.gnd,
+    var id = this.dataset.lodid,
         box_exists = this.nextSibling;
 
     if (box_exists) {
@@ -17,26 +17,23 @@ jQuery(".oes-gndlink").on("click", function (event) {
         });
     } else {
 
-        /* create gnd box */
+        /* create LOD box */
         var box_container = document.createElement('div'),
             box_inner = document.createElement('div'),
             box = document.createElement('div'),
             button = document.createElement('button'),
-            spinner = document.createElement('img'),
-            data = document.createElement('div'),
-            scripts = document.getElementsByTagName("script"),
-            theme_url = scripts[scripts.length-1].src;
+            spinner = document.createElement('div'),
+            data = document.createElement('div');
 
-        box_container.className = 'oes-gnd-box-container'
-        box_inner.className = 'oes-gnd-box-inner';
-        box.className = 'oes-gnd-box';
-        box.id = 'oes-gnd-box-' + id;
-        button.className = 'oes-gnd-box-close';
+        box_container.className = 'oes-lod-box-container';
+        box_inner.className = 'oes-lod-box-inner';
+        box.className = 'oes-lod-box';
+        box.id = 'oes-lod-box-' + id;
+        button.className = 'oes-lod-box-close';
         button.innerHTML = '<span></span>';
         spinner.className = 'oes-spinner';
-        /* TODO spinner.src = '/../../../images/spinner.gif';  */
         spinner.alt = 'waiting...';
-        data.className = 'gnd-data gnd-data-' + id;
+        data.className = 'oes-lod-data oes-lod-data-' + id;
 
         this.parentNode.appendChild(box_container);
         box_container.appendChild(box_inner);
@@ -49,16 +46,21 @@ jQuery(".oes-gndlink").on("click", function (event) {
             this.parentNode.parentNode.parentNode.style.display = "none";
         };
 
+        /* add api information to request */
+        var params = {};
+        params['api'] = this.dataset.api;
+        params['lodid'] = id;
+
         /* call rest api */
         jQuery.ajax({
             type: "POST",
-            url: oesGndAJAX.ajax_url,
-            data: {action: 'oes_gnd_box', nonce: oesGndAJAX.ajax_nonce, param: id}
+            url: oesLodAJAX.ajax_url,
+            data: {action: 'oes_lod_box', nonce: oesLodAJAX.ajax_nonce, param: params}
         }).done(function (data) {
             jQuery('.oes-spinner').each(function () {
                 this.style.display = 'none';
             });
-            jQuery('.gnd-data-' + data.id).each(function () {
+            jQuery('.oes-lod-data-' + data.id).each(function () {
                 this.innerHTML = data.html;
             });
         });

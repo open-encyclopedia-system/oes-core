@@ -251,6 +251,7 @@ function include_tools(){
     oes_include('/includes/admin/tools/export.class.php');
     if(oes_user_is_oes_admin()) {
         oes_include('/includes/admin/tools/config-admin.class.php');
+        oes_include('/includes/admin/tools/update.class.php');
         oes_include('/includes/admin/tools/delete.class.php');
     }
 }

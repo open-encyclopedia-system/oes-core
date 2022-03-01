@@ -169,8 +169,9 @@ if (!class_exists('Page')) :
             /* add load page action */
             add_action('load-' . $page, [$this, 'load']);
 
-            /* add capabilities to admin */
+            /* add capabilities to admin and editor */
             get_role('administrator')->add_cap($this->page_parameters['capability']);
+            get_role('editor')->add_cap($this->page_parameters['capability']);
 
             return $page;
         }
@@ -263,8 +264,8 @@ if (!class_exists('Page')) :
             'lod' => [
                 'sub_page' => true,
                 'page_parameters' => [
-                    'page_title' => 'LOD',
-                    'menu_title' => 'LOD',
+                    'page_title' => 'Linked Open Data',
+                    'menu_title' => 'Linked Open Data',
                     'menu_slug' => 'oes_settings_lod',
                     'position' => 6
                 ],

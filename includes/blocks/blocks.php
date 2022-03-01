@@ -21,7 +21,6 @@ if (!class_exists('Blocks')) {
                 'foreground' => '#fff',
                 'src' => 'book-alt'
             ],
-            'attributes' => [],
             'category' => 'oes-blocks',
             'keywords' => ['OES']
         ];

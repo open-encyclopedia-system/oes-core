@@ -683,6 +683,14 @@ if (!class_exists('OES_Object')) {
 
             return $allChildren;
         }
+
+
+        /**
+         * Prepare the mpdf
+        */
+        function create_mpdf($mpdf){
+            return $mpdf;
+        }
     }
 }
 

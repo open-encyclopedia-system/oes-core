@@ -91,6 +91,8 @@ if (!class_exists('OES_Post')) {
         {
             if (isset($this->fields['field_oes_post_language']))
                 $this->language = $this->fields['field_oes_post_language']['value'];
+            elseif($postLanguage = oes_get_post_language($this->object_ID))
+                $this->language = $postLanguage;
             else $this->language = $language;
         }
 
@@ -577,7 +579,7 @@ if (!class_exists('OES_Post')) {
                 $terms = $this->get_all_terms([$taxonomyKey], $this->parent_ID);
                 if (isset($terms[$taxonomyKey]) && !empty($terms[$taxonomyKey]))
                     return [
-                        'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$this->language] ??
+                        'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$this->language] ?:
                             (get_taxonomy($taxonomyKey)->label ?? $taxonomyKey),
                         'value' => implode(', ', $terms[$taxonomyKey]),
                         'key' => $fieldKey
@@ -661,5 +663,59 @@ if (!class_exists('OES_Post')) {
 
             return $returnVersions;
         }
+    }
+}
+
+
+/**
+ * Add a field group to the page object containing the language field.
+ */
+function oes_add_language_field_to_page()
+{
+    add_action('oes/datamodel_registered', 'oes_add_language_field_to_page_action');
+}
+
+
+/**
+ * Add a field group to the page object containing the language field (action call).
+ */
+function oes_add_language_field_to_page_action()
+{
+    /* prepare languages */
+    $languages = [];
+    $oes = OES();
+    if (!empty($oes->languages))
+        foreach ($oes->languages as $languageKey => $language) $languages[$languageKey] = $language['label'];
+
+    /* add field group */
+    if (function_exists('acf_add_local_field_group')) {
+        acf_add_local_field_group([
+            'key' => 'group_oes_page',
+            'title' => 'Page',
+            'fields' => [[
+                'key' => 'field_oes_post_language',
+                'label' => 'Language',
+                'name' => 'field_oes_post_language',
+                'type' => 'select',
+                'instructions' => '',
+                'required' => true,
+                'default_value' => 'language0',
+                'choices' => $languages
+            ],
+                [
+                    'key' => 'field_oes_page_translations',
+                    'label' => 'Translations',
+                    'name' => 'field_oes_page_translations',
+                    'type' => 'relationship',
+                    'return_format' => 'id',
+                    'post_type' => ['page'],
+                    'filters' => ['search']
+                ]],
+            'location' => [[[
+                'param' => 'post_type',
+                'operator' => '==',
+                'value' => 'page'
+            ]]]
+        ]);
     }
 }

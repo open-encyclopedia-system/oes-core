@@ -1,5 +1,9 @@
 <?php
 
+use function OES\ACF\get_select_field_value;
+use function OES\ACF\oes_get_field;
+use function OES\ACF\oes_get_field_object;
+
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
@@ -234,3 +238,154 @@ function oes_dashboard_tasks_html()
 add_filter('acf/update_value/key=field_oes_task__date', function ($value, $post_id, $field, $original) {
     return empty($value) ? date('Ymd') : $value;
 }, 10, 4);
+
+
+/* prepare filter ----------------------------------------------------------------------------------------------------*/
+add_action('oes/datamodel_registered', 'oes_task_initialize_filter');
+
+
+/**
+ * Prepare filter for column display, sorting and filtering.
+ *
+ * TODO move to columns.php?
+ */
+function oes_task_initialize_filter()
+{
+    add_filter('manage_oes_task_posts_columns', 'oes_task_add_post_column');
+    add_action('manage_oes_task_posts_custom_column', 'oes_task_display_post_column_value', 10, 2);
+    //add_filter('manage_edit-oes_task_sortable_columns', 'oes_task_make_columns_sortable');
+}
+
+
+/**
+ * Add extra columns to the list display of posts in the wp admin area.
+ *
+ * @param array $columns The columns for the post type that is being displayed.
+ * @return array Returns the columns to be displayed.
+ */
+function oes_task_add_post_column(array $columns): array
+{
+    $columns['status'] = 'Status';
+    $columns['assigned_to'] = 'Assigned To';
+    return $columns;
+}
+
+
+/**
+ * Display values for column in the list display of post types in the wp admin area.
+ *
+ * @param string $column The column name.
+ * @param string $post_id The post ID.
+ */
+function oes_task_display_post_column_value(string $column, string $post_id)
+{
+
+    switch($column){
+
+        default:
+
+            /* acf field */
+            if ($value = oes_get_field($column, $post_id)) {
+
+                /* check type */
+                $fieldObject = oes_get_field_object($column);
+                if ($fieldObject && !empty($value)) {
+
+                    switch ($fieldObject['type']) {
+
+                        case 'radio' :
+                        case 'select' :
+                            $newValue = get_select_field_value($column, $post_id);
+                            break;
+
+                        case 'user' :
+                            $newValue = $fieldObject['value']['nickname'] ?? '';
+                            break;
+
+                        case 'post_object':
+                            $postObject = get_post($value);
+                            $newValue = $postObject ?
+                                sprintf('<span class="oes-column-post">' .
+                                    '<a href="post.php?post=%s&action=edit" class="oes-admin-link">%s' .
+                                    '</a></span>',
+                                    $postObject->ID,
+                                    $postObject->post_title) :
+                                $value;
+                            break;
+
+                        case 'relationship' :
+                            if (is_array($value)) {
+                                $newValueTemp = [];
+                                foreach ($value as $post) {
+                                    if (get_post($post)) {
+                                        $postID = ($fieldObject['return_format'] == 'object') ? $post->ID : $post;
+                                        $newValueTemp[] = sprintf('<span class="oes-column-post">' .
+                                            '<a href="post.php?post=%s&action=edit" class="oes-admin-link">%s' .
+                                            '</a></span>',
+                                            $postID,
+                                            get_the_title($postID)
+                                        );
+                                    }
+                                }
+                                $newValue = implode('', $newValueTemp);
+                            } else {
+                                $newValue = get_post($value) ? oes_get_display_title($value) : $value;
+                            }
+                            break;
+
+                        case 'taxonomy' :
+                            if (is_array($value)) {
+                                $newValueTemp = [];
+                                foreach ($value as $valueID) {
+                                    $term = get_term($valueID);
+                                    if ($term) $newValueTemp[] = sprintf('<span class="oes-column-taxonomy">' .
+                                        '<a href="edit.php?post_type=%s&%s=%s">%s</a></span>',
+                                        $_GET['post_type'] ?? '',
+                                        $column,
+                                        $valueID,
+                                        $term->name
+                                    );
+                                }
+                                $newValue = implode(', ', $newValueTemp);
+                            } else {
+                                $newValue = get_term($value)->name ?? $value;
+                            }
+                            break;
+                    }
+                }
+
+                echo $newValue ?? $value;
+            } /* taxonomy */
+            elseif (get_taxonomy($column)) {
+
+                $terms = get_the_terms($post_id, $column);
+
+                $termStringArray = [];
+                if ($terms) {
+                    foreach ($terms as $term)
+                        $termStringArray[] = sprintf(
+                            '<span class="oes-column-tag"><a href="edit.php?post_type=%s&%s=%s">%s</a></span>',
+                            $_GET['post_type'] ?? '',
+                            $column,
+                            $term->slug,
+                            $term->name);
+                }
+                if (!empty($termStringArray)) echo implode('', $termStringArray);
+            }
+            break;
+    }
+}
+
+
+/**
+ * Make columns sortable in the list display of post types in the wp admin area.
+ *
+ * @param array $columns The columns which are to be displayed.
+ * @return array Return columns.
+ */
+function oes_task_make_columns_sortable(array $columns): array
+{
+    $columns['status'] = 'status';
+    $columns['assigned_to'] = 'assigned_to';
+    return $columns;
+}

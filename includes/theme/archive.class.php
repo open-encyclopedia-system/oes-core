@@ -3,6 +3,7 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
+use function OES\ACF\get_all_object_fields;
 use function OES\ACF\oes_get_field;
 use function OES\ACF\oes_get_field_object;
 use function OES\Versioning\get_current_version_id;
@@ -82,7 +83,8 @@ if (!class_exists('OES_Archive')) {
             $this->term = $args['term'] ?? '';
 
             /* Set language */
-            $this->language = $args['language'] ?? '';
+            global $language;
+            $this->language = $args['language'] ?? $language;
 
             /* Check if post type creation is skipped */
             $this->skip_post_object = $args['skip_post_object'] ?? true;
@@ -108,13 +110,22 @@ if (!class_exists('OES_Archive')) {
 
                         if (oes_starts_with($filterKey, 'taxonomy__')) {
                             $filterKey = substr($filterKey, 10);
-                            if(taxonomy_exists($filterKey)){
+                            if (taxonomy_exists($filterKey)) {
                                 $filterArgs['type'] = 'taxonomy';
                                 $this->filter_array['list'][$filterKey]['label'] = get_taxonomy($filterKey)->label;
                             }
+                        } elseif (oes_starts_with($filterKey, 'post_type__')) {
+                            $filterKey = substr($filterKey, 11);
+                            if (post_type_exists($filterKey)) {
+                                $filterArgs['type'] = 'post_type';
+                                $this->filter_array['list'][$filterKey]['label'] =
+                                    (isset($oes->post_types[$filterKey]['label']) ?
+                                    $oes->post_types[$filterKey]['label'] :
+                                    $filterKey);
+                            }
                         } elseif (oes_starts_with($filterKey, 'parent_taxonomy__')) {
                             $filterKey = substr($filterKey, 17);
-                            if(taxonomy_exists($filterKey)){
+                            if (taxonomy_exists($filterKey)) {
                                 $filterArgs['type'] = 'taxonomy';
                                 $filterArgs['parent'] = true;
                                 $this->filter_array['list'][$filterKey]['label'] = get_taxonomy($filterKey)->label;
@@ -140,7 +151,7 @@ if (!class_exists('OES_Archive')) {
                     $this->label = $oes->theme_index['label'] ?? __('Index', 'oes');
                 else
                     $this->label = (!empty($this->language) &&
-                        $oes->post_types[$postType]['theme_labels']['archive__header'][$this->language]) ?
+                        isset($oes->post_types[$postType]['theme_labels']['archive__header'][$this->language])) ?
                         $oes->post_types[$postType]['theme_labels']['archive__header'][$this->language] :
                         $oes->post_types[$postType]['label'] ?? 'Label missing';
             }
@@ -228,7 +239,7 @@ if (!class_exists('OES_Archive')) {
                     else $queryArgs = [
                         'post_type' => $this->post_type,
                         'tax_query' => [[
-                            'taxonomy' => $this->taxonomies,
+                            'taxonomy' => $this->taxonomies[0], //TODO multiple taxonomies?
                             'field' => 'slug',
                             'terms' => $this->term
                         ]]
@@ -285,8 +296,8 @@ if (!class_exists('OES_Archive')) {
                         $currentVersion = get_current_version_id($parentID) ?? false;
 
                     /* check for language */
-                    if (!empty($this->language))
-                        if ($this->language !== oes_get_post_language($post->ID)) return;
+                    if (!empty($this->language) && $this->language !== 'all')
+                        if ($this->language !== oes_get_post_language($parentID ?? $post->ID)) return;
 
                     if ($currentVersion && $currentVersion != $post->ID) return;
                 }
@@ -323,6 +334,25 @@ if (!class_exists('OES_Archive')) {
                                 $this->filter_array['list'][$filter]['items'][$term->term_id] = $term->name;
                                 $this->filter_array['json'][$filter][$term->term_id][] = get_the_ID();
                             }
+                        }/* check if taxonomy */
+                        elseif ($filterParams['type'] === 'post_type') {
+
+                            /* get relationship fields */
+                            $relationshipFields = get_all_object_fields($post->post_type, ['relationship', 'post_object']);
+                            if(!empty($relationshipFields))
+                                foreach($relationshipFields as $relationshipFieldKey => $relationshipField)
+                                    if(in_array($filter, $relationshipField['post_type'] ?? [])) {
+
+                                        $fieldValue = \OES\ACF\oes_get_field($relationshipFieldKey, $relevantPost);
+                                        if(!empty($fieldValue))
+                                            foreach($fieldValue as $singleFieldValue)
+                                            if(!isset($this->filter_array['json'][$filter][$singleFieldValue->ID]) ||
+                                                !in_array(get_the_ID(), $this->filter_array['json'][$filter][$singleFieldValue->ID])){
+                                                $this->filter_array['list'][$filter]['items'][$singleFieldValue->ID] =
+                                                    oes_get_display_title($singleFieldValue->ID);
+                                                $this->filter_array['json'][$filter][$singleFieldValue->ID][] = get_the_ID();
+                                            }
+                                    }
                         } /* check if field */
                         elseif ($filterParams['type'] === 'field' && $field = oes_get_field($filter, $relevantPost))
                             if (!empty($field)) {

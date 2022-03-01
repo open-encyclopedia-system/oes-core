@@ -19,15 +19,6 @@ function oes_theme_add_favicon(string $href, string $imgSize = "16x16")
 
 
 /**
- * Include a modified and styled display of the GND information in frontend box.
- */
-function oes_theme_gnd_display_modified_table(){
-    add_filter('oes/api_lobid_display_table', '\OES\API\gnd_modify_table_data', 10, 2);
-    add_filter('oes/api_lobid_display_entry', '\OES\API\gnd_display_entry', 10, 4);
-}
-
-
-/**
  * Add search to top navigation menu at end
  *
  * @param string $label The navigation item label.
@@ -36,6 +27,6 @@ function oes_theme_gnd_display_modified_table(){
 function oes_theme_add_search_to_navigation(string $label = ''): string
 {
     return '<li id="menu-item-oes-search" class="menu-item">' .
-            '<a id="oes-search" href="javascript:void(0)">' . ($label ?: __('Search', 'oes')) . '</a>' .
+            '<a id="oes-search" href="javascript:void(0)">' . ($label ?? __('Search', 'oes')) . '</a>' .
             '</li>';
 }

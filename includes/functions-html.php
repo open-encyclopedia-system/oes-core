@@ -270,7 +270,7 @@ function oes_html_get_form_element(string $type = 'checkbox', string $name = '',
                 $value,
                 $args['min'] ?? '',
                 $args['max'] ?? '',
-                isset($args['on_change']) ? 'onChange={' . $args['on_change'] . '}' : ''
+                $additional . (isset($args['on_change']) ? 'onChange={' . $args['on_change'] . '}' : '')
             );
             break;
 

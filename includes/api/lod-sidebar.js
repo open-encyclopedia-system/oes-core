@@ -5,14 +5,73 @@
     var TextControl = wp.components.TextControl;
     var SelectControl = wp.components.SelectControl;
     var RangeControl = wp.components.RangeControl;
+    var NumberControl = wp.components.__experimentalNumberControl;
+
 
     registerPlugin('oes-lod-sidebar', {
         render: function () {
 
-            let search_term = '',
-                authority_file = 'gnd',
-                search_type = 'all',
-                search_size = 5;
+
+            /* TODO call from php ?*/
+            var databaseString = el('div', null, 'Search in the ',
+                    el('a', {href: 'https://www.dnb.de/', target: '_blank'}, 'GND'),
+                    ', ',
+                    el('a', {href: 'https://www.geonames.org/', target: '_blank'}, 'Geonames'),
+                    ' database and create shortcodes or copy values to this post.'),
+                options =
+                    el('div', {},
+                        el(
+                            'div', {className: 'components-base-control__field oes-lod-search-options-block-editor oes-lod-authority-file-container'},
+                            el(SelectControl, {
+                                label: 'Authority File',
+                                id: 'oes-lod-authority-file',
+                                name: 'oes-lod-authority-file',
+                                onChange: function (value) {
+                                    oesLodShowSearchOptions(value);
+                                },
+                                options: [
+                                    {label: 'GND', value: 'gnd'},
+                                    {label: 'Geonames', value: 'geonames'}
+                                ]
+                            }),
+                        ),
+                        el(
+                            'div', {className: 'components-base-control__field oes-lod-search-options-block-editor oes-gnd-search-options-block-editor'},
+                            el(SelectControl, {
+                                label: 'Type',
+                                id: 'oes-gnd-type',
+                                name: 'oes-gnd-type',
+                                options: [
+                                    {value: 'all', label: 'All'},
+                                    {value: 'Person', label: 'Person'},
+                                    {value: 'ConferenceOrEvent', label: 'Konferenz oder Veranstaltung'},
+                                    {value: 'CorporateBody', label: 'Körperschaft'},
+                                    {value: 'SubjectHeading', label: 'Schlagwort'},
+                                    {value: 'PlaceOrGeographicName', label: 'Geografikum'}
+                                ]
+                            }),
+                            el(NumberControl, {
+                                label: 'Size',
+                                id: 'oes-gnd-size',
+                                name: 'oes-gnd-size',
+                                min: 1,
+                                max: 50
+                            })
+                        ),
+                        el(
+                            'div', {
+                                className: 'components-base-control__field oes-lod-search-options-block-editor oes-geonames-search-options-block-editor',
+                                style: {display: "none"}
+                            },
+                            el(NumberControl, {
+                                label: 'Size',
+                                id: 'oes-geonames-size',
+                                name: 'oes-geonames-size',
+                                min: 1,
+                                max: 50
+                            })
+                        )
+                    );
 
             return el(
                 PluginSidebar,
@@ -26,10 +85,7 @@
                     {className: 'oes-lod-sidebar block-editor-block-inspector'},
                     el('div',
                         {className: 'block-editor-block-card'},
-                        el('div', null,
-                            'Search in the ',
-                            el('a', {href: 'https://www.dnb.de/', target: '_blank'}, 'GND database'),
-                            ' and create shortcodes or copy values to this post. (More databases to come)')
+                        databaseString
                     ),
                     el('div',
                         null,
@@ -55,44 +111,7 @@
                             ),
                             el('div',
                                 {className: 'oes-lod-sidebar-options oes-collapsed components-base-control'},
-                                el('div',
-                                    {className: 'components-base-control__field'},
-                                    el(SelectControl, {
-                                        label: 'Authority File',
-                                        id: 'oes-lod-authority-file',
-                                        name: 'oes-lod-authority-file',
-                                        value: 'gnd',
-                                        options: [
-                                            {label: 'GND', value: 'gnd'}
-                                        ]
-                                    }),
-                                    el(SelectControl, {
-                                        label: 'Type',
-                                        id: 'oes-gnd-type',
-                                        name: 'oes-gnd-type',
-                                        onChange: function (value) {
-                                            search_type = value;
-                                        },
-                                        options: [
-                                            {value: 'all', label: 'All'},
-                                            {value: 'Person', label: 'Person'},
-                                            {value: 'ConferenceOrEvent', label: 'Konferenz oder Veranstaltung'},
-                                            {value: 'CorporateBody', label: 'Körperschaft'},
-                                            {value: 'SubjectHeading', label: 'Schlagwort'},
-                                            {value: 'PlaceOrGeographicName', label: 'Geografikum'}
-                                        ]
-                                    }),
-                                    el(RangeControl, {
-                                        label: 'Size',
-                                        id: 'oes-gnd-size',
-                                        name: 'oes-gnd-size',
-                                        onChange: function (value) {
-                                            search_size = value;
-                                        },
-                                        min: 1,
-                                        max: 50
-                                    })
-                                )
+                                options
                             )
                         ),
                         el('div',
@@ -104,12 +123,9 @@
                                             placeholder: 'Type to search',
                                             id: 'oes-lod-search-input',
                                             name: 'oes-lod-search-input',
-                                            onChange: function (value) {
-                                                search_term = value;
-                                            },
                                             onKeyPress: function (event) {
                                                 if (event.key === 'Enter') {
-                                                    oesLodBlockEditorExecuteApiRequest(authority_file, search_term, search_size, search_type);
+                                                    oesLodAdminApiRequest();
                                                 }
                                             }
                                         }
@@ -120,7 +136,7 @@
                                             id: 'oes-lod-frame-show',
                                             href: 'javascript:void(0);',
                                             onClick: function () {
-                                                oesLodBlockEditorExecuteApiRequest(authority_file, search_term, search_size, search_type);
+                                                oesLodAdminApiRequest();
                                             }
                                         }, 'Look Up Value'))
                                 ),
@@ -147,7 +163,9 @@
                                     el('a', {
                                         className: 'oes-lod-meta-box-copy-options oes-lod-meta-box-toggle',
                                         href: 'javascript:void(0)',
-                                        onClick: function(){oesLodMetaBoxToggleCopyOptionPanel();}
+                                        onClick: function () {
+                                            oesLodMetaBoxToggleCopyOptionPanel();
+                                        }
                                     }, 'Copy Options'),
                                     el('div', {
                                             className: 'oes-lod-meta-box-copy-options-container oes-lod-meta-box-options-container'
@@ -157,13 +175,15 @@
                                         })
                                     ),
                                     el('div', {
-                                        className: 'oes-lod-meta-box-copy-options-button'
-                                    },
+                                            className: 'oes-lod-meta-box-copy-options-button'
+                                        },
                                         el('a', {
-                                            id: 'oes-gnd-copy-to-post',
+                                            id: 'oes-lod-copy-to-post',
                                             className: 'button-primary',
                                             href: 'javascript:void(0)',
-                                            onClick: function(){oesLodBlockEditorCopyToPost();}
+                                            onClick: function () {
+                                                oesLodCopyToPost();
+                                            }
                                         }, 'Copy Options')
                                     )
                                 )
@@ -193,8 +213,13 @@
                                     {className: 'oes-lod-results'},
                                     el('div',
                                         {className: 'oes-lod-information'},
-                                        'You can find results for your search in the table below. Click on the GND icon to get further information from the GND. Click on the link on the right to get to the GND page. Select an entry by clicking on the checkbox on the left. If the post type support the LOD feature "Copy to Post" you will find a list of copy options on the right side. Select the options you want to copy to your post and confirm by pressing the button.'
-                                    ),
+                                        'You can find results for your search in the table below. Click on the ' +
+                                        'icon to get further information from the selected databse. Click on the link ' +
+                                        'on the right to get to the database page. ' +
+                                        'Select an entry by clicking on the checkbox on the left. If the post type ' +
+                                        'support the LOD feature "Copy to Post" you will find a list of copy options ' +
+                                        'on the right side. Select the options you want to copy to your post and ' +
+                                        'confirm by pressing the button.'),
                                     el('div',
                                         {className: 'oes-lod-results-table-wrapper'},
                                         el('table',
@@ -204,9 +229,9 @@
                                                 el('tr',
                                                     {className: 'oes-lod-results-table-header'},
                                                     el('th', null),
-                                                    el('th', null, 'GND Name'),
+                                                    el('th', null, 'Name'),
                                                     el('th', {className: 'oes-lod-results-table-header-type'}, 'Type'),
-                                                    el('th', null, 'GND ID'),
+                                                    el('th', null, 'ID'),
                                                     el('th', null)
                                                 )
                                             ),

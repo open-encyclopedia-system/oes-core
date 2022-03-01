@@ -204,7 +204,7 @@ if (!class_exists('Writing')) :
                                     'fields-' . $postTypeKey . '-' . $fieldKey . '-inherit_to',
                                     $field['inherit_to'] ?? [],
                                     ['options' => $field['inherit_to_options'], 'multiple' => true,
-                                        'class' => 'oes-replace-select2', 'reorder' => true]),
+                                        'class' => 'oes-replace-select2', 'reorder' => true, 'hidden' => true]),
                             ];
 
                 $table[] = [

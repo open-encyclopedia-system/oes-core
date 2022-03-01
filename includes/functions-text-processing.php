@@ -323,3 +323,28 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
 
     return $returnArrayString;
 }
+
+
+/**
+ * Convert coordinates from decimal to degree.
+ *
+ * @param string $points The coordinates as decimal string.
+ * @return string Return the coordinates in degree.
+ */
+function oes_convert_coordinates_decimal_to_degree(string $points): string
+{
+    $coordinatesArray = [];
+    $coordinates = explode(' ', $points);
+
+    if (sizeof($coordinates) === 2)
+        for ($i = 0; $i < 2; $i++) {
+            $floatValue = floatval($coordinates[$i]);
+            $d = intval($floatValue);
+            $diff = abs($floatValue - $d);
+            $m = intval(60 * $diff);
+            $s = intval(3600 * $diff - 60 * $m);
+            $coordinatesArray[] = sprintf('%s° %s′ %s″ %s', $d, $m, $s, ($i ? 'N' : 'W'));
+        }
+
+    return implode(' ', $coordinatesArray);
+}

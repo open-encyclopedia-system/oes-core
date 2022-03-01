@@ -31,7 +31,7 @@ if (!class_exists('Reading')) :
                 __('You can choose which field will be displayed as title of a post object with the OES feature ' .
                     '<b>Titles</b>.', 'oes') . '<br>' .
                 __('The single view of a post object includes a table of metadata. You can define which post data ' .
-                    'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes')  . '<br>' .
+                    'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes') . '<br>' .
                 __('When displaying an archive view of a post type you can define data to be included in a ' .
                     'dropdown table in the OES feature <b>Archive</b>.', 'oes') . '<br>' .
                 __('The OES feature <b>Media</b> allows you to define the display behaviour of images in the ' .
@@ -242,10 +242,25 @@ if (!class_exists('Reading')) :
 
                 /* prepare options */
                 $options = [];
+                $postTypesRelationships = [];
                 if (isset($postTypeData['field_options']) && !empty($postTypeData['field_options']))
                     foreach ($postTypeData['field_options'] as $fieldKey => $field)
-                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message']))
+                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message'])) {
                             $options[$fieldKey] = $field['label'];
+                            if (in_array($field['type'], ['relationship', 'post_object'])) {
+                                $checkForPostTypes = get_field_object($fieldKey)['post_type'] ?? [];
+                                if(is_string($checkForPostTypes)) $checkForPostTypes = [$checkForPostTypes];
+                                if (!empty($checkForPostTypes))
+                                    foreach ($checkForPostTypes as $singlePostType)
+                                        $postTypesRelationships['post_type__' . $singlePostType] =
+                                            __('Post Type: ', 'oes') .
+                                            (isset($oes->post_types[$singlePostType]['label']) ?
+                                                $oes->post_types[$singlePostType]['label'] :
+                                                $singlePostType);
+                            }
+                        }
+                if(!empty($postTypesRelationships)) $options = array_merge($options, $postTypesRelationships);
+
 
                 /* add taxonomies */
                 if (get_post_type_object($postTypeKey)->taxonomies)
@@ -492,7 +507,7 @@ if (!class_exists('Reading')) :
                         'oes_config[main_language]',
                         'oes_config-main_language',
                         $oes->main_language ?? 'language0',
-                    ['options' => $languageOptions]
+                        ['options' => $languageOptions]
                     )
                 ]]
             ];

@@ -34,7 +34,9 @@ function oes_get_wp_query_posts(array $args): array
     }
 
     $query = new WP_Query($queryArgs);
-    return $query->posts;
+    $posts = $query->posts;
+    wp_reset_query();
+    return $posts;
 }
 
 
@@ -187,6 +189,12 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
 
     /* prepare items */
     foreach ($sortedArray as $item) {
+
+        /* check if term id TODO post id*/
+        if (is_string($item) || is_int($item)) {
+            $checkIfTerm = get_term($item);
+            if ($checkIfTerm) $item = get_term($item);
+        }
 
         /* term */
         if ($item instanceof WP_Term) {
@@ -704,7 +712,8 @@ function oes_get_post_language($postID)
  * @param string|int $postID The post ID.
  * @return false|mixed|string Returns the language label or false.
  */
-function oes_get_post_language_label($postID){
+function oes_get_post_language_label($postID)
+{
     $oes = OES();
     $languageKey = oes_get_post_language($postID);
     return $languageKey ? $oes->languages[$languageKey]['label'] : false;

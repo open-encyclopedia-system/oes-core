@@ -47,7 +47,7 @@ if (!class_exists('Datamodel')) :
                 'label_translations' => []
             ],
             'fields' => [
-                'gnd_properties' => []
+                'pattern' => []
             ]
         ];
 
@@ -253,8 +253,8 @@ if (!class_exists('Datamodel')) :
                             $oesArgs = [];
                             if (isset($this->config_options['taxonomy']))
                                 foreach ($this->config_options['taxonomy'] as $optionKey => $option)
-                                    if (isset($postTypeData[$optionKey]))
-                                        $oesArgs[$optionKey] = $postTypeData[$optionKey];
+                                    if (isset($postTypeData['oes_args'][$optionKey]))
+                                        $oesArgs[$optionKey] = $postTypeData['oes_args'][$optionKey];
 
                             /* object are to be added to database schema */
                             $this->objects_for_DB[$taxonomyKey] = $this->prepare_posts_for_DB(
@@ -802,6 +802,13 @@ if (!class_exists('Datamodel')) :
                                                 if (isset($field[$optionKey]))
                                                     $oes->taxonomies[$taxonomyKey]['field_options'][$field['key']][$optionKey] =
                                                         $field[$optionKey];
+
+                                        /* add api information */
+                                        if (!empty($oes->apis))
+                                            foreach ($oes->apis as $apiKey => $ignore)
+                                                if (isset($field[$apiKey . '_properties']))
+                                                    $oes->taxonomies[$taxonomyKey]['field_options'][$field['key']][$apiKey . '_properties'] =
+                                                        $field[$apiKey . '_properties'];
                                     }
                             }
 
@@ -876,13 +883,13 @@ if (!class_exists('Datamodel')) :
 
 
                                 /* add editorial tab */
-                                if(isset($argsAll['oes_args']['editorial_tab']) && $argsAll['oes_args']['editorial_tab'])
+                                if (isset($argsAll['oes_args']['editorial_tab']) && $argsAll['oes_args']['editorial_tab'])
                                     $acfArgs['fields'] = array_merge(array_values(get_editorial_tab()),
                                         array_values($acfArgs['fields']));
 
 
                                 /* add version tab fore version controlling post */
-                                if(isset($argsAll['oes_args']['version'])){
+                                if (isset($argsAll['oes_args']['version'])) {
                                     $versionTab = get_versioning_tab_parent();
 
                                     $versionTab['current_version']['post_type'] = [$argsAll['oes_args']['version']];
@@ -896,8 +903,7 @@ if (!class_exists('Datamodel')) :
 
                                     $acfArgs['fields'] = array_merge(array_values($acfArgs['fields']),
                                         array_values($versionTab));
-                                }
-                                elseif(isset($argsAll['oes_args']['parent'])){
+                                } elseif (isset($argsAll['oes_args']['parent'])) {
                                     $versionTab = get_versioning_tab_version();
 
                                     $versionTab['parent_post']['post_type'] = [$argsAll['oes_args']['parent']];
@@ -946,6 +952,13 @@ if (!class_exists('Datamodel')) :
                                                     $oes->post_types[$postTypeKey]['field_options'][$field['key']][$optionKey] =
                                                         $field[$optionKey];
 
+                                        /* add api information */
+                                        if (!empty($oes->apis))
+                                            foreach ($oes->apis as $apiKey => $ignore)
+                                                if (isset($field[$apiKey . '_properties']))
+                                                    $oes->post_types[$postTypeKey]['field_options'][$field['key']][$apiKey . '_properties'] =
+                                                        $field[$apiKey . '_properties'];
+
                                         /* add to global instance if relationship field and not versioning field */
                                         if (($field['type'] == 'relationship' || $field['type'] == 'post_object') &&
                                             !oes_starts_with($field['key'], 'field_oes_versioning_') &&
@@ -993,26 +1006,26 @@ if (!class_exists('Datamodel')) :
                 /* register media fields */
                 if (isset($allConfigs['media']))
                     foreach ($allConfigs['media'] as $mediaConfigParamKey => $mediaConfigParam)
-                            if ($mediaConfigParamKey === 'acf_add_local_field_group') {
-                                $registered = acf_add_local_field_group($mediaConfigParam);
+                        if ($mediaConfigParamKey === 'acf_add_local_field_group') {
+                            $registered = acf_add_local_field_group($mediaConfigParam);
 
-                                /* process result */
-                                if (!$registered) $this->messages['registration']['error'][] =
-                                    __('Failed acf_add_local_field_group for media.', 'oes');
-                                else {
+                            /* process result */
+                            if (!$registered) $this->messages['registration']['error'][] =
+                                __('Failed acf_add_local_field_group for media.', 'oes');
+                            else {
 
-                                    /* prepare media field information */
-                                    $argsFields = [];
-                                    foreach ($allConfigs['media']['acf_add_local_field_group']['fields'] ?? [] as $fieldKey => $field)
-                                        foreach ($field as $fieldParamKey => $fieldParam)
-                                            if (!in_array($fieldParamKey, self::SKIPPED_FIELD_ARGS))
-                                                $argsFields[$fieldKey][$fieldParamKey] = $fieldParam;
+                                /* prepare media field information */
+                                $argsFields = [];
+                                foreach ($allConfigs['media']['acf_add_local_field_group']['fields'] ?? [] as $fieldKey => $field)
+                                    foreach ($field as $fieldParamKey => $fieldParam)
+                                        if (!in_array($fieldParamKey, self::SKIPPED_FIELD_ARGS))
+                                            $argsFields[$fieldKey][$fieldParamKey] = $fieldParam;
 
-                                    $oes->media_groups['acf_add_local_field_group_id'] =
-                                        ($mediaConfig['acf_add_local_field_group']['key'] ?? 'Group key missing');
-                                    $oes->media_groups['fields'] = $argsFields;
-                                }
-                            } else $oes->media_groups[$mediaConfigParamKey] = $mediaConfigParam;
+                                $oes->media_groups['acf_add_local_field_group_id'] =
+                                    ($mediaConfig['acf_add_local_field_group']['key'] ?? 'Group key missing');
+                                $oes->media_groups['fields'] = $argsFields;
+                            }
+                        } else $oes->media_groups[$mediaConfigParamKey] = $mediaConfigParam;
 
 
                 /* check for index configurations */
@@ -1183,7 +1196,7 @@ endif;
  *
  * TODO @nextRelease: more options, add parent fields, make link optional, return $url instead of anchor...
  */
-function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $separator = ''): string
+function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $separator = '', bool $sort = false): string
 {
     /* get parts */
     $stringParts = [];
@@ -1227,7 +1240,10 @@ function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $sep
 
                     case 'relationship' :
                     case 'post_object' :
-                        $value = get_field_display_value($fieldKey, $postID, ['separator' => $part['separator'] ?? ', ']);
+                        $value = get_field_display_value($fieldKey, $postID, [
+                            'sort' => $sort,
+                            'separator' => ($part['separator'] ?? ', ')
+                        ]);
                         break;
 
                     case 'select' :

@@ -24,7 +24,7 @@ if (!class_exists('LOD_Options')) :
             return '<div class="oes-tool-information-wrapper"><p>' .
                 __('If the <b>Copy to Post</b> option is set for a post type, you can define copy behaviour ' .
                     'for the included LOD databases. E.g. for the included GND database define the field mapping that ' .
-                    'determines which entry data will be imported to which post object field', 'oes')  .
+                    'determines which entry data will be imported to which post object field', 'oes') .
                 '</p></div>';
         }
 
@@ -33,10 +33,11 @@ if (!class_exists('LOD_Options')) :
         {
 
             /* get theme label configurations */
-            $tableData = [];
             $oes = OES();
             if (!empty($oes->apis))
                 foreach ($oes->apis as $apiKey => $apiOptions) {
+
+                    $tableData = [];
 
                     foreach ($oes->post_types as $postTypeKey => $postType)
                         if (isset($postType['lod_box']) &&
@@ -62,18 +63,18 @@ if (!class_exists('LOD_Options')) :
                                 $tableDataHead[] = '<strong>' . ($field['label'] ?? 'Label missing') .
                                     '</strong><div><code>' . $fieldKey . '</code>' . '</div>';
 
-                                foreach ($apiOptions->copy_options as $copyOption)
-                                    $tableDataBody[] = oes_html_get_form_element($option['type'],
-                                        'fields[' . $postTypeKey . '][' . $fieldKey . '][' . $copyOption . ']',
-                                        'fields-' . $postTypeKey . '-' . $fieldKey . '_' . $copyOption,
-                                        $field[$copyOption] ?? [],
-                                        [
-                                            'options' => $option['options'],
-                                            'multiple' => $option['multiple'] ?? true,
-                                            'class' => 'oes-replace-select2',
-                                            'hidden' => ($option['type'] === 'select')
-                                        ]
-                                    );
+                                $copyOption = $apiKey . '_properties';
+                                $tableDataBody[] = oes_html_get_form_element($option['type'],
+                                    'fields[' . $postTypeKey . '][' . $fieldKey . '][' . $copyOption . ']',
+                                    'fields-' . $postTypeKey . '-' . $fieldKey . '_' . $copyOption,
+                                    $field[$copyOption] ?? [],
+                                    [
+                                        'options' => $option['options'],
+                                        'multiple' => $option['multiple'] ?? true,
+                                        'class' => 'oes-replace-select2',
+                                        'hidden' => ($option['type'] === 'select')
+                                    ]
+                                );
                             }
 
                             /* add to return value */

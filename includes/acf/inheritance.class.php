@@ -170,22 +170,23 @@ if (!class_exists('Inheritance')) :
             if (!$originalField) $originalField = $sourceField;
 
             if ($fieldKeys = OES()->post_types[$sourcePostType]['field_options'][$sourceField]['inherit_to'] ?? false)
-                foreach ($fieldKeys as $targetField) {
+                if ($fieldKeys !== 'hidden' && is_array($fieldKeys))
+                    foreach ($fieldKeys as $targetField) {
 
-                    $splitValue = explode(':', $targetField);
-                    if (sizeof($splitValue) > 1 &&
-                        $splitValue[1] != $originalField && !in_array($splitValue[1], $affectedFields)) {
-                        $affectedFields[] = $splitValue[1];
+                        $splitValue = explode(':', $targetField);
+                        if (sizeof($splitValue) > 1 &&
+                            $splitValue[1] != $originalField && !in_array($splitValue[1], $affectedFields)) {
+                            $affectedFields[] = $splitValue[1];
 
-                        /* prepare self reference */
-                        if ($splitValue[0] == $sourcePostType)
-                            $this->after_processing[$splitValue[1]][$operation][] = $value;
+                            /* prepare self reference */
+                            if ($splitValue[0] == $sourcePostType)
+                                $this->after_processing[$splitValue[1]][$operation][] = $value;
 
-                        /* check for inheritance from child to further children (recursive) */
-                        $affectedFields = $this->get_affected_fields($splitValue[0],
-                            $splitValue[1], $operation, $value, $affectedFields, $originalField);
+                            /* check for inheritance from child to further children (recursive) */
+                            $affectedFields = $this->get_affected_fields($splitValue[0],
+                                $splitValue[1], $operation, $value, $affectedFields, $originalField);
+                        }
                     }
-                }
             return $affectedFields;
         }
 
