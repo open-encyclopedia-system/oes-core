@@ -333,7 +333,7 @@ function initialize()
     oes_include('/includes/api/api_interface.class.php');
     oes_include('/includes/api/gnd/gnd-interface.php');
     oes_include('/includes/api/geonames/geonames-interface.php');
-    //oes_include('/includes/api/loc/loc-interface.php');
+    oes_include('/includes/api/loc/loc-interface.php');
 }
 
 
@@ -778,6 +778,7 @@ function lod_add_post_meta()
 
 /* action for ajax form in frontend */
 add_action('wp_ajax_oes_lod_box', '\OES\API\lod_box');
+add_action('wp_ajax_nopriv_oes_lod_box', '\OES\API\lod_box');
 
 
 /**
