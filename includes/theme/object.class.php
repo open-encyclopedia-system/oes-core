@@ -34,6 +34,12 @@ if (!class_exists('OES_Object')) {
         /** @var bool $include_table_of_contents Whether header blocks are considered for the table of contents. */
         public bool $include_table_of_contents = true;
 
+        /** @var bool $is_pdf_mode Whether html rendering is for pdf output. Default is false. */
+        public bool $is_pdf_mode = false;
+
+        /** @bar bool $only_published_posts_for_index Only consider published post for index list. */
+        public bool $only_published_posts_for_index = true;
+
 
         /**
          * OES_Object constructor.
@@ -46,9 +52,11 @@ if (!class_exists('OES_Object')) {
         {
             $this->set_object_id($objectID);
             $this->set_title();
-            $this->add_class_variables($additionalParameters);
             $this->set_language($language);
+            $this->add_class_variables($additionalParameters);
+            $this->set_language($language); //sic!
             $this->set_include_table_of_contents($additionalParameters['include_table_of_contents'] ?? true);
+            $this->after_construct();
         }
 
 
@@ -70,6 +78,8 @@ if (!class_exists('OES_Object')) {
          */
         function add_class_variables(array $additionalParameters)
         {
+            if(isset($additionalParameters['only_published_posts_for_index']))
+                $this->only_published_posts_for_index = $additionalParameters['only_published_posts_for_index'];
         }
 
 
@@ -88,6 +98,14 @@ if (!class_exists('OES_Object')) {
         function set_include_table_of_contents(bool $include = true)
         {
             $this->include_table_of_contents = $include;
+        }
+
+
+        /**
+         * Function executed after class construction
+         */
+        function after_construct()
+        {
         }
 
 
@@ -131,7 +149,8 @@ if (!class_exists('OES_Object')) {
                 'table-header-class' => 'oes-content-table-header',
                 'add-to-toc' => true,
                 'position' => 2,
-                'add-number' => false
+                'add-number' => false,
+                'block-heading' => false
             ], $args);
             $position = $args['position'];
             $addNumber = $args['add-number'];
@@ -194,7 +213,8 @@ if (!class_exists('OES_Object')) {
                     'label' => empty($cleanTextForToC) ? $headerText : $cleanTextForToC,
                     'level' => $level,
                     'position' => $position,
-                    'consecutive' => sizeof($this->table_of_contents) + 1
+                    'consecutive' => sizeof($this->table_of_contents) + 1,
+                    'block-heading' => $args['block-heading']
                 ];
 
             return '<h' . $level . ' class="' . implode(' ', $headingClass) . '" id="' . $id . '">' .
@@ -232,7 +252,7 @@ if (!class_exists('OES_Object')) {
                                 $this->generate_table_of_contents_header(
                                     $headingText,
                                     $level,
-                                    ['position' => 1, 'id' => $id]
+                                    ['position' => 1, 'id' => $id, 'block-heading' => true]
                                 );
                         }
             }
@@ -346,19 +366,30 @@ if (!class_exists('OES_Object')) {
             /* generate header list by looping through the header */
             $headingsList = '';
             foreach ($tableOfContent as $header) {
-                $anchor = oes_get_html_anchor(
-                    $header['label'],
-                    '#' . $header['anchor'],
-                    'oes_toc_' . $header['anchor'],
-                    'oes-toc-anchor');
-                $headingsList .= sprintf('<li class="oes-toc-header%s">%s</li>', $header['level'], $anchor);
+                if($this->is_pdf_mode){
+                    $headingsList .= sprintf('<div class="oes-toc-header%s oes-toc-anchor oes-pdf-toc-anchor">%s</div>',
+                        $header['level'],
+                        $header['label']);
+                }
+                else{
+                    $anchor = oes_get_html_anchor(
+                        $header['label'],
+                        '#' . $header['anchor'],
+                        'oes_toc_' . $header['anchor'],
+                        'oes-toc-anchor');
+                    $headingsList .= sprintf('<li class="oes-toc-header%s">%s</li>', $header['level'], $anchor);
+
+                }
             }
-            if (!empty($headingsList)) $headingsList = '<ul class="oes-table-of-contents">' . $headingsList . '</ul>';
+            if (!empty($headingsList))
+                $headingsList = $this->is_pdf_mode ?
+                    '<div class="oes-table-of-contents">' . $headingsList . '</div>' :
+                    '<ul class="oes-table-of-contents">' . $headingsList . '</ul>';
 
             return sprintf('<div class="oes-table-of-contents-wrapper">%s%s</div>',
                 ($args['toc-header-exclude'] ?
                     '' :
-                    sprintf('<h1 class="oes-content-table-header1" id="oes_toc_header">%s</h1>',
+                    sprintf('<h1 class="oes-content-table-header1" id="oes-toc-header">%s</h1>',
                         $args['toc-header']
                     )),
                 $headingsList
@@ -388,7 +419,7 @@ if (!class_exists('OES_Object')) {
         function get_html_terms(array $taxonomies = [], array $args = []): string
         {
             $termsHTML = '';
-            foreach ($this->get_all_terms($taxonomies) as $taxonomyKey => $terms)
+            foreach ($this->get_all_terms($taxonomies, false, $args['loop'] ?? '') as $taxonomyKey => $terms)
                 if (!empty($terms))
                     $termsHTML .= $this->generate_table_of_contents_header(
                             OES()->taxonomies[$taxonomyKey]['label_translations'][$this->language] ??
@@ -404,9 +435,10 @@ if (!class_exists('OES_Object')) {
          *
          * @param array $taxonomies Filter for specific taxonomies.
          * @param mixed $objectID The post ID. Current post ID if empty.
+         * @param string $loop The loop identifier.
          * @return array Return array of terms.
          */
-        function get_all_terms(array $taxonomies = [], $objectID = false): array
+        function get_all_terms(array $taxonomies = [], $objectID = false, string $loop = ''): array
         {
             /* set post id */
             if (!$objectID) $objectID = $this->object_ID;
@@ -420,11 +452,18 @@ if (!class_exists('OES_Object')) {
                 $terms = get_the_terms($objectID, $taxonomy);
                 if (!empty($terms))
                     foreach ($terms as $term) {
-                        $termArray[$taxonomy][] = oes_get_html_anchor(
-                            '<span>' . $term->name . '</span>',
-                            get_term_link($term->term_id),
-                            false,
-                            'oes-post-term');
+                        $termArray[$taxonomy][] =
+                            ($loop === 'xml') ?
+                                ['term_id' => $term->term_id,
+                                    'title' => $term->name,
+                                    'permalink' => get_term_link($term->term_id),
+                                    'type' => $term->taxonomy
+                                ] :
+                                oes_get_html_anchor(
+                                    '<span>' . $term->name . '</span>',
+                                    get_term_link($term->term_id),
+                                    false,
+                                    'oes-post-term');
                     }
             }
             return $termArray;
@@ -452,8 +491,35 @@ if (!class_exists('OES_Object')) {
         function get_index_connections(string $consideredPostType = '', string $postRelationship = ''): string
         {
 
+            /* get table data */
+            $tableData = $this->get_index_connections_table($consideredPostType, $postRelationship);
+
+            /* get html representation of connected posts */
+            $html = $this->get_index_connection_html($tableData);
+
+            /* get header from options */
+            $header = '';
+            if ($headerLabel = $this->theme_labels['single__toc__index'][$this->language] ?? '')
+                if (!empty($headerLabel))
+                    $header = $this->generate_table_of_contents_header($headerLabel, 1, ['add-to-toc' => false]);
+
+            /* return wrapped table */
+            return empty($html) ? '' : $header . $html;
+        }
+
+
+        /**
+         * Get all index posts that are connected to this post.
+         *
+         * @param string $consideredPostType The considered post type.
+         * @param string $postRelationship Add specification for post such as 'parent', 'child_version'.
+         * @return array Returns the table data of the connected posts.
+         */
+        function get_index_connections_table(string $consideredPostType = '', string $postRelationship = ''): array
+        {
+
             /* prepare data */
-            if(empty($consideredPostType)) $consideredPostType = OES()->theme_index['element'] ?? false;
+            if (empty($consideredPostType)) $consideredPostType = OES()->theme_index['element'] ?? false;
             $connectedPosts = $this->get_index_connected_posts($consideredPostType, $postRelationship);
 
             /* prepare table data */
@@ -467,7 +533,7 @@ if (!class_exists('OES_Object')) {
                         foreach ($connectedPostArray as $connectedPost) {
 
                             /* skip if post not published */
-                            if ($connectedPost->post_status != 'publish') continue;
+                            if ($this->only_published_posts_for_index && $connectedPost->post_status != 'publish') continue;
 
                             /* prepare data */
                             $prepareTable[$connectedPost->ID] = [
@@ -538,17 +604,7 @@ if (!class_exists('OES_Object')) {
                 $tableData = apply_filters('oes/post_index_get_index_connections', $tableData);
 
 
-            /* get html representation of connected posts */
-            $html = $this->get_index_connection_html($tableData);
-
-            /* get header from options */
-            $header = '';
-            if ($headerLabel = $this->theme_labels['single__toc__index'][$this->language] ?? '')
-                if (!empty($headerLabel))
-                    $header = $this->generate_table_of_contents_header($headerLabel, 1, ['add-to-toc' => false]);
-
-            /* return wrapped table */
-            return empty($html) ? '' : $header . $html;
+            return $tableData;
         }
 
 
@@ -687,9 +743,19 @@ if (!class_exists('OES_Object')) {
 
         /**
          * Prepare the mpdf
-        */
-        function create_mpdf($mpdf){
+         */
+        function create_mpdf($mpdf)
+        {
             return $mpdf;
+        }
+
+
+        /*
+         * Modify xml data.
+         */
+        function modify_xml_data($data, $args = [])
+        {
+            return $data;
         }
     }
 }

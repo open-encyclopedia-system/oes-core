@@ -25,8 +25,16 @@ function initialize_filter()
     foreach ($oes->post_types as $postType => $postTypeConfiguration)
         if (isset($postTypeConfiguration['admin_columns'])) {
             add_filter('manage_' . $postType . '_posts_columns', 'OES\Admin\Columns\add_post_column');
-            add_action('manage_' . $postType . '_posts_custom_column','OES\Admin\Columns\display_post_column_value', 10, 2);
+            add_action('manage_' . $postType . '_posts_custom_column', 'OES\Admin\Columns\display_post_column_value', 10, 2);
             add_filter('manage_edit-' . $postType . '_sortable_columns', 'OES\Admin\Columns\make_columns_sortable');
+        }
+
+    /* loop through taxonomies and add action and filter for post type that have defined columns */
+    foreach ($oes->taxonomies as $taxonomyKey => $taxonomyConfiguration)
+        if (isset($taxonomyConfiguration['admin_columns'])) {
+            add_filter('manage_edit-' . $taxonomyKey . '_columns', 'OES\Admin\Columns\add_post_column');
+            add_filter('manage_' . $taxonomyKey . '_custom_column', 'OES\Admin\Columns\display_taxonomy_column_value', 10, 3);
+            //TODO @nextRelease add_filter('manage_edit-' . $taxonomyKey . '_sortable_columns', 'OES\Admin\Columns\make_columns_sortable');
         }
 }
 
@@ -41,48 +49,82 @@ function add_post_column(array $columns): array
 {
     /* get global parameter for post type */
     $oes = OES();
-    global $post_type;
-
-    /* bail if no global configuration for this post type exists */
-    if (!isset($oes->post_types[$post_type])) return $columns;
+    global $post_type, $taxonomy;
 
     /* prepare new columns */
     $newColumns = [];
 
-    /* check for other columns to be displayed */
-    if (isset($oes->post_types[$post_type]['admin_columns']))
-        foreach ($oes->post_types[$post_type]['admin_columns'] as $columnKey) {
-            switch ($columnKey) {
+    if (!empty(get_current_screen()->taxonomy)) {
 
-                case 'init':
-                    break;
+        /* bail if no global configuration for this post type exists */
+        if (!isset($oes->taxonomies[$taxonomy])) return $columns;
 
-                case 'cb' :
-                case 'title' :
-                case 'date' :
-                    $newColumns[$columnKey] = $columns[$columnKey];
-                    break;
+        /* check for other columns to be displayed */
+        if (isset($oes->taxonomies[$taxonomy]['admin_columns']))
+            foreach ($oes->taxonomies[$taxonomy]['admin_columns'] as $columnKey) {
+                switch ($columnKey) {
 
-                case 'date_modified' :
-                    $newColumns[$columnKey] = __('Last Updated', 'oes');
-                    break;
+                    case 'init':
+                        break;
 
-                case 'parent':
-                    $newColumns[$columnKey] = __('Parent', 'oes');
-                    break;
-
-                default :
-                    /* check if taxonomy */
-                    if ($taxonomy = get_taxonomy($columnKey))
-                        $newColumns[$columnKey] = $oes->taxonomies[$taxonomy]['label'] ?? $taxonomy->label;
-                    elseif (oes_starts_with($columnKey, 'taxonomy-'))
+                    case 'cb' :
+                    case 'name' :
+                    case 'description' :
+                    case 'slug' :
+                    case 'posts' :
                         $newColumns[$columnKey] = $columns[$columnKey];
-                    else
+                        break;
+
+                    case 'id' :
+                        $newColumns[$columnKey] = __('Term ID', 'oes');
+                        break;
+
+                    default :
                         $newColumns[$columnKey] =
-                            $oes->post_types[$post_type]['field_options'][$columnKey]['label'] ?? $columnKey;
-                    break;
+                            $oes->taxonomies[$taxonomy]['field_options'][$columnKey]['label'] ?? $columnKey;
+                        break;
+                }
             }
-        }
+    } else {
+
+        /* bail if no global configuration for this post type exists */
+        if (!isset($oes->post_types[$post_type])) return $columns;
+
+        /* check for other columns to be displayed */
+        if (isset($oes->post_types[$post_type]['admin_columns']))
+            foreach ($oes->post_types[$post_type]['admin_columns'] as $columnKey) {
+                switch ($columnKey) {
+
+                    case 'init':
+                        break;
+
+                    case 'cb' :
+                    case 'title' :
+                    case 'date' :
+                        $newColumns[$columnKey] = $columns[$columnKey];
+                        break;
+
+                    case 'date_modified' :
+                        $newColumns[$columnKey] = __('Last Updated', 'oes');
+                        break;
+
+                    case 'parent':
+                        $newColumns[$columnKey] = __('Parent', 'oes');
+                        break;
+
+                    default :
+                        /* check if taxonomy */
+                        if ($taxonomy = get_taxonomy($columnKey))
+                            $newColumns[$columnKey] = $oes->taxonomies[$taxonomy]['label'] ?? $taxonomy->label;
+                        elseif (oes_starts_with($columnKey, 'taxonomy-'))
+                            $newColumns[$columnKey] = $columns[$columnKey];
+                        else
+                            $newColumns[$columnKey] =
+                                $oes->post_types[$post_type]['field_options'][$columnKey]['label'] ?? $columnKey;
+                        break;
+                }
+            }
+    }
 
     return empty($newColumns) ? $columns : $newColumns;
 }
@@ -227,6 +269,106 @@ function display_post_column_value(string $column, string $post_id)
 
 
 /**
+ * Display values for column in the list display of taxonomy in the wp admin area.
+ *
+ * @param string $ignore Custom column output.
+ * @param string $column The column name.
+ * @param int $term_id The term id.
+ */
+function display_taxonomy_column_value(string $ignore, string $column, int $term_id)
+{
+    /* get column value depending on field type */
+    switch ($column) {
+
+        case 'cb' :
+        case 'name' :
+        case 'description' :
+        case 'slug' :
+        case 'posts' :
+            break;
+
+        case 'id' :
+            echo $term_id;
+            break;
+
+        default:
+
+            global $taxonomy;
+
+            /* acf field */
+            if ($value = oes_get_field($column, $taxonomy . '_' . $term_id)) {
+
+                /* check type */
+                $fieldObject = oes_get_field_object($column);
+                if ($fieldObject && !empty($value)) {
+
+                    switch ($fieldObject['type']) {
+
+                        case 'radio' :
+                        case 'select' :
+                            $newValue = get_select_field_value($column, $term_id);
+                            break;
+
+                        case 'post_object':
+                            $postObject = get_post($value);
+                            $newValue = $postObject ?
+                                sprintf('<span class="oes-column-post">' .
+                                    '<a href="post.php?post=%s&action=edit" class="oes-admin-link">%s' .
+                                    '</a></span>',
+                                    $postObject->ID,
+                                    $postObject->post_title) :
+                                $value;
+                            break;
+
+                        case 'relationship' :
+                            if (is_array($value)) {
+                                $newValueTemp = [];
+                                foreach ($value as $post) {
+                                    if (get_post($post)) {
+                                        $postID = ($fieldObject['return_format'] == 'object') ? $post->ID : $post;
+                                        $newValueTemp[] = sprintf('<span class="oes-column-post">' .
+                                            '<a href="post.php?post=%s&action=edit" class="oes-admin-link">%s' .
+                                            '</a></span>',
+                                            $postID,
+                                            get_the_title($postID)
+                                        );
+                                    }
+                                }
+                                $newValue = implode('', $newValueTemp);
+                            } else {
+                                $newValue = get_post($value) ? oes_get_display_title($value) : $value;
+                            }
+                            break;
+
+                        case 'taxonomy' :
+                            if (is_array($value)) {
+                                $newValueTemp = [];
+                                foreach ($value as $valueID) {
+                                    $term = get_term($valueID);
+                                    if ($term) $newValueTemp[] = sprintf('<span class="oes-column-taxonomy">' .
+                                        '<a href="edit.php?post_type=%s&%s=%s">%s</a></span>',
+                                        $_GET['post_type'] ?? '',
+                                        $column,
+                                        $valueID,
+                                        $term->name
+                                    );
+                                }
+                                $newValue = implode(', ', $newValueTemp);
+                            } else {
+                                $newValue = get_term($value)->name ?? $value;
+                            }
+                            break;
+                    }
+                }
+
+                echo $newValue ?? $value;
+            }
+            break;
+    }
+}
+
+
+/**
  * Make columns sortable in the list display of post types in the wp admin area.
  *
  * @param array $columns The columns which are to be displayed.
@@ -235,36 +377,64 @@ function display_post_column_value(string $column, string $post_id)
 function make_columns_sortable(array $columns): array
 {
     /* get global parameter for post type */
-    global $post_type;
+    global $post_type, $taxonomy;
     $oes = OES();
 
-    /* bail if no configuration for this post type exists */
-    if (!isset($oes->post_types[$post_type])) return $columns;
+    if (!empty(get_current_screen()->taxonomy)) {
 
-    /* check for other columns to be displayed */
-    if (isset($oes->post_types[$post_type]['admin_columns']))
-        foreach ($oes->post_types[$post_type]['admin_columns'] as $fieldKey) {
+        /* bail if no configuration for this post type exists */
+        if (!isset($oes->taxonomies[$taxonomy])) return $columns;
 
-            /* skip init */
-            if ($fieldKey == 'init') continue;
+        /* check for other columns to be displayed */
+        if (isset($oes->taxonomies[$taxonomy]['admin_columns']))
+            foreach ($oes->taxonomies[$taxonomy]['admin_columns'] as $fieldKey) {
 
-            if ($fieldKey == 'date_modified') $columns[$fieldKey] = 'modified';
+                /* skip init */
+                if ($fieldKey == 'init') continue;
 
-            /* check if acf field */
-            if ($fieldObject = oes_get_field_object($fieldKey))
-                switch ($fieldObject['type']) {
-                    case 'taxonomy' :
-                    case 'relationship' :
-                        break;
-                    default:
-                        $columns[$fieldKey] = $fieldKey;
-                        break;
-                }
-            else $columns[$fieldKey] = $fieldKey;
-        }
+                /* check if acf field */
+                if ($fieldObject = oes_get_field_object($fieldKey))
+                    switch ($fieldObject['type']) {
+                        case 'taxonomy' :
+                        case 'relationship' :
+                            break;
+                        default:
+                            $columns[$fieldKey] = $fieldKey;
+                            break;
+                    }
+                else $columns[$fieldKey] = $fieldKey;
+            }
+    }
+    else{
+
+        /* bail if no configuration for this post type exists */
+        if (!isset($oes->post_types[$post_type])) return $columns;
+
+        /* check for other columns to be displayed */
+        if (isset($oes->post_types[$post_type]['admin_columns']))
+            foreach ($oes->post_types[$post_type]['admin_columns'] as $fieldKey) {
+
+                /* skip init */
+                if ($fieldKey == 'init') continue;
+
+                if ($fieldKey == 'date_modified') $columns[$fieldKey] = 'modified';
+
+                /* check if acf field */
+                if ($fieldObject = oes_get_field_object($fieldKey))
+                    switch ($fieldObject['type']) {
+                        case 'taxonomy' :
+                        case 'relationship' :
+                            break;
+                        default:
+                            $columns[$fieldKey] = $fieldKey;
+                            break;
+                    }
+                else $columns[$fieldKey] = $fieldKey;
+            }
+    }
+
     return $columns;
 }
-
 
 
 /* sort columns ------------------------------------------------------------------------------------------------------*/
@@ -323,7 +493,6 @@ function sort_columns(WP_Query $query)
             }
     }
 }
-
 
 
 /* sort columns ------------------------------------------------------------------------------------------------------*/
@@ -468,7 +637,6 @@ function add_column_filter(string $post_type)
         }
     }
 }
-
 
 
 /* sort columns ------------------------------------------------------------------------------------------------------*/

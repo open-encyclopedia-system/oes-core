@@ -26,3 +26,12 @@ function expandImageModal(modals){
         });
     }
 }
+
+function oesToggleGalleryPanel(show) {
+    let parent = jQuery(show).parent();
+    parent.children('.oes-gallery-image').hide();
+    jQuery(show).fadeIn();
+
+    parent.find('.oes-figure-thumbnail').removeClass('active');
+    jQuery('.thumbnail-' + show.id).addClass('active');
+}

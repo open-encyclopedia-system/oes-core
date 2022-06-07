@@ -24,11 +24,11 @@ if (!class_exists('Reading')) :
             return '<div class="oes-tool-information-wrapper"><p>' .
                 __('The OES feature <b>Notes</b> enables the display of the notes header in the table of contents ' .
                     'inside the frontend display of a post object.', 'oes') . '<br>' .
-                __('You can administrate the OES feature <b>Index</b> ' .
-                    'by defining an index page on which post types will be displayed that are connected to the main ' .
+                __('The OES feature <b>Index</b> allows you to ' .
+                    'define an index page on which post types will be displayed that are linked to the main ' .
                     'post type (usually a type of article). The index post types will include a display of their ' .
-                    'connection inside the encyclopedia on the frontend single display.', 'oes') . '<br>' .
-                __('You can choose which field will be displayed as title of a post object with the OES feature ' .
+                    'connection within the encyclopaedia on the frontend single display.', 'oes') . '<br>' .
+                __('You can choose the field that will be displayed as title of a post object with the OES feature ' .
                     '<b>Titles</b>.', 'oes') . '<br>' .
                 __('The single view of a post object includes a table of metadata. You can define which post data ' .
                     'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes') . '<br>' .
@@ -189,7 +189,6 @@ if (!class_exists('Reading')) :
                 $titleOptions = $titleOptionsNull = [];
                 $titleOptionsNull['default'] = __('Same as Title', 'oes');
                 $titleOptions['wp-title'] = __('Post Title (WordPress)', 'oes');
-                $archiveFilterOptions['alphabet'] = __('Alphabet', 'oes');
                 foreach ($allFields as $fieldKey => $singleField)
                     if ($singleField['type'] == 'text') $titleOptions[$fieldKey] = $singleField['label'];
 
@@ -212,6 +211,44 @@ if (!class_exists('Reading')) :
                         $postTypeData['display_titles']['title_sorting_display'] ?? 'default',
                         ['options' => array_merge($titleOptionsNull, $titleOptions)])
                 ];
+            }
+
+            /* taxonomies --------------------------------------------------------------------------------------------*/
+            foreach ($oes->taxonomies as $taxonomyKey => $taxonomyData) {
+
+                /* get all fields for this post type */
+                $allFields = get_all_object_fields($taxonomyKey, false, false);
+
+                if (!empty($allFields)) {
+
+                    /* prepare html for title options */
+                    $titleOptions = $titleOptionsNull = [];
+                    $titleOptionsNull['default'] = __('Same as Title', 'oes');
+                    $titleOptions['wp-title'] = __('Name (WordPress)', 'oes');
+                    foreach ($allFields as $fieldKey => $singleField)
+                        if ($singleField['type'] == 'text') $titleOptions[$fieldKey] = $singleField['label'];
+
+                    $tableBody[] = [
+                        '<strong>' . ($taxonomyData['label'] ?? $taxonomyKey) . '</strong>' .
+                        '<code class="oes-object-identifier">' . $taxonomyKey . '</code>',
+                        oes_html_get_form_element('select',
+                            'taxonomies[' . $taxonomyKey . '][oes_args][display_titles][title_display]',
+                            'taxonomies-' . $taxonomyKey . '-oes_args-display_titles-title_display',
+                            $taxonomyData['display_titles']['title_display'] ?? 'default',
+                            ['options' => $titleOptions]),
+                        oes_html_get_form_element('select',
+                            'taxonomies[' . $taxonomyKey . '][oes_args][display_titles][title_archive_display]',
+                            'taxonomies-' . $taxonomyKey . '-oes_args-display_titles-title_archive_display',
+                            $taxonomyData['display_titles']['title_archive_display'] ?? 'default',
+                            ['options' => array_merge($titleOptionsNull, $titleOptions)]),
+                        oes_html_get_form_element('select',
+                            'taxonomies[' . $taxonomyKey . '][oes_args][display_titles][title_sorting_display]',
+                            'taxonomies-' . $taxonomyKey . '-oes_args-display_titles-title_sorting_display',
+                            $taxonomyData['display_titles']['title_sorting_display'] ?? 'default',
+                            ['options' => array_merge($titleOptionsNull, $titleOptions)])
+                    ];
+
+                }
             }
 
 
@@ -249,7 +286,7 @@ if (!class_exists('Reading')) :
                             $options[$fieldKey] = $field['label'];
                             if (in_array($field['type'], ['relationship', 'post_object'])) {
                                 $checkForPostTypes = get_field_object($fieldKey)['post_type'] ?? [];
-                                if(is_string($checkForPostTypes)) $checkForPostTypes = [$checkForPostTypes];
+                                if (is_string($checkForPostTypes)) $checkForPostTypes = [$checkForPostTypes];
                                 if (!empty($checkForPostTypes))
                                     foreach ($checkForPostTypes as $singlePostType)
                                         $postTypesRelationships['post_type__' . $singlePostType] =
@@ -259,7 +296,7 @@ if (!class_exists('Reading')) :
                                                 $singlePostType);
                             }
                         }
-                if(!empty($postTypesRelationships)) $options = array_merge($options, $postTypesRelationships);
+                if (!empty($postTypesRelationships)) $options = array_merge($options, $postTypesRelationships);
 
 
                 /* add taxonomies */
@@ -394,13 +431,53 @@ if (!class_exists('Reading')) :
                     ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true]);
             }
 
+            /* add options for taxonomies */
+            foreach ($oes->taxonomies as $taxonomyKey => $taxonomyData) {
+
+                /* prepare options */
+                $options = ['title' => 'Title (Display Title)'];
+
+                //TODO @2.0: add field options
+                /* if (isset($taxonomyData['field_options']) && !empty($taxonomyData['field_options']))
+                    foreach ($taxonomyData['field_options'] as $fieldKey => $field)
+                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message']))
+                            $options[$fieldKey] = $field['label']; */
+
+                $thead[] = '<strong>' . ($taxonomyData['label'] ?? $taxonomyKey) . '</strong>' .
+                    '<code class="oes-object-identifier">' . $taxonomyKey . '</code>';
+                $tbody[] = oes_html_get_form_element('select',
+                    'oes_config[search][taxonomies][' . $taxonomyKey . ']',
+                    'oes_config-search-taxonomies-' . $taxonomyKey,
+                    $oes->search['taxonomies'][$taxonomyKey] ?? [],
+                    ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true]);
+            }
+
             $this->table_data[] = [
+                'type' => 'accordion',
                 'title' => __('Search', 'oes'),
-                'table' => [[
-                    'transpose' => true,
-                    'thead' => $thead,
-                    'tbody' => [$tbody]
-                ]]
+                'table' => [
+                    [
+                        'header' => '<strong>' . __('General', 'oes') . '</strong>',
+                        'transpose' => true,
+                        'thead' => [
+                            '<strong>' . __('Maximum paragraphs in search result', 'oes') . '</strong>' .
+                            '<div>' . __('The maximum of paragraphs when displaying the preview in search results') . '</div>'
+                        ],
+                        'tbody' => [[
+                            oes_html_get_form_element('number',
+                                'oes_config[search][max_preview_paragraphs]',
+                                'oes_config-search-max_preview_paragraphs',
+                                $oes->search['max_preview_paragraphs'] ?? 1,
+                                ['min' => 0, 'max' => 100])
+                        ]]
+                    ],
+                    [
+                        'header' => '<strong>' . __('Search in', 'oes') . '</strong>',
+                        'transpose' => true,
+                        'thead' => $thead,
+                        'tbody' => [$tbody]
+                    ]
+                ]
             ];
         }
 

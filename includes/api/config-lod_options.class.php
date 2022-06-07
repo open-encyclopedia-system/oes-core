@@ -35,63 +35,64 @@ if (!class_exists('LOD_Options')) :
             /* get theme label configurations */
             $oes = OES();
             if (!empty($oes->apis))
-                foreach ($oes->apis as $apiKey => $apiOptions) {
+                foreach ($oes->apis as $apiKey => $apiOptions)
+                    if (!empty($apiOptions->config_options['properties']['options'])) {
 
-                    $tableData = [];
+                        $tableData = [];
 
-                    foreach ($oes->post_types as $postTypeKey => $postType)
-                        if (isset($postType['lod_box']) &&
-                            in_array('post', $postType['lod_box'])) {
+                        foreach ($oes->post_types as $postTypeKey => $postType)
+                            if (isset($postType['lod_box']) &&
+                                in_array('post', $postType['lod_box'])) {
 
-                            /* prepare data */
-                            $tableDataHead = [];
-                            $tableDataBody = [];
+                                /* prepare data */
+                                $tableDataHead = [];
+                                $tableDataBody = [];
 
-                            $option = $apiOptions->config_options['properties'];
+                                $option = $apiOptions->config_options['properties'];
 
-                            /* prepare table body */
-                            foreach ($postType['field_options'] as $fieldKey => $field) {
+                                /* prepare table body */
+                                foreach ($postType['field_options'] as $fieldKey => $field) {
 
-                                /* skip field types */
-                                $type = (oes_get_field_object($fieldKey) &&
-                                    isset(oes_get_field_object($fieldKey)['type'])) ?
-                                    oes_get_field_object($fieldKey)['type'] :
-                                    'tab';
-                                if (in_array($type, ['tab', 'message', 'relationship', 'post', 'image', 'date_picker']))
-                                    continue;
+                                    /* skip field types */
+                                    $type = (oes_get_field_object($fieldKey) &&
+                                        isset(oes_get_field_object($fieldKey)['type'])) ?
+                                        oes_get_field_object($fieldKey)['type'] :
+                                        'tab';
+                                    if (in_array($type, ['tab', 'message', 'relationship', 'post', 'image', 'date_picker']))
+                                        continue;
 
-                                $tableDataHead[] = '<strong>' . ($field['label'] ?? 'Label missing') .
-                                    '</strong><div><code>' . $fieldKey . '</code>' . '</div>';
+                                    $tableDataHead[] = '<strong>' . ($field['label'] ?? 'Label missing') .
+                                        '</strong><div><code>' . $fieldKey . '</code>' . '</div>';
 
-                                $copyOption = $apiKey . '_properties';
-                                $tableDataBody[] = oes_html_get_form_element($option['type'],
-                                    'fields[' . $postTypeKey . '][' . $fieldKey . '][' . $copyOption . ']',
-                                    'fields-' . $postTypeKey . '-' . $fieldKey . '_' . $copyOption,
-                                    $field[$copyOption] ?? [],
-                                    [
-                                        'options' => $option['options'],
-                                        'multiple' => $option['multiple'] ?? true,
-                                        'class' => 'oes-replace-select2',
-                                        'hidden' => ($option['type'] === 'select')
-                                    ]
-                                );
+                                    $copyOption = $apiKey . '_properties';
+                                    $tableDataBody[] = oes_html_get_form_element($option['type'],
+                                        'fields[' . $postTypeKey . '][' . $fieldKey . '][' . $copyOption . ']',
+                                        'fields-' . $postTypeKey . '-' . $fieldKey . '_' . $copyOption,
+                                        $field[$copyOption] ?? [],
+                                        [
+                                            'options' => $option['options'],
+                                            'multiple' => $option['multiple'] ?? true,
+                                            'class' => 'oes-replace-select2',
+                                            'hidden' => ($option['type'] === 'select')
+                                        ]
+                                    );
+                                }
+
+                                /* add to return value */
+                                $tableData[] = [
+                                    'header' => $postType['label'],
+                                    'transpose' => true,
+                                    'thead' => $tableDataHead,
+                                    'tbody' => [$tableDataBody]
+                                ];
                             }
 
-                            /* add to return value */
-                            $tableData[] = [
-                                'header' => $postType['label'],
-                                'transpose' => true,
-                                'thead' => $tableDataHead,
-                                'tbody' => [$tableDataBody]
-                            ];
-                        }
-
-                    $this->table_data[] = [
-                        'type' => 'accordion',
-                        'title' => $apiOptions->label ?? $apiKey,
-                        'table' => $tableData
-                    ];
-                }
+                        $this->table_data[] = [
+                            'type' => 'accordion',
+                            'title' => $apiOptions->label ?? $apiKey,
+                            'table' => $tableData
+                        ];
+                    }
 
             $this->table_title = __('Copy To Post', 'oes');
         }

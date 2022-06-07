@@ -22,11 +22,14 @@ function oes_theme_add_favicon(string $href, string $imgSize = "16x16")
  * Add search to top navigation menu at end
  *
  * @param string $label The navigation item label.
+ * @param array $args Additional parameters.
  * @return string Return the modified HTML list item.
  */
-function oes_theme_add_search_to_navigation(string $label = ''): string
+function oes_theme_add_search_to_navigation(string $label = '', array $args = []): string
 {
     return '<li id="menu-item-oes-search" class="menu-item">' .
-            '<a id="oes-search" href="javascript:void(0)">' . ($label ?? __('Search', 'oes')) . '</a>' .
-            '</li>';
+        '<a id="oes-search" href="javascript:void(0)"' .
+        (isset($args['class']) ? (' class="' . $args['class'] . '"') : '') .
+        '>' . ($label ?? __('Search', 'oes')) . '</a>' .
+        '</li>';
 }

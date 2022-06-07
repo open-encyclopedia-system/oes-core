@@ -334,11 +334,11 @@ function initialize()
     oes_include('/includes/api/gnd/gnd-interface.php');
     oes_include('/includes/api/geonames/geonames-interface.php');
     oes_include('/includes/api/loc/loc-interface.php');
+
+    /* add postboxes for LOD search interface */
+    add_action('add_meta_boxes', '\OES\API\lod_meta_boxes');
 }
 
-
-/* add postboxes for LOD search interface */
-add_action('add_meta_boxes', '\OES\API\lod_meta_boxes');
 
 /**
  * Add meta box for the LOD search interface if LOD option is set for the post type.

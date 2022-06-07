@@ -26,6 +26,9 @@ if (!class_exists('OES_Post')) {
         /** @var false|string $post_type The post type. */
         public $post_type = '';
 
+        /** @var false|string $post_type_label The post type label. */
+        public $post_type_label = '';
+
         /** @var false|int|mixed $parent_ID The parent post id connected to the post id. */
         public $parent_ID = 0;
 
@@ -35,8 +38,8 @@ if (!class_exists('OES_Post')) {
         /** @var bool|mixed The current version of this post (applies if post is version controlled). */
         public $current_version = false;
 
-        /** @var bool $is_index_post Determines if post is an index post. */
-        public bool $is_index_post = false;
+        /** @var bool $oes_is_index_post Determines if post is an index post. */
+        public bool $oes_is_index_post = false;
 
         /** @var array $fields The post fields. */
         public array $fields = [];
@@ -53,6 +56,15 @@ if (!class_exists('OES_Post')) {
         {
             /* set post type */
             $this->post_type = get_post_type($this->object_ID);
+
+            /* set post type label */
+            if ($this->post_type) {
+                global $oes;
+                $cleanLanguage = ($this->language === 'all' || empty($this->language)) ? 'language0' : $this->language;
+                $this->post_type_label = $oes->post_types[$this->post_type]['label_translations'][$cleanLanguage] ??
+                    ($oes->post_types[$this->post_type]['label'] ??
+                        (get_post_type_object($this->post_type)->labels->singular_name ?? 'Label missing'));
+            }
 
             /* check for version information */
             $this->set_version_information();
@@ -91,9 +103,11 @@ if (!class_exists('OES_Post')) {
         {
             if (isset($this->fields['field_oes_post_language']))
                 $this->language = $this->fields['field_oes_post_language']['value'];
-            elseif($postLanguage = oes_get_post_language($this->object_ID))
+            elseif ($postLanguage = oes_get_post_language($this->object_ID))
                 $this->language = $postLanguage;
             else $this->language = $language;
+
+            if (empty($this->language)) $this->language = 'language0';
         }
 
 
@@ -276,7 +290,7 @@ if (!class_exists('OES_Post')) {
          */
         function get_html_featured_post(array $args): string
         {
-            return $this->title .
+            return isset($args['title']) && !empty($args['title']) ? $args['title'] : $this->title .
                 '<div class="oes-featured-post-excerpt">' . get_the_excerpt($this->object_ID) . '</div>';
         }
 
@@ -305,8 +319,21 @@ if (!class_exists('OES_Post')) {
             /* add index information single__toc__index */
             $prepareContentArray['index'] = $this->is_index_post ? $this->get_index_connections() : '';
 
+
+            /* check if table of contents is skipped */
+            $includeToc = oes_get_field('field_oes_page_include_toc', $this->object_ID);
+            if (is_null($includeToc)) $includeToc = (!isset($args['skip-toc']) || !$args['skip-toc']);
+
+            /**
+             * Filters if table of content is included.
+             *
+             * @param bool $includeToc Boolean indicating if toc is included.
+             */
+            if (has_filter('oes/theme_skip-toc-' . $this->post_type))
+                $includeToc = apply_filters('oes/theme_skip-toc-' . $this->post_type, $includeToc);
+
             /* create table of contents */
-            if (!isset($args['skip-toc']) || !$args['skip-toc'])
+            if ($includeToc)
                 $prepareContentArray['toc'] = $this->get_html_table_of_contents();
 
             /* modify content */
@@ -356,8 +383,11 @@ if (!class_exists('OES_Post')) {
                             'add-to-toc' => !($oes->notes['exclude_from_toc'] ?? false)
                         ]);
 
+            /* check if pdf */
+            $pdf = $this->is_pdf_mode ? ' pdf="true"' : '';
+
             /* add shortcode */
-            return do_shortcode('[oesnote_list header="' . str_replace('"', "\'", $header) . '"]');
+            return do_shortcode('[oesnote_list header="' . str_replace('"', "\'", $header) . '"' . $pdf . ']');
         }
 
 
@@ -424,11 +454,16 @@ if (!class_exists('OES_Post')) {
             $oes = OES();
 
             /* loop through configuration */
+            $position = 0;
             $collectData = [];
             if (isset($oes->post_types[$this->post_type]['metadata']))
                 foreach ($oes->post_types[$this->post_type]['metadata'] as $fieldKey) {
+                    ++$position;
                     $metaData = $this->get_meta_or_archive_field_data($fieldKey, 'metadata');
-                    if ($metaData) $collectData[] = $metaData;
+                    if ($metaData) $collectData[] = array_merge(
+                        ['position' => $position * 10],
+                        $metaData
+                    );
                 }
 
 
@@ -473,14 +508,14 @@ if (!class_exists('OES_Post')) {
             /* merge args with defaults */
             $args = array_merge([
                 'display-header' => 'Metadata',
-                'table-class' => 'oes-metadata-table table',
+                'table-class' => ($this->is_pdf_mode ? ' oes-pdf-metadata-table' : 'oes-metadata-table table'),
                 'header-class' => 'oes-content-table-header1'
             ], $args);
 
             /* return table representation*/
+            $header = sprintf('<h1 class="%s">%s</h1>', $args['header-class'], $args['display-header']);
             return sprintf('<div class="oes-metadata">%s<table class="%s">%s</table></div>',
-                $args['display-header'] ?
-                    sprintf('<h1 class="%s">%s</h1>', $args['header-class'], $args['display-header']) : '',
+                $args['display-header'] ? $header : '',
                 $args['table-class'],
                 do_shortcode($tableString)
             );
@@ -546,13 +581,19 @@ if (!class_exists('OES_Post')) {
                 /* add to table data */
                 $taxonomyKey = substr($fieldKey, 10);
                 $terms = $this->get_all_terms([$taxonomyKey]);
-                if (isset($terms[$taxonomyKey]) && !empty($terms[$taxonomyKey]))
-                    return [
+                if (isset($terms[$taxonomyKey]) && !empty($terms[$taxonomyKey])){
+
+                    $pseudoField = [
                         'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$this->language] ??
                             (get_taxonomy($taxonomyKey)->label ?? $taxonomyKey),
                         'value' => implode(', ', $terms[$taxonomyKey]),
-                        'key' => $fieldKey
+                        'key' => $fieldKey,
+                        'type' => $taxonomyKey
                     ];
+
+                    /* modify or augment values, alternatively call function.  */
+                    return $this->modify_metadata($pseudoField, $loop);
+                }
 
             } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent__')) {
 
@@ -565,26 +606,38 @@ if (!class_exists('OES_Post')) {
                 $label = $oes->post_types[$parentPostType]['field_options'][$parentField]['label_translation_' . $this->language] ??
                     ($oes->post_types[$parentPostType]['field_options'][$parentField]['label'] ?? $parentField);
 
-                if (!empty($parentFieldValue))
-                    return [
+                if (!empty($parentFieldValue)){
+
+                    $pseudoField = [
                         'label' => $label,
+                        'db_value' => oes_get_field($parentField, $this->parent_ID),
                         'value' => $parentFieldValue,
-                        'key' => $fieldKey
+                        'key' => $fieldKey,
+                        'type' => get_field_object($parentField)['type'] ?? 'unknown'
                     ];
+
+                    /* modify or augment values, alternatively call function.  */
+                    return $this->modify_metadata($pseudoField, $loop);
+                }
 
             } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent_taxonomy__')) {
 
                 /* add to table data */
                 $taxonomyKey = substr($fieldKey, 17);
-                $terms = $this->get_all_terms([$taxonomyKey], $this->parent_ID);
-                if (isset($terms[$taxonomyKey]) && !empty($terms[$taxonomyKey]))
-                    return [
+                $terms = $this->get_all_terms([$taxonomyKey], $this->parent_ID, $loop);
+                if (isset($terms[$taxonomyKey]) && !empty($terms[$taxonomyKey])){
+
+                    $pseudoField = [
                         'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$this->language] ?:
                             (get_taxonomy($taxonomyKey)->label ?? $taxonomyKey),
-                        'value' => implode(', ', $terms[$taxonomyKey]),
-                        'key' => $fieldKey
+                        'value' => (($loop === 'xml') ? $terms[$taxonomyKey] : implode(', ', $terms[$taxonomyKey])),
+                        'key' => $fieldKey,
+                        'type' => $taxonomyKey
                     ];
 
+                    /* modify or augment values, alternatively call function.  */
+                    return $this->modify_metadata($pseudoField, $loop);
+                }
             } elseif (isset($this->fields[$fieldKey]['value'])) {
 
                 /* get current field configuration */
@@ -609,10 +662,44 @@ if (!class_exists('OES_Post')) {
                 /* check if value is empty and is to be skipped if empty */
                 if (empty($field['value']) || (empty($field['value-display']))) return '';
 
+
+                /* modify list values */
+                $replaceValue = [];
+                if ($loop === 'xml' && is_array($field['value']))
+                    foreach ($field['value'] as $singleValue)
+                        if ($singleValue instanceof WP_Post) {
+                            $replaceValue[$singleValue->ID] = [
+                                'title' => oes_get_display_title($singleValue),
+                                'permalink' => get_permalink($singleValue->ID),
+                                'type' => $singleValue->post_type
+                            ];
+                        } elseif ($singleValue instanceof WP_Term) {
+                            $replaceValue[$singleValue->term_id] = [
+                                'title' => oes_get_display_title($singleValue),
+                                'permalink' => get_term_link($singleValue->term_id),
+                                'type' => $singleValue->taxonomy
+                            ];
+                        } elseif (is_int($singleValue))
+                            if ($singleValuePost = get_post($singleValue)) {
+                                $replaceValue[$singleValuePost->ID] = [
+                                    'title' => oes_get_display_title($singleValuePost),
+                                    'permalink' => get_permalink($singleValuePost->ID),
+                                    'type' => $singleValuePost->post_type
+                                ];
+                            } elseif ($singleValueTerm = get_term($singleValue)) {
+                                $replaceValue[$singleValueTerm->term_id] = [
+                                    'title' => oes_get_display_title($singleValueTerm),
+                                    'permalink' => get_term_link($singleValueTerm->term_id),
+                                    'type' => $singleValueTerm->taxonomy
+                                ];
+                            }
+
                 /* prepare value, use 'value-display' if set, else use 'value' */
-                $value = ($field['value-display'] && is_string($field['value-display'])) ?
-                    (empty($field['value-display']) ? $field['value'] : $field['value-display']) :
-                    'Value Display missing';
+                if (empty($replaceValue))
+                    $replaceValue = ($field['value-display'] && is_string($field['value-display'])) ?
+                        (empty($field['value-display']) ? $field['value'] : $field['value-display']) :
+                        'Value Display missing';
+
 
                 /* get label */
                 $label = $field['further_options']['label_translation_' . $this->language] ??
@@ -621,8 +708,9 @@ if (!class_exists('OES_Post')) {
                 /* add to table data */
                 return [
                     'label' => $label,
-                    'value' => $value,
-                    'key' => $fieldKey
+                    'value' => $replaceValue,
+                    'key' => $fieldKey,
+                    'type' => 'field'
                 ];
             }
 
@@ -692,16 +780,24 @@ function oes_add_language_field_to_page_action()
         acf_add_local_field_group([
             'key' => 'group_oes_page',
             'title' => 'Page',
-            'fields' => [[
-                'key' => 'field_oes_post_language',
-                'label' => 'Language',
-                'name' => 'field_oes_post_language',
-                'type' => 'select',
-                'instructions' => '',
-                'required' => true,
-                'default_value' => 'language0',
-                'choices' => $languages
-            ],
+            'fields' => [
+                [
+                    'key' => 'field_oes_page_include_toc',
+                    'label' => 'Include Table of Content',
+                    'name' => 'field_oes_page_include_toc',
+                    'type' => 'true_false',
+                    'instructions' => '',
+                    'default_value' => true
+                ],
+                [
+                    'key' => 'field_oes_post_language',
+                    'label' => 'Language',
+                    'name' => 'field_oes_post_language',
+                    'type' => 'select',
+                    'instructions' => '',
+                    'required' => true,
+                    'choices' => $languages
+                ],
                 [
                     'key' => 'field_oes_page_translations',
                     'label' => 'Translations',
@@ -710,7 +806,8 @@ function oes_add_language_field_to_page_action()
                     'return_format' => 'id',
                     'post_type' => ['page'],
                     'filters' => ['search']
-                ]],
+                ]
+            ],
             'location' => [[[
                 'param' => 'post_type',
                 'operator' => '==',
@@ -718,4 +815,29 @@ function oes_add_language_field_to_page_action()
             ]]]
         ]);
     }
+}
+
+
+/**
+ * Set post data for OES_Post object.
+ *
+ * @param array $args Additional parameters. Valid parameters are:
+ *  'post-id'  : The post id.
+ */
+function oes_set_post_data(array $args = [])
+{
+
+    /* get the post id */
+    $postID = $args['post-id'] ?? get_the_ID();
+
+    /* check if post type for index */
+    global $post_type, $oes, $oes_language, $oes_post, $oes_is_index;
+    $oes_is_index = in_array($post_type, $oes->theme_index['objects'] ?? []);
+
+    /* get post object (prepare rendered content to derive table of content etc) */
+    $cleanLanguage = $oes_language === 'all' ? 'language0' : $oes_language;
+    $oes_post = class_exists($post_type) ?
+        new $post_type($postID, $cleanLanguage) :
+        new OES_Post($postID, $cleanLanguage);
+
 }

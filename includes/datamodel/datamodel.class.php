@@ -44,7 +44,9 @@ if (!class_exists('Datamodel')) :
                 'editorial_tab' => true
             ],
             'taxonomy' => [
-                'label_translations' => []
+                'label_translations' => [],
+                'display_titles' => [],
+                'admin_columns' => []
             ],
             'fields' => [
                 'pattern' => []
@@ -256,6 +258,13 @@ if (!class_exists('Datamodel')) :
                                     if (isset($postTypeData['oes_args'][$optionKey]))
                                         $oesArgs[$optionKey] = $postTypeData['oes_args'][$optionKey];
 
+                            /* add theme label options */
+                            $themeLabels = array_merge(
+                                [],
+                                $postTypeData['oes_args']['theme_labels'] ?? []
+                            );
+                            if (!empty($themeLabels)) $oesArgs['theme_labels'] = $themeLabels;
+
                             /* object are to be added to database schema */
                             $this->objects_for_DB[$taxonomyKey] = $this->prepare_posts_for_DB(
                                 $taxonomyKey,
@@ -411,6 +420,10 @@ if (!class_exists('Datamodel')) :
                     elseif (!$name) {
                         $newArgs[$newKey]['name'] = $key;
                     }
+
+                    /* use WordPress date format for date fields that have no format */
+                    if($field['type'] === 'date_picker' && get_option('oes_admin-use_date_format'))
+                        $newArgs[$newKey]['display_format'] = get_option('date_format') ?? 'm/d/Y';
 
                     /* add available languages according to plugin configuration */
                     if ($key == 'field_oes_post_language') {
@@ -795,6 +808,20 @@ if (!class_exists('Datamodel')) :
                                 if ($acfArgs['fields'])
                                     foreach ($acfArgs['fields'] as $field) {
 
+                                        /* add field label */
+                                        $oes->taxonomies[$taxonomyKey]['field_options'][$field['key']]['label'] =
+                                            $field['label'];
+
+                                        /* add field type */
+                                        $oes->taxonomies[$taxonomyKey]['field_options'][$field['key']]['type'] =
+                                            $field['type'];
+
+                                        /* add translations */
+                                        if (!empty($oes->languages))
+                                            foreach ($oes->languages as $languageKey => $language) {
+                                                $oes->taxonomies[$taxonomyKey]['field_options'][$field['key']]['label_translation_' . $languageKey] =
+                                                    $field['label_translation_' . $languageKey] ?? $field['label'];
+                                            }
 
                                         /* check if field option */
                                         if (isset($this->config_options['fields']))
@@ -978,6 +1005,30 @@ if (!class_exists('Datamodel')) :
                                                 if (isset($field['inherit_to']))
                                                     $oes->post_types[$postTypeKey]['field_options'][$field['key']]['inherit_to'] =
                                                         $field['inherit_to'];
+                                            }
+
+                                        /* add to global instance if relationship field in repeater field */
+                                        if ($field['type'] == 'repeater' &&
+                                            !empty($field['sub_fields']) &&
+                                            !oes_starts_with($field['key'], 'field_oes_versioning_') &&
+                                            !oes_starts_with($field['key'], 'field_connected_parent_')
+                                        )
+                                        foreach($field['sub_fields'] as $subField)
+                                        if(($subField['type'] == 'relationship' || $subField['type'] == 'post_object') &&
+                                            isset($subField['post_type']) && !empty($subField['post_type'])){
+
+                                                /* prepare options for configuration */
+                                                $postTypes = is_string($subField['post_type']) ?
+                                                    [$subField['post_type']] :
+                                                    $subField['post_type'];
+                                                foreach ($postTypes as $relatedPostType)
+                                                    $bidirectionalArray[$postTypeKey][$relatedPostType][] =
+                                                        $subField['key'];
+
+                                                /* check if inheritance */
+                                                if (isset($subField['inherit_to']))
+                                                    $oes->post_types[$postTypeKey]['field_options'][$subField['key']]['inherit_to'] =
+                                                        $subField['inherit_to'];
                                             }
 
                                         /* check if processing for field value and prepare transformation hook */
@@ -1329,7 +1380,8 @@ function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $sep
  */
 function get_editorial_tab(): array
 {
-    return [
+
+    $editorialTab = [
         [
             'name' => 'field_oes_tab_editorial',
             'label' => 'Editorial',
@@ -1358,6 +1410,18 @@ function get_editorial_tab(): array
             'key' => 'field_oes_comment'
         ]
     ];
+
+
+    /**
+     * Filters the fields for the editorial tab.
+     *
+     * @param array $editorialTab The fields for the editorial tab.
+     */
+    if (has_filter('oes/get_editorial_tab'))
+        $editorialTab = apply_filters('oes/get_editorial_tab', $editorialTab);
+
+
+    return $editorialTab;
 }
 
 

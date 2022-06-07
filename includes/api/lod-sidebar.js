@@ -17,6 +17,8 @@
                     el('a', {href: 'https://www.dnb.de/', target: '_blank'}, 'GND'),
                     ', ',
                     el('a', {href: 'https://www.geonames.org/', target: '_blank'}, 'Geonames'),
+                    ', ',
+                    el('a', {href: 'https://id.loc.gov/authorities/subjects.html', target: '_blank'}, 'Library of Congress (Subjects)'),
                     ' database and create shortcodes or copy values to this post.'),
                 options =
                     el('div', {},
@@ -31,7 +33,8 @@
                                 },
                                 options: [
                                     {label: 'GND', value: 'gnd'},
-                                    {label: 'Geonames', value: 'geonames'}
+                                    {label: 'Geonames', value: 'geonames'},
+                                    {label: 'Library of Congress (Subjects)', value: 'loc'}
                                 ]
                             }),
                         ),

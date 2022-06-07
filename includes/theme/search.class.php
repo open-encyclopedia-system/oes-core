@@ -19,7 +19,10 @@ if (!class_exists('OES_Search')) {
         /** @var array $characters The characters for the alphabet filter (starting characters of item titles). */
         public array $characters = [];
 
-        /** @var array $preparedPosts The prepared items found during the loop. */
+        /** @var array $prepared_ids The prepared items id found during the loop. */
+        public array $prepared_ids = [];
+
+        /** @var array $prepared_posts The prepared items found during the loop. */
         public array $prepared_posts = [];
 
         /** @var int $count Count the prepared items. */
@@ -73,83 +76,234 @@ if (!class_exists('OES_Search')) {
             }
             $this->filter = $filterArray;
 
-            /* Do the loop */
-            $this->do_the_loop();
+            $this->loop_results();
         }
 
 
         /**
          * Loop through search results.
          */
-        function do_the_loop()
+        function loop_results()
         {
-            /* get global OES instance parameter */
-            $oes = OES();
-
-            /* do the loop */
             if (have_posts())
                 while (have_posts()) {
                     the_post();
-                    $post = get_post(get_the_ID());
-                    $this->get_data_from_post($post);
+                    $this->prepared_ids[] = get_the_ID();
                 }
+        }
+    }
+}
 
-            /* add ALL button */
-            if (!empty($this->filter_array['list']['objects']['items']))
-                $this->filter_array['list']['objects']['items'] = array_merge(
-                    ['all' => $oes->theme_labels['archive__filter__all_button'][$this->language] ?? __('ALL', 'oes')],
-                    $this->filter_array['list']['objects']['items']);
+
+/**
+ * Modify the WordPress search to scan also post metadata according to configurations.
+ */
+function oes_theme_modify_search()
+{
+    add_filter('posts_join', 'oes_search_join');
+    add_filter('posts_where', 'oes_search_where_statement');
+    add_filter('posts_distinct', 'oes_search_distinct');
+}
+
+
+/**
+ * Add search in post meta table.
+ *
+ * @param string $join The sql join statement is passed by WordPress search.
+ * @return string Returns modified join string.
+ */
+function oes_search_join(string $join): string
+{
+
+
+    /* Modify search if call from frontend. */
+    if (is_search() && !is_admin()) {
+
+        global $oes, $wpdb;
+
+        /* add post meta */
+        if (isset($oes->search['postmeta_fields']) && !empty($oes->search['postmeta_fields']))
+            $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' ON (' . $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id) ';
+
+        /* add taxonomies */
+        if (isset($oes->search['taxonomies']) && !empty($oes->search['taxonomies']))
+            $join .=
+                ' LEFT JOIN ' . $wpdb->term_relationships . ' ON (' . $wpdb->posts . '.ID = ' . $wpdb->term_relationships . '.object_id) ' .
+                ' LEFT JOIN ' . $wpdb->term_taxonomy . ' ON (' . $wpdb->term_relationships . '.term_taxonomy_id = ' . $wpdb->term_taxonomy . '.term_taxonomy_id) ' .
+                ' LEFT JOIN ' . $wpdb->terms . ' ON (' . $wpdb->term_taxonomy . '.term_id = ' . $wpdb->terms . '.term_id) ';
+    }
+
+    return $join;
+}
+
+
+/**
+ * Extend search in post meta value.
+ *
+ * @param string $where The sql where statement is passed by WordPress search.
+ * @return string|string[]|null Returns modified where string.
+ */
+function oes_search_where_statement(string $where): string
+{
+    /* Modify search if call from frontend. */
+    if (is_search() && !is_admin()) {
+
+        /* get global search variable */
+        global $wpdb, $oes;
+
+        $prepareStatement = '';
+
+        /* add post meta */
+        if (isset($oes->search['postmeta_fields']) && !empty($oes->search['postmeta_fields'])) {
+
+            /* get post meta fields to be searched */
+            $filterFields = [];
+            foreach ($oes->search['postmeta_fields'] as $fields)
+                foreach ($fields as $field)
+                    if (!in_array($field, ['title', 'content'])) $filterFields[] = '"' . $field . '"';
+
+            /* include search in meta value, exclude search in post meta with meta keys starting with '_' */
+            if(!empty($filterFields)) $prepareStatement .= " OR " .
+                "((" . $wpdb->postmeta . ".meta_value LIKE $1) " .
+                "AND (" . $wpdb->postmeta . ".meta_key NOT LIKE '" . '^_%' . "' ESCAPE '" . '^' . "') " .
+                "AND " . $wpdb->postmeta . ".meta_key IN (" . implode(',', $filterFields) . "))";
+        }
+
+        if (isset($oes->search['taxonomies']) && !empty($oes->search['taxonomies'])) {
+
+            $searchedTaxonomies = [];
+            foreach ($oes->search['taxonomies'] as $taxonomyKey => $taxonomyFields)
+                foreach ($taxonomyFields as $field)
+                    if ($field === 'title')
+                        $searchedTaxonomies[] = '"' . $taxonomyKey . '"';
+
+            if (!empty($searchedTaxonomies)) {
+                /* include search in terms */
+                $prepareStatement .= " OR " .
+                    "(" . $wpdb->term_taxonomy . ".taxonomy IN (" .  implode(',', $searchedTaxonomies) .
+                    ") AND (" . $wpdb->terms . ".name LIKE $1)) ";
+            }
+        }
+
+        /* hook search into existing search (title is arbitrary) */
+        if (!empty($prepareStatement)){
+            $replacement =  "(" . $wpdb->posts . ".post_title LIKE $1)" . $prepareStatement;
+            $where = preg_replace(
+                "/\(\s*" . $wpdb->posts . ".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
+                $replacement,
+                $where);
         }
 
 
-        /**
-         * Get data from the post.
-         *
-         * @param array|WP_Post $post The post.
-         */
-        function get_data_from_post(WP_Post $post)
-        {
+    }
+    return $where;
+}
 
-            /* get global OES instance parameter */
-            $oes = OES();
+
+/**
+ * Prevent duplicates in sql where statement.
+ *
+ * @param string $where The sql where statement is passed by WordPress search.
+ * @return string Returns modified where string.
+ */
+function oes_search_distinct(string $where): string
+{
+    /* Modify search if call from frontend. */
+    if (is_search() && !is_admin()) return "DISTINCT";
+    return $where;
+}
+
+
+/**
+ * Get result objects for OES_Search object.
+ *
+ * @param array $args Additional parameters. Valid parameters are:
+ *  'post-id'  : The post id.
+ * @return array[] Returns search results.
+ */
+function oes_get_search_data(array $args = []): array
+{
+    global $oes_language, $oes_archive_count;
+    $search = new OES_Search($oes_language);
+    $oes_archive_count = $search->count;
+    return (array)$search;
+}
+
+
+/**
+ * Get data for OES_Search object.
+ *
+ * @param array $args Additional parameters. Valid parameters are:
+ *  'prepared_ids'  : The prepared ids.
+ *  'language'      : The considered language.
+ *  'filter'        : The filter.
+ *  'filter_array'  : The filter data.
+ * @return array[] Returns search results.
+ */
+function oes_search_get_results(array $args = []): array
+{
+    /* get global OES instance parameter */
+    global $oes;
+
+    /* set default args */
+    $args = array_merge([
+        'prepared_ids' => [],
+        'language' => 'language0',
+        'filter' => [],
+        'filter_array' => []
+    ], $args);
+    $searchTerm = $args['search_term'] ?? false;
+
+    /* check for global parameter */
+    if (empty($args['prepared_ids'])) {
+        global $oes_search;
+        if (isset($oes_search['prepared_ids'])) $args['prepared_ids'] = $oes_search['prepared_ids'];
+    }
+
+    /* do the loop */
+    $characters = [];
+    $preparedPosts = [];
+    $count = 0;
+    if (!empty($args['prepared_ids']) && $searchTerm)
+        foreach ($args['prepared_ids'] as $preparedID) {
 
             /* skip if status is not 'publish' */
+            $post = get_post($preparedID);
             if ($post->post_status && 'publish' == $post->post_status) {
 
 
                 /* check if post is to be considered */
-                $searchedFields = isset($oes->search['postmeta_fields'][$post->post_type]) ?
-                    $oes->search['postmeta_fields'][$post->post_type] : false;
+                $searchedFields = $oes->search['postmeta_fields'][$post->post_type] ?? false;
 
                 /* skip if empty (no search field selected) */
                 if (!empty($searchedFields)) {
 
                     /* get post data ---------------------------------------------------------------------------------*/
-                    $titleDisplay = oes_get_display_title($post->ID, ['option' => 'title_archive_display']);
+                    $titleDisplay = oes_get_display_title($preparedID, ['option' => 'title_archive_display']);
 
                     /* get first character of displayed title */
-                    $titleForSorting = oes_get_display_title(false, ['option' => 'title_sorting_display']);
+                    $titleForSorting = oes_get_display_title($preparedID, ['option' => 'title_sorting_display']);
                     $titleForSorting = oes_replace_umlaute($titleForSorting);
+                    if (empty($titleForSorting)) $titleForSorting = $titleDisplay ?? $post->post_title;
                     $key = strtoupper(substr($titleForSorting, 0, 1));
 
                     /* check if non-alphabetic key */
                     if (!in_array($key, range('A', 'Z'))) $key = 'other';
 
                     /* prepare array with existing first characters of displayed posts */
-                    if (!in_array($key, $this->characters)) $this->characters[] = $key;
+                    if (!in_array($key, $characters)) $characters[] = $key;
 
 
                     /* get occurrences -------------------------------------------------------------------------------*/
-                    global $s;
                     $occurrences = 0;
                     $occurrencesArray = [];
 
 
                     /* title */
-                    $occurrencesTitle = oes_get_highlighted_search($s, oes_get_display_title($post->ID));
+                    $occurrencesTitle = oes_get_highlighted_search($searchTerm, oes_get_display_title($preparedID));
                     if (!empty($occurrencesTitle)) {
                         $occurrencesContentTitle = '';
-                        foreach ($occurrencesTitle as $singleOccurrence){
+                        foreach ($occurrencesTitle as $singleOccurrence) {
                             $occurrencesContentTitle .= $singleOccurrence['unfiltered'];
                             $occurrences += $singleOccurrence['occurrences'];
                         }
@@ -161,13 +315,17 @@ if (!class_exists('OES_Search')) {
 
 
                     /* content */
-                    $occurrencesContent = oes_get_highlighted_search($s, $post->post_content);
+                    $occurrencesContent = oes_get_highlighted_search($searchTerm, $post->post_content);
+                    $maxParagraphs = $oes->search['max_preview_paragraphs'] ?? 1;
+                    $countParagraphs = 0;
                     if (!empty($occurrencesContent)) {
                         $occurrencesContentString = '';
                         foreach ($occurrencesContent as $singleOccurrence) {
-                            $occurrencesContentString .= $singleOccurrence['paragraph'] .
-                                '<span class="oes-dot-dot-dot"></span><br>';
+                            if ($countParagraphs < $maxParagraphs)
+                                $occurrencesContentString .= $singleOccurrence['paragraph'] .
+                                    '<span class="oes-dot-dot-dot"></span>';
                             $occurrences += $singleOccurrence['occurrences'];
+                            $countParagraphs++;
                         }
                         $occurrencesArray['content'] = [
                             'th' => ['Content'],
@@ -188,7 +346,7 @@ if (!class_exists('OES_Search')) {
                                     case 'url' :
 
                                         /* get search results */
-                                        $searchResultsFields = oes_get_highlighted_search($s, $field['value']);
+                                        $searchResultsFields = oes_get_highlighted_search($searchTerm, $field['value']);
 
                                         /* prepare search result for display */
                                         if ($searchResultsFields) {
@@ -233,7 +391,7 @@ if (!class_exists('OES_Search')) {
 
                                             /* add information to table */
                                             $label =
-                                                $oes->post_types[$post->post_type]['field_options'][$fieldKey]['label_translation_' . $this->language] ?:
+                                                $oes->post_types[$post->post_type]['field_options'][$fieldKey]['label_translation_' . $args['language']] ?:
                                                     $field['label'];
                                             $occurrencesArray[] = [
                                                 'th' => [$label],
@@ -256,114 +414,43 @@ if (!class_exists('OES_Search')) {
                     /* add information  ---------------------------------------------.--------------------------------*/
                     $version = false;
                     if (isset($oes->post_types[$post->post_type]['field_options']['field_oes_post_version']))
-                        $version = get_version_field($post->ID) ?: false;
+                        $version = get_version_field($preparedID) ?: false;
                     if (!empty($occurrences)) {
 
                         /* add post type to object type filter -------------------------------------------------------*/
-                        $postTypeLabel = ($this->filter['objects'][$post->post_type] ??
+                        $postTypeLabel = ($args['filter']['objects'][$post->post_type] ??
                             get_post_type_object($post->post_type)->label);
-                        $this->filter_array['list']['objects']['items'][$post->post_type] = $postTypeLabel;
-                        $this->filter_array['json']['objects'][$post->post_type][] = $post->ID;
+                        $args['filter_array']['list']['objects']['items'][$post->post_type] = $postTypeLabel;
+                        $args['filter_array']['json']['objects'][$post->post_type][] = $preparedID;
 
-                        $this->prepared_posts[$occurrences][$titleForSorting . get_the_ID()] = [
-                            'id' => get_the_ID(),
+                        $preparedPosts[$occurrences][$titleForSorting . (10000 - $preparedID)] = [
+                            'id' => $preparedID,
                             'title' => $titleDisplay,
-                            'permalink' => get_permalink(),
+                            'permalink' => get_permalink($preparedID),
                             'version' => $version,
                             'type' => $postTypeLabel,
                             'post_type' => $post->post_type,
                             'occurrences' => $occurrencesArray,
                             'occurrences-count' => $occurrences
                         ];
-                        $this->count++;
+                        $count++;
                     }
                 }
             }
         }
-    }
-}
 
+    /* add ALL button */
+    if (!empty($args['filter_array']['list']['objects']['items']))
+        $args['filter_array']['list']['objects']['items'] = array_merge(
+            ['all' => $oes->theme_labels['archive__filter__all_button'][$args['language']] ?? __('ALL', 'oes')],
+            $args['filter_array']['list']['objects']['items']);
 
-/**
- * Modify the WordPress search to scan also post metadata according to configurations.
- */
-function oes_theme_modify_search()
-{
-    add_filter('posts_join', 'oes_search_join');
-    add_filter('posts_where', 'oes_search_where_statement');
-    add_filter('posts_distinct', 'oes_search_distinct');
-}
-
-
-/**
- * Add search in post meta table.
- *
- * @param string $join The sql join statement is passed by WordPress search.
- * @return string Returns modified join string.
- */
-function oes_search_join(string $join): string
-{
-    global $wpdb;
-
-    /* Modify search if call from frontend. */
-    if (is_search() && !is_admin())
-        $join .= ' LEFT JOIN ' . $wpdb->postmeta . ' ON (' . $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id) ';
-    return $join;
-}
-
-
-/**
- * Extend search in post meta value.
- *
- * @param string $where The sql where statement is passed by WordPress search.
- * @return string|string[]|null Returns modified where string.
- */
-function oes_search_where_statement(string $where): string
-{
-    /* Modify search if call from frontend. */
-    if (is_search() && !is_admin()) {
-
-        /* get global search variable */
-        global $wpdb;
-
-        /* get global OES instance parameter */
-        $oes = OES();
-
-        /* get post meta fields to be searched */
-        $filterFields = [];
-        if (isset($oes->search['postmeta_fields']) && !empty($oes->search['postmeta_fields']))
-            foreach ($oes->search['postmeta_fields'] as $fields)
-                foreach ($fields as $field)
-                    if (!in_array($field, ['title', 'content'])) $filterFields[] = '"' . $field . '"';
-        $filterSearch = implode(',', $filterFields);
-
-        /* include search in meta value, exclude search in post meta with meta keys starting with '_' */
-        $prepareStatement = "(" .
-            "((" . $wpdb->posts . ".post_title LIKE $1) OR " .
-            "(" . $wpdb->postmeta . ".meta_value LIKE $1) " .
-            "AND (" . $wpdb->postmeta . ".meta_key NOT LIKE '" . '^_%' . "' ESCAPE '" . '^' . "') " .
-            ($filterSearch ? "AND " . $wpdb->postmeta . ".meta_key IN (" . $filterSearch . ")" : "") .
-            "))";
-
-        /* hook search into existing search (title is arbitrary) */
-        $where = preg_replace(
-            "/\(\s*" . $wpdb->posts . ".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
-            "(" . $prepareStatement . ")",
-            $where);
-    }
-    return $where;
-}
-
-
-/**
- * Prevent duplicates in sql where statement.
- *
- * @param string $where The sql where statement is passed by WordPress search.
- * @return string Returns modified where string.
- */
-function oes_search_distinct(string $where): string
-{
-    /* Modify search if call from frontend. */
-    if (is_search() && !is_admin()) return "DISTINCT";
-    return $where;
+    return [
+        'characters' => $characters,
+        'posts' => $preparedPosts,
+        'count' => $count,
+        'filter' => $args['filter'],
+        'filter_array' => $args['filter_array'],
+        'language' => $args['language']
+    ];
 }

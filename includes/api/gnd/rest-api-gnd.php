@@ -425,6 +425,7 @@ if (!class_exists('GND_API')) {
             return $entryData;
         }
 
+
         //Overwrite parent
         function get_data_for_display_prepare_html(string $title, string $table, $entry): string
         {

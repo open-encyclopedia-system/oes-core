@@ -14,36 +14,34 @@ if (!class_exists('LOC_Interface')) {
         //Set parent parameter
         public string $identifier = 'loc';
         public string $label = 'Library of Congress (Subjects)';
-        public string $database_link = 'https://id.loc.gov/authorities/subjects.html/';
+        public string $database_link = 'https://id.loc.gov/authorities/subjects.html';
 
-        const PROPERTIES = [
-            'geonameId' =>  ['label' => ['german' => 'LoC ID', 'english' => 'LoC ID'], 'position' => 20],
-            'name' =>  ['label' => ['german' => 'Name', 'english' => 'Name'], 'position' => 21],
-            'colloquialName' =>  ['label' => ['german' => 'Umganssprachliche Name(n)', 'english' => 'Colloquial Name(s)'], 'position' => 22],
-            'historicalName' =>  ['label' => ['german' => 'Historische Name(n)', 'english' => 'Historical Name(s)'], 'position' => 23],
-            'alternateName' =>  ['label' => ['german' => 'Alternative Name(n)', 'english' => 'Alternate Name(s)'], 'position' => 24],
-            'officialName' =>  ['label' => ['german' => 'Offizieller Name', 'english' => 'Official Name'], 'position' => 25],
-            'shortName' =>  ['label' => ['german' => 'Name Abkürzung', 'english' => 'Short Name'], 'position' => 26],
-            'lng' =>  ['label' => ['german' => 'Längengrad', 'english' => 'Longitude'], 'position' => 40],
-            'lat' =>  ['label' => ['german' => 'Breitengrad', 'english' => 'Latitude'], 'position' => 41],
-            'countryCode' =>  ['label' => ['german' => 'Ländercode', 'english' => 'Country Code'], 'position' => 50],
-            'countryName' =>  ['label' => ['german' => 'Land', 'english' => 'Country'], 'position' => 51],
-            'postalCode' =>  ['label' => ['german' => 'Postleitzahl', 'english' => 'Postal Code'], 'position' => 52],
-            'population' =>  ['label' => ['german' => 'Population', 'english' => 'Population'], 'position' => 53]
-        ];
+        const PROPERTIES = [];
 
-        const SEARCH_PARAMETERS = [
-            [
-                'id' => 'oes-loc-size',
-                'label' => 'Size',
-                'type' => 'number',
-                'value' => 5,
-                'args' => [
-                    'min' => 0,
-                    'max' => 100
-                ]
-            ]
-        ];
+        const SEARCH_PARAMETERS = [];
+
+        //Overwrite parent
+        function render_shortcode(array $args, string $content = ""): string
+        {
+            /* get gnd object */
+            if ($lodID = $args['id'] ?? false) {
+
+                /* get global OES instance parameter */
+                $oes = OES();
+
+                $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
+                $iconPathAbsolute = file_exists($oes->path_core_plugin . $iconPath) ?
+                    plugins_url($oes->basename . $iconPath) :
+                    plugins_url($oes->basename . '/includes/api/icon_lod_preview.png');
+
+                return '<span class="oes-lod-container">' .
+                    sprintf('<a href="https://catalog.loc.gov/vwebv/search?searchArg=%s" target="_blank">%s</a>',
+                        ($args['label'] ?? $lodID) . '&searchCode=SKEY%5E*&searchType=1',
+                        ($args['label'] ?? $lodID) . oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
+                    ) . '</span>';
+
+            } else return $content;
+        }
     }
 
     /* include loc api files and instantiate api interface */

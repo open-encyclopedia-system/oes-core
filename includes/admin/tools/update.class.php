@@ -75,7 +75,7 @@ if (!class_exists('Delete')) :
 
                 /* get all posts and update relationship fields */
                 $posts = oes_get_wp_query_posts(['post_type' => $postType]);
-                $fields = get_all_object_fields($postType, ['relationship', 'post_object']);
+                $fields = get_all_object_fields($postType, ['relationship', 'post_object', 'taxonomy', 'repeater']);
 
                 if (!empty($posts))
                     foreach ($posts as $post)

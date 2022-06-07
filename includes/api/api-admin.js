@@ -30,13 +30,13 @@ jQuery("#oes-lod-search-input").on('keypress', function (event) {
 function oesLodAdminApiRequest() {
 
     /* get authority file */
-    var authority_file = jQuery('#oes-lod-authority-file').children("option:selected").val();
+    const authority_file = jQuery('#oes-lod-authority-file').children("option:selected").val();
     oesLodShowPanel(authority_file);
     oesLodClearTable(authority_file);
 
     /* prepare params */
-    var search_term = jQuery.trim(jQuery("#oes-lod-search-input").val()),
-        params = {};
+    const search_term = jQuery.trim(jQuery("#oes-lod-search-input").val());
+    let params = {};
 
     jQuery('.oes-lod-search-options').each(function () {
         params[this.name] = this.value;
@@ -50,7 +50,8 @@ function oesLodAdminApiRequest() {
     params['search_term'] = search_term;
 
     /* TODO @nextRelease: get post type */
-    var post_type = 'post', attrs = jQuery('body').attr('class').split(' ');
+    let post_type = 'post';
+    const attrs = jQuery('body').attr('class').split(' ');
     jQuery(attrs).each(function () {
         if ('post-type-' === this.substr(0, 10)) {
             post_type = this.split('post-type-');
@@ -74,7 +75,7 @@ function oesLodAdminApiRequest() {
         }).done(function (data) {
 
             /* prepare table for results and temporarily storage */
-            var retrieved_object = localStorage.getItem('oesLodResults'),
+            let retrieved_object = localStorage.getItem('oesLodResults'),
                 temp_results = JSON.parse(retrieved_object);
             if (!temp_results) temp_results = [];
 
@@ -83,7 +84,7 @@ function oesLodAdminApiRequest() {
                 alert('Error for trying to get entries for "' + search_term + '". (API: ' + authority_file + ')');
             } else {
 
-                var table = jQuery("#oes-lod-results-table-tbody"),
+                const table = jQuery("#oes-lod-results-table-tbody"),
                     k = temp_results.length;
 
                 if (data.response.length < 1) {
@@ -91,7 +92,7 @@ function oesLodAdminApiRequest() {
                 } else {
 
                     /* loop through results */
-                    for (var i = 0; i < data.response.length; i++) {
+                    for (let i = 0; i < data.response.length; i++) {
 
                         /* prepare row and cells */
                         var tr = table[0].insertRow(),
@@ -112,7 +113,7 @@ function oesLodAdminApiRequest() {
                             id + '">' + name + '</label>';
 
                         /* Name and preview */
-                        var get_url = window.location,
+                        const get_url = window.location,
                             base_url = get_url.protocol + "//" + get_url.host + "/"
                                 + get_url.pathname.split('/wp-admin')[0];
                         td2.innerHTML = '<div class="oes-lod-link-admin">' +
@@ -170,11 +171,11 @@ function oesLodAdminApiRequest() {
 function oesLodCopyToPost() {
 
     /* get selected data */
-    var params = {},
-        fields = jQuery('.oes-lod-copy-value');
+    let params = {};
+    const fields = jQuery('.oes-lod-copy-value');
 
     /* only consider value if checkbox is checked */
-    for (var i = 0; i < fields.length; i++) {
+    for (let i = 0; i < fields.length; i++) {
         if (fields[i].previousSibling.previousSibling.previousSibling.checked) {
             params[fields[i].id] = fields[i].innerText;
         }
@@ -205,31 +206,31 @@ function oesLodCopyToPost() {
 function oesLodPrepareCopy(el) {
 
     /* temp: allow only one checkbox */
-    var checkboxesTemp = jQuery('.oes-lod-entry-checkbox');
-    for (var ch = 0; ch < checkboxesTemp.length; ch++) {
+    const checkboxesTemp = jQuery('.oes-lod-entry-checkbox');
+    for (let ch = 0; ch < checkboxesTemp.length; ch++) {
         checkboxesTemp[ch].checked = false;
     }
     el.checked = true;
 
-    var fields = jQuery('.oes-lod-copy-value'),
+    const fields = jQuery('.oes-lod-copy-value'),
         shortcode = jQuery('#oes-lod-shortcode');
 
     /* copy to post */
     if (fields && el.checked) {
 
-        var retrieved_object = localStorage.getItem('oesLodResults'),
+        let retrieved_object = localStorage.getItem('oesLodResults'),
             result_array = JSON.parse(retrieved_object),
             entry = [];
 
         /* get entry */
-        for (var j = 0; j < result_array.length; j++) {
+        for (let j = 0; j < result_array.length; j++) {
             if (result_array[j]['id'] == el.name) entry = result_array[j]['entry'];
         }
 
         /* loop through fields */
-        for (var i = 0; i < fields.length; i++) {
+        for (let i = 0; i < fields.length; i++) {
 
-            var fieldID = fields[i].id,
+            let fieldID = fields[i].id,
                 name = fieldID;
 
             /* remove '_value' from name  */
@@ -243,10 +244,10 @@ function oesLodPrepareCopy(el) {
                 /* check box */
                 fields[i].previousSibling.previousSibling.previousSibling.checked = true;
 
-                var activeRows = jQuery('.oes-lod-result-active');
+                const activeRows = jQuery('.oes-lod-result-active');
 
                 if (activeRows.length > 0) {
-                    for (var k = 0; k < activeRows.length; k++) {
+                    for (let k = 0; k < activeRows.length; k++) {
                         activeRows[k].className = "";
                     }
                 }
@@ -263,16 +264,16 @@ function oesLodPrepareCopy(el) {
     if (shortcode.length > 0) {
 
         /* get all checkboxes */
-        var checkboxes = jQuery(".oes-lod-entry-checkbox"),
-            shortcodeText = '';
+        const checkboxes = jQuery(".oes-lod-entry-checkbox");
+        let shortcodeText = '';
 
         /* loop through checkboxes */
-        for (var m = 0; m < checkboxes.length; m++) {
+        for (let m = 0; m < checkboxes.length; m++) {
             if (checkboxes[m].checked) {
                 if (shortcodeText) {
                     shortcodeText += ', ';
                 }
-                var label = jQuery.trim(jQuery("#oes-lod-label-" + checkboxes[m].name).text()),
+                const label = jQuery.trim(jQuery("#oes-lod-label-" + checkboxes[m].name).text()),
                     authority_file = jQuery('#oes-lod-authority-file').children("option:selected").val();
                 shortcodeText += '[' + authority_file + 'link id="' + checkboxes[m].name + '" label="' + label + '"]';
             }
@@ -288,12 +289,12 @@ function oesLodPrepareCopy(el) {
 /* generate preview */
 function oesLodPreview(el) {
 
-    var retrieved_object = localStorage.getItem('oesLodResults'),
-        result_array = JSON.parse(retrieved_object),
-        entry = [];
+    const retrieved_object = localStorage.getItem('oesLodResults'),
+        result_array = JSON.parse(retrieved_object);
+    let entry = [];
 
     /* get entry */
-    for (var j = 0; j < result_array.length; j++) {
+    for (let j = 0; j < result_array.length; j++) {
         if (result_array[j]['id'] == el.dataset.lod) {
             entry = result_array[j]['entry'];
         }
@@ -303,14 +304,14 @@ function oesLodPreview(el) {
     jQuery(".oes-lod-admin-preview").hide();
 
     /* show lod box */
-    var previewBox = el.nextElementSibling,
+    const previewBox = el.nextElementSibling,
         previewTextElement = previewBox.lastChild;
     previewBox.style.display = "block";
 
     /* check if empty */
     if (previewTextElement.innerHTML.trim() === "") {
 
-        var previewText = 'No information',
+        let previewText = 'No information',
             description = document.createElement('div');
 
         description.className = 'oes-lod-preview-description';
@@ -322,7 +323,7 @@ function oesLodPreview(el) {
             previewText = 'Information from Database:'
 
             /* create table */
-            var tableContainer = document.createElement('div'),
+            let tableContainer = document.createElement('div'),
                 table = document.createElement("TABLE");
             tableContainer.className = 'oes-lod-preview-container';
             previewTextElement.appendChild(tableContainer);
@@ -332,7 +333,7 @@ function oesLodPreview(el) {
             for (const [key, value] of Object.entries(entry)) {
 
                 /* create row */
-                var tr = table.insertRow(),
+                let tr = table.insertRow(),
                     td2 = tr.insertCell(0),
                     td1 = tr.insertCell(0);
                 td2.innerHTML = oesLodGetCellValue(value['raw'], '<br>');
@@ -350,16 +351,16 @@ function oesLodPreviewClose(el) {
 
 /* prepare value for html cell */
 function oesLodGetCellValue(value, separator) {
-    var display_value = "";
+    let display_value = "";
     if (Array.isArray(value)) {
         if (separator === 'list') {
             display_value += '<ul class="oes-lod-prepare-copy-list">';
-            for (var m = 0; m < value.length; m++) {
+            for (let m = 0; m < value.length; m++) {
                 display_value += '<li>' + value[m] + '</li>';
             }
             display_value += '</ul>';
         } else {
-            for (var n = 0; n < value.length; n++) {
+            for (let n = 0; n < value.length; n++) {
                 if (display_value) display_value += separator;
                 display_value += value[n];
             }
@@ -395,8 +396,8 @@ function oesLodShowPanel(authority_file) {
     /* show the connected table and search options */
 
     /* set tab to active */
-    var tabs = jQuery(".oes-lod-tab-item");
-    for (var i = 0; i < tabs.length; i++) {
+    const tabs = jQuery(".oes-lod-tab-item");
+    for (let i = 0; i < tabs.length; i++) {
         if (tabs[i].id === "oes-lod-tab-" + authority_file) tabs[i].className = "oes-lod-tab-item active";
         else tabs[i].className = "oes-lod-tab-item";
     }

@@ -29,7 +29,7 @@ if (!class_exists('Admin')) :
                 '</td></tr>';
 
 
-            $suspendDatamodel = '<tr><th><strong>' . __('Suspend OES datamodel registration') . '</strong>' .
+            $suspendDatamodel = '<tr><th><strong>' . __('Suspend OES Datamodel Registration') . '</strong>' .
                 '<div>' . __('Techy option, will temporarily skip the OES datamodel (data will not be touched, I ' .
                     'promise). Suspend datamodel registration to operate on post type "OES Objects" or execute ' .
                     'delete options.', 'oes') .
@@ -40,13 +40,22 @@ if (!class_exists('Admin')) :
                     get_option('oes_admin-suspend_datamodel')) .
                 '</td></tr>';
 
-            $hideVersionTab = '<tr><th><strong>' . __('Hide versioning tab') . '</strong>' .
+            $hideVersionTab = '<tr><th><strong>' . __('Hide Versioning Tab') . '</strong>' .
                 '<div>' . __('Hide the post fields that hold version information.', 'oes') .
                 '</div></th><td>' .
                 oes_html_get_form_element('checkbox',
                     'oes_admin-hide_version_tab',
                     'oes_admin-hide_version_tab',
                     get_option('oes_admin-hide_version_tab')) .
+                '</td></tr>';
+
+            $wordpressDateFormat = '<tr><th><strong>' . __('Use WordPress Date Format') . '</strong>' .
+                '<div>' . __('Use the WordPress date format for all ACF date picker fields.', 'oes') .
+                '</div></th><td>' .
+                oes_html_get_form_element('checkbox',
+                    'oes_admin-use_date_format',
+                    'oes_admin-use_date_format',
+                    get_option('oes_admin-use_date_format')) .
                 '</td></tr>';
 
 
@@ -56,6 +65,7 @@ if (!class_exists('Admin')) :
                 $showOESObjects .
                 $suspendDatamodel .
                 $hideVersionTab .
+                $wordpressDateFormat .
                 '</tbody></table>';
         }
 
@@ -64,7 +74,12 @@ if (!class_exists('Admin')) :
         function admin_post_tool_action()
         {
             /* add or delete option */
-            $options = ['oes_admin-suspend_datamodel', 'oes_admin-show_oes_objects', 'oes_admin-hide_version_tab'];
+            $options = [
+                'oes_admin-suspend_datamodel',
+                'oes_admin-show_oes_objects',
+                'oes_admin-hide_version_tab',
+                'oes_admin-use_date_format'
+            ];
             foreach ($options as $option)
                 if (!oes_option_exists($option)) add_option($option, isset($_POST[$option]));
                 else update_option($option, isset($_POST[$option]));

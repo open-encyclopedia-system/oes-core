@@ -261,6 +261,16 @@ if (!class_exists('Page')) :
                 ],
                 'view_file_name' => 'view-settings-reading'
             ],
+            'cache' => [
+                'sub_page' => true,
+                'page_parameters' => [
+                    'page_title' => 'Cache',
+                    'menu_title' => 'Cache',
+                    'menu_slug' => 'oes_settings_cache',
+                    'position' => 4
+                ],
+                'view_file_name' => 'view-settings-cache'
+            ],
             'lod' => [
                 'sub_page' => true,
                 'page_parameters' => [
@@ -271,6 +281,17 @@ if (!class_exists('Page')) :
                 ],
                 'view_file_name' => 'view-settings-lod'
             ],
+            /* TODO @nextRelease: in development
+            'export' => [
+                'sub_page' => true,
+                'page_parameters' => [
+                    'page_title' => 'Export Formats',
+                    'menu_title' => 'Export Formats',
+                    'menu_slug' => 'oes_settings_export',
+                    'position' => 7
+                ],
+                'view_file_name' => 'view-settings-export'
+            ],*/
             'tools' => [
                 'sub_page' => true,
                 'page_parameters' => [

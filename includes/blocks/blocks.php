@@ -35,7 +35,7 @@ if (!class_exists('Blocks')) {
             add_filter('block_categories_all', [$this, 'oes_block_category']);
 
             /* add registration to hook */
-            add_action('init', [$this, 'oes_register_block_types']);
+            add_action('oes/datamodel_registered', [$this, 'oes_register_block_types']);
         }
 
 
@@ -44,9 +44,15 @@ if (!class_exists('Blocks')) {
          */
         function oes_register_block_types()
         {
+            /* get global configuration instance */
+            $oes = OES();
+
+            /* include blocks */
+            oes_include('/includes/blocks/oes-table-of-contents/block.php');
+            oes_include('/includes/blocks/oes-card/block.php');
+            if(!$oes->acf_pro) oes_include('/includes/blocks/oes-featured-post/block.php');
 
             /* loop through blocks that are stored in the global OES instance */
-            $oes = OES();
             if (!empty($oes->blocks['core']))
                 foreach ($oes->blocks['core'] as $blockID => $block) {
 
@@ -123,7 +129,7 @@ if (!class_exists('Blocks')) {
                             $args['render_callback'] = [$this, 'default_block_render'];
 
                         /* register block type */
-                        acf_register_block_type($args);
+                        if(function_exists('acf_register_block_type')) acf_register_block_type($args);
 
                         /* register acf block with field groups */
                         if (isset($block['field_group'])) {
@@ -179,6 +185,10 @@ if (!class_exists('Blocks')) {
             if ($oes->acf_pro){
 
                 /* include acf pro blocks */
+                oes_include('/includes/blocks/acf-pro/oes-featured-post/block.php');
+                oes_include('/includes/blocks/acf-pro/oes-gallery-panel/block.php');
+                oes_include('/includes/blocks/acf-pro/oes-image-panel/block.php');
+                oes_include('/includes/blocks/acf-pro/oes-panel/block.php');
                 oes_include('/includes/blocks/acf-pro/oes-post-content/block.php');
 
                 /* include custom acf pro blocks (set by OES Project Plugin) */
@@ -255,12 +265,6 @@ if (!class_exists('Blocks')) {
             );
         }
     }
-
-
-    /* include blocks */
-    oes_include('/includes/blocks/oes-table-of-contents/block.php');
-    oes_include('/includes/blocks/oes-card/block.php');
-    oes_include('/includes/blocks/oes-featured-post/block.php');
 
     /* instantiate */
     new Blocks();

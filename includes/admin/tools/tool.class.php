@@ -247,9 +247,13 @@ function include_tools(){
     oes_include('/includes/admin/tools/config-pattern.class.php');
     oes_include('/includes/admin/tools/config-reading.class.php');
     oes_include('/includes/admin/tools/config-theme_labels.class.php');
+    //todo oes_include('/includes/admin/tools/config-export_formats.class.php');
     oes_include('/includes/admin/tools/import.class.php');
     oes_include('/includes/admin/tools/export.class.php');
     if(oes_user_is_oes_admin()) {
+        oes_include('/includes/admin/tools/cache-update.class.php');
+        oes_include('/includes/admin/tools/cache-empty.class.php');
+        oes_include('/includes/admin/tools/config-cache_scheduler.class.php');
         oes_include('/includes/admin/tools/config-admin.class.php');
         oes_include('/includes/admin/tools/update.class.php');
         oes_include('/includes/admin/tools/delete.class.php');

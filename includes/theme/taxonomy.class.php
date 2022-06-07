@@ -16,8 +16,11 @@ if (!class_exists('OES_Taxonomy')) {
         /** @var string $taxonomy The taxonomy. */
         public string $taxonomy = '';
 
-        /** @var bool $is_index_term Determines if term is an index term. */
-        public bool $is_index_term = false;
+        /** @var string $taxonomy_label The taxonomy label. */
+        public string $taxonomy_label = '';
+
+        /** @var bool $oes_is_index_term Determines if term is an index term. */
+        public bool $oes_is_index_term = false;
 
 
         //Overwrite parent
@@ -25,11 +28,19 @@ if (!class_exists('OES_Taxonomy')) {
         {
             if ($term = get_term($this->object_ID)) {
 
+                /* get global OES instance parameter */
+                global $oes;
+
                 /* set taxonomy */
                 $this->taxonomy = $term->taxonomy;
 
-                /* get global OES instance parameter */
-                $oes = OES();
+                /* set taxonomy label */
+                if ($this->taxonomy) {
+                    $cleanLanguage = ($this->language === 'all' || empty($this->language)) ? 'language0' : $this->language;
+                    $this->taxonomy_label = $oes->taxonomies[$this->taxonomy]['label_translations'][$cleanLanguage] ??
+                        ($oes->taxonomies[$this->taxonomy]['label'] ??
+                            (get_taxonomy($this->taxonomy)->labels->singular_name ?? 'Label missing'));
+                }
 
                 /* check if term is part of the index */
                 $this->is_index_term = in_array($term->taxonomy, $oes->theme_index['objects'] ?? []);
@@ -84,6 +95,7 @@ if (!class_exists('OES_Taxonomy')) {
                 $connectedPosts = get_posts([
                     'post_type' => $consideredPostType,
                     'numberposts' => -1,
+                    'post_status' => 'any',
                     'tax_query' => [[
                         'taxonomy' => $this->taxonomy,
                         'field' => 'term_id',
@@ -96,4 +108,29 @@ if (!class_exists('OES_Taxonomy')) {
             return [$connectedPosts];
         }
     }
+}
+
+
+/**
+ * Set term data for OES Taxonomy object.
+ *
+ * @param array $args Additional parameters. Valid parameters are:
+ *  'term-id'  : The term id.
+ */
+function oes_set_term_data(array $args = [])
+{
+    /* get global parameters */
+    global $taxonomy, $term, $oes_language, $oes_term;
+
+    /* get the term id */
+    $termID = $args['term-id'] ?? false;
+
+    /* get term object */
+    $cleanLanguage = $oes_language === 'all' ? 'language0' : $oes_language;
+    if(!$termID || !get_term($termID)){
+        $termID = get_term_by('slug', $term, $taxonomy)->term_id ?? false;
+    }
+    $oes_term = class_exists($taxonomy) ?
+        new $taxonomy($termID, $cleanLanguage) :
+        new OES_Taxonomy($termID, $cleanLanguage);
 }

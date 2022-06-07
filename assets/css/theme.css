@@ -1,5 +1,227 @@
 
 /* ---------------------------------------------------------------------------------------------------------------------
+-- FEATURED POST -------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+.oes-card {
+    padding:0;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.oes-featured-article-card a {
+    position:static;
+}
+
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- PANEL ---------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+
+.oes-panel-container {
+    margin: 2rem 0;
+}
+
+/* Header */
+.oes-panel-header {
+    width: 100%;
+}
+
+.oes-panel-title {
+    background-color: var(--oes-background);
+    margin-bottom: 0 !important;
+}
+
+.oes-caption-container {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+}
+
+.oes-caption-container:after {
+    font-family: "FontAwesome", serif;
+    content: "\f106";
+    border: none;
+    vertical-align: middle;
+    padding: 1rem;
+    color: var(--oes-primary);
+}
+
+.oes-accordion.active .oes-caption-container:after {
+    content: "\f107";
+    color: var(--oes-contrast);
+}
+
+.oes-caption-text {
+    display: flex;
+}
+
+.oes-panel-header label {
+    margin: 0;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    height: 100%;
+}
+
+.oes-panel-caption-text span {
+    margin: 0;
+    padding: 1rem;
+    font-size: 1rem;
+}
+
+.oes-panel-header label {
+    background-color: var(--oes-contrast);
+    color: #fff;
+}
+
+.oes-panel-header span {
+    color: var(--oes-primary);
+}
+
+.oes-caption-title {
+    padding: 1rem;
+}
+
+/* Panel */
+.oes-panel {
+    background-color: var(--oes-background);
+    display: none;
+}
+
+.oes-panel.active {
+    display: block;
+}
+
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- GALLERY PANEL -------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+/* Gallery */
+.oes-figure-title-label {
+    font-weight:bold;
+}
+
+.oes-gallery-image {
+    display:none
+}
+.oes-gallery-image.active{
+    display:block;
+}
+
+.oes-figure-slider-panel {
+    width:100%;
+    background-color:var(--oes-darker);
+    padding:.5rem 2rem;
+}
+
+.oes-figure-slider-panel {
+    text-align:center;
+    justify-content:center;
+    display: block;
+    width:100%
+}
+
+.oes-figure-slider-panel ul {
+    list-style-type:none;
+    padding-inline-start: 0;
+    text-align:center;
+    justify-content:center;
+    display: inline;
+}
+
+li.oes-figure-thumbnail {
+    cursor:pointer;
+    display:inline;
+    width:90px;
+    height:70px;
+    padding:0 1px;
+}
+
+li.oes-figure-thumbnail img {
+    border:2px solid var(--oes-darker);
+    max-width:90px;
+    object-fit:scale-down;
+    height:70px;
+}
+
+li.oes-figure-thumbnail.active img{
+    border:2px solid white;
+}
+
+.oes-slider-button {
+    text-decoration: none;
+    display: block;
+    font-size:2rem;
+    color:white;
+    cursor:pointer;
+    border-radius: 50%;
+    padding:0 2rem;
+    position:absolute;
+    top:calc(50% - 1rem);
+}
+
+.oes-slider-button.next {
+    right:0;
+}
+
+.oes-slider-button.previous {
+    left:0;
+}
+
+.oes-slider-button:hover {
+    color:var(--oes-contrast);
+}
+
+.oes-slider-button i {
+    padding-left:5px;
+}
+
+.oes-modal-toggle {
+    position: relative;
+}
+
+.oes-modal-toggle .fa-angle-left,
+.oes-modal-toggle .fa-angle-right {
+    background: black;
+    opacity: 50%;
+    border-radius: 50%;
+    -moz-border-radius: 50%;
+    -webkit-border-radius: 50%;
+    text-align: center;
+    color: white;
+    padding: .2rem;
+    z-index: 1000;
+    top: calc(50% - 1rem);
+    position: absolute;
+    font-size: 2rem;
+    width: 2.4rem;
+}
+
+.oes-modal-toggle .fa-angle-left:hover,
+.oes-modal-toggle .fa-angle-right:hover {
+    background: var(--oes-contrast);
+    opacity: 100%;
+    cursor: pointer;
+}
+
+.oes-modal-toggle .fa-angle-left {
+    left: 1rem;
+    padding-left: .05rem;
+    padding-right: .15rem;
+}
+
+.oes-modal-toggle .fa-angle-right {
+    right: 1rem;
+    padding-left: .15rem;
+    padding-right: .05rem;
+}
+
+
+/* ---------------------------------------------------------------------------------------------------------------------
 -- MODAL IMAGE ---------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
@@ -38,7 +260,7 @@ figure.oes-expand-image .fa-expand:hover {
 figure.oes-expand-image figcaption {
     font-size: 0.8rem;
     line-height: 1.2rem;
-    padding-top: 3px;
+    padding: 1rem;
 }
 
 .oes-modal-container {

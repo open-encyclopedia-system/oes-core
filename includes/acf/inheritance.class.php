@@ -75,7 +75,9 @@ if (!class_exists('Inheritance')) :
 
             /* 2. get current value ----------------------------------------------------------------------------------*/
             $fieldName = $field['key'];
-            $currentValue = maybe_unserialize(get_post_meta($postID, $fieldName, true));
+            $currentValue = (isset($field['parent']) && !empty($field['parent'])) ?
+                maybe_unserialize(get_post_meta($postID, $field['name'], true)) :
+                maybe_unserialize(get_post_meta($postID, $fieldName, true));
 
             /* make sure that the value is an integer array */
             if ($currentValue === '') $currentValue = [];

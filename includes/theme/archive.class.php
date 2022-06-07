@@ -24,6 +24,9 @@ if (!class_exists('OES_Archive')) {
         /** @var string $postType A string containing the post type. */
         public string $post_type = '';
 
+        /** @var string $taxonomy A string containing the taxonomy. */
+        public string $taxonomy = '';
+
         /** @var array $taxonomies A string containing the taxonomies that are considered for the post type archive. */
         public array $taxonomies = [];
 
@@ -74,17 +77,25 @@ if (!class_exists('OES_Archive')) {
             $postType = $args['post-type'] ?? '';
             if (empty($postType)) {
                 global $post_type;
-                $postType = $post_type;
+                if (!is_null($post_type)) $postType = $post_type;
             }
             $this->post_type = $postType;
 
             /* Set taxonomy */
+            $thisTaxonomy = $args['taxonomy'] ?? '';
+            if (empty($thisTaxonomy)) {
+                global $taxonomy;
+                if (!is_null($taxonomy)) $thisTaxonomy = $taxonomy;
+            }
+            $this->taxonomy = $thisTaxonomy;
+
+            /* Set additional taxonomies */
             $this->taxonomies = $args['taxonomies'] ?? [];
             $this->term = $args['term'] ?? '';
 
             /* Set language */
-            global $language;
-            $this->language = $args['language'] ?? $language;
+            global $oes_language;
+            $this->language = $args['language'] ?? $oes_language;
 
             /* Check if post type creation is skipped */
             $this->skip_post_object = $args['skip_post_object'] ?? true;
@@ -120,8 +131,8 @@ if (!class_exists('OES_Archive')) {
                                 $filterArgs['type'] = 'post_type';
                                 $this->filter_array['list'][$filterKey]['label'] =
                                     (isset($oes->post_types[$filterKey]['label']) ?
-                                    $oes->post_types[$filterKey]['label'] :
-                                    $filterKey);
+                                        $oes->post_types[$filterKey]['label'] :
+                                        $filterKey);
                             }
                         } elseif (oes_starts_with($filterKey, 'parent_taxonomy__')) {
                             $filterKey = substr($filterKey, 17);
@@ -146,14 +157,26 @@ if (!class_exists('OES_Archive')) {
             if (empty($this->label)) {
 
                 /* check if index page */
-                global $is_index;
-                if ($is_index)
+                global $oes_is_index;
+                if ($oes_is_index)
                     $this->label = $oes->theme_index['label'] ?? __('Index', 'oes');
-                else
-                    $this->label = (!empty($this->language) &&
-                        isset($oes->post_types[$postType]['theme_labels']['archive__header'][$this->language])) ?
-                        $oes->post_types[$postType]['theme_labels']['archive__header'][$this->language] :
-                        $oes->post_types[$postType]['label'] ?? 'Label missing';
+                else {
+                    $consideredLanguage = $this->language === 'all' ? 'language0' : $this->language;
+                    if (!empty($this->post_type))
+                        $this->label = (!empty($consideredLanguage) &&
+                            isset($oes->post_types[$postType]['theme_labels']['archive__header'][$consideredLanguage])) ?
+                            $oes->post_types[$postType]['theme_labels']['archive__header'][$consideredLanguage] :
+                            $oes->post_types[$postType]['label'] ?? 'Label missing';
+                    elseif (!empty($this->taxonomy))
+
+                        if (empty($consideredLanguage))
+                            $this->label = $oes->taxonomies[$thisTaxonomy]['label'] ?? 'Label missing';
+                        else
+                            $this->label =
+                                $oes->taxonomies[$thisTaxonomy]['theme_labels']['archive__header'][$consideredLanguage] ??
+                                ($oes->taxonomies[$thisTaxonomy]['label_translations'][$consideredLanguage] ??
+                                    ($oes->taxonomies[$thisTaxonomy]['label'] ?? 'Label missing'));
+                }
             }
 
             /**
@@ -169,6 +192,8 @@ if (!class_exists('OES_Archive')) {
             $this->display_content = (isset($oes->post_types[$postType]['archive_on_single_page']) &&
                 $oes->post_types[$postType]['archive_on_single_page']);
 
+            $this->before_loop();
+
             /* do the loop */
             $this->loop_results();
         }
@@ -179,7 +204,7 @@ if (!class_exists('OES_Archive')) {
          *
          * @param array $additionalObjects The additional objects. Valid values are post type and taxonomy names.
          */
-        public function set_additional_objects(array $additionalObjects = [])
+        public function set_additional_objects(array $additionalObjects = [], array $args = [])
         {
 
             /* loop through objects and check for post type or taxonomy */
@@ -203,13 +228,23 @@ if (!class_exists('OES_Archive')) {
                             }
                     } elseif (taxonomy_exists($object)) {
 
+                        $args = array_merge(['hide_empty' => true], $args);
+
                         /* query terms */
-                        $terms = get_terms(['taxonomy' => $object]);
+                        $terms = get_terms(['taxonomy' => $object, 'hide_empty' => $args['hide_empty']]);
 
                         /* loop through results */
                         if ($terms) foreach ($terms as $term) $this->loop_results_term($term);
                     }
                 }
+        }
+
+
+        /**
+         * Optional additional action before loop.
+         */
+        function before_loop()
+        {
         }
 
 
@@ -239,7 +274,7 @@ if (!class_exists('OES_Archive')) {
                     else $queryArgs = [
                         'post_type' => $this->post_type,
                         'tax_query' => [[
-                            'taxonomy' => $this->taxonomies[0], //TODO multiple taxonomies?
+                            'taxonomy' => $this->taxonomies[0], //TODO @nextRelease : multiple taxonomies?
                             'field' => 'slug',
                             'terms' => $this->term
                         ]]
@@ -255,12 +290,32 @@ if (!class_exists('OES_Archive')) {
                         }
                 }
             } elseif (!empty($this->post_type))
-                if (have_posts())
-                    while (have_posts()) {
-                        the_post();
-                        $post = get_post(get_the_ID());
-                        $this->loop_results_post($post);
+                if (is_archive()) {
+                    if (have_posts())
+                        while (have_posts()) {
+                            the_post();
+                            $post = get_post(get_the_ID());
+                            $this->loop_results_post($post);
+                        }
+                } else {
+                    if (post_type_exists($this->post_type)) {
+
+                        /* query posts */
+                        $posts = new WP_Query([
+                            'post_type' => $this->post_type,
+                            'post_status' => 'publish',
+                            'posts_per_page' => -1
+                        ]);
+
+                        /* loop through results */
+                        if ($posts->have_posts())
+                            while ($posts->have_posts()) {
+                                $posts->the_post();
+                                $post = get_post(get_the_ID());
+                                $this->loop_results_post($post);
+                            }
                     }
+                }
         }
 
 
@@ -296,8 +351,9 @@ if (!class_exists('OES_Archive')) {
                         $currentVersion = get_current_version_id($parentID) ?? false;
 
                     /* check for language */
-                    if (!empty($this->language) && $this->language !== 'all')
-                        if ($this->language !== oes_get_post_language($parentID ?? $post->ID)) return;
+                    $postLanguage = oes_get_post_language($parentID ?? $post->ID);
+                    if ($postLanguage && !empty($this->language) && $this->language !== 'all')
+                        if ($this->language !== $postLanguage) return;
 
                     if ($currentVersion && $currentVersion != $post->ID) return;
                 }
@@ -339,19 +395,19 @@ if (!class_exists('OES_Archive')) {
 
                             /* get relationship fields */
                             $relationshipFields = get_all_object_fields($post->post_type, ['relationship', 'post_object']);
-                            if(!empty($relationshipFields))
-                                foreach($relationshipFields as $relationshipFieldKey => $relationshipField)
-                                    if(in_array($filter, $relationshipField['post_type'] ?? [])) {
+                            if (!empty($relationshipFields))
+                                foreach ($relationshipFields as $relationshipFieldKey => $relationshipField)
+                                    if (in_array($filter, $relationshipField['post_type'] ?? [])) {
 
                                         $fieldValue = \OES\ACF\oes_get_field($relationshipFieldKey, $relevantPost);
-                                        if(!empty($fieldValue))
-                                            foreach($fieldValue as $singleFieldValue)
-                                            if(!isset($this->filter_array['json'][$filter][$singleFieldValue->ID]) ||
-                                                !in_array(get_the_ID(), $this->filter_array['json'][$filter][$singleFieldValue->ID])){
-                                                $this->filter_array['list'][$filter]['items'][$singleFieldValue->ID] =
-                                                    oes_get_display_title($singleFieldValue->ID);
-                                                $this->filter_array['json'][$filter][$singleFieldValue->ID][] = get_the_ID();
-                                            }
+                                        if (!empty($fieldValue))
+                                            foreach ($fieldValue as $singleFieldValue)
+                                                if (!isset($this->filter_array['json'][$filter][$singleFieldValue->ID]) ||
+                                                    !in_array(get_the_ID(), $this->filter_array['json'][$filter][$singleFieldValue->ID])) {
+                                                    $this->filter_array['list'][$filter]['items'][$singleFieldValue->ID] =
+                                                        oes_get_display_title($singleFieldValue->ID);
+                                                    $this->filter_array['json'][$filter][$singleFieldValue->ID][] = get_the_ID();
+                                                }
                                     }
                         } /* check if field */
                         elseif ($filterParams['type'] === 'field' && $field = oes_get_field($filter, $relevantPost))
@@ -367,6 +423,15 @@ if (!class_exists('OES_Archive')) {
                                         }
                                         break;
 
+                                    case 'taxonomy' :
+                                        foreach ($field as $termID) {
+                                            $this->filter_array['list'][$filter]['items'][$termID] =
+                                                oes_get_display_title(get_term($termID, get_field_object($filter)['taxonomy']));
+                                            $this->filter_array['json'][$filter][$termID][] = get_the_ID();
+                                        }
+                                        break;
+
+                                    case 'radio':
                                     case 'select':
                                         $this->filter_array['list'][$filter]['items'][$field] =
                                             oes_get_field_object($filter)['choices'][$field] ?? $field;
@@ -421,7 +486,8 @@ if (!class_exists('OES_Archive')) {
 
             /* add information  --------------------------------------------------------------------------------------*/
             $this->prepared_posts[$key][$titleForSorting . $term->term_taxonomy_id][] = [
-                'termID' => $term->term_taxonomy_id,
+                'termID' => $term->term_id,
+                'termTaxonomyID' => $term->term_taxonomy_id,
                 'title' => $titleDisplay,
                 'titleForDisplay' => $titleDisplay,
                 'permalink' => get_term_link($term)
@@ -461,7 +527,7 @@ if (!class_exists('OES_Archive')) {
                         $title = 'Title missing';
                         $permalink = $object['permalink'];
                         $hidePost = false;
-                        $additionalInformation = [];
+                        $additionalInformation = '';
 
                         /* differentiate between post and term */
                         if ($postID = $object['postID'] ?? false) {
@@ -549,6 +615,67 @@ if (!class_exists('OES_Archive')) {
 
 
 /**
+ * Get archive parameters and data for post type and additional objects.
+ *
+ * @param array $args Additional parameters. Valid parameters are:
+ *  'execute-loop'  : Execute the loop even if a cache exists.
+ * @return array[] Return archive parameters and data for post type and additional objects.
+ */
+function oes_get_archive_data(array $args = []): array
+{
+
+    /* merge args */
+    $args = array_merge([
+        'execute-loop' => false
+    ], $args);
+
+    /* get global parameters */
+    global $oes, $post_type, $oes_additional_objects, $oes_is_index;
+
+    /* check if index */
+    if (!$oes_is_index) $oes_is_index = in_array($post_type, $oes->theme_index['objects'] ?? []);
+
+    /* check for cache */
+    $cache = false;
+    if ($post_type) $cache = get_option('oes_cache_' . $post_type);
+    elseif (sizeof($oes_additional_objects) > 1) $cache = get_option('oes_cache_index');
+    elseif (isset($oes_additional_objects[0])) $cache = get_option('oes_cache_' . $oes_additional_objects[0]);
+
+    if ($cache && !$args['execute-loop']) $archive = unserialize($cache);
+    else {
+
+        /**
+         * Filters if archive loop uses additional arguments.
+         *
+         * @param array $additionalArgs The additional arguments.
+         */
+        $additionalArgs = [];
+        if (has_filter('oes/theme_archive_additional_args'))
+            $additionalArgs = apply_filters('oes/theme_archive_additional_args', $additionalArgs);
+
+        /* execute the loop */
+        $oesArchive = new OES_Archive();
+        if (!empty($oes_additional_objects)) $oesArchive->set_additional_objects($oes_additional_objects, $additionalArgs);
+        $archive = [
+            'archive' => (array)$oesArchive,
+            'table-array' => $oesArchive->get_data_as_table()
+        ];
+    }
+
+    /* prepare archive count */
+    global $oes_filter, $oes_archive_count;
+    $oes_filter = $archive['archive']['filter_array'];
+
+    $oes_archive_count = (($archive['archive']['characters'] && sizeof($archive['archive']['characters']) > 0 &&
+        $archive['archive']['count']) ?
+        $archive['archive']['count'] :
+        false);
+
+    return $archive;
+}
+
+
+/**
  * Get the alphabet filter (list of all characters with filter functions).
  *
  * @param array $characters All starting characters of archive items.
@@ -565,7 +692,8 @@ function oes_archive_get_alphabet_filter(array $characters): array
     /* first entry */
     $alphabetArray[] = [
         'style' => ' class="active-li"',
-        'content' => '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="all">' .
+        'content' => '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="all" ' .
+            'onClick="oesApplyAlphabetFilter(this)">' .
             __('ALL', 'oes') . '</a>'
     ];
 
@@ -591,7 +719,8 @@ function oes_archive_get_alphabet_filter(array $characters): array
             $alphabetArray[] = [
                 'style' => $styleText . ' class="active-li"',
                 'content' => '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="' .
-                    strtolower($firstCharacter) . '">' . $firstCharacterDisplay . '</a>'
+                    strtolower($firstCharacter) . '" onClick="oesApplyAlphabetFilter(this)">' .
+                    $firstCharacterDisplay . '</a>'
             ];
         } else {
 

@@ -1,0 +1,14 @@
+.oes-panel {
+    background-color: lightgrey;
+    display: block !important;
+}
+
+.oes-panel-header label {
+    background-color: black;
+    color: #fff;
+}
+
+.oes-panel-title {
+    background-color: grey;
+    color: #fff;
+}

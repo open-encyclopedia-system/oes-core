@@ -26,7 +26,7 @@ function oes_get_wp_query_posts(array $args): array
     $queryArgs = [];
     if (isset($args['post_type'])) $queryArgs['post_type'] = $args['post_type'];
     if (isset($args['post_status'])) $queryArgs['post_status'] = $args['post_status'];
-    $queryArgs['post_per_page'] = $args['posts_per_page'] ?? -1;
+    $queryArgs['posts_per_page'] = $args['posts_per_page'] ?? -1;
     if (isset($args['meta_key'])) {
         $value = $args['meta_value'] ?? '';
         $compare = $args['meta_compare'] ?? '=';
@@ -102,7 +102,7 @@ function oes_get_display_title($object = false, array $args = []): string
     if ($object instanceof WP_Term) {
 
         $option = $args['option'] ?? 'title_display';
-        $titleOption = $oes->taxonomies[$object->taxonomy]['taxonomy_options'][$option] ?? false;
+        $titleOption = $oes->taxonomies[$object->taxonomy]['display_titles'][$option] ?? false;
         $title = ($titleOption && $titleOption != 'wp-title') ?
             oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id) : null;
 
@@ -190,7 +190,7 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
     /* prepare items */
     foreach ($sortedArray as $item) {
 
-        /* check if term id TODO post id*/
+        /* check if term id TODO @nextRelease post id*/
         if (is_string($item) || is_int($item)) {
             $checkIfTerm = get_term($item);
             if ($checkIfTerm) $item = get_term($item);
@@ -209,7 +209,7 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
                 $title = oes_get_display_title($item->ID);
                 $args['permalink'] = $args['permalink'] ? get_permalink($item->ID) : false;
                 $itemText = $args['permalink'] ? oes_get_html_anchor($title, $args['permalink']) : $title;
-                $listItems[] = $args['separator'] ? $title : $itemText;
+                $listItems[] = $itemText;
             }
         }
     }
@@ -293,7 +293,7 @@ function oes_insert_post(array $parameters, bool $update = true)
         } else $args[$key] = $parameter;
     }
 
-    return ['post' => wp_insert_post($args, true), 'wrong_parameter' => $wrongParameter];
+    return ['post' => $update ? wp_update_post($args, true) : wp_insert_post($args, true), 'wrong_parameter' => $wrongParameter];
 }
 
 

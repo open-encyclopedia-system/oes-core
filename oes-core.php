@@ -39,17 +39,18 @@ if (!function_exists('OES')) {
      * It initializes the OES plugin if not yet initialized.
      *
      * @param bool|string $projectPath The path to the OES Project plugin.
+     * @param array $args Additional arguments.
      *
      * @return OES_Core Returns the OES plugin instance.
      */
-    function OES($projectPath = false): OES_Core
+    function OES($projectPath = false, array $args = []): OES_Core
     {
         global $oes;
 
         /* initialize and return the global instance. */
         if (!isset($oes)) {
 
-            $oes = new OES_Core();
+            $oes = new OES_Core($args);
 
             /* check if successful */
             if ($oes->initialized) {
@@ -132,9 +133,6 @@ if (!class_exists('OES_Core')) :
         /* @var array The acf group IDs for media types. */
         public array $media_groups = [];
 
-        /** @var bool Indicating if admin filter included. */
-        public bool $admin_filter = true;
-
         /** @var array|Assets The OES Core and OES Project assets. See class 'Assets'. */
         public $assets = [];
 
@@ -168,12 +166,6 @@ if (!class_exists('OES_Core')) :
         /** @var array Notes configurations */
         public array $notes = [];
 
-        /** @var bool The admin manual feature. Include feature if true. */
-        public bool $manual = true;
-
-        /** @var bool The task feature. Include feature if true. */
-        public bool $tasks = true;
-
         /* @var string|int|bool The post ID of the OES object holding general configuration information. */
         public $config_post = false;
 
@@ -186,15 +178,41 @@ if (!class_exists('OES_Core')) :
         /* @var array Search configuration. */
         public array $search = [];
 
-        /** @var bool The dashboard feature. Include oes feature if true */
-        public bool $oes_dashboard = true;
+        /**
+         * @var array|bool[] The included OES features.
+         *
+         * oes_dashboard    :   The dashboard feature. Include feature if true.
+         * manual           :   The admin manual feature. Include feature if true.
+         * tasks            :   The task feature. Include feature if true.
+         * admin_filter     :   The admin filter feature. Include feature if true.
+         * notes            :   The notes feature. Include feature if true.
+         * blocks           :   The blocks feature. Include feature if true.
+         * oes_theme        :   The theme classes feature. Include feature if true.
+         * lod_apis         :   The Linked Open Data APIs feature. Include feature if true.
+         * xml              :   The xml feature. Include feature if true.
+         * user rights      :   The user rights feature. Include feature if true.
+         */
+        public array $included_features = [
+            'oes_dashboard' => true,
+            'manual' => true,
+            'tasks' => true,
+            'admin_filter' => true,
+            'notes' => true,
+            'blocks' => true,
+            'oes_theme' => true,
+            'lod_apis' => true,
+            'xml' => true,
+            'user_rights' => true
+        ];
 
 
         /**
          * OES_Core constructor.
          * Check if ACF plugin is activated and set basename.
+         *
+         * @param array $args Additional arguments.
          */
-        function __construct()
+        function __construct(array $args = [])
         {
             /* check if acf plugin exists */
             if (!class_exists('ACF')) {
@@ -210,6 +228,16 @@ if (!class_exists('OES_Core')) :
 
                 /* set plugin base name */
                 $this->basename = basename($this->path_core_plugin);
+
+                /* check for additional parameters */
+                if(!empty($args))
+                    foreach($args as $propertyKey => $value)
+                        if($propertyKey === 'included_features'){
+                            if(is_array($value))
+                                $this->included_features = array_merge($this->included_features, $value);
+                        }
+                        elseif(property_exists($this, $propertyKey))
+                            $this->$propertyKey = $value;
             }
         }
 
@@ -228,8 +256,11 @@ if (!class_exists('OES_Core')) :
             oes_include('/includes/functions-post.php');
             oes_include('/includes/functions-html.php');
 
+            /** Include tools ----------------------------------------------------------------------------------------*/
+            oes_include('/includes/admin/tools/tool.class.php');
+
             /** Set up dashboard in the editorial layer --------------------------------------------------------------*/
-            if($this->oes_dashboard) oes_include('/includes/admin/dashboard.php');
+            if ($this->included_features['oes_dashboard']) oes_include('/includes/admin/dashboard.php');
 
             /** Include messaging to display admin notices in the editorial layer --------------------------------------
              * This will include messaging to display admin notices in the editorial layer.
@@ -237,10 +268,10 @@ if (!class_exists('OES_Core')) :
             oes_include('/includes/admin/notices.php');
 
             /** Include admin manual feature -------------------------------------------------------------------------*/
-            if($this->manual) oes_include('/includes/admin/manual.php');
+            if ($this->included_features['manual']) oes_include('/includes/admin/manual.php');
 
             /** Include task feature ---------------------------------------------------------------------------------*/
-            if($this->tasks) oes_include('/includes/admin/tasks.php');
+            if ($this->included_features['tasks']) oes_include('/includes/admin/tasks.php');
 
             /** Include assets. Sets $this->assets. --------------------------------------------------------------------
              * This will include all css and js needed inside the editorial layer for this OES Core plugin.
@@ -250,7 +281,7 @@ if (!class_exists('OES_Core')) :
             /** Include modification of columns for post types lists inside the editorial layer. -----------------------
              * This will include modification of columns for post types lists inside the editorial layer.
              */
-            if($this->admin_filter) oes_include('/includes/admin/columns.php');
+            if ($this->included_features['admin_filter']) oes_include('/includes/admin/columns.php');
 
             /** Include admin pages inside the editorial layer ---------------------------------------------------------
              * This will include admin pages inside the editorial layer for this OES Core plugin and the functionalities
@@ -273,23 +304,29 @@ if (!class_exists('OES_Core')) :
             oes_include('/includes/versioning/versioning.php');
 
             /** Include note feature. --------------------------------------------------------------------------------*/
-            oes_include('/includes/notes/notes.php');
+            if ($this->included_features['notes']) oes_include('/includes/notes/notes.php');
 
             /** Include OES Core and OES Project blocks for the Gutenberg editor. ------------------------------------*/
-            oes_include('/includes/blocks/blocks.php');
+            if ($this->included_features['blocks']) oes_include('/includes/blocks/blocks.php');
 
             /** Include theme classes ans functions. -----------------------------------------------------------------*/
-            oes_include('/includes/theme/object.class.php');
-            oes_include('/includes/theme/post.class.php');
-            oes_include('/includes/theme/taxonomy.class.php');
-            oes_include('/includes/theme/archive.class.php');
-            oes_include('/includes/theme/search.class.php');
-            oes_include('/includes/theme/functions-theme.php');
-            oes_include('/includes/theme/navigation.php');
-            oes_include('/includes/theme/figures.php');
+            if ($this->included_features['oes_theme']){
+                oes_include('/includes/theme/object.class.php');
+                oes_include('/includes/theme/post.class.php');
+                oes_include('/includes/theme/taxonomy.class.php');
+                oes_include('/includes/theme/archive.class.php');
+                oes_include('/includes/theme/search.class.php');
+                oes_include('/includes/theme/functions-theme.php');
+                oes_include('/includes/theme/navigation.php');
+                oes_include('/includes/theme/figures.php');
+                oes_include('/includes/theme/filter/filter.php');
+            }
 
             /** Include LOD APIs. ------------------------------------------------------------------------------------*/
-            oes_include('/includes/api/rest-api.class.php');
+            if ($this->included_features['lod_apis']) oes_include('/includes/api/rest-api.class.php');
+
+            /** Include xml export -----------------------------------------------------------------------------------*/
+            if ($this->included_features['xml'])oes_include('/includes/export/xml.php');
 
 
             /**
@@ -316,7 +353,7 @@ if (!class_exists('OES_Core')) :
             );
 
             /* set general configs from found post */
-            if(!empty($generalConfigPost)){
+            if (!empty($generalConfigPost)) {
 
                 /* set config post parameter */
                 $this->config_post = $generalConfigPost[0]->ID ?? false;
@@ -327,8 +364,7 @@ if (!class_exists('OES_Core')) :
                 /* check for languages */
                 if (isset($generalConfigContent['languages']))
                     foreach ($generalConfigContent['languages'] as $languageKey => $language)
-                        $this->languages[
-                            (oes_starts_with($languageKey, 'language') ? '' : 'language') . $languageKey] =
+                        $this->languages[(oes_starts_with($languageKey, 'language') ? '' : 'language') . $languageKey] =
                             $language;
 
                 /* check for container */
@@ -364,7 +400,7 @@ if (!class_exists('OES_Core')) :
                 }
 
             /* include user roles */
-            oes_include('/includes/admin/rights.php');
+            if ($this->included_features['user_rights']) oes_include('/includes/admin/rights.php');
         }
 
 

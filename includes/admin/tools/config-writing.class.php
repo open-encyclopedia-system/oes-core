@@ -20,17 +20,18 @@ if (!class_exists('Writing')) :
         function information_html(): string
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
-                __('The general writing configurations aim to improve the writing experience for the editorial team.<br>' .
+                __('Writing configurations refer to settings related to organisation and accessibility of post objects ' .
+                    'and aim to improve the writing experience for the editors.<br>' .
                     'This includes the configuration of the OES feature <b>Container</b> which allows you to organize ' .
-                    'admin menu items into a top menu with sub menu items and display currently worked on post ' .
-                    'objects.<br>' .
-                    'You can add or remove columns for the admin list views of post objects with the OES feature ' .
-                    '<b>Admin Columns</b> and display information that helps you administrating and organizing your ' .
-                    'post objects.<br>' .
+                    'admin menu items (the menu on the left) into a top menu with sub menu items and to display ' .
+                    'currently worked on post objects.<br>' .
+                    'You can add or remove columns for the list views of post objects in the admin area with the OES ' .
+                    'feature <b>Admin Columns</b> and display information that helps you to administrate and ' .
+                    'organizing your post objects.<br>' .
                     'The OES feature <b>Inheritance</b> allows to define bidirectional relationships between post ' .
                     'objects ' .
-                    '(e.g. if you connect an article object with an author the author object will also be connected ' .
-                    'to the same article.)', 'oes') .
+                    '(e.g. if you connect an article object with an author the author object will automatically be ' .
+                    'connected to this article.)', 'oes') .
                 '</p></div>';
         }
 
@@ -164,6 +165,25 @@ if (!class_exists('Writing')) :
                     'post_types[' . $postTypeKey . '][oes_args][admin_columns]',
                     'post_types-' . $postTypeKey . '-oes_args-admin_columns',
                     $postTypeData['admin_columns'] ?? [],
+                    ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true]);
+            }
+
+            foreach ($oes->taxonomies as $taxonomyKey => $taxonomyData) {
+
+                /* prepare options */
+                $options = ['cb' => 'Checkbox', 'name' => 'Name', 'slug' => 'Slug',
+                    'description' => 'Description', 'posts' => 'Count', 'id' => 'ID'];
+                if (isset($taxonomyData['field_options']) && !empty($taxonomyData['field_options']))
+                    foreach ($taxonomyData['field_options'] as $fieldKey => $field)
+                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message']))
+                            $options[$fieldKey] = __('Field: ', 'oes') . $field['label'];
+
+                $thead[] = '<strong>' . ($taxonomyData['label'] ?? $taxonomyKey) . '</strong>' .
+                    '<code class="oes-object-identifier">' . $taxonomyKey . '</code>';
+                $tbody[] = oes_html_get_form_element('select',
+                    'taxonomies[' . $taxonomyKey . '][oes_args][admin_columns]',
+                    'taxonomies-' . $taxonomyKey . '-oes_args-admin_columns',
+                    $taxonomyData['admin_columns'] ?? [],
                     ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true]);
             }
 

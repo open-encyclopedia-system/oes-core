@@ -33,14 +33,16 @@ if (!class_exists('Pattern')) :
 
             return '<div class="oes-tool-information-wrapper"><p>' .
                 __('The OES feature <b>Pattern</b> allows you to create patterns for fields that react to other ' .
-                    'fields or data.<br>' .
-                    'Example: you have a post type that has the fields "surname", "first name" and ' .
-                    '"full name". The field "full name" should always have the pattern [surname], [first name]. '.
-                    'When you define this pattern for the field "full name" the value will be generated automatically ' .
+                    'fields or data when you are editing a post object.<br>' .
+                    'Example: A post type that has the fields "surname", "first name" and ' .
+                    '"full name". The value of the field "full name" is composed of  the values of the fields “surname” ' .
+                    'and “first name”  with a comma separating the two. More “technically”, this can be defined as the ' .
+                    'pattern [surname], [first name]. '.
+                    'Once you defined this pattern for the field "full name" its value will be generated automatically ' .
                     'when updating a post object of this post type. ' .
                     'To define the pattern you have to add two pattern parts:<br>' .
                     $patternList .
-                    'There are some more options that will be described in the user handbook (coming soon).', 'oes') .
+                    'There are additional options that will be described in the user handbook (coming soon).', 'oes') .
                 '</p></div>';
         }
 
@@ -98,7 +100,7 @@ if (!class_exists('Pattern')) :
                 /* add field pattern */
                 if(isset($postTypeData['field_options']) && !empty($postTypeData['field_options']))
                     foreach($postTypeData['field_options'] as $fieldKey => $field)
-                        if(isset($field['type']) && in_array($field['type'], ['text', 'textarea'])){
+                        if(isset($field['type']) && in_array($field['type'], ['text', 'textarea', 'wysiwyg'])){
                             $thead[] = '<strong>' . ($field['label'] ?? $fieldKey) . '</strong>' .
                                 '<code  class="oes-object-identifier">' . $fieldKey . '</code>' .
                                 '<div>' . __('Field will be computed according to pattern', 'oes') . '</div>';

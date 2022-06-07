@@ -169,10 +169,6 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
     if (isset($fieldObject['type']))
         switch ($fieldObject['type']) {
 
-            case 'date_picker' :
-                return empty($value) ? '' :
-                    date("j F Y", strtotime(str_replace('/', '-', $value)));
-
             case 'relationship' :
                 $newArgs = $args;
                 $newArgs['class'] = $args['list-class'];
@@ -216,12 +212,19 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
                 return oes_display_post_array_as_list($tags, $args['list-id'],
                     ['class' => $args['list-class'], 'permalink' => $args['value-is-link']]);
 
+            case 'date_picker' :
+            case 'date_time_picker' :
+                return (isset($fieldObject['display_format']) &&
+                    !empty($fieldObject['display_format']) &&
+                    strtotime(str_replace('/', '-', $value))) ?
+                    date_i18n($fieldObject['display_format'], strtotime(str_replace('/', '-', $value))) :
+                    $value;
+
             case 'range' :
             case 'button_group' :
             case 'accordion' :
             case 'checkbox' :
             case 'color_picker' :
-            case 'date_time_picker' :
             case 'email' :
             case 'file' :
             case 'google_map' :
@@ -237,7 +240,7 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
 
             case 'repeater' :
 
-                if ($value){
+                if ($value) {
 
                     /**
                      * Filters the repeater value.
@@ -245,14 +248,21 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
                      * @param array $value The value.
                      * @param array $fieldObject The field.
                      */
-                    if (has_filter('oes/acf_pro_display_repeater_field')){
+                    if (has_filter('oes/acf_pro_display_repeater_field')) {
                         $value = apply_filters('oes/acf_pro_display_repeater_field', $value, $fieldObject);
-                    }
-                    else {
+                    } else {
 
                         /* flatten value */
                         $flattenValue = [];
-                        foreach ($value as $singleValue) $flattenValue[] = implode(' ', $singleValue);
+                        foreach ($value as $singleValue)
+                            foreach ($singleValue as $singleSingleValue) {
+                                $flattenValueLoop = [];
+
+                                //TODO @nextRelease for all acf fields---
+                                if (is_string($singleSingleValue) && !empty($singleSingleValue))
+                                    $flattenValueLoop[] = $singleSingleValue;
+                                if (!empty($flattenValueLoop)) $flattenValue[] = implode(' ', $flattenValueLoop);
+                            }
                         $value = empty($flattenValue) ? '' : implode(', ', $flattenValue);
                     }
                 }

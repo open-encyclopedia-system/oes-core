@@ -247,7 +247,7 @@ add_action('oes/datamodel_registered', 'oes_task_initialize_filter');
 /**
  * Prepare filter for column display, sorting and filtering.
  *
- * TODO move to columns.php?
+ * TODO @nextRelease move this function to columns.php?
  */
 function oes_task_initialize_filter()
 {

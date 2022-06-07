@@ -41,6 +41,9 @@ function oes_note_shortcode(array $args, string $content = ""): string
     global $oesNotes;
     $postID = $GLOBALS['post']->ID;
 
+    /* check if pdf */
+    $is_pdf = $args['pdf'] ?? false;
+
     /* get note number */
     $number = (!isset($oesNotes[$postID]) || count($oesNotes[$postID]['used_reference_numbers']) == 0) ?
         1 :
@@ -72,12 +75,25 @@ function oes_note_shortcode(array $args, string $content = ""): string
     $content = str_replace(['<oesnotep>', '</oesnotep>'], ['', '<br/>'], $content);
 
     /* create note */
-    $returnString = '<sup id="note' . $number . '" class="oes-note" data-fn="' .
-        $number . '" data-fn-post-scope="post_' . $postID . '"><a href="javascript:void(0)">' .
-        $number . '</a></sup>';
+    $returnString = $is_pdf ?
+        ('<span id="note' . $number . '" class="oes-pdf-note oes-pdf-link">[' . $number . ']</span>') :
+        ('<sup id="note' . $number . '" class="oes-note" data-fn="' .
+            $number . '" data-fn-post-scope="post_' . $postID . '"><a href="javascript:void(0)">' .
+            $number . '</a></sup>');
 
     /* add note text */
-    $returnString .= '<span class="oes-note__note" data-fn="' . $number . '">' . $content . '</span>';
+    if(!$is_pdf) {
+
+        /**
+         * Filter the note content.
+         *
+         * @param string $content The note content.
+         */
+        if (has_filter('oes/note_content'))
+            $content = apply_filters('oes/note_content', $content, $number);
+
+        $returnString .= '<span class="oes-note__note" data-fn="' . $number . '">' . $content . '</span>';
+    }
 
     return $returnString;
 }
@@ -101,39 +117,40 @@ function oes_note_shortcode_list($args, string $content = ""): string
     if (empty($oesNotes[$postID]) || !isset($oesNotes[$postID]['notes'])) return '';
 
     /* loop through notes */
+    $is_pdf = $args['pdf'] ?? false;
     $content .= $args['header'] ?? '';
-    $content .= '<ul class="oes-notes-list">';
-    foreach ($oesNotes[$postID]['notes']  as $number => $note){
+    $content .= $is_pdf ? '<div class="oes-notes-list oes-pdf-replace-list">' : '<ul class="oes-notes-list">';
+    foreach ($oesNotes[$postID]['notes'] as $number => $note) {
 
         /* check for paragraphs */
         $modifiedNote = '';
-        if(strpos($note, '<oesnotep>') || strpos($note, '<oesnotep>') === 0) {
+        if (strpos($note, '<oesnotep>') || strpos($note, '<oesnotep>') === 0) {
 
             /* get text before and after paragraph */
-            $prepareNote = preg_replace('/<oesnotep>/', 'OESSPLIT', $note,1);
+            $prepareNote = preg_replace('/<oesnotep>/', 'OESSPLIT', $note, 1);
             $prepareNote = preg_replace('~</oesnotep>(?!.*</oesnotep>)~', 'OESSPLIT', $prepareNote);
             $prepareNoteSplit = preg_split('/(OESSPLIT)/', $prepareNote, null);
 
             /* should contain three items BEFORE PARAGRAPHS AFTER */
-            if(sizeof($prepareNoteSplit) == 3){
+            if (sizeof($prepareNoteSplit) == 3) {
 
                 /* before text */
-                if(!empty($prepareNoteSplit[0])) $modifiedNote .= '<div>' . $prepareNoteSplit[0] . '</div>';
+                if (!empty($prepareNoteSplit[0])) $modifiedNote .= '<div>' . $prepareNoteSplit[0] . '</div>';
 
                 /* paragraphs */
-                if(!empty($prepareNoteSplit[1])){
+                if (!empty($prepareNoteSplit[1])) {
 
                     $noteColumns = [];
                     $i = 0;
                     $insidep = true;
                     $paragraphs = preg_split('/(<oesnotep>|<\/oesnotep>)/', $prepareNoteSplit[1], null, PREG_SPLIT_DELIM_CAPTURE);
-                    if($paragraphs) foreach($paragraphs as $paragraph){
+                    if ($paragraphs) foreach ($paragraphs as $paragraph) {
 
-                        if(empty($paragraph) || $paragraph == " ") continue;
-                        elseif($paragraph == "<oesnotep>") continue;
-                        elseif($paragraph == "</oesnotep>") continue;
-                        elseif($paragraph == "<br>")$i++;
-                        else{
+                        if (empty($paragraph) || $paragraph == " ") continue;
+                        elseif ($paragraph == "<oesnotep>") continue;
+                        elseif ($paragraph == "</oesnotep>") continue;
+                        elseif ($paragraph == "<br>") $i++;
+                        else {
                             $noteColumns[$i][] = '<p>' . $paragraph . '</p>';
                             $i++;
                         }
@@ -152,27 +169,33 @@ function oes_note_shortcode_list($args, string $content = ""): string
                     }
 
                     /* put into columns */
-                    if($noteColumns){
+                    if ($noteColumns) {
                         $modifiedNote .= '<div class="note-columns-' . sizeof($noteColumns) . ' row">';
-                        foreach($noteColumns as $noteContainer)
+                        foreach ($noteColumns as $noteContainer)
                             $modifiedNote .= '<div class="column">' . implode('', $noteContainer) . '</div>';
                         $modifiedNote .= '</div>';
                     }
                 }
 
                 /* after text */
-                if(!empty($prepareNoteSplit[2])) $modifiedNote .= '<div>' . $prepareNoteSplit[2] . '</div>';
+                if (!empty($prepareNoteSplit[2])) $modifiedNote .= '<div>' . $prepareNoteSplit[2] . '</div>';
             }
         }
 
-        $content .= sprintf('<li><span><a href="#note%s">%s</a></span><div class="%s">%s</div></li>',
-            $number,
-            $number,
-            'note' . intval($number),
-            empty($modifiedNote) ? $note : $modifiedNote);
+        $content .= $is_pdf ?
+            sprintf('<div><div class="oes-pdf-note">%s</div><div class="oes-pdf-note-text %s">%s</div></div>',
+                $number,
+                'note' . intval($number),
+                empty($modifiedNote) ? $note : $modifiedNote) :
+            sprintf('<li id="oes-note-list-%s"><span><a href="#note%s">%s</a></span><div class="%s">%s</div></li>',
+                $number,
+                $number,
+                $number,
+                'note' . intval($number),
+                empty($modifiedNote) ? $note : $modifiedNote);
 
     }
-    $content .= '</ul>';
+    $content .= $is_pdf ? '</div>' : '</ul>';
 
     return $content;
 }
@@ -194,6 +217,11 @@ add_filter('oes/the_content', 'oes_notes_render_for_frontend');
  */
 function oes_notes_render_for_frontend(string $content): string
 {
-    $content = str_replace('<oesnote>', '[oesnote class=""]', $content);
+
+    $additional = 'class=""';
+    if (has_filter('oes/notes_render_for_frontend'))
+        $additional = apply_filters('oes/notes_render_for_frontend', $additional);
+
+    $content = str_replace('<oesnote>', ('[oesnote ' . $additional . ']'), $content);
     return str_replace('</oesnote>', '[/oesnote]', $content);
 }

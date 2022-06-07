@@ -195,11 +195,11 @@ if (!class_exists('API_Interface')) {
         function set_search_options(): array
         {
             $searchOptions = [];
-            foreach(static::SEARCH_PARAMETERS as $option){
+            foreach (static::SEARCH_PARAMETERS as $option) {
 
                 /* prepare class name */
                 $classNameArray = ['oes-' . $this->identifier . '-search-options', 'oes-lod-search-options'];
-                if(isset($option['args']['class'])){
+                if (isset($option['args']['class'])) {
                     $currentClasses = explode(' ', $option['args']['class']);
                     $classNameArray = array_merge($currentClasses, $classNameArray);
                 }
@@ -207,7 +207,7 @@ if (!class_exists('API_Interface')) {
 
                 /* prepare form element */
                 $searchOptions[] = [
-                    'label' => '<label for="' . $option['id'] .'">' . $option['label'] . '</label>',
+                    'label' => '<label for="' . $option['id'] . '">' . $option['label'] . '</label>',
                     'form' => oes_html_get_form_element(
                         $option['type'] ?? 'checkbox',
                         $option['id'] ?? 'name-missing',
@@ -240,18 +240,19 @@ if (!class_exists('API_Interface')) {
                     'multiple' => true,
                     'capabilities' => ['backend', 'fields', 'lod'],
                     'skip_admin_config' => true,
-                    'options' => [
-                        $this->identifier => [
-                            'label' => $this->label . ' Basic',
-                            'options' => [
-                                'base-timestamp' => $this->label . ' Timestamp'
+                    'options' => (empty(static::PROPERTIES) ? [] :
+                        [
+                            $this->identifier => [
+                                'label' => $this->label . ' Basic',
+                                'options' => [
+                                    'base-timestamp' => $this->label . ' Timestamp'
+                                ]
+                            ],
+                            $this->identifier . '_properties' => [
+                                'label' => $this->label . ' Properties',
+                                'options' => $properties
                             ]
-                        ],
-                        $this->identifier . '_properties' => [
-                            'label' => $this->label . ' Properties',
-                            'options' => $properties
-                        ]
-                    ],
+                        ]),
                     'description' => 'Enable copying from ' . $this->label .
                         ' entry to field. Only relevant if LOD Options "Copy To Post" is set.'
                 ]

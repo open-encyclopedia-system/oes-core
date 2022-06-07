@@ -18,6 +18,7 @@ if (!isset($oes->blocks['acf_pro'][$blockID]))
         'render_callback' => 'oes_block_render_post_content',
         'enqueue_style' => plugins_url($oes->basename . '/includes/blocks/acf-pro/oes-post-content/block.css'),
         'keywords' => ['OES', 'content'],
+        'mode' => 'auto',
         'field_group' => [
             'title' => 'OES Content',
             'fields' => [

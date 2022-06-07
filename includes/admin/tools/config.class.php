@@ -341,7 +341,16 @@ if (!class_exists('Config')) :
                                 /* prepare new content */
                                 if (!empty($argsFields))
                                     foreach ($argsFields as $intKey => $field)
-                                        if (isset($field['key']) && isset($_POST['fields'][$postTypeKey][$field['key']]))
+                                        if(isset($field['type']) && $field['type'] === 'repeater')
+                                        foreach($field['sub_fields'] as $intSubField => $subField){
+                                            if (isset($subField['key']) && isset($_POST['fields'][$postTypeKey][$subField['key']]))
+                                                foreach ($_POST['fields'][$postTypeKey][$subField['key']] as $propertyKey => $newValue)
+                                                    if (!isset($subField[$propertyKey]) || $newValue !== $subField[$propertyKey]) {
+                                                        $updateObject = true;
+                                                        $argsAll['acf_add_local_field_group']['fields'][$intKey]['sub_fields'][$intSubField][$propertyKey] = $newValue;
+                                                    }
+                                        }
+                                        elseif (isset($field['key']) && isset($_POST['fields'][$postTypeKey][$field['key']]))
                                             foreach ($_POST['fields'][$postTypeKey][$field['key']] as $propertyKey => $newValue)
                                                 if (!isset($field[$propertyKey]) || $newValue !== $field[$propertyKey]) {
                                                     $updateObject = true;

@@ -37,7 +37,7 @@ TABLE OF CONTENTS
     padding-bottom:10px;
 }
 
-/* TODO check if necessary after acf pro update or move to extra file with acf css? */
+/* TODO @nextRelease check if necessary after acf pro update or move to extra file with acf css? */
 .acf-block-fields {
     margin:0 !important;
 }
@@ -78,7 +78,6 @@ a.oes-admin-link:after {
     background: #fafafa;
     border-radius:3px;
 }
-
 
 .oes-dashicons {
     font-family: "dashicons", serif;
@@ -852,4 +851,45 @@ table.pattern-definition .oes-accordion-panel {
 .oes-pattern-row-delete:before {
     content: "\f335";
     font-family: "dashicons", serif
+}
+
+/* cache table -------------------------------------------------------------------------------------------------------*/
+table.oes-settings-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.oes-settings-table td,
+table.oes-settings-table th {
+    border: 1px solid #787c82;
+    padding: 8px;
+}
+
+table.oes-settings-table tr:nth-child(even){
+    background-color: #f2f2f2;
+}
+
+table.oes-settings-table th {
+    text-align: left;
+    background-color: rgba(0,0,0,.07);
+}
+
+.oes-setting-remark {
+    font-style: italic;
+    color: #787c82;
+}
+
+.oes-settings-annotations p {
+    font-style: italic;
+    color: #787c82;
+    padding:0;
+    margin:0;
+}
+
+.oes-tool-information-wrapper-cache-scheduler {
+    padding-top: 1rem;
+}
+
+.oes-tool-wrapper-cache-empty {
+    padding-top: 3rem;
 }

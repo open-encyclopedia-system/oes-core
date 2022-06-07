@@ -7,6 +7,10 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 if (!class_exists('Geonames_API')) {
 
     /**
+     *  TODO Under Development!
+     *
+     * TODO: rename 'lobid' for frontend search with neutral term
+     *
      * Class Geonames_API
      * https://www.geonames.org/export/web-services.html
      *
@@ -15,10 +19,10 @@ if (!class_exists('Geonames_API')) {
      * You will then receive an email with a confirmation link and after you have confirmed the email you can enable
      * your account for the webservice on your account page http://www.geonames.org/manageaccount.
      *
-     * services: TODO
+     * services:
      * https://www.geonames.org/export/ws-overview.html
      *
-     * Limitations: TODO
+     * Limitations: TODO validate
      * 20'000 credits daily limit per application (identified by the parameter 'username'), the hourly limit is 1000
      * credits. A credit is a web service request hit for most services. An exception is thrown when the limit is
      * exceeded.
@@ -28,7 +32,7 @@ if (!class_exists('Geonames_API')) {
     class Geonames_API extends Rest_API
     {
 
-        /** @var string The url to the lobid api. */
+        /** @var string The url to the geonames api. */
         public string $url = 'http://api.geonames.org/';
 
 
@@ -36,7 +40,6 @@ if (!class_exists('Geonames_API')) {
         function set_credentials()
         {
             $this->login = get_option('oes_api-geonames_login');
-            //$this->password = '';
         }
 
 
@@ -84,13 +87,24 @@ if (!class_exists('Geonames_API')) {
             ];
         }
 
+
+        //Overwrite parent
+        function get_data_for_display_modify_table_data($entry){
+
+            $modifiedEntryKeys = ['geonameId', 'name', 'countryCode', 'countryName', 'lng', 'lat', 'wikipediaURL'];
+
+            $modifiedEntry = [];
+            foreach($modifiedEntryKeys as $key)
+                if(isset($entry['entry'][$key])) $modifiedEntry[$key] = $entry['entry'][$key];
+
+            return $modifiedEntry;
+        }
+
+
         //Overwrite parent
         function get_data_for_display_prepare_html(string $title, string $table, $entry): string
         {
-
-            $html = '<div class="oes-lod-box-title">' . $title . '</div>' . $table . 'hdsaf';
-
-            return $html;
+            return '<div class="oes-lod-box-title">' . $title . '</div>' . $table;
         }
     }
 }
