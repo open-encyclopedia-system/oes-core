@@ -6,7 +6,6 @@ The development of the Open Encyclopedia System Software was funded by the Germa
 
 OES is a WordPress plugin, developed on WordPress version 5.9..
 An OES application consists of a OES plugin, an additional OES project plugin which implements the OES features for the application and an optional OES theme.
-OES requires PHP 7.4.
 
 
 ## Documentation (Coming Soon)
@@ -15,6 +14,11 @@ We are working on a detailed user manual and a technical function reference. Sup
 
 
 ## Getting Started
+
+### Requirements
+
+* OES requires WordPress version 5.9. and is tested upto version 5.9..
+* OES requires PHP 7.4.
 
 ### Dependencies
 
