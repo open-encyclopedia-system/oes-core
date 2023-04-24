@@ -1,6 +1,6 @@
 OES - Open Encyclopedia System
 
-Copyright (C) 2022 Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
+Copyright (C) 2023 Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
