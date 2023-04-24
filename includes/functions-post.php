@@ -26,6 +26,7 @@ function oes_get_wp_query_posts(array $args): array
     $queryArgs = [];
     if (isset($args['post_type'])) $queryArgs['post_type'] = $args['post_type'];
     if (isset($args['post_status'])) $queryArgs['post_status'] = $args['post_status'];
+    if (isset($args['fields'])) $queryArgs['fields'] = $args['fields'];
     $queryArgs['posts_per_page'] = $args['posts_per_page'] ?? -1;
     if (isset($args['meta_key'])) {
         $value = $args['meta_value'] ?? '';
@@ -63,26 +64,29 @@ function oes_get_post_meta(string $postID, string $meta_key = '', bool $single =
  * @param mixed $value A string containing the value for the post meta field.
  * @param string $delimiter A string containing an array delimiter if $value can be an array. If false, the value is
  * never split (e.g. text fields)
+ *
+ * @return int|false Meta ID or true on success, false on failure or if the value passed to the function
+ *                  is the same as the one that is already in the database
  */
 function oes_update_post_meta($postID, string $fieldName, $value = '', string $delimiter = ",")
 {
     /* delete if value is empty */
-    if (empty($value) or !$value) delete_post_meta($postID, $fieldName);
+    if (empty($value)) return delete_post_meta($postID, $fieldName);
 
     /* field does not yet exist */
     elseif (!get_post_meta($postID, $fieldName)) {
         $valueArray = is_array($value) ? $value : ($delimiter ? explode($delimiter, $value) : $value);
         if (is_array($valueArray)) {
-            if (sizeof($valueArray) > 1) add_post_meta($postID, $fieldName, $valueArray);
-            else add_post_meta($postID, $fieldName, $value);
-        } else add_post_meta($postID, $fieldName, $value);
+            if (sizeof($valueArray) > 1) return add_post_meta($postID, $fieldName, $valueArray);
+            else return add_post_meta($postID, $fieldName, $value);
+        } else return add_post_meta($postID, $fieldName, $value);
     } /* field already exists, update */
     else {
         $valueArray = is_array($value) ? $value : ($delimiter ? explode($delimiter, $value) : $value);
         if (is_array($valueArray)) {
-            if (sizeof($valueArray) > 1) update_post_meta($postID, $fieldName, $valueArray);
-            else update_post_meta($postID, $fieldName, $value);
-        } else update_post_meta($postID, $fieldName, $value);
+            if (sizeof($valueArray) > 1) return update_post_meta($postID, $fieldName, $valueArray);
+            else return update_post_meta($postID, $fieldName, $value);
+        } else return update_post_meta($postID, $fieldName, $value);
     }
 }
 
@@ -103,8 +107,20 @@ function oes_get_display_title($object = false, array $args = []): string
 
         $option = $args['option'] ?? 'title_display';
         $titleOption = $oes->taxonomies[$object->taxonomy]['display_titles'][$option] ?? false;
-        $title = ($titleOption && $titleOption != 'wp-title') ?
-            oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id) : null;
+
+        $title = null;
+        if(!$titleOption || $titleOption === 'wp-title'){
+
+            /* modify option if language dependent */
+            if (isset($args['language']) && $args['language'] !== 'language0') {
+                if ($metaData = get_term_meta($object->term_id))
+                    if (isset($metaData['name_' . $args['language']][0]) && !empty($metaData['name_' . $args['language']][0]))
+                        $title = $metaData['name_' . $args['language']][0];
+            }
+        }
+        elseif($title){
+            $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
+        }
 
         return empty($title) ? $object->name : $title;
     } else {
@@ -114,7 +130,16 @@ function oes_get_display_title($object = false, array $args = []): string
 
         /* check if option is set */
         $option = $args['option'] ?? 'title_display';
-        $titleOption = $oes->post_types[get_post_type($object)]['display_titles'][$option] ?? false;
+        $postType = get_post_type($object);
+        $titleOption = $oes->post_types[$postType]['display_titles'][$option] ?? false;
+
+        /* modify option if language dependent */
+        if (isset($args['language']) && $args['language'] !== 'language0' &&
+            isset($oes->post_types[$postType]['field_options'][$titleOption]['language_dependent']) &&
+            $oes->post_types[$postType]['field_options'][$titleOption]['language_dependent'] &&
+            get_field($titleOption . '_' . $args['language'], $object))
+            $titleOption = $titleOption . '_' . $args['language'];
+
         $title = ($titleOption && $titleOption != 'wp-title') ? oes_get_field($titleOption, $object) : null;
 
         return empty($title) ? get_the_title($object) : $title;
@@ -136,10 +161,11 @@ function oes_sort_post_array_by_title(array $postsArray): array
         /* loop through array and store with title as key in sorted array */
         foreach ($postsArray as $post) {
 
+            $postTitle = '';
             if ($post instanceof WP_Term) $postTitle = $post->name;
-            else $postTitle = get_the_title($post->ID);
+            elseif ($post instanceof WP_Post) $postTitle = get_the_title($post->ID);
 
-            $sortedArray[strtoupper($postTitle)] = $post;
+            if (!empty($postTitle)) $sortedArray[strtoupper($postTitle)] = $post;
         }
 
         /* sort by title */
@@ -174,7 +200,8 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
         'permalink' => true,
         'sort' => true,
         'status' => ['publish'],
-        'separator' => false
+        'separator' => false,
+        'language' => 'language0'
     ], $args);
 
     /* prepare parameters for list display */
@@ -190,7 +217,7 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
     /* prepare items */
     foreach ($sortedArray as $item) {
 
-        /* check if term id TODO @nextRelease post id*/
+        /* check if term id */
         if (is_string($item) || is_int($item)) {
             $checkIfTerm = get_term($item);
             if ($checkIfTerm) $item = get_term($item);
@@ -198,15 +225,16 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
 
         /* term */
         if ($item instanceof WP_Term) {
-            $title = $item->name;
+            $title = oes_get_display_title($item, ['language' => $args['language']]);
             $args['permalink'] = $args['permalink'] ? get_term_link($item->term_id) : false;
             $itemText = $args['permalink'] ? oes_get_html_anchor($title, $args['permalink']) : $title;
             $listItems[] = $itemText;
         } /* post */
         elseif ($item instanceof WP_Post) {
             /* check if status */
-            if (in_array($item->post_status, $args['status'])) {
-                $title = oes_get_display_title($item->ID);
+            if ((is_string($args['status']) && $args['status'] == 'all') ||
+                in_array($item->post_status, $args['status'])) {
+                $title = oes_get_display_title($item->ID, ['language' => $args['language']]);
                 $args['permalink'] = $args['permalink'] ? get_permalink($item->ID) : false;
                 $itemText = $args['permalink'] ? oes_get_html_anchor($title, $args['permalink']) : $title;
                 $listItems[] = $itemText;
@@ -396,8 +424,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
                     $parameterArray = array_filter($parameterArray);
 
                     /* check if values */
-                    if (!array($parameterArray) || empty($parameterArray)) break;
-                    if (count($parameterArray) == 1 && empty($parameterArray[0])) break;
+                    if (!is_array($parameterArray)) break;
 
                     /**
                      * Filters the field value for a taxonomy field.
@@ -437,7 +464,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
             }
 
             /* update */
-            if ($newValue) $resultArray['update_result'][$field] = update_field($field, $newValue, $postID);
+            if (!is_null($newValue)) $resultArray['update_result'][$field] = update_field($field, $newValue, $postID);
         }
 
         /* track results */
@@ -465,7 +492,7 @@ function oes_insert_term(array $parameters, bool $update = false)
         return __('The term is missing a term name for insert.', 'oes');
 
     /* Validate term id for update -----------------------------------------------------------------------------------*/
-    //TODO @nextRelease : validate term id for update
+    //@oesDevelopment Validate term id for update.
 
     /* Validate taxonomy ---------------------------------------------------------------------------------------------*/
 
@@ -527,7 +554,7 @@ function oes_insert_term_meta($termID, string $taxonomy, array $parameters)
         } /* update acf field */
         else {
 
-            /* TODO @nextRelease: differentiate between field types see post meta */
+            //@oesDevelopment Differentiate between field types, see post meta.
 
             /* update */
             $resultArray['update_result'][$field] = update_field($field, $parameter, $taxonomy . '_' . $termID);
@@ -548,8 +575,9 @@ function oes_insert_term_meta($termID, string $taxonomy, array $parameters)
  *
  * @param int $postID The post ID.
  * @param int $newPostID The post ID of the new post.
+ * @return void
  */
-function copy_post_meta(int $postID, int $newPostID)
+function copy_post_meta(int $postID, int $newPostID): void
 {
 
     /* copy metadata */
@@ -703,6 +731,19 @@ function oes_get_page_ID_from_GUID(string $guid): ?string
 function oes_get_post_language($postID)
 {
     return oes_get_field('field_oes_post_language', $postID) ?? false;
+}
+
+
+/**
+ * Get post language key.
+ *
+ * @param string|int $postID The post ID.
+ * @param string $language The new language.
+ * @return bool (boolean) Returns the language key or false.
+ */
+function oes_set_post_language($postID, string $language = 'language0'): bool
+{
+    return update_field('field_oes_post_language', $language, $postID) ?? false;
 }
 
 

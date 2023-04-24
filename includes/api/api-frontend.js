@@ -7,7 +7,7 @@ jQuery(".oes-lod-box-close").click(function () {
 /* execute api request */
 jQuery(".oes-lodlink").on("click", function (event) {
 
-    var id = this.dataset.lodid,
+    const id = this.dataset.lodid,
         box_exists = this.nextSibling;
 
     if (box_exists) {
@@ -18,7 +18,7 @@ jQuery(".oes-lodlink").on("click", function (event) {
     } else {
 
         /* create LOD box */
-        var box_container = document.createElement('div'),
+        const box_container = document.createElement('div'),
             box_inner = document.createElement('div'),
             box = document.createElement('div'),
             button = document.createElement('button'),
@@ -47,7 +47,7 @@ jQuery(".oes-lodlink").on("click", function (event) {
         };
 
         /* add api information to request */
-        var params = {};
+        const params = {};
         params['api'] = this.dataset.api;
         params['lodid'] = id;
 

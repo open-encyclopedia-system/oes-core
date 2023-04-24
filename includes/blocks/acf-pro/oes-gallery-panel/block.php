@@ -1,6 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
+
 use function OES\ACF\oes_get_field;
+
 
 /* get global instance */
 $oes = OES();
@@ -68,12 +71,14 @@ if (!isset($oes->blocks['acf_pro'][$blockID]))
 
 /**
  * Define the server side callback to render the block 'OES Gallery Panel' in the frontend.
+ * @return void
  */
-function oes_render_gallery_panel()
+function oes_render_gallery_panel(): void
 {
     if ($figures = oes_get_field('gallery_repeater') ?? false)
         echo oes_get_gallery_panel_html($figures,
-            ['gallery_title' => oes_get_field('gallery_title') ?? 'NO HEADER']
+            ['gallery_title' => oes_get_field('gallery_title') ?? 'NO HEADER',
+                'bootstrap' => false]
         );
     else
         echo '<span style="color:red;font-style:italic">Image Block: No valid Image selected</span>';

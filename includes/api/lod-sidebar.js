@@ -1,24 +1,24 @@
 (function (wp) {
-    var registerPlugin = wp.plugins.registerPlugin;
-    var PluginSidebar = wp.editPost.PluginSidebar;
-    var el = wp.element.createElement;
-    var TextControl = wp.components.TextControl;
-    var SelectControl = wp.components.SelectControl;
-    var RangeControl = wp.components.RangeControl;
-    var NumberControl = wp.components.__experimentalNumberControl;
+    const registerPlugin = wp.plugins.registerPlugin,
+        PluginSidebar = wp.editPost.PluginSidebar,
+        el = wp.element.createElement,
+        TextControl = wp.components.TextControl,
+        SelectControl = wp.components.SelectControl,
+        NumberControl = wp.components.__experimentalNumberControl;
 
 
     registerPlugin('oes-lod-sidebar', {
         render: function () {
 
-
-            /* TODO call from php ?*/
-            var databaseString = el('div', null, 'Search in the ',
+            const databaseString = el('div', null, 'Search in the ',
                     el('a', {href: 'https://www.dnb.de/', target: '_blank'}, 'GND'),
                     ', ',
                     el('a', {href: 'https://www.geonames.org/', target: '_blank'}, 'Geonames'),
                     ', ',
-                    el('a', {href: 'https://id.loc.gov/authorities/subjects.html', target: '_blank'}, 'Library of Congress (Subjects)'),
+                    el('a', {
+                        href: 'https://id.loc.gov/authorities/subjects.html',
+                        target: '_blank'
+                    }, 'Library of Congress (Subjects)'),
                     ' database and create shortcodes or copy values to this post.'),
                 options =
                     el('div', {},
@@ -217,7 +217,7 @@
                                     el('div',
                                         {className: 'oes-lod-information'},
                                         'You can find results for your search in the table below. Click on the ' +
-                                        'icon to get further information from the selected databse. Click on the link ' +
+                                        'icon to get further information from the selected database. Click on the link ' +
                                         'on the right to get to the database page. ' +
                                         'Select an entry by clicking on the checkbox on the left. If the post type ' +
                                         'support the LOD feature "Copy to Post" you will find a list of copy options ' +

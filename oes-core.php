@@ -4,7 +4,7 @@
  * Plugin Name: OES Core
  * Plugin URI: http://www.open-encyclopedia-system.org/
  * Description: Building and maintaining online encyclopedias.
- * Version: 2.0
+ * Version: 2.2
  * Author: Maren Strobl, Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -26,8 +26,8 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-
 use OES\Admin\Assets;
+
 
 /** --------------------------------------------------------------------------------------------------------------------
  * The OES instance.
@@ -98,7 +98,10 @@ if (!class_exists('OES_Core')) :
     {
 
         /** @var string The OES Core plugin version. */
-        public string $version = '2.0';
+        public string $version = '2.2';
+
+        /** @var string The OES Database version. */
+        public string $db_version = '1.0';
 
         /** @var bool The OES Core plugin was successfully initialized. False on error. */
         public bool $initialized = true;
@@ -127,6 +130,13 @@ if (!class_exists('OES_Core')) :
         /* @var array Information about registered OES post types. */
         public array $post_types = [];
 
+        /* @var array Information about general OES fields. */
+        public array $other_fields = [
+            'field_oes_tab_editorial' => ['type' => 'tab', 'label' => 'Editorial'],
+            'field_oes_status' => ['label' => 'Status', 'instructions' => 'Internal field for post status.'],
+            'field_oes_comment' => ['label' => 'Comment', 'instructions' => 'Internal comment.']
+        ];
+
         /* @var array Information about registered OES taxonomies. */
         public array $taxonomies = [];
 
@@ -152,7 +162,7 @@ if (!class_exists('OES_Core')) :
         public array $project_params = [];
 
         /** @var array Languages for multilingual posts. Default is english. */
-        public array $languages = ['language0' => ['label' => 'English']];
+        public array $languages = ['language0' => ['label' => 'English', 'abb' => 'ENG']];
 
         /** @var string The website main language (e.g. for navigation elements) */
         public string $main_language = 'language0';
@@ -160,20 +170,23 @@ if (!class_exists('OES_Core')) :
         /** @var array Registered tools. */
         public array $admin_tools = [];
 
-        /** @var array API configurations */
+        /** @var array API configurations. */
         public array $apis = [];
 
-        /** @var array Notes configurations */
+        /** @var array Notes configurations. */
         public array $notes = [];
 
         /* @var string|int|bool The post ID of the OES object holding general configuration information. */
         public $config_post = false;
 
-        /* @var array|bool Information for the theme page 'Index'. */
-        public $theme_index = false;
+        /* @var array|bool Information for the theme index pages. */
+        public $theme_index_pages = false;
 
         /* @var array General theme labels. */
         public array $theme_labels = [];
+
+        /* @var array General theme options. */
+        public array $theme_options = [];
 
         /* @var array Search configuration. */
         public array $search = [];
@@ -230,13 +243,12 @@ if (!class_exists('OES_Core')) :
                 $this->basename = basename($this->path_core_plugin);
 
                 /* check for additional parameters */
-                if(!empty($args))
-                    foreach($args as $propertyKey => $value)
-                        if($propertyKey === 'included_features'){
-                            if(is_array($value))
+                if (!empty($args))
+                    foreach ($args as $propertyKey => $value)
+                        if ($propertyKey === 'included_features') {
+                            if (is_array($value))
                                 $this->included_features = array_merge($this->included_features, $value);
-                        }
-                        elseif(property_exists($this, $propertyKey))
+                        } elseif (property_exists($this, $propertyKey))
                             $this->$propertyKey = $value;
             }
         }
@@ -256,77 +268,140 @@ if (!class_exists('OES_Core')) :
             oes_include('/includes/functions-post.php');
             oes_include('/includes/functions-html.php');
 
+
+            /** Create database tables for OES -----------------------------------------------------------------------*/
+            oes_include('/includes/admin/db/initialize-db.php');
+            oes_include('/includes/admin/db/class-operation.php');
+            oes_include('/includes/admin/db/functions-operation.php');
+
+
             /** Include tools ----------------------------------------------------------------------------------------*/
-            oes_include('/includes/admin/tools/tool.class.php');
+            oes_include('/includes/admin/tools/class-tool.php');
+            oes_include('/includes/admin/tools/hooks-tool.php');
+            oes_include('/includes/admin/tools/functions-tool.php');
 
             /** Set up dashboard in the editorial layer --------------------------------------------------------------*/
-            if ($this->included_features['oes_dashboard']) oes_include('/includes/admin/dashboard.php');
+            if ($this->included_features['oes_dashboard']) oes_include('/includes/admin/dashboard/hooks-dashboard.php');
 
             /** Include messaging to display admin notices in the editorial layer --------------------------------------
              * This will include messaging to display admin notices in the editorial layer.
              */
-            oes_include('/includes/admin/notices.php');
+            oes_include('/includes/admin/notices/functions-notices.php');
+            oes_include('/includes/admin/notices/hooks-notices.php');
 
             /** Include admin manual feature -------------------------------------------------------------------------*/
-            if ($this->included_features['manual']) oes_include('/includes/admin/manual.php');
+            if ($this->included_features['manual']) {
+                oes_include('/includes/admin/manual/functions-manual.php');
+                oes_include('/includes/admin/manual/hooks-manual.php');
+                oes_include('/includes/admin/manual/filters-manual.php');
+            }
 
             /** Include task feature ---------------------------------------------------------------------------------*/
-            if ($this->included_features['tasks']) oes_include('/includes/admin/tasks.php');
+            if ($this->included_features['tasks']) {
+                oes_include('/includes/admin/tasks/hooks-tasks.php');
+                oes_include('/includes/admin/tasks/functions-tasks.php');
+            }
 
             /** Include assets. Sets $this->assets. --------------------------------------------------------------------
              * This will include all css and js needed inside the editorial layer for this OES Core plugin.
              */
-            oes_include('/includes/admin/assets.class.php');
+            oes_include('/includes/admin/assets/class-assets.php');
 
             /** Include modification of columns for post types lists inside the editorial layer. -----------------------
              * This will include modification of columns for post types lists inside the editorial layer.
              */
-            if ($this->included_features['admin_filter']) oes_include('/includes/admin/columns.php');
+            if ($this->included_features['admin_filter']) {
+                oes_include('/includes/admin/columns/hooks-columns.php');
+                oes_include('/includes/admin/columns/functions-columns.php');
+            }
 
             /** Include admin pages inside the editorial layer ---------------------------------------------------------
              * This will include admin pages inside the editorial layer for this OES Core plugin and the functionalities
              * on these pages, e.g. settings options inside the editorial layer.
              */
-            oes_include('/includes/admin/pages/page.class.php');
-
-            /* Include menu container pages. */
-            oes_include('/includes/admin/pages/container.class.php');
+            oes_include('/includes/admin/hooks-admin.php');
+            oes_include('/includes/admin/pages/class-page.php');
+            oes_include('/includes/admin/pages/class-container.php');
+            oes_include('/includes/admin/pages/hooks-pages.php');
 
             /** Initialize acf dependencies --------------------------------------------------------------------------*/
-            oes_include('/includes/acf/acf.php');
-            oes_include('/includes/acf/inheritance.class.php');
+            oes_include('/includes/acf/functions-acf.php');
+            oes_include('/includes/acf/fixes-acf.php');
+            oes_include('/includes/acf/hooks-acf.php');
+            oes_include('/includes/acf/class-acf_inheritance.php');
 
-            /** Include the feature 'OES Posts' which generates custom post types according to the OES Project data
-             * model. ------------------------------------------------------------------------------------------------*/
-            oes_include('/includes/datamodel/datamodel.class.php');
+            /** Include the data model -------------------------------------------------------------------------------*/
+            oes_include('/includes/model/class-model.php');
+            oes_include('/includes/model/functions-model.php');
+
+            /** Include multilingualism -------------------------------------------------------------------------------*/
+            oes_include('/includes/multilingualism/hooks-multilingualism.php');
 
             /** Include the versioning feature for OES post types. ---------------------------------------------------*/
-            oes_include('/includes/versioning/versioning.php');
+            oes_include('/includes/versioning/hooks-versioning.php');
+            oes_include('/includes/versioning/functions-versioning.php');
 
             /** Include note feature. --------------------------------------------------------------------------------*/
-            if ($this->included_features['notes']) oes_include('/includes/notes/notes.php');
+            if ($this->included_features['notes']) {
+                $this->assets->add_style('oes-notes', '/includes/notes/notes.css');
+                $this->assets->add_script('oes-notes', '/includes/notes/notes.js', ['wp-rich-text', 'wp-element', 'wp-editor', 'wp-i18n']);
+                oes_include('/includes/notes/shortcodes-notes.php');
+                oes_include('/includes/notes/hooks-notes.php');
+            }
 
             /** Include OES Core and OES Project blocks for the Gutenberg editor. ------------------------------------*/
-            if ($this->included_features['blocks']) oes_include('/includes/blocks/blocks.php');
+            if ($this->included_features['blocks']) {
+                oes_include('/includes/blocks/functions-blocks.php');
+                oes_include('/includes/blocks/hooks-blocks.php');
+            }
 
             /** Include theme classes ans functions. -----------------------------------------------------------------*/
-            if ($this->included_features['oes_theme']){
-                oes_include('/includes/theme/object.class.php');
-                oes_include('/includes/theme/post.class.php');
-                oes_include('/includes/theme/taxonomy.class.php');
-                oes_include('/includes/theme/archive.class.php');
-                oes_include('/includes/theme/search.class.php');
+            if ($this->included_features['oes_theme']) {
+
+
+                oes_include('/includes/admin/tools/cache/functions-cache.php');
+
                 oes_include('/includes/theme/functions-theme.php');
-                oes_include('/includes/theme/navigation.php');
-                oes_include('/includes/theme/figures.php');
-                oes_include('/includes/theme/filter/filter.php');
+
+                oes_include('/includes/theme/shortcodes-theme.php');
+
+                oes_include('/includes/theme/data/functions-data.php');
+                oes_include('/includes/theme/data/hooks-data.php');
+                oes_include('/includes/theme/data/class-object.php');
+                oes_include('/includes/theme/data/class-post.php');
+                oes_include('/includes/theme/data/class-page.php');
+                oes_include('/includes/theme/data/class-taxonomy.php');
+                oes_include('/includes/theme/data/class-archive.php');
+
+                oes_include('/includes/theme/figures/functions-figures.php');
+                $this->assets->add_style('oes-figures', '/includes/theme/figures/figures.css');
+
+                oes_include('/includes/theme/filter/shortcodes-filter.php');
+                $this->assets->add_style('oes-filter', '/includes/theme/filter/filter.css');
+                $this->assets->add_script('oes-filter', '/includes/theme/filter/filter.js');
+
+                oes_include('/includes/theme/navigation/class-template_redirect.php');
+                oes_include('/includes/theme/navigation/functions-multilingualism.php');
+                oes_include('/includes/theme/navigation/hooks-navigation.php');
+                oes_include('/includes/theme/navigation/class-language_switch.php');
+
+                oes_include('/includes/theme/search/class-search.php');
+                oes_include('/includes/theme/search/functions-search.php');
             }
 
             /** Include LOD APIs. ------------------------------------------------------------------------------------*/
-            if ($this->included_features['lod_apis']) oes_include('/includes/api/rest-api.class.php');
+            if ($this->included_features['lod_apis']) {
+                oes_include('/includes/api/hooks-rest_api.php');
+                oes_include('/includes/api/class-rest_api.php');
+                $this->assets->add_style('oes-api', '/includes/api/api.css');
+            }
 
             /** Include xml export -----------------------------------------------------------------------------------*/
-            if ($this->included_features['xml'])oes_include('/includes/export/xml.php');
+            if ($this->included_features['xml']) {
+                oes_include('/includes/export/functions-xml.php');
+                oes_include('/includes/export/hooks-xml.php');
+                oes_include('/includes/export/shortcodes-xml.php');
+            }
 
 
             /**
@@ -365,19 +440,36 @@ if (!class_exists('OES_Core')) :
                 if (isset($generalConfigContent['languages']))
                     foreach ($generalConfigContent['languages'] as $languageKey => $language)
                         $this->languages[(oes_starts_with($languageKey, 'language') ? '' : 'language') . $languageKey] =
-                            $language;
+                            array_merge(
+                                [
+                                    'label' => 'Label missing',
+                                    'abb' => $languageKey
+                                ],
+                                $language
+                            );
 
                 /* check for container */
                 if (isset($generalConfigContent['container']))
                     foreach ($generalConfigContent['container'] as $containerID => $container)
                         $this->admin_pages['container'][$containerID] = $container;
+
+                /* prepare other fields before data model registration */
+                if (isset($generalConfigContent['other_fields']))
+                    $this->other_fields = array_merge($this->other_fields, $generalConfigContent['other_fields']);
             }
 
 
             /* initialize data model */
-            if (isset($this->path_data_model)) {
-                $dataModel = new OES\Datamodel();
-                $dataModel->create_datamodel($this->path_data_model, $_POST['reload_json'] ?? false);
+            if(empty($this->path_data_model)) {
+                $this->path_data_model = [$this->path_project_plugin . '/includes/model.json'];
+
+                /* legacy */
+                if(empty($this->path_data_model))
+                    $this->path_data_model = [$this->path_project_plugin . '/includes/datamodel.json'];
+            }
+            if ($this->path_data_model) {
+                $model = new OES\Model();
+                $model->create_data_model($this->path_data_model, $_POST['reload_json'] ?? false);
             }
 
             /* include theme pages */
@@ -400,7 +492,10 @@ if (!class_exists('OES_Core')) :
                 }
 
             /* include user roles */
-            if ($this->included_features['user_rights']) oes_include('/includes/admin/rights.php');
+            if ($this->included_features['user_rights']) {
+                oes_include('/includes/admin/rights/hooks-rights.php');
+                oes_include('/includes/admin/rights/functions-rights.php');
+            }
         }
 
 
@@ -415,11 +510,3 @@ if (!class_exists('OES_Core')) :
         }
     }
 endif;
-
-
-/**
- * Add favicon to WordPress admin pages.
- */
-add_action('admin_head', function () {
-    echo '<link rel="icon" type="image/x-icon" href="' . plugin_dir_url(__FILE__) . 'assets/images/favicon.ico" />';
-});

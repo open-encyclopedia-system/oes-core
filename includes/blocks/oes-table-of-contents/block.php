@@ -1,8 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
+
 use function OES\ACF\acf_post_id;
 
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /* get global OES instance parameter */
 $oes = OES();
@@ -32,12 +33,12 @@ function oes_block_render_table_of_contents(array $attributes): string
     $editMode = strrpos($_SERVER['REQUEST_URI'], "context=edit");
 
     /* create table of contents header */
-    $tocHeader = sprintf('<h1 class="oes-content-table-header1" id="toc-header">%s</h1>',
+    $tocHeader = sprintf('<h1 class="oes-content-table-header" id="toc-header">%s</h1>',
         $attributes['oes_block_title'] ?? 'Table of Contents'
     );
 
     /* get post object */
-    //TODO @nextRelease: create OES_Page instead of OES_Post, fix header generation ('-' instead of '_')
+    //@oesDevelopment Create OES_Page instead of OES_Post, fix header generation ('-' instead of '_')
     global $post;
     $postObject = new OES_Post($post ? $post->ID : acf_post_id());
 

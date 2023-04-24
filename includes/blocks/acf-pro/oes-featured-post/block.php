@@ -1,8 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
+
 use function OES\ACF\oes_get_field;
 
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /* get global instance */
 $oes = OES();
@@ -60,8 +61,10 @@ if (!isset($oes->blocks['acf_pro'][$blockID]))
 
 /**
  * Define the server side callback to render your block in the front end.
+ * @return void
  */
-function oes_block_render_featured_post(){
+function oes_block_render_featured_post(): void
+{
     echo oes_get_featured_post_html(
         oes_get_field('featured_post') ?? false, [
         'title' => oes_get_field('post_title'),

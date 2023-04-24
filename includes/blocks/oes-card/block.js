@@ -1,11 +1,8 @@
 var el = wp.element.createElement,
-    registerBlockType = wp.blocks.registerBlockType,
-    ServerSideRender = wp.components.ServerSideRender,
     TextControl = wp.components.TextControl,
-    TextareaControl = wp.components.TextareaControl,
-    InspectorControls = wp.editor.InspectorControls;
+    TextareaControl = wp.components.TextareaControl;
 
-registerBlockType('oes/oes-card', {
+wp.blocks.registerBlockType('oes/oes-card', {
     title: 'OES Card',
     icon: {
         src: 'book-alt',
@@ -34,6 +31,10 @@ registerBlockType('oes/oes-card', {
         'oes_card_link_text': {
             type: 'string',
             default: ""
+        },
+        'oes_card_link_target': {
+            type: 'string',
+            default: ""
         }
     },
 
@@ -49,52 +50,60 @@ registerBlockType('oes/oes-card', {
             el("div", {
                     className: "oes-card-wrapper"
                 },
-                el(ServerSideRender, {
+                el(wp.serverSideRender, {
                     block: 'oes/oes-card',
                     attributes: props.attributes
                 })
             ),
 
             /* Inspector */
-            el(InspectorControls,
+            el(wp.blockEditor.InspectorControls,
                 {}, [
-                    el("hr", {
-                    }),
-                    el(TextControl, {
-                        label: 'Title',
-                        value: props.attributes.oes_card_title,
-                        onChange: (value) => {
-                            props.setAttributes({oes_card_title: value});
-                        }
-                    }),
-                    el(TextareaControl, {
-                        label: 'Body',
-                        value: props.attributes.oes_card_body,
-                        onChange: (value) => {
-                            props.setAttributes({oes_card_body: value});
-                        }
-                    }),
-                    el(TextControl, {
-                        label: 'Image Link (absolute path)',
-                        value: props.attributes.oes_card_image,
-                        onChange: (value) => {
-                            props.setAttributes({oes_card_image: value});
-                        }
-                    }),
-                    el(TextControl, {
-                        label: 'Link',
-                        value: props.attributes.oes_card_link,
-                        onChange: (value) => {
-                            props.setAttributes({oes_card_link: value});
-                        }
-                    }),
-                    el(TextControl, {
-                        label: 'Link Text',
-                        value: props.attributes.oes_card_link_text,
-                        onChange: (value) => {
-                            props.setAttributes({oes_card_link_text: value});
-                        }
-                    })
+                    el("div",
+                        {className: "oes-block-control-wrapper"}, [
+                            el(TextControl, {
+                                label: 'Title',
+                                value: props.attributes.oes_card_title,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_title: value});
+                                }
+                            }),
+                            el(TextareaControl, {
+                                label: 'Body',
+                                value: props.attributes.oes_card_body,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_body: value});
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Image Link (absolute path)',
+                                value: props.attributes.oes_card_image,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_image: value});
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Link',
+                                value: props.attributes.oes_card_link,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_link: value});
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Link Text',
+                                value: props.attributes.oes_card_link_text,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_link_text: value});
+                                }
+                            }),
+                            el(TextControl, {
+                                label: 'Link Target (default is _self)',
+                                value: props.attributes.oes_card_link_target,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_card_link_target: value});
+                                }
+                            })
+                        ])
                 ]
             )
         ]

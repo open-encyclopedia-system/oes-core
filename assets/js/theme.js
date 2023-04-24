@@ -1,12 +1,12 @@
 /* expand modal image */
 expandImageModal(document.getElementsByClassName("oes-modal-toggle"));
 function expandImageModal(modals){
-    var j;
+    let j;
     for (j = 0; j < modals.length; j++) {
-        var modalContainer = modals[j].firstElementChild;
+        const modalContainer = modals[j].firstElementChild;
         modalContainer.addEventListener("click", function() {
 
-            var img = this.firstElementChild,
+            const img = this.firstElementChild,
                 modal = this.parentElement.nextElementSibling,
                 close = modal.firstElementChild,
                 modalImg = close.nextElementSibling.firstElementChild;

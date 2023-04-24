@@ -1,11 +1,8 @@
 var el = wp.element.createElement,
-    registerBlockType = wp.blocks.registerBlockType,
-    ServerSideRender = wp.components.ServerSideRender,
-    TextControl = wp.components.TextControl,
-    InspectorControls = wp.editor.InspectorControls;
+    TextControl = wp.components.TextControl;
 
 
-registerBlockType('oes/oes-table-of-contents', {
+wp.blocks.registerBlockType('oes/oes-table-of-contents', {
     title: 'OES Table of Contents',
     icon: {
         src: 'book-alt',
@@ -33,24 +30,25 @@ registerBlockType('oes/oes-table-of-contents', {
             el("div", {
                     className: "oes-table-of-contents"
                 },
-                el(ServerSideRender, {
+                el(wp.serverSideRender, {
                     block: 'oes/oes-table-of-contents',
                     attributes: props.attributes
                 })
             ),
 
             /* Inspector */
-            el(InspectorControls,
+            el(wp.blockEditor.InspectorControls,
                 {}, [
-                    el("hr", {
-                    }),
-                    el(TextControl, {
-                        label: 'Title',
-                        value: props.attributes.oes_block_title,
-                        onChange: (value) => {
-                            props.setAttributes({oes_block_title: value});
-                        }
-                    }),
+                    el("div",
+                        {className: "oes-block-control-wrapper"}, [
+                            el(TextControl, {
+                                label: 'Title',
+                                value: props.attributes.oes_block_title,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_block_title: value});
+                                }
+                            })
+                        ])
                 ]
             )
         ]

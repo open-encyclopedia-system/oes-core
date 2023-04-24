@@ -1,16 +1,5 @@
 /*----------------------------------------------------------------------------------------------------------------------
 CSS Styling for admin layer.
-
-TABLE OF CONTENTS
-01  General
-02  Menu Pages
-02b Display Settings
-02c Menu Page: OES Configurations
-02d Menu Page: Tools
-03  Post Type: Admin Pages
-03a Post Type: Versioning
-04  Navigation Menus
-10  Frontend
 ----------------------------------------------------------------------------------------------------------------------*/
 
 :root {
@@ -20,76 +9,138 @@ TABLE OF CONTENTS
     --oes-primary: #004589
 }
 
-/* login icon */
+/* Login icon */
 #login h1 a,
 .login h1 a {
     background-image: url('../images/oes_cubic_512.png');
     background-repeat: no-repeat;
-    padding-bottom:20px;
+    padding-bottom: 20px;
 }
 
-/* ADMIN : Dashboard*/
 #footer-thankyou {
-    display:none;
+    display: none;
 }
 
 .oes-dashboard-postbox-container .oes-dashboard-button-group {
-    padding-bottom:10px;
+    padding-bottom: 10px;
 }
 
-/* TODO @nextRelease check if necessary after acf pro update or move to extra file with acf css? */
+/* TODO next release : acf fix, check if still necessary after acf pro update */
 .acf-block-fields {
-    margin:0 !important;
+    margin: 0 !important;
 }
 
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 01 GENERAL ----------------------------------------------------------------------------------------------------------
+-- GENERAL -------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
+.oes-display-none {
+    display: none
+}
 
+/* Colors */
+.oes-warning {
+    background-color: yellow;
+}
+
+.oes-notice {
+    color: red;
+    font-style: italic;
+    border: 1px solid red;
+}
+
+.oes-grey-out {
+    font-style: italic;
+    color: lightgrey;
+}
+
+.oes-remark {
+    font-style: italic;
+    color: #787c82;
+}
+
+/* Paddings and margins */
+.oes-p-5px {
+    padding: 5px;
+}
+
+.oes-pb-0-5 {
+    padding-top: .5rem;
+}
+
+.oes-pb-1 {
+    padding-bottom: 1rem;
+}
+
+.oes-pb-2 {
+    padding-bottom: 2rem;
+}
+
+.oes-pb-3 {
+    padding-bottom: 3rem;
+}
+
+.oes-pt-0-5 {
+    padding-top: .5rem;
+}
+
+.oes-pt-1 {
+    padding-top: 1rem;
+}
+
+.oes-pt-2 {
+    padding-top: 2rem;
+}
+
+.oes-pt-3 {
+    padding-top: 3rem;
+}
+
+.oes-pt-1-0 {
+    padding: 1rem 0;
+}
+
+.oes-pt-0-1 {
+    padding: 0 1rem;
+}
+
+/* Admin link */
 a.oes-admin-link:after {
     content: "\f103";
-    font:normal 1rem/1 dashicons;
+    font: normal 1rem/1 dashicons;
 }
 
-.oes-tooltip {
-    position: relative;
-    display: inline-block;
+/* Inline code */
+.oes-object-identifier,
+.oes-object-identifier-br {
+    opacity: 75%;
+    font-size: .7rem;
+    font-weight: lighter;
 }
 
-.oes-tooltip .oes-tooltip-text {
-    visibility: hidden;
-    color: white;
-    background: rgba(0,0,0, 0.5);
-    position: absolute;
-    padding: 5px;
-    z-index: 10;
-    top:-5px;
-    white-space: nowrap;
-}
-
-.oes-tooltip:hover .oes-tooltip-text {
-    visibility: visible;
+.oes-object-identifier {
+    margin-left: .7rem;
 }
 
 .oes-code-container {
     border: #ebebeb solid 1px;
     background: #fafafa;
-    border-radius:3px;
+    border-radius: 3px;
 }
 
+/* Icons */
 .oes-dashicons {
     font-family: "dashicons", serif;
-    vertical-align:middle;
+    vertical-align: middle;
 }
 
 .oes-dashicons:active,
 .oes-dashicons:focus {
-    outline:0;
-    border:none;
-    -moz-outline-style: none;
-    box-shadow:none;
+    outline: 0;
+    border: none;
+    --moz-outline-style: none;
+    box-shadow: none;
 }
 
 .oes-plus:before {
@@ -97,290 +148,121 @@ a.oes-admin-link:after {
 }
 
 .oes-minus:before,
-.oes-plus.active:before{
+.oes-plus.active:before {
     content: "\f460";
 }
 
 .oes-yes:before {
     content: "\f12a";
-    color:green;
+    color: green;
 }
 
-.oes-dismiss:before{
+.oes-dismiss:before {
     content: "\f335";
-    color:grey;
+    color: grey;
 }
 
-
-/* toggle checkbox ---------------------------------------------------------------------------------------------------*/
+/* Toggle checkbox */
 .oes-toggle-checkbox input[type="checkbox"] {
-    display:none;
+    display: none;
 }
 
 .oes-toggle-checkbox label.oes-toggle-label {
-    width:2rem;
-    height:1.2rem;
-    box-sizing:border-box;
-    border:1px solid var(--wordpress-lighter-grey);
+    width: 2rem;
+    height: 1.2rem;
+    box-sizing: border-box;
+    border: 1px solid var(--wordpress-lighter-grey);
     background-color: var(--wordpress-light-grey);
-    float:left;
-    border-radius:1rem;
-    position:relative;
-    cursor:pointer;
-    transition:.3s ease;
+    float: left;
+    border-radius: 1rem;
+    position: relative;
+    cursor: pointer;
+    transition: .3s ease;
 }
 
 .oes-toggle-checkbox input[type=checkbox]:checked + label {
-    background:var(--oes-active-blue);
+    background: var(--oes-active-blue);
 }
 
-.oes-toggle-checkbox input[type=checkbox]:checked + label:before{
-    left:.9rem;
+.oes-toggle-checkbox input[type=checkbox]:checked + label:before {
+    left: .9rem;
 }
 
-.oes-toggle-checkbox label.oes-toggle-label:before{
-    transition:.3s ease;
-    content:'';
-    width:.8rem;
-    height:.8rem;
-    position:absolute;
-    background:white;
-    left:.15rem;
-    top:.15rem;
-    box-sizing:border-box;
-    border-radius:1rem;
+.oes-toggle-checkbox label.oes-toggle-label:before {
+    transition: .3s ease;
+    content: '';
+    width: .8rem;
+    height: .8rem;
+    position: absolute;
+    background: white;
+    left: .15rem;
+    top: .15rem;
+    box-sizing: border-box;
+    border-radius: 1rem;
 }
+
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 02 MENU PAGES -------------------------------------------------------------------------------------------------------
+-- DISPLAY SETTINGS ---------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
-
-.dummy-admin-notices {
-    display: none
-}
-
-.wrap#settings-page {
-    /*margin: 10px 20px 0 2px;*/
-}
-
-/* ---------------------------------------------------------------------------------------------------------------------
--- 02B DISPLAY SETTINGS ------------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------------*/
-
-h2.oes-settings {
-    margin:0;
-}
-
-.oes_settings_table#default {
-    border-collapse: collapse;
-    border-spacing: 0;
-    display: inline-block;
-    vertical-align: top;
-    max-width: 100%;
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-.oes_settings_table#default tbody {
-    background-size: 10px 100%, 10px 100%;
-    background-attachment: scroll, scroll;
-    background-repeat: no-repeat;
-}
-
-.oes_settings_table#default th {
-    background-color: #52accc;
-    border: 1px solid #555;
-    border-collapse: collapse;
-    padding: 6px 12px;
-    font-size: 14px;
-    text-align: left;
-}
-
-.oes_settings_table#default td {
-    background-color: #e5e5e5;
-    border: 1px solid #555;
-    border-collapse: collapse;
-    padding: 6px 12px;
-    font-size: 14px;
-    text-align: left;
-}
-
-.oes_settings_table table th .top {
-    font-weight: bold;
-}
-
-.settings-wrapper {
-    display: flex;
-    align-items: center;
-}
-
-.submit-inline {
-    display: inline-flex;
-    margin-bottom: 5px;
-    padding-left: 1em;
-}
-
-.settings-wrapper-post-types {
-    margin-top:10px;
-}
 
 .oes-settings-submit .submit {
-    padding:0 !important;
+    padding: 0 !important;
     margin: 10px 0 !important;
     float: left !important;
 }
 
-.oes-settings-form-wrapper {
-    padding: 5px 10px;
-}
-
-
-/* ---------------------------------------------------------------------------------------------------------------------
--- 02C MENU PAGE : OES CONFIGURATIONS ----------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------------*/
-
-.oes-configuration-wrapper {
-    padding: 5px 10px;
-}
-
-.oes-form-wrapper {
-    padding-top:2rem;
-}
-
-.oes-form-wrapper-small {
-    padding-top: .5rem;
-}
-
-.oes-configuration-header h2 {
-    margin-bottom:0.5rem;
-}
-
-.nav-tab-wrapper#configuration {
-    /*margin-bottom: 1em;*/
-}
-
-
-/* Data Models -------------------------------------------------------------------------------------------------------*/
-.oes-data-model table.form-table th {
-    width:50%;
-}
-
-
-/* Post Types --------------------------------------------------------------------------------------------------------*/
-.post-types-table .buttons button {
-    display: inline-block;
-    vertical-align: baseline;
-    margin-left: .5em
-}
-
-.post-types-table .submit {
-    display: inline-block;
-}
-
-table.legend th {
-    white-space:nowrap;
-    text-align:left;
-    vertical-align: top;
-    padding-right:1em;
-}
-
-/* data source */
-.post-types-data-source {
-    display: inline-flex
-}
-
-.post-types-data-source input[type="submit"] {
-    margin-left: 5em;
-}
-
-.post-types-data-source tbody th {
-    vertical-align: top;
-    padding-top: 10px
-}
-
-/* relationships */
-table#option-relationship th {
-    text-align: left;
-    width: 40%;
-    font-weight: normal;
-    font-size: 13px
-}
-
-table#option-relationship #column-header {
-    font-weight: bold;
-    font-size: 16px
-}
-
-table#option-relationship .merged-cells {
-    border-bottom: 1px solid #ccd0d4;
-    border-top: 1px solid #ccd0d4;
-    background-color: #e5e5e5;
-    font-size: 16px;
-}
-
-table#option-relationship .post-type {
-    font-weight: bold;
-}
-
-/* Taxonomies --------------------------------------------------------------------------------------------------------*/
-
-
-/* Theme Options -----------------------------------------------------------------------------------------------------*/
-table#oes-presentation-table th,
-table#oes-presentation-table td {
-    text-align: left;
-}
-
-/* LOD Options -------------------------------------------------------------------------------------------------------*/
-.oes-config-table .oes-lod-current-value {
-    padding-top:.5rem;
-    color: #096484;
-}
-
-/* ---------------------------------------------------------------------------------------------------------------------
--- 02D MENU PAGE : TOOLS -----------------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------------------------------------*/
-
-#configuration-tools {
-    display: flex;
-}
-
-#configuration-tools .submit {
-    padding: 0 1em 0 0;
+.oes-operations thead td input {
     margin: 0;
 }
 
-#configuration-tools input#submit {
-    background-color: transparent;
-    color: #096484;
-    border-color: #096484;
-    display: inline-flex;
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- MENU PAGE : OES CONFIGURATIONS -------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+.oes-form-wrapper-small input[type="text"] {
+    width: 100%;
 }
 
-#configuration-tools input#submit:hover {
-    background-color: #096484;
+ul.oes-settings-nav-tabs {
+    list-style-type: none;
+    margin-bottom: 0;
+    background-color: white;
+    border: 1px solid #e5e5e5;
+    overflow: hidden;
+}
+
+ul.oes-settings-nav-tabs li {
+    float: left;
+    margin-bottom: 0;
+}
+
+ul.oes-settings-nav-tabs li a {
+    display: block;
+    padding: 1rem 1.5rem;
+    text-transform: uppercase;
+    border: 1px solid white;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+ul.oes-settings-nav-tabs li a.active,
+ul.oes-settings-nav-tabs li a:hover {
+    background-color: #52accc;
+    border: 1px solid #52accc;
     color: white;
-    border-color: #096484;
 }
 
-/* Postboxes */
-#tools-checkbox {
-    padding-top:5px;
+/* Expand button */
+.oes-config-expand-button-wrapper {
+    float: right;
 }
 
-#oes-tool-lod .inside,
-#oes-tool-export .inside,
-#oes-tool-export-single .inside,
-#oes-tool-import .inside,
-#oes-tool-delete-posts .inside,
-#oes-tool-update-posts .inside {
-    margin-bottom:50px;
-}
 
-.postbox#oes-tool-delete-posts {
-    border-color: red;
-    background: lightpink;
-}
+/* ---------------------------------------------------------------------------------------------------------------------
+-- MENU PAGE : TOOLS --------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
 
 .oes-tools-checkboxes {
     border: #ebebeb solid 1px;
@@ -388,38 +270,84 @@ table#oes-presentation-table td {
     border-radius: 3px
 }
 
-.oes-tools-checkboxes .oes-tools-checkboxes-wrapper {
-    padding:5px 12px
+.oes-tools-checkboxes-wrapper {
+    padding: 5px 12px;
 }
 
 .oes-tools-checkbox-single {
-    margin:.5rem 0;
+    margin: .5rem 0;
     padding: .1rem 0;
 }
 
 .oes-tools-checkboxes-wrapper span {
-    padding-left:.5rem;
+    padding-left: .5rem;
 }
 
-#delete-posts input[type=checkbox]:checked + label {
-    background:red;
+#oes-delete-posts input[type=checkbox]:checked + label {
+    background: red;
 }
 
-.oes-postbox-margin .postbox {
-    padding-bottom:50px;
+/* Operations */
+.oes-operation-display thead th {
+    font-weight: 600;
+}
+
+tr.oes-operation-container-row {
+    border-top: 1px solid var(--wordpress-light-grey);
+}
+
+tr.oes-operation-container-row td ul {
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+    margin-block-start: 0;
+}
+
+td.oes-operation-include {
+    border: 1px solid var(--wordpress-light-grey);
+}
+
+td.oes-operation-additional-info {
+    font-size: .7rem;
+    border-left: 1px solid var(--wordpress-light-grey)
+}
+
+td.oes-operation-additional-info div {
+    padding-bottom: .7rem;
+}
+
+td.oes-operation-additional-info span:after {
+    content: ': ';
+}
+
+span.oes-operation-empty-value {
+    font-weight: 200;
+    opacity: 50%;
+}
+
+.oes-operations-table {
+    padding-bottom: 2rem;
+}
+.oes-operation-select {
+    position: absolute;
+    padding-top: 1rem;
+}
+
+.oes-operations .tablenav {
+    position: relative;
+    top: 0;
+    right: 0;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 04  NAVIGATION MENUS ------------------------------------------------------------------------------------------------
+-- NAVIGATION MENUS ----------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
 .menu-item-settings .acf-menu-item-fields {
     margin: 1rem 0;
 }
 
-
-.acf-fields.acf-menu-item-fields > .acf-field .acf-label label{
-    font-style:normal !important;
+.acf-fields.acf-menu-item-fields > .acf-field .acf-label label {
+    font-style: normal !important;
     color: var(--oes-primary);
     margin: 10px 0 5px;
     padding-top: 10px;
@@ -427,40 +355,12 @@ table#oes-presentation-table td {
 
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 10  FRONTEND --------------------------------------------------------------------------------------------------------
+-- Tasks ---------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
-.oes-warning {
-    background-color: yellow;
-}
-
-
-.oes-italic {
-    font-style:italic;
-}
-
-/* manual */
-.oes-manual-toc-list li li {
-    padding-left:5px;
-}
-
-.oes-manual-toc-list li li li {
-    padding-left:10px;
-}
-
-.oes-manual-toc-list li li li li {
-    padding-left:15px;
-}
-
-.oes-manual-toc-list li li li li li {
-    padding-left:20px;
-}
-
 .post-type-oes_task #commentstatusdiv {
-    display:none;
+    display: none;
 }
-
-/* TODO @nextRelease: clean up css above */
 
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -474,34 +374,10 @@ table#oes-presentation-table td {
     height: 2px;
 }
 
-.oes-notice-text {
-    color:red;
-    font-style:italic;
-    border: 1px solid red;
-}
 
 /* ---------------------------------------------------------------------------------------------------------------------
 -- ADMIN PAGE : GENERAL ------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
-
-.oes-grey-out {
-    font-style: italic;
-    color: lightgrey;
-}
-
-.oes-no-padding {
-    padding:0;
-}
-
-/* accordion ---------------------------------------------------------------------------------------------------------*/
-.oes-accordion {
-    cursor: pointer;
-    text-align: left;
-    outline: none;
-    transition: 0.4s;
-    font-weight: 600;
-    font-size: 14px
-}
 
 .oes-info-icon {
     padding-left: .3em;
@@ -510,8 +386,18 @@ table#oes-presentation-table td {
 .oes-info-icon:after {
     content: "\f348";
     font: normal 20px/1 dashicons;
-    color:#426890;
+    color: #426890;
     margin: 1em 0;
+}
+
+/* Accordion */
+.oes-accordion {
+    cursor: pointer;
+    text-align: left;
+    outline: none;
+    transition: 0.4s;
+    font-weight: 600;
+    font-size: 14px
 }
 
 .oes-accordion a,
@@ -529,7 +415,7 @@ table#oes-presentation-table td {
 .oes-accordion-panel {
     display: none;
     overflow: hidden;
-    padding:5px 10px;
+    padding: 5px 10px;
 }
 
 .oes-accordion-body.active .oes-accordion-panel {
@@ -573,36 +459,36 @@ span.oes-column-post a.oes-admin-link:after {
 }
 
 .oes-versioning-button-groups {
-    padding-top:15px;
+    padding-top: 15px;
 }
 
 .oes-versioning-post-list {
-    width:100%;
+    width: 100%;
     border-collapse: collapse;
-    border:1px solid #000;
+    border: 1px solid #000;
 }
 
 .oes-versioning-post-list thead {
-    background-color:rgb(243, 245, 246);
-    border:1px solid #096484;
-    color:#096484;
+    background-color: rgb(243, 245, 246);
+    border: 1px solid #096484;
+    color: #096484;
 }
 
 .oes-versioning-post-list th,
 .oes-versioning-post-list tr,
 .oes-versioning-post-list td {
-    vertical-align:top;
-    border:none;
-    padding:5px;
-    text-align:left;
+    vertical-align: top;
+    border: none;
+    padding: 5px;
+    text-align: left;
 }
 
 .oes-versioning-post-list tr + tr {
-    border-top:1px solid #ccd0d4;
+    border-top: 1px solid #ccd0d4;
 }
 
 .oes-versioning-post-list td + td {
-    border-left:1px solid #ccd0d4;
+    border-left: 1px solid #ccd0d4;
 }
 
 .oes-versioning-post-list td label {
@@ -639,7 +525,7 @@ span.oes-column-post a.oes-admin-link:after {
     font-weight: bold;
     margin: 15px 0;
     color: #096484;
-    padding:0;
+    padding: 0;
 }
 
 .oes-versioning-translation-posts table {
@@ -648,7 +534,7 @@ span.oes-column-post a.oes-admin-link:after {
 
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 02A MENU PAGE : CONTAINER -------------------------------------------------------------------------------------------
+-- MENU PAGE : CONTAINER -----------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
 .oes-menu-container {
@@ -671,12 +557,16 @@ span.oes-column-post a.oes-admin-link:after {
 
 
 /* ---------------------------------------------------------------------------------------------------------------------
--- 02C MENU PAGE : CONFIGURATIONS --------------------------------------------------------------------------------------
+-- MENU PAGE : CONFIGURATIONS ------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
 
-/* table */
+/* Table */
+table.oes-config-table thead:not(:first-of-type) th,
+table.oes-config-table thead:not(:first-of-type) td {
+    border-top: 1px solid #c3c4c7;
+}
 
-/* expand icon */
+/* Expand icon */
 table.oes-config-table .oes-dashicons {
     font-size: 1.5rem;
 }
@@ -685,16 +575,20 @@ tr.oes-config-table-separator {
     background-color: #268fbb !important;
 }
 
+tr.oes-config-table-hide {
+    display: none
+}
+
 tr.oes-config-table-separator td,
 tr.oes-config-table-separator th {
-    color: white;
+    color: white !important;
 }
 
 .oes-expandable-row-20 {
     width: 20px;
 }
 
-/* header rows */
+/* Header rows */
 tr.oes-expandable-header td,
 tr.oes-expandable-header th {
     border-top: 1px solid var(--wordpress-light-grey);
@@ -727,7 +621,7 @@ tr.oes-expandable-header.active span {
     color: white;
 }
 
-/* options table */
+/* Options table */
 tr.oes-expandable-row table {
     width: 100%;
     vertical-align: top;
@@ -740,62 +634,56 @@ tr.oes-expandable-row > td {
     padding: 0;
 }
 
-/* table field count */
-span.oes-config-datamodel-field-count {
+/* Table field count */
+span.oes-config-data-model-field-count {
     float: right;
     font-weight: normal;
 }
 
-
-/*  option value table */
-
+/* Option value table */
 table.oes-option-table select,
 table.oes-option-table input[type="text"] {
     max-width: 100%;
     width: 100%;
 }
 
-/* transposed table */
+/* Transposed table */
+table.oes-config-table tbody th,
 table.oes-option-table tbody th {
     vertical-align: top;
     border-right: 1px solid var(--wordpress-light-grey);
     border-bottom: 1px solid var(--wordpress-light-grey);
+    border-top: 1px solid var(--wordpress-light-grey);
     background: var(--wordpress-lighter-grey);
 }
 
+table.oes-config-table tbody td.oes-table-transposed,
 table.oes-option-table tbody td.oes-table-transposed {
     background-color: white;
-    border-top: 1px solid var(--wordpress-light-grey);
     border-bottom: 1px solid var(--wordpress-light-grey);
 }
 
-table.oes-config-table code.oes-object-identifier {
-    opacity: 75%;
-    margin-left: .7rem;
-    font-size: .7rem;
-    font-weight: lighter;
+.oes-operation-type-header th {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
 }
 
-/* config table : pattern option -------------------------------------------------------------------------------------*/
+.oes-operation-type-header > th:first-child {
+    border-right: none;
+}
 
+.oes-config-warning {
+    padding: .5rem;
+    margin-bottom: 2rem;
+}
+
+/* Pattern */
 .oes-pattern-panel {
-    display:none;
+    display: none;
 }
 
 .oes-pattern-panel.active {
-    display:block;
-}
-
-.oes-pattern-further-options {
-    padding: 1rem 0;
-}
-
-.oes-pattern-further-option-wrapper {
-    padding-top: 1rem;
-}
-
-td.oes-no-padding {
-    padding: 0;
+    display: block;
 }
 
 table#oes-pattern-definition {
@@ -825,7 +713,7 @@ table.pattern-definition .oes-accordion-panel {
 
 .oes-pattern-row-delete,
 .oes-pattern-row-up {
-    margin-right:5px !important;
+    margin-right: 5px !important;
 }
 
 .oes-pattern-row-delete {
@@ -853,43 +741,44 @@ table.pattern-definition .oes-accordion-panel {
     font-family: "dashicons", serif
 }
 
-/* cache table -------------------------------------------------------------------------------------------------------*/
-table.oes-settings-table {
-    border-collapse: collapse;
-    width: 100%;
-}
-
-table.oes-settings-table td,
-table.oes-settings-table th {
-    border: 1px solid #787c82;
-    padding: 8px;
-}
-
-table.oes-settings-table tr:nth-child(even){
-    background-color: #f2f2f2;
-}
-
-table.oes-settings-table th {
-    text-align: left;
-    background-color: rgba(0,0,0,.07);
-}
-
-.oes-setting-remark {
-    font-style: italic;
-    color: #787c82;
-}
-
+/* Cache settings */
 .oes-settings-annotations p {
     font-style: italic;
     color: #787c82;
-    padding:0;
-    margin:0;
+    padding: 0;
+    margin: 0;
 }
 
-.oes-tool-information-wrapper-cache-scheduler {
-    padding-top: 1rem;
+/* Logo settings */
+.oes-row {
+    display: flex;
 }
 
-.oes-tool-wrapper-cache-empty {
-    padding-top: 3rem;
+.oes-column-75 {
+    flex: 75%;
+}
+
+.oes-column-25 {
+    flex: 25%;
+    border-left: 1px solid var(--wordpress-light-grey);
+    padding-left: 1rem;
+}
+
+.oes-column-image {
+    width: 100%;
+}
+
+.oes-favicon-preview {
+    width: 32px;
+    height: 32px;
+}
+
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- BLOCKS --------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+.oes-block-control-wrapper {
+    padding: 16px;
+    border-top: 1px solid #e0e0e0;
 }

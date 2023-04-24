@@ -1,8 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
+
 use function OES\ACF\oes_get_field;
 
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /* get global instance */
 $oes = OES();
@@ -72,14 +73,17 @@ if (!isset($oes->blocks['acf_pro'][$blockID])) {
 
 
 /**
- * Define the server side callback to render your block in the front end
+ * Define the server side callback to render your block in the front end.
+ * @return void
  */
-function oes_block_render_panel() {
+function oes_block_render_panel(): void
+{
     echo '<div class="' . (oes_get_field('panel_class') ?? '') . '">' .
         oes_get_panel_html('<InnerBlocks />', [
             'caption' => oes_get_field('panel_title') ?? '',
             'number-prefix' => oes_get_field('panel_number_prefix') ?? '',
             'number' => oes_get_field('panel_number') ?? '',
+            'bootstrap' => false,
             'active' => isset($_POST['post']) ?
                 true :
                 (oes_get_field('panel_expanded') ?? false)

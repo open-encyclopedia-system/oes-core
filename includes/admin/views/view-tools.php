@@ -15,13 +15,3 @@ do_action('admin_notices');
         '</a>'
     ); ?>
 </p>
-<div id="poststuff">
-    <?php do_meta_boxes('oes-tools', 'normal', ''); ?>
-</div>
-<script type="text/javascript">
-    /* close and expand postboxes */
-    jQuery(document).ready(function ($) {
-        $('.if-js-closed').removeClass('if-js-closed').addClass('closed');
-        postboxes.add_postbox_toggles('oes-settings_page_oes_frontend');
-    });
-</script>

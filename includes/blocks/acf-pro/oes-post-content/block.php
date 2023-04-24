@@ -1,8 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) exit; // Exit if accessed directly
+
 use function OES\ACF\oes_get_field;
 
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /* get global instance */
 $oes = OES();
@@ -55,8 +56,10 @@ if (!isset($oes->blocks['acf_pro'][$blockID]))
 
 /**
  * Define the server side callback to render your block in the front end.
+ * @return void
  */
-function oes_block_render_post_content(){
+function oes_block_render_post_content(): void
+{
 
     /* get block fields */
     $previewPost = oes_get_field('block__post_content__post') ?? false;

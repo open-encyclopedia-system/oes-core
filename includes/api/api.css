@@ -254,7 +254,7 @@ table#oes-lod-results-table td {
 
 /* ICON --------------------------------------------------------------------------------------------------------------*/
 
-/* new icon TODO @nextRelease: identify by name instead of last-child? */
+/* new icon @oesDevelopment Identify by name instead of last-child? */
 .components-button.has-icon .dashicon.dashicons-oes-lod-sidebar-icon {
     background : url('../../assets/images/oes_cubic_18x18.png') no-repeat;
     margin-right: 5px;
@@ -647,7 +647,7 @@ button.oes-lod-box-close span:before {
     content: "\00d7";
 }
 
-.oes-lod-box-title h3.oes-content-table-header3 {
+.oes-lod-box-title h3.oes-content-table-header {
     margin: .5rem 0;
 }
 
@@ -668,4 +668,9 @@ ul.oes-lod-box-list li:last-child:after {
 .oes-lod-box-additional-info {
     font-size: 14px;
     color: #646970
+}
+
+.oes-lod-box-container-inner,
+.oes-lod-box-additional-info > div {
+    margin-bottom: 2rem;
 }

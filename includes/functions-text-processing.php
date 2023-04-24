@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * @param int $offset The offset. Default is 0.
  * @return bool Returns true if the input string does start with needle.
  *
- * TODO @php8.0: can be replaced with str_starts_with
+ * @oesDevelopment Can be replaced with str_starts_with on php8.0.
  */
 function oes_starts_with(string $string, string $needle, int $offset = 0): bool
 {
@@ -113,10 +113,23 @@ function oes_array_to_string_flat($input = null): string
  * Replace double quote by single quote in string.
  *
  * @param string $value A string where double quotes are to be replaced.
+ * @return void
  */
-function oes_replace_double_quote(string &$value)
+function oes_replace_double_quote(string &$value): void
 {
     $value = str_replace('"', "'", $value);
+}
+
+
+/**
+ * Replace characters for html form.
+ *
+ * @param mixed $value The value to be cleaned.
+ * @return mixed Returns clean value
+ */
+function oes_replace_for_form($value)
+{
+    return str_replace(["\"", "\„", "“", "„"], ['&#8220;', '&#8222;', '&#8220;', '&#8222;'], $value);
 }
 
 
@@ -128,16 +141,15 @@ function oes_replace_double_quote(string &$value)
  */
 function oes_replace_for_serializing($value)
 {
-    if(is_string($value)){
+    if (is_string($value)) {
         $replacedStringParams = [
             '\"' => "&quot;",
             "\'" => "&apos;",
             '\\\\' => "&bsol;"
         ];
         $value = str_replace(array_keys($replacedStringParams), array_values($replacedStringParams), $value);
-    }
-    elseif(is_array($value))
-        foreach($value as $key => $singleValue)
+    } elseif (is_array($value))
+        foreach ($value as $key => $singleValue)
             $value[$key] = oes_replace_for_serializing($singleValue);
 
     return $value;
@@ -152,16 +164,15 @@ function oes_replace_for_serializing($value)
  */
 function oes_replace_from_serializing($value)
 {
-    if(is_string($value)){
+    if (is_string($value)) {
         $replacedStringParams = [
             "&quot;" => '\"',
             "&apos;" => "\'",
             "&bsol;" => '\\\\'
         ];
         $value = str_replace(array_keys($replacedStringParams), array_values($replacedStringParams), $value);
-    }
-    elseif(is_array($value))
-        foreach($value as $key => $singleValue)
+    } elseif (is_array($value))
+        foreach ($value as $key => $singleValue)
             $value[$key] = oes_replace_from_serializing($singleValue);
 
     return $value;
@@ -177,7 +188,7 @@ function oes_replace_from_serializing($value)
  * @param string $encoding Optional string containing the encoding. Default is 'windows-1251//TRANSLIT'.
  * @return string Returns encoded string.
  *
- * TODO @nextRelease: fix encoding problem for excel csv with Windows-1251.
+ * @oesDevelopment Improve encoding for csv with Windows-1251.
  */
 function oes_csv_escape_string(string $input, string $separator = ';', string $inputEncoding = 'utf-8', string $encoding = "windows-1251"): string
 {
@@ -276,10 +287,10 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
 
     /* gather paragraphs by striping content of tags and replacing line breaks */
     $paragraphs = [];
-    $contentByParagraph = preg_split( '/<\/p>/is', $content );
-    foreach($contentByParagraph as $paragraphRaw)
+    $contentByParagraph = preg_split('/<\/p>/is', $content);
+    foreach ($contentByParagraph as $paragraphRaw)
         $paragraphs[] = strip_tags($paragraphRaw, '<em><oesnote><strong><span><sub><sup><s>');
-    
+
     /* loop through paragraphs */
     if (count($paragraphs) > 1 || !empty($paragraphs[0])) {
         foreach ($paragraphs as $paragraphKey => $paragraph) {
@@ -298,18 +309,42 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
                 } else $searchParagraph = $paragraph;
 
                 /* check if occurrence in sentence -------------------------------------------------------------------*/
-                if (strpos($searchParagraph, $key) !== false) {
+                if (stripos($searchParagraph, $key) !== false) {
 
                     /* check occurrences */
                     $occurrences = substr_count(strtolower($searchParagraph), strtolower($key));
-                    
+
                     /* prepare paragraph */
                     $highlightedParagraph = preg_replace('/(' . $key . ')/iu',
                         '<span class="oes-search-highlighted">\0</span>', $paragraph);
 
+                    /* check if inside note */
+                    if (strpos($highlightedParagraph, '<oesnote>') !== false) {
+                        $notes = preg_split('/<oesnote>/is', $highlightedParagraph);
+
+                        if (sizeof($notes) > 1) {
+                            foreach ($notes as $i => $singleNote) {
+
+                                if ($i > 0) {
+
+                                    /* check if search term inside note */
+                                    if (stripos($singleNote, $key) !== false) {
+                                        $notes[$i - 1] .= '<span class="oes-search-highlighted-note">';
+                                        $notes[$i] = str_replace('</oesnote>', '</oesnote></span>', $notes[$i]);
+                                    }
+
+                                }
+                            }
+
+                            $highlightedParagraph = implode('<oesnote>', $notes);
+
+                        }
+
+                    }
+
                     /* check search result after filtering */
                     $filteredContent = apply_filters('the_content', $highlightedParagraph);
-                    if(!empty($filteredContent) && $occurrences > 0)
+                    if (!empty($filteredContent) && $occurrences > 0)
                         $returnArrayString[] = [
                             'paragraph' => $filteredContent,
                             'occurrences' => $occurrences,
@@ -347,4 +382,25 @@ function oes_convert_coordinates_decimal_to_degree(string $points): string
         }
 
     return implode(' ', $coordinatesArray);
+}
+
+
+/**
+ * Convert a date string to a formatted string.
+ *
+ * @param string $date The date as string.
+ * @param string $locale The locale. Default is 'en_US'.
+ * @param int $dateType The date type.
+ * @param int $timeType The time type.
+ * @return string Returns the formatted string.
+ */
+function oes_convert_date_to_formatted_string(string $date, string $locale = 'en_US', int $dateType = 1, int $timeType = -1): string
+{
+    $formattedString = '';
+    if ($date) {
+        $timestamp = strtotime(str_replace('/', '-', $date));
+        $formatter = new IntlDateFormatter($locale, $dateType, $timeType);
+        $formattedString = $formatter->format($timestamp);
+    }
+    return $formattedString;
 }

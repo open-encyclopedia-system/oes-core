@@ -1,9 +1,8 @@
 
 .oes-card {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    margin: 0 10px;
-    border-radius: 0;
+    border-radius: 0 !important;
     border:none;
+    font-size: .9rem;
 }
 
 a.oes-card-img {
@@ -28,17 +27,12 @@ a.oes-card-img:hover .oes-card-overlay{
     opacity: 50%
 }
 
-.oes-card .card-body {
-    position:relative;
+.oes-card-body {
+    display: flex;
+    flex-direction: column;
 }
 
-.oes-card .oes-card-text {
-    padding-bottom: 4.25rem;
-}
-
-.oes-card .card-body a {
-    position:absolute;
-    bottom: 1.25rem;
-    left:1.25rem;
-    right: 1.25rem;
+.oes-card-text {
+    flex-grow: 1;
+    padding-bottom: 1rem;
 }

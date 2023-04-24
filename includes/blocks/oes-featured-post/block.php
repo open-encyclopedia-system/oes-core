@@ -14,7 +14,7 @@ if (!isset($oes->blocks['core'][$blockID])) {
         'attributes' => [
             'oes_post' => ['type' => 'string']
         ],
-        'keywords' => ['OES', 'card', 'layout']
+        'keywords' => ['OES', 'featured', 'post']
     ];
 }
 
@@ -39,12 +39,12 @@ function oes_block_render_featured_post(array $attributes): string
         if (method_exists($featuredPost, 'get_html_featured_post'))
             $content = $featuredPost->get_html_featured_post([]);
         else
-            $content = '<span class="oes-notice-text">' .
-                __('No render method for post type.', 'oes') . '</span>' . $postType;
+            $content = '<span class="oes-notice">' .
+                __('Featured Post: No render method for post type.', 'oes') . '</span>' . $postType;
     }
     else{
-        $content = '<span class="oes-notice-text">' .
-            __('No post selected.', 'oes') . '</span>';
+        $content = '<span class="oes-notice">' .
+            __('Featured Post: No post selected.', 'oes') . '</span>';
     }
 
     return $content;

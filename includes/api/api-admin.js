@@ -8,12 +8,15 @@ function oesLodBlockEditorToggleOptionPanel() {
 
 /* function for api admin actions called not from block editor -------------------------------------------------------*/
 
-/* show and hide the option panel */
+/* show and hide the option and copy panel */
 function oesLodMetaBoxToggleOptionPanel() {
     jQuery(".oes-lod-meta-box-api-options-container").toggleClass('oes-collapsed');
     jQuery(".oes-lod-meta-box-api-toggle").toggleClass('oes-toggle-collapsed');
 }
-
+function oesLodMetaBoxToggleCopyOptionPanel(){
+    jQuery(".oes-lod-meta-box-copy-options-container").toggleClass('oes-collapsed');
+    jQuery(".oes-lod-meta-box-copy-options").toggleClass('oes-toggle-collapsed');
+}
 
 /* api request -------------------------------------------------------------------------------------------------------*/
 
@@ -42,18 +45,18 @@ function oesLodAdminApiRequest() {
         params[this.name] = this.value;
     });
 
-    /* todo temp for block editor */
+    /* @oesDevelopment Temp for block editor */
     jQuery('.oes-lod-search-options-block-editor :input').each(function () {
         if (this.name && this.value) params[this.name] = this.value;
     });
 
     params['search_term'] = search_term;
 
-    /* TODO @nextRelease: get post type */
+    /* @oesDevelopment Get post type */
     let post_type = 'post';
     const attrs = jQuery('body').attr('class').split(' ');
     jQuery(attrs).each(function () {
-        if ('post-type-' === this.substr(0, 10)) {
+        if ('post-type-' == this.substr(0, 10)) {
             post_type = this.split('post-type-');
             post_type = post_type[post_type.length - 1];
         }
@@ -95,7 +98,7 @@ function oesLodAdminApiRequest() {
                     for (let i = 0; i < data.response.length; i++) {
 
                         /* prepare row and cells */
-                        var tr = table[0].insertRow(),
+                        const tr = table[0].insertRow(),
                             td5 = tr.insertCell(0),
                             td4 = tr.insertCell(0),
                             td3 = tr.insertCell(0),
@@ -113,9 +116,6 @@ function oesLodAdminApiRequest() {
                             id + '">' + name + '</label>';
 
                         /* Name and preview */
-                        const get_url = window.location,
-                            base_url = get_url.protocol + "//" + get_url.host + "/"
-                                + get_url.pathname.split('/wp-admin')[0];
                         td2.innerHTML = '<div class="oes-lod-link-admin">' +
                             '<a href="javascript:void(0)" onclick="oesLodPreview(this)" data-lod="' + id + '">' +
                             '<img src="' + data.icon_path + '" ' + 'alt="oes-lod-icon">' +
@@ -273,7 +273,7 @@ function oesLodPrepareCopy(el) {
                 if (shortcodeText) {
                     shortcodeText += ', ';
                 }
-                const label = jQuery.trim(jQuery("#oes-lod-label-" + checkboxes[m].name).text()),
+                const label = jQuery.trim(jQuery("#oes-lod-label-" + checkboxes[m].name).text()).replace(/,/g, ';'),
                     authority_file = jQuery('#oes-lod-authority-file').children("option:selected").val();
                 shortcodeText += '[' + authority_file + 'link id="' + checkboxes[m].name + '" label="' + label + '"]';
             }
@@ -398,7 +398,7 @@ function oesLodShowPanel(authority_file) {
     /* set tab to active */
     const tabs = jQuery(".oes-lod-tab-item");
     for (let i = 0; i < tabs.length; i++) {
-        if (tabs[i].id === "oes-lod-tab-" + authority_file) tabs[i].className = "oes-lod-tab-item active";
+        if (tabs[i].id == "oes-lod-tab-" + authority_file) tabs[i].className = "oes-lod-tab-item active";
         else tabs[i].className = "oes-lod-tab-item";
     }
 

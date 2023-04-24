@@ -1,10 +1,7 @@
 var el = wp.element.createElement,
-    registerBlockType = wp.blocks.registerBlockType,
-    ServerSideRender = wp.components.ServerSideRender,
-    TextControl = wp.components.TextControl,
-    InspectorControls = wp.editor.InspectorControls;
+    TextControl = wp.components.TextControl;
 
-registerBlockType('oes/oes-featured-post', {
+wp.blocks.registerBlockType('oes/oes-featured-post', {
     title: 'OES Featured Post',
     icon: {
         src: 'book-alt',
@@ -32,24 +29,24 @@ registerBlockType('oes/oes-featured-post', {
             el("div", {
                     className: "oes-featured-post-block-wrapper"
                 },
-                el(ServerSideRender, {
+                el(wp.serverSideRender, {
                     block: 'oes/oes-featured-post',
                     attributes: props.attributes
                 })
             ),
 
             /* Inspector */
-            el(InspectorControls,
-                {}, [
-                    el("hr", {
-                    }),
-                    el(TextControl, {
-                        label: 'Post ID',
-                        value: props.attributes.oes_post,
-                        onChange: (value) => {
-                            props.setAttributes({oes_post: value});
-                        }
-                    })
+            el(wp.blockEditor.InspectorControls, {}, [
+                el("div",
+                        {className: "oes-block-control-wrapper"}, [
+                        el(TextControl, {
+                                label: 'Post ID',
+                                value: props.attributes.oes_post,
+                                onChange: (value) => {
+                                    props.setAttributes({oes_post: value});
+                                }
+                            })
+                        ])
                 ]
             )
         ]

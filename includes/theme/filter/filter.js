@@ -1,3 +1,46 @@
+function oesPreFilterArchive() {
+    if (typeof oes_filter !== 'undefined') {
+        const urlSearchParams = new URLSearchParams(window.location.search),
+            params = Object.fromEntries(urlSearchParams.entries());
+        let filtered = false;
+        for (const k in params) {
+            const values = params[k].split(',');
+            for (let i = 0; i < values.length; i++) {
+                let filterName = k;
+                if (k.substr(0, 5) === 'oesf_') filterName = k.substr(5);
+                if (oes_filter.hasOwnProperty(filterName)) {
+                    oesApplyFilter(values[i], filterName);
+                    filtered = true;
+                }
+            }
+        }
+
+        if (!filtered) {
+            oesInitializeFilter();
+        }
+    }
+}
+
+function oesInitializeFilter() {
+
+    /* get cookie */
+    const selected_value_store = localStorage.getItem("oesSelectedFilter");
+    if (selected_value_store.length > 0) {
+        const parsed_value = JSON.parse(selected_value_store);
+        if(parsed_value != null && parsed_value.length > 0) {
+            for (let i = 0; i < parsed_value.length; i++) {
+                let filterName = parsed_value[i]['type'];
+                if (oes_filter.hasOwnProperty(filterName)) {
+                    for (let j = 0; j < parsed_value[i]['ids'].length; j++) {
+                        oesApplyFilter(parsed_value[i]['ids'][j], filterName);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 /*
 * Processing for Applying a Filter:
 *
@@ -17,10 +60,12 @@ function oesApplyFilterProcessing() {
     oesUpdateWrapperVisibility();
     oesUpdateFacetFilterCount();
     oesUpdateFilterCount();
+    oesUpdateLocalStorage();
 }
 
 /* Facet filter ------------------------------------------------------------------------------------------------------*/
-let current_post_ids = [];
+let current_filter_post_ids = [];
+let selected_filter = [];
 
 /* apply facet filter */
 function oesApplyFilter(filter, type) {
@@ -34,14 +79,19 @@ function oesApplyFilter(filter, type) {
         active_filter_container[0].childNodes[0].childNodes[0].data + '</span></a></li>');
 
     /* prepare matching array (perform "OR" operation) */
-    if (!current_post_ids[type]) {
-        current_post_ids[type] = oes_filter[type][filter];
+    if (!current_filter_post_ids[type]) {
+        current_filter_post_ids[type] = oes_filter[type][filter];
     } else {
-        current_post_ids[type] = current_post_ids[type].concat(oes_filter[type][filter]);
+        current_filter_post_ids[type] = current_filter_post_ids[type].concat(oes_filter[type][filter]);
     }
 
     /* hide item from selection list */
     active_filter_container.parent().toggleClass("active");
+
+    /* store selected filter */
+    if (type in selected_filter) {
+        if (!selected_filter[type].includes(filter)) selected_filter[type].push(filter);
+    } else selected_filter[type] = [filter];
 
     oesApplyFilterProcessing();
 }
@@ -57,13 +107,13 @@ function oesRemoveFilter(filter_inner, type_inner) {
 
     /* check if this is the last filter */
     if (jQuery('.oes-active-filter-item').length === 0) {
-        current_post_ids = [];
+        current_filter_post_ids = [];
     } else {
 
         /* remove data from current post_ids */
-        if (current_post_ids.hasOwnProperty(type_inner)) {
+        if (current_filter_post_ids.hasOwnProperty(type_inner)) {
 
-            /* redo current post ids for this type :( (no easier way...? TODO @nextRelease ) */
+            /* redo current post ids for this type :( (no easier way...? @oesDevelopment ) */
             let update_post_ids = [];
             const active_filter = jQuery(".oes-active-filter-item-" + type_inner);
 
@@ -74,9 +124,25 @@ function oesRemoveFilter(filter_inner, type_inner) {
             }
 
             if (update_post_ids.length !== 0) {
-                current_post_ids[type_inner] = update_post_ids;
+                current_filter_post_ids[type_inner] = update_post_ids;
             } else {
-                delete current_post_ids[type_inner];
+                delete current_filter_post_ids[type_inner];
+            }
+        }
+    }
+
+    /* store selected filter */
+    if (type_inner in selected_filter) {
+        if (selected_filter[type_inner].includes(filter_inner)) {
+            if (selected_filter[type_inner].length < 2) {
+                delete selected_filter[type_inner];
+            } else {
+                const index = selected_filter[type_inner].indexOf(filter_inner);
+                if (index > -1) {
+                    let temp_selected_filter = selected_filter[type_inner];
+                    temp_selected_filter.splice(index, 1);
+                    selected_filter[type_inner] = temp_selected_filter;
+                }
             }
         }
     }
@@ -90,7 +156,7 @@ function oesApplyFacetFilterProcessing() {
     const items = jQuery(".oes-post-filter-wrapper");
 
     /* show all if no filter active */
-    if (Object.keys(current_post_ids).length === 0) {
+    if (Object.keys(current_filter_post_ids).length === 0) {
         items.show();
         jQuery(".oes-filter-item-count").show();
         jQuery(".oes-archive-wrapper").show();
@@ -99,20 +165,21 @@ function oesApplyFacetFilterProcessing() {
 
         /* get results (perform "AND" operation) */
         let post_ids = [];
-        if (Object.keys(current_post_ids).length === 1) {
-            post_ids = current_post_ids[Object.keys(current_post_ids)[0]];
-        } else if (Object.keys(current_post_ids).length !== 0) {
+        if (Object.keys(current_filter_post_ids).length === 1) {
+            post_ids = current_filter_post_ids[Object.keys(current_filter_post_ids)[0]];
+        } else if (Object.keys(current_filter_post_ids).length !== 0) {
 
             /* get first element */
-            let first_key = Object.keys(current_post_ids)[0],
-                post_ids_temp = current_post_ids[first_key];
+            let first_key = Object.keys(current_filter_post_ids)[0],
+                post_ids_temp = current_filter_post_ids[first_key];
 
             /* skip first element and get intersection */
-            for (let type in current_post_ids) {
+            for (let type in current_filter_post_ids) {
                 if (type !== first_key) {
-                    post_ids = post_ids_temp.filter(value => current_post_ids[type].includes(value));
+                    post_ids_temp = post_ids_temp.filter(value => current_filter_post_ids[type].includes(value));
                 }
             }
+            post_ids = post_ids_temp;
         }
 
         /* add active filter */
@@ -128,7 +195,7 @@ function oesApplyFacetFilterProcessing() {
     }
 }
 
-/* TODO very slow, only recommended if not many filter */
+/* @oesDevelopment Improve - very slow, only recommended if not many filter */
 function oesUpdateFacetFilterCount() {
 
     /* loop through facet filter */
@@ -167,15 +234,27 @@ function oesUpdateFacetFilterCount() {
                     for (let n = 0; n < visible_wrapper.length; n++) {
 
                         /* show item to count visible children and hide if empty */
-                        let visible_items = jQuery(visible_wrapper[n]).children('.oes-alphabet-container').children('.oes-post-filter-wrapper:visible');
-                        if (jQuery('.oes-alphabet-container').length < 1) {
-                            visible_items = jQuery(visible_wrapper[n]).children('.oes-post-filter-wrapper:visible');
+                        let visible_items;
+                        let ignore_alphabet = false;
+                        if(jQuery(visible_wrapper[n]).hasClass('oes-ignore-alphabet-filter')){
+                            visible_items = jQuery(visible_wrapper[n]);
+                            ignore_alphabet = true;
+                        }
+                        else{
+                            visible_items = jQuery(visible_wrapper[n]).children('.oes-alphabet-container').children('.oes-post-filter-wrapper:visible');
+                            if (jQuery('.oes-alphabet-container').length < 1) {
+                                visible_items = jQuery(visible_wrapper[n]).children('.oes-post-filter-wrapper:visible');
+                            }
                         }
 
                         for (let p = 0; p < visible_items.length; p++) {
-
                             const class_name = visible_items[p].className;
-                            collect_current_ids.push(parseInt(class_name.substring(class_name.lastIndexOf('-') + 1)));
+                            if(ignore_alphabet) {
+                                collect_current_ids.push(parseInt(visible_items[p].dataset.oesId));
+                            }
+                            else {
+                                collect_current_ids.push(parseInt(class_name.substring(class_name.lastIndexOf('-') + 1)));
+                            }
                         }
                     }
 
@@ -188,7 +267,7 @@ function oesUpdateFacetFilterCount() {
                     const facet_filter_count = jQuery(facet_filter[k]).children('.oes-filter-item-count');
                     if (facet_filter_count.length > 0) facet_filter_count[0].innerHTML = '(' + new_count + ')';
 
-                    /* hide if empty TODO only makes sense if not more selectable */
+                    /* hide if empty @oesDevelopment only makes sense if not more selectable */
                     if (new_count === 0) jQuery(facet_filter[k]).parent().hide();
                     else if (!jQuery(facet_filter[k]).parent().hasClass('active'))
                         jQuery(facet_filter[k]).parent().show();
@@ -247,11 +326,15 @@ function oesApplyRangeFilterProcessing() {
 function oesApplyAlphabetFilter(el) {
 
     /* only apply if not disabled (should not be possible but better safe...) */
-    if (!el.classList.contains('oes-filter-disable-click')) {
+    if (!el.classList.contains('oes-disabled-link')) {
 
         /* update active filter */
-        jQuery(".oes-filter-abc").removeClass("active");
+        const alphabet_filter = jQuery(".oes-filter-abc"),
+            alphabet_filter_parent = alphabet_filter.parent();
+        alphabet_filter.removeClass("active");
+        alphabet_filter_parent.removeClass("active");
         el.classList.toggle("active");
+        jQuery(el).parent().toggleClass("active");
     }
 
     oesApplyFilterProcessing();
@@ -268,9 +351,9 @@ function oesApplyAlphabetFilterProcessing() {
         /* disable all alphabet filter with empty body */
         for (let k = 0; k < items.length; k++) {
             if (jQuery(items[k]).children('.oes-alphabet-container').children(':visible').length < 1) {
-                jQuery('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').addClass("oes-filter-disable-click");
+                jQuery('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').addClass("oes-disabled-link");
             } else {
-                jQuery('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').removeClass("oes-filter-disable-click");
+                jQuery('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').removeClass("oes-disabled-link");
             }
         }
 
@@ -280,7 +363,7 @@ function oesApplyAlphabetFilterProcessing() {
             filter = active_alphabet_filter[0].dataset.filter;
         if (filter !== 'all') {
             items.hide();
-            jQuery(".filter-" + filter).show();
+            jQuery(".oes-alphabet-filter-" + filter).show();
         }
     }
 }
@@ -288,13 +371,14 @@ function oesApplyAlphabetFilterProcessing() {
 
 /* Hide empty alphabet wrapper (only relevant if character is displayed before alphabet block) -----------------------*/
 function oesUpdateWrapperVisibility() {
-    const items = jQuery(".oes-archive-wrapper");
+    const items = jQuery(".oes-archive-wrapper:not(.oes-ignore-alphabet-filter)");
     for (let k = 0; k < items.length; k++) {
 
         /* show item to count visible children and hide if empty, check for alphabet wrapper (if alphabet filter exist) */
-        if ((jQuery('.oes-alphabet-container').length > 0 &&
-                jQuery(items[k]).children('.oes-alphabet-container').children(':visible').length < 1) ||
-            jQuery(items[k]).children(':visible').length < 1) {
+        if (jQuery(items[k]).children(':visible').length < 1 ||
+            (jQuery(".oes-alphabet-container").length > 0 &&
+                jQuery(items[k]).children(".oes-alphabet-container").children(':visible').length < 1)
+        ) {
             jQuery(items[k]).hide();
         }
     }
@@ -308,7 +392,7 @@ function oesUpdateFilterCount() {
     const amount = jQuery(".oes-post-filter-wrapper:visible").length,
         count_element = jQuery(".oes-archive-count-number");
 
-    if (count_element.length > 0) count_element[0].innerText = amount + ' ';
+    if (count_element.length > 0) count_element[0].innerText = amount;
 
     /* update label */
     if (amount === 0) jQuery(".oes-archive-container-no-entries").show();
@@ -324,12 +408,51 @@ function oesUpdateFilterCount() {
 }
 
 
+/* Update local storage variable -------------------------------------------------------------------------------------*/
+function oesUpdateLocalStorage() {
+
+    let unique_post_ids = [];
+    for (let i in current_filter_post_ids) {
+        unique_post_ids = unique_post_ids.concat(current_filter_post_ids[i]);
+    }
+    localStorage.setItem('oesResultIDs', JSON.stringify(unique_post_ids));
+
+    /* prepare back link */
+    localStorage.setItem('oesSearchResultsURL', window.location.href);
+
+    /* prepare selection filter */
+    let selected_filter_store = [];
+    let i = 0;
+    for (const [type, ids] of Object.entries(selected_filter)) {
+        selected_filter_store[i] = {};
+        selected_filter_store[i]['type'] = type;
+        selected_filter_store[i]['ids'] = ids;
+        i++;
+    }
+
+    let collect_displayed_ids = [];
+    let visible_posts = jQuery('.oes-post-filter-wrapper:visible');
+    for (let n = 0; n < visible_posts.length; n++) {
+        const class_name = visible_posts[n].className;
+        if(class_name.includes("oes-ignore-alphabet-filter")) {
+            collect_displayed_ids.push(parseInt(visible_posts[n].dataset.oesId));
+        }
+        else {
+            collect_displayed_ids.push(parseInt(class_name.substring(class_name.lastIndexOf('-') + 1)));
+        }
+    }
+
+    localStorage.setItem('oesSelectedFilter', JSON.stringify(selected_filter_store));
+    localStorage.setItem("oesDisplayedIds", JSON.stringify(collect_displayed_ids));
+}
+
+
 /* Post type filter (used in search) ---------------------------------------------------------------------------------*/
 function oesFilterPostTypes(filter) {
 
     const count = jQuery(".oes-archive-count-number"),
         results = jQuery(".oes-post-type-filter");
-    let amount = 0;
+    let amount;
 
     if (filter === 'all') {
         results.show();

@@ -7,16 +7,42 @@
     ); ?>
 </p>
 <p><?php printf(__('The reading settings manage the display and behaviour of the frontend (your website as ' .
-        'displayed by the selected theme. Learn more about themes in the %sWordPress manual%s). ' .
+        'displayed by the selected theme, learn more about themes in the %sWordPress manual%s). ' .
         'Most of the settings affect only the OES theme or a derivative of it and will have no impact ' .
         'on other themes. ', 'oes'),
         '<a href="https://developer.wordpress.org/themes/getting-started/what-is-a-theme/" target="_blank">',
-    '</a>');
+        '</a>');
+    echo '<br>';
     _e('A post object can be displayed according to its post type on the frontend as a <b>single page</b>, as a ' .
-        'search result or as ' .
+        '<b>search result</b> or as ' .
         'part of a WordPress <b>archive</b> listing all posts of a specific post type. ' .
         'For instance, the post type “article” ' .
-        'can be displayed in full on one page, can be referred to as the result of a search, or can be listed in an ' .
-        'overview of all articles of a reference work.', 'oes');?></p>
-<div class="oes-form-wrapper-small"><?php \OES\Admin\Tools\display_tool('reading'); ?></div>
-<div class="oes-form-wrapper-small"><?php \OES\Admin\Tools\display_tool('theme-labels'); ?></div>
+        'can be displayed in full on one page (the single view), '.
+        'can be referred to as the result of a search (the search view), or can be listed in an ' .
+        'overview of all articles of a reference work (the archive view).', 'oes'); ?></p>
+<div class="oes-settings-nav-tabs-container">
+    <ul class="oes-settings-nav-tabs"><?php
+
+        $navtabs = [
+            'theme-languages' => 'Languages',
+            'theme-notes' => 'Endnotes',
+            'theme-single-view' => 'Single',
+            'theme-archive-view' => 'Archive',
+            'theme-index-pages' => 'Index (Register)',
+            'theme-search' => 'Search',
+            'theme-media' => 'Media',
+            'theme-logos' => 'Logos',
+            'theme-colors' => 'Colors',
+            'theme-labels' => 'Labels [Theme]'
+        ];
+        foreach ($navtabs as $navtabSlug => $navTabLabel)
+            echo '<li><a href="' . admin_url('admin.php?page=oes_settings_reading&select=' . $navtabSlug) .
+                '" class="' . ((isset($_GET['select']) || $navtabSlug !== 'theme-languages') ? '' : 'active') . '">' . $navTabLabel . '</a></li>';
+        ?>
+    </ul>
+</div>
+<div class="oes-settings-nav-tabs-panel">
+    <div class="oes-pb-0-5 oes-form-wrapper-small"><?php
+        \OES\Admin\Tools\display_tool($_GET['select'] ?? 'theme-languages');
+        ?></div>
+</div>
