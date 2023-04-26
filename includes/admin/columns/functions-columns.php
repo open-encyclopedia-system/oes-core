@@ -179,7 +179,7 @@ function display_post_column_value(string $column, string $post_id): void
                             case 'relationship' :
                                 if (is_array($value)) {
                                     $newValueTemp = [];
-                                    $value = array_unique($value);
+                                    $value = array_unique($value, SORT_REGULAR);
                                     foreach ($value as $post) {
                                         if (get_post($post)) {
                                             $postID = ($fieldObject['return_format'] == 'object') ? $post->ID : $post;
