@@ -489,6 +489,15 @@ function oes_get_panel_html(string $content = '', array $args = []): string
     ], $args);
 
 
+    /**
+     * Filters the panel arguments.
+     *
+     * @param array $args The panel arguments.
+     */
+    if (has_filter('oes/get_panel_html_args'))
+        $args = apply_filters('oes/get_panel_html_args', $args);
+
+
     /* get figure number */
     if (is_bool($args['number']) && $args['number']) {
 
@@ -607,6 +616,16 @@ function oes_get_gallery_panel_html(array $figures, array $args = []): string
         'bootstrap' => true
     ], $args);
 
+
+    /**
+     * Filters the gallery panel arguments.
+     *
+     * @param array $args The gallery panel arguments.
+     */
+    if (has_filter('oes/get_gallery_panel_html_args'))
+        $args = apply_filters('oes/get_gallery_panel_html_args', $args);
+
+
     /* get figure */
     if ($figures) {
 
@@ -680,11 +699,11 @@ function oes_get_gallery_panel_html(array $figures, array $args = []): string
         /* prepare slider controls */
         $nextIDs = $itemIDs;
         array_shift($nextIDs);
-        $nextIDs[] = $itemIDs[0];
+        $nextIDs[] = $itemIDs[0] ?? false;
 
         $prevIDs = $itemIDs;
         array_pop($prevIDs);
-        array_unshift($prevIDs, $itemIDs[array_key_last($itemIDs)]);
+        if($prevIDs) array_unshift($prevIDs, $itemIDs[array_key_last($itemIDs)]);
 
 
         if (sizeof($numbers) > 1) $numberString = $numbers[0] . ' - ' . end($numbers);
@@ -838,6 +857,16 @@ function oes_get_image_panel_html(array $image, array $args = []): string
         'bootstrap' => true,
         'active' => true
     ], $args);
+
+
+    /**
+     * Filters the image panel arguments.
+     *
+     * @param array $args The panel arguments.
+     */
+    if (has_filter('oes/get_image_panel_html_args'))
+        $args = apply_filters('oes/get_image_panel_html_args', $args);
+
 
     /* get figure */
     if ($image) {

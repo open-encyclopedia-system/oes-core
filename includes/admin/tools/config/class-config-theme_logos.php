@@ -42,6 +42,12 @@ if (!class_exists('Theme_Logos')) :
                     'favicon' => false,
                     'default' => 'oes-home-logo.png'
                 ],
+                'oes_theme-header_logo_print' => [
+                    'title' => __('Header Logo (Print)', 'oes'),
+                    'description' => __('The logo will be displayed on top of the printed page.', 'oes'),
+                    'favicon' => false,
+                    'default' => 'oes-home-logo.png'
+                ],
                 'oes_theme-favicon' => [
                     'title' => __('Favicon', 'oes'),
                     'description' => __('The icon is used as standard icon and can be accessed by older browsers.', 'oes'),
@@ -116,6 +122,7 @@ if (!class_exists('Theme_Logos')) :
             /* add or update option */
             foreach ([
                          'oes_theme-header_logo',
+                         'oes_theme-header_logo_print',
                          'oes_theme-favicon',
                          'oes_theme-favicon_16_16',
                          'oes_theme-favicon_32_32',

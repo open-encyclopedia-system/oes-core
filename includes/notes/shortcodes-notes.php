@@ -108,7 +108,7 @@ function oes_note_shortcode_list($args, string $content = ""): string
             /* get text before and after paragraph */
             $prepareNote = preg_replace('/<oesnotep>/', 'OESSPLIT', $note, 1);
             $prepareNote = preg_replace('~</oesnotep>(?!.*</oesnotep>)~', 'OESSPLIT', $prepareNote);
-            $prepareNoteSplit = preg_split('/(OESSPLIT)/', $prepareNote, null);
+            $prepareNoteSplit = preg_split('/(OESSPLIT)/', $prepareNote, 0);
 
             /* should contain three items BEFORE PARAGRAPHS AFTER */
             if (sizeof($prepareNoteSplit) == 3) {
@@ -122,7 +122,7 @@ function oes_note_shortcode_list($args, string $content = ""): string
                     $noteColumns = [];
                     $i = 0;
                     $insidep = true;
-                    $paragraphs = preg_split('/(<oesnotep>|<\/oesnotep>)/', $prepareNoteSplit[1], null, PREG_SPLIT_DELIM_CAPTURE);
+                    $paragraphs = preg_split('/(<oesnotep>|<\/oesnotep>)/', $prepareNoteSplit[1], 0, PREG_SPLIT_DELIM_CAPTURE);
                     if ($paragraphs) foreach ($paragraphs as $paragraph) {
 
                         if (empty($paragraph) || $paragraph == " ") continue;

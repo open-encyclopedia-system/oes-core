@@ -528,7 +528,7 @@ if (!class_exists('OES_Archive')) {
                                                     if (!isset($this->filter_array['json'][$filter][$singleFieldValue->ID]) ||
                                                         !in_array($post->ID, $this->filter_array['json'][$filter][$singleFieldValue->ID])) {
                                                         $this->filter_array['list'][$filter]['items'][$singleFieldValue->ID] =
-                                                            oes_get_display_title($singleFieldValue->ID, ['language' => $this->language]);
+                                                            oes_get_display_title($singleFieldValue->ID, ['language' => $this->language, 'option' => 'title_sorting']);
                                                         $this->filter_array['json'][$filter][$singleFieldValue->ID][] = $post->ID;
                                                     }
                                         }
@@ -544,7 +544,7 @@ if (!class_exists('OES_Archive')) {
                                                 if (!isset($this->filter_array['json'][$filter][$singlePostID]) ||
                                                     !in_array($post->ID, $this->filter_array['json'][$filter][$singlePostID])) {
                                                     $this->filter_array['list'][$filter]['items'][$singlePostID] =
-                                                        oes_get_display_title($singlePostID, ['language' => $this->language]);
+                                                        oes_get_display_title($singlePostID, ['language' => $this->language, 'option' => 'title_sorting']);
                                                     $this->filter_array['json'][$filter][$singlePostID][] = $post->ID;
                                                 }
                                             }

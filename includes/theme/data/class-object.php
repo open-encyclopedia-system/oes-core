@@ -401,16 +401,22 @@ if (!class_exists('OES_Object')) {
             $headingsList = '';
             foreach ($tableOfContent as $header) {
                 if ($this->is_pdf_mode) {
-                    $headingsList .= sprintf('<div class="oes-toc-header%s oes-toc-anchor oes-pdf-toc-anchor">%s</div>',
+                    $headingsList .= sprintf('<div class="oes-toc-header%s %s oes-toc-anchor oes-pdf-toc-anchor">%s</div>',
                         $header['level'],
+                        ((isset($header['block-heading']) && $header['block-heading']) ? 'oes-toc-block-heading' : ''),
                         $header['label']);
                 } else {
                     $anchor = oes_get_html_anchor(
                         $header['label'],
                         '#' . $header['anchor'],
                         'oes_toc_' . $header['anchor'],
-                        'oes-toc-anchor');
-                    $headingsList .= sprintf('<li class="oes-toc-header%s">%s</li>', $header['level'], $anchor);
+                        ('oes-toc-anchor' . (
+                            (isset($header['block-heading']) && $header['block-heading']) ?
+                                ' oes-toc-block-heading' :
+                                '')));
+                    $headingsList .= sprintf('<li class="oes-toc-header%s">%s</li>',
+                        $header['level'],
+                        $anchor);
 
                 }
             }

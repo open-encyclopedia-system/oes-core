@@ -257,7 +257,7 @@ if (!class_exists('OES_Core')) :
         /**
          * OES Initializing of the OES Core plugin functionalities and features.
          */
-        function initialize_core()
+        function initialize_core(): void
         {
             /** Include functionalities for OES Core plugin processing. ------------------------------------------------
              * This will include functions that are used throughout the OES Core plugin and the Project plugin.
@@ -289,6 +289,15 @@ if (!class_exists('OES_Core')) :
             oes_include('/includes/admin/notices/functions-notices.php');
             oes_include('/includes/admin/notices/hooks-notices.php');
 
+            /** Include admin pages inside the editorial layer ---------------------------------------------------------
+             * This will include admin pages inside the editorial layer for this OES Core plugin and the functionalities
+             * on these pages, e.g. settings options inside the editorial layer.
+             */
+            oes_include('/includes/admin/hooks-admin.php');
+            oes_include('/includes/admin/pages/class-page.php');
+            oes_include('/includes/admin/pages/class-container.php');
+            oes_include('/includes/admin/pages/hooks-pages.php');
+
             /** Include admin manual feature -------------------------------------------------------------------------*/
             if ($this->included_features['manual']) {
                 oes_include('/includes/admin/manual/functions-manual.php');
@@ -315,15 +324,6 @@ if (!class_exists('OES_Core')) :
                 oes_include('/includes/admin/columns/functions-columns.php');
             }
 
-            /** Include admin pages inside the editorial layer ---------------------------------------------------------
-             * This will include admin pages inside the editorial layer for this OES Core plugin and the functionalities
-             * on these pages, e.g. settings options inside the editorial layer.
-             */
-            oes_include('/includes/admin/hooks-admin.php');
-            oes_include('/includes/admin/pages/class-page.php');
-            oes_include('/includes/admin/pages/class-container.php');
-            oes_include('/includes/admin/pages/hooks-pages.php');
-
             /** Initialize acf dependencies --------------------------------------------------------------------------*/
             oes_include('/includes/acf/functions-acf.php');
             oes_include('/includes/acf/fixes-acf.php');
@@ -344,7 +344,8 @@ if (!class_exists('OES_Core')) :
             /** Include note feature. --------------------------------------------------------------------------------*/
             if ($this->included_features['notes']) {
                 $this->assets->add_style('oes-notes', '/includes/notes/notes.css');
-                $this->assets->add_script('oes-notes', '/includes/notes/notes.js', ['wp-rich-text', 'wp-element', 'wp-editor', 'wp-i18n']);
+                $this->assets->add_script('oes-notes', '/includes/notes/notes.js');
+                if(is_admin()) $this->assets->add_script('oes-notes-admin', '/includes/notes/notes-admin.js', ['wp-rich-text', 'wp-element', 'wp-editor', 'wp-i18n']);
                 oes_include('/includes/notes/shortcodes-notes.php');
                 oes_include('/includes/notes/hooks-notes.php');
             }
@@ -416,7 +417,7 @@ if (!class_exists('OES_Core')) :
          *
          * @throws Exception
          */
-        function initialize_project()
+        function initialize_project(): void
         {
             /* get general config post */
             $generalConfigPost = get_posts([
