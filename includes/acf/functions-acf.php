@@ -164,6 +164,10 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
 
                 return oes_display_post_array_as_list($value, $args['list-id'], $newArgs);
 
+
+            case 'post_object' :
+                return $value ? oes_get_html_anchor(oes_get_display_title($value, $args), get_permalink($value)) : false;
+
             case 'select' :
             case 'radio' :
 
@@ -216,7 +220,6 @@ function get_field_display_value(string $fieldName, $postID, array $args = [])
             case 'google_map' :
             case 'image' :
             case 'number' :
-            case 'post_object' :
             case 'time_picker' :
             case 'true_false' :
             case 'text' :

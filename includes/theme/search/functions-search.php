@@ -222,8 +222,9 @@ function oes_search_get_results(array $args = []): array
                     if (!empty($occurrences)) {
 
                         /* add post type to object type filter -------------------------------------------------------*/
-                        $postTypeLabel = ($oes->post_types[$post->post_type]['theme_labels']['archive__header'][$args['language']] ??
-                            get_post_type_object($post->post_type)->label);
+                        $postTypeLabel = ($oes->post_types[$post->post_type]['label_translations_plural'][$args['language']] ??
+                            ($oes->post_types[$post->post_type]['label'] ??
+                            (get_post_type_object($post->post_type)->labels->singular_name ?? 'Label missing')));
                         $args['filter_array']['list']['objects']['items'][$post->post_type] = $postTypeLabel;
                         $args['filter_array']['json']['objects'][$post->post_type][] = $preparedID;
 

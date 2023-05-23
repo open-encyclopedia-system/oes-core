@@ -251,8 +251,9 @@ function oes_column_pre_get_posts_2(WP_Query $query): void
         $column = $query->get('orderby');
 
         /* order by column value */
-        if (isset($oes->post_types[$post_type]['admin_columns'][$column]['type']))
-            switch ($oes->post_types[$post_type]['admin_columns'][$column]['type']) {
+        if (isset($oes->post_types[$post_type]['admin_columns']) &&
+            in_array($column, $oes->post_types[$post_type]['admin_columns']))
+            switch ($column) {
 
                 case 'parent' :
                     $query->set('orderby', 'meta_value_num');
@@ -260,11 +261,17 @@ function oes_column_pre_get_posts_2(WP_Query $query): void
                     $query->set('meta_type', 'CHAR');
                     break;
 
+                case 'cb' :
+                case 'title' :
+                case 'date' :
+                case 'date_modified' :
+                    break;
+
                 default :
 
                     /* get field type */
                     $fieldObject = oes_get_field_object($column);
-                    if ($fieldObject['type']) {
+                    if ($fieldObject && isset($fieldObject['type'])) {
                         switch ($fieldObject['type']) {
                             case 'taxonomy' :
                                 $orderType = $fieldObject['field_type'] == 'multi_select' ? 'NUMERIC' : 'CHAR';
@@ -272,6 +279,12 @@ function oes_column_pre_get_posts_2(WP_Query $query): void
                                 $query->set('meta_key', $column);
                                 $query->set('meta_type', $orderType);
                                 $query->set('order', 'ASC');
+                                break;
+
+                            case 'number' :
+                                $query->set('orderby', 'meta_value_num');
+                                $query->set('meta_key', $column);
+                                $query->set('meta_type', 'CHAR');
                                 break;
 
                             default:
