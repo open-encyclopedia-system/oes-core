@@ -675,6 +675,7 @@ if (!class_exists('OES_Archive')) {
                         $title = 'Title missing';
                         $permalink = $object['permalink'];
                         $hidePost = false;
+                        $versionExists = true;
                         $additionalInformation = '';
 
                         /* differentiate between post and term */
@@ -689,17 +690,24 @@ if (!class_exists('OES_Archive')) {
 
                                 /* get current version */
                                 $versionID = get_current_version_id($postID);
-                                $title = oes_get_display_title($versionID, ['language' => $this->language]);
-                                $permalink = get_permalink($versionID);
 
-                                /* check for OES Post action */
-                                if ($archiveData) {
+                                if($versionID) {
 
-                                    /* get post */
-                                    $post = class_exists($versionPostType) ?
-                                        new $versionPostType($versionID, $this->language) :
-                                        new OES_Post($versionID, $this->language);
-                                    $additionalInformation = $post->additional_archive_data;
+                                    $title = oes_get_display_title($versionID, ['language' => $this->language]);
+                                    $permalink = get_permalink($versionID);
+
+                                    /* check for OES Post action */
+                                    if ($archiveData) {
+
+                                        /* get post */
+                                        $post = class_exists($versionPostType) ?
+                                            new $versionPostType($versionID, $this->language) :
+                                            new OES_Post($versionID, $this->language);
+                                        $additionalInformation = $post->additional_archive_data;
+                                    }
+                                }
+                                else {
+                                    $versionExists = false;
                                 }
                             } else {
 
@@ -719,12 +727,15 @@ if (!class_exists('OES_Archive')) {
                                 }
                             }
 
-                            /* check if post is hidden */
-                            if ($post && method_exists($post, 'check_if_post_is_hidden'))
-                                $hidePost = $post->check_if_post_is_hidden();
+                            if($versionExists) {
 
-                            /* get data to be displayed in dropdown table */
-                            $tableData = $archiveData ? $post->get_archive_data() : [];
+                                /* check if post is hidden */
+                                if ($post && method_exists($post, 'check_if_post_is_hidden'))
+                                    $hidePost = $post->check_if_post_is_hidden();
+
+                                /* get data to be displayed in dropdown table */
+                                $tableData = $archiveData ? $post->get_archive_data() : [];
+                            }
 
                         } elseif ($object['termID'] ?? false) {
 
@@ -733,7 +744,7 @@ if (!class_exists('OES_Archive')) {
                         }
 
                         /* add information to table ------------------------------------------------------------------*/
-                        if (!$hidePost) {
+                        if (!$hidePost && $versionExists) {
 
                             $prepareRowData = [
                                 'id' => $postID,

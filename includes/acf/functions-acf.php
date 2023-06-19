@@ -10,12 +10,13 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  *
  * @param string $fieldName The field name or key
  * @param mixed $postID The post_id of which the value is saved against
+ * @param bool $formatValue Whether to apply formatting logic. Defaults to true.
  *
  * @return mixed Return field value.
  */
-function oes_get_field(string $fieldName, $postID = false)
+function oes_get_field(string $fieldName, $postID = false, bool $formatValue = true)
 {
-    return get_field($fieldName, $postID);
+    return get_field($fieldName, $postID, $formatValue);
 }
 
 

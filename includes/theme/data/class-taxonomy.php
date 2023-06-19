@@ -159,7 +159,10 @@ if (!class_exists('OES_Taxonomy')) {
                 '<ul class="oes-breadcrumbs-list">' .
                 '<li>' .
                 '<a href="' . $link . '">' .
-                (($this->theme_labels['archive__link_back'][$this->language] ?? 'See all ') . $name) .
+                '<span class="oes-breadcrumbs-back-to-archive" >' .
+                ($this->theme_labels['archive__link_back'][$this->language] ?? 'See all') .
+                '</span>' .
+                $name .
                 '</a>' .
                 '</li>' .
                 '</ul>' .

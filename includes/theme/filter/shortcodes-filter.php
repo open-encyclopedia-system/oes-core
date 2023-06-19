@@ -146,7 +146,8 @@ function oes_post_type_filter_html(): string
     $filter = is_array($oes_search) ? $oes_search['filter_array'] : $oes_search->filter_array;
     $filterList = '';
     if (!empty($filter['list']['objects']['items']) &&
-        sizeof($filter['list']['objects']['items']) > 1)
+        sizeof($filter['list']['objects']['items']) > 1) {
+        asort($filter['list']['objects']['items']);
         foreach ($filter['list']['objects']['items'] as $key => $label) {
             $filterList .= sprintf('<li><a href="javascript:void(0);" ' .
                 'onClick="oesFilterPostTypes(\'%s\')" ' .
@@ -155,7 +156,7 @@ function oes_post_type_filter_html(): string
                 $key,
                 $label);
         }
-
+    }
     if (!empty($filterList))
         $returnString .= '<div class="oes-subheader-archive">' .
             '<ul class="oes-post-type-list oes-vertical-list">' . $filterList . '</ul>' .
@@ -180,7 +181,7 @@ function oes_index_filter_html(): string
         strtolower($oes->languages[$consideredLanguage]['abb']) . '/' :
         '');
 
-        /* prepare return string */
+    /* prepare return string */
     $returnString = '';
 
     if ($oes_is_index &&
@@ -201,12 +202,12 @@ function oes_index_filter_html(): string
             if ($postTypeObject = get_post_type_object($object)) {
                 $name = ($oes->post_types[$object]['label_translations_plural'][$consideredLanguage] ??
                     ($oes->post_types[$object]['theme_labels']['archive__header'][$consideredLanguage] ??
-                    ($oes->post_types[$object]['label'] ?: $postTypeObject->label)));
+                        ($oes->post_types[$object]['label'] ?: $postTypeObject->label)));
                 $link = home_url('/') . $languageSwitch . (get_post_type_object($object)->rewrite['slug'] ?? $object) . '/';
             } elseif ($taxonomyObject = get_taxonomy($object)) {
                 $name = ($oes->taxonomies[$object]['label_translations_plural'][$consideredLanguage] ??
                     ($oes->taxonomies[$object]['label_translations'][$consideredLanguage] ?:
-                    ($oes->taxonomies[$object]['label'] ?: $taxonomyObject->label)));
+                        ($oes->taxonomies[$object]['label'] ?: $taxonomyObject->label)));
                 $link = home_url('/') . $languageSwitch . $oes->taxonomies[$object]['rewrite']['slug'] . '/';
             }
 

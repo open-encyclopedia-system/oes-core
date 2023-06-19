@@ -900,15 +900,19 @@ if (!class_exists('OES_Post')) {
             else
                 $archiveLink = get_post_type_archive_link($this->post_type);
 
+            $archiveLabel = ($oes->post_types[$this->post_type]['label_translations_plural'][$this->language] ??
+                ($oes->post_types[$this->post_type]['theme_labels']['archive__header'][$this->language] ?? $this->post_type_label));
+
             return '<div class="oes-sidebar-wrapper">' .
                 $header .
                 '<div class="oes-breadcrumbs-container">' .
                 '<ul class="' . $args['list-class'] . '">' .
                 '<li>' .
                 '<a href="' . $archiveLink . '">' .
-                (($this->theme_labels['archive__link_back'][$this->language] ?? 'See all ') .
-                    ($oes->post_types[$this->post_type]['label_translations_plural'][$this->language] ??
-                        ($oes->post_types[$this->post_type]['theme_labels']['archive__header'][$this->language] ?? $this->post_type_label))) .
+                '<span class="oes-breadcrumbs-back-to-archive" >' .
+                ($this->theme_labels['archive__link_back'][$this->language] ?? 'See all') .
+                '</span>' .
+                $archiveLabel .
                 '</a>' .
                 '</li>' .
                 '</ul>' .

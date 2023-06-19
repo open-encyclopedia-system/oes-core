@@ -72,7 +72,8 @@ if (!class_exists('Theme_Archive_View')) :
                     $titleOptions = [];
                     $titleOptions['wp-title'] = __('Post Title (WordPress)', 'oes');
                     foreach ($allFields as $fieldKey => $singleField)
-                        if ($singleField['type'] == 'text') $titleOptions[$fieldKey] = empty($singleField['label']) ? $fieldKey : $singleField['label'];
+                        if (in_array($singleField['type'], ['text', 'date_picker']))
+                            $titleOptions[$fieldKey] = empty($singleField['label']) ? $fieldKey : $singleField['label'];
 
                     /* prepare options */
                     $options = [];

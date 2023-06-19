@@ -308,3 +308,24 @@ function oes_set_term_data(array $args = []): void
         new $taxonomy($termID, $cleanLanguage) :
         new OES_Taxonomy($termID, $cleanLanguage);
 }
+
+
+/**
+ * OES filters the content when calling the Post or Term Object. If the additional text needs to be filtered, the
+ * functions must be called without filter.
+ *
+ * @param string $text The text to be filtered.
+ * @param array $args Additional parameters to identify which functions should apply.
+ * @return string The filtered text.
+ */
+function oes_apply_the_filter(string $text, array $args = []): string
+{
+    if(empty($args) || in_array('blocks', $args)) $text = do_blocks($text);
+    if(empty($args) || in_array('texturize', $args)) $text = wptexturize($text);
+    if(empty($args) || in_array('smilies', $args)) $text = convert_smilies($text);
+    if(empty($args) || in_array('paragraphs', $args)) $text = wpautop($text);
+    if(empty($args) || in_array('no_paragraphs_shortcode', $args)) $text = shortcode_unautop($text);
+    if(empty($args) || in_array('attachment', $args)) $text = prepend_attachment($text);
+    if(empty($args) || in_array('filter_tags', $args)) $text = wp_filter_content_tags($text);
+    return wp_replace_insecure_home_url($text);
+}

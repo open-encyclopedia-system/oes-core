@@ -140,7 +140,7 @@ function oes_get_display_title($object = false, array $args = []): string
             get_field($titleOption . '_' . $args['language'], $object))
             $titleOption = $titleOption . '_' . $args['language'];
 
-        $title = ($titleOption && $titleOption != 'wp-title') ? oes_get_field($titleOption, $object) : null;
+        $title = ($titleOption && $titleOption != 'wp-title') ? oes_get_field($titleOption, $object, false) : null;
 
         return empty($title) ? get_the_title($object) : $title;
     }

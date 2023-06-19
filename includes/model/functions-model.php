@@ -69,7 +69,7 @@ function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $sep
                         break;
 
                     case 'date_picker':
-                        $format = $part['date_format'] ?? 'j F Y';
+                        $format = (empty($part['date_format']) ? 'j F Y' : $part['date_format']);
                         $value = $acfValue ?
                             date($format, strtotime(str_replace('/', '-', $acfValue))) : false;
                         break;
@@ -78,7 +78,7 @@ function get_post_dtm_parts_from_array(array $dtmParts, int $postID, string $sep
                     case 'post_object' :
                         $value = get_field_display_value($fieldKey, $postID, [
                             'sort' => $sort,
-                            'separator' => ($part['separator'] ?? ', ')
+                            'separator' => (empty($part['separator']) ? ', ' : $part['separator'])
                         ]);
                         break;
 

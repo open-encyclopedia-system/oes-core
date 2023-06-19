@@ -392,7 +392,7 @@ function oesUpdateFilterCount() {
     const amount = jQuery(".oes-post-filter-wrapper:visible").length,
         count_element = jQuery(".oes-archive-count-number");
 
-    if (count_element.length > 0) count_element[0].innerText = amount;
+    for(let i= 0; i < count_element.length; i++) count_element[i].innerText = amount;
 
     /* update label */
     if (amount === 0) jQuery(".oes-archive-container-no-entries").show();
