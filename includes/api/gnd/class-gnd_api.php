@@ -130,15 +130,15 @@ if (!class_exists('GND_API')) {
                             if ($propertyKey == 'id')
                                 $value = oes_get_html_anchor($value, $value, false, false, '_blank');
                         } elseif (is_array($property)) {
-                            $value = '<ul class="oes-lod-box-list">';
+                            $value = '<ul class="oes-field-value-list">';
                             foreach ($property as $singleProperty) {
 
                                 if (is_string($singleProperty)) {
                                     if ($propertyKey == 'type') {
                                         $typeLabels = GND_Interface::TYPES;
                                         $value .= '<li>' .
-                                            $typeLabels[$singleProperty]['labels'][$this->language] ?? $singleProperty .
-                                            '</li>';
+                                        $typeLabels[$singleProperty]['labels'][$this->language] ?? $singleProperty .
+                                        '</li>';
                                         $raw[] = $typeLabels[$singleProperty]['labels'][$this->language] ??
                                             $singleProperty;
                                     } else {
@@ -154,7 +154,7 @@ if (!class_exists('GND_API')) {
                                                 $url, false, false, '_blank') . '</li>';
                                         $raw[] = $singleProperty->label ?? ($singleProperty->id ?? $url);
                                     } elseif ($singleLink = $singleProperty->id ?? false) {
-                                        $icon = $singleProperty->collection->icon ?
+                                        $icon = !empty($singleProperty->collection->icon) ?
                                             ('<img class="oes-gnd-sameas-links" src="' . $singleProperty->collection->icon . '" alt="oes-link-icon">') :
                                             '';
                                         $value .= '<li>' .
@@ -210,9 +210,9 @@ if (!class_exists('GND_API')) {
                 /* prepare types */
                 $entryID = $transformedDataEntry['gndIdentifier']['value'] ?? false;
                 $entryTypesArray = [];
-                if($entryTypes = $transformedDataEntry['type']['raw'] ?? false)
-                    foreach($entryTypes as $entryType)
-                        if($entryType !== 'Authority Resource' && $entryType !== 'Normdatenressource')
+                if ($entryTypes = $transformedDataEntry['type']['raw'] ?? false)
+                    foreach ($entryTypes as $entryType)
+                        if ($entryType !== 'Authority Resource' && $entryType !== 'Normdatenressource')
                             $entryTypesArray[] = $entryType;
 
                 $transformedData[$entryKey] = [
@@ -232,7 +232,8 @@ if (!class_exists('GND_API')) {
 
 
         //Overwrite parent
-        function get_data_for_display_modify_table_data($entry){
+        function get_data_for_display_modify_table_data($entry)
+        {
 
             $entryData = $entry['entry'];
 
@@ -244,16 +245,16 @@ if (!class_exists('GND_API')) {
              */
             if (has_filter('oes/api_gnd_display_table'))
                 $entryData = apply_filters('oes/api_gnd_display_table', $entryData, $this->types);
-            else{
+            else {
 
                 $modifiedEntries = [];
 
                 /* @oesDevelopment Add preferred name and name variants (max 10) for all types.
-                if (isset($entryData['preferredName']))
-                   $modifiedEntries[] = [
-                        'label' => '<i class="fa fa-user"></i>',
-                        'value' => $entryData['preferredName']['value']
-                    ];*/
+                 * if (isset($entryData['preferredName']))
+                 * $modifiedEntries[] = [
+                 * 'label' => ...
+                 * 'value' => $entryData['preferredName']['value']
+                 * ];*/
 
                 if (isset($entryData['variantName'])) {
 
@@ -265,8 +266,8 @@ if (!class_exists('GND_API')) {
                     }
 
                     $modifiedEntries[] = [
-                        'label' => '<i class="fa fa-user"></i>',
-                        'value' => '<ul class="oes-lod-box-list"><li>' .
+                        'label' => ($this->language === 'german' ? 'Namensvariante(n)' : 'variant name(s)'),
+                        'value' => '<ul class="oes-field-value-list"><li>' .
                             implode('</li><li>', $variantNames) . '</li></ul>'
                     ];
                 }
@@ -282,10 +283,10 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['dateOfBirth']) || isset($entryData['placeOfBirth']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-asterisk"></i>',
+                            'label' => ($this->language === 'german' ? 'Geboren' : 'birth'),
                             'value' => (isset($entryData['dateOfBirth']['value']) ?
                                     (strpos($entryData['dateOfBirth']['raw'][0], '-') > 0 ?
-                                        date_format(date_create($entryData['dateOfBirth']['raw'][0]), 'd.m.Y') :
+                                        oes_convert_date_to_formatted_string($entryData['dateOfBirth']['raw'][0]) :
                                         $entryData['dateOfBirth']['raw'][0]) :
                                     '') .
                                 (isset($entryData['placeOfBirth']['value']) ?
@@ -295,9 +296,9 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['dateOfDeath']) || isset($entryData['placeOfDeath']))
                         $modifiedEntries[] = [
-                            'label' => '<strong>†</strong>',
-                            'value' => (isset($entryData['dateOfDeath']['value']) ?
-                                    date_format(date_create($entryData['dateOfDeath']['raw'][0]), 'd.m.Y') :
+                            'label' => ($this->language === 'german' ? 'Verstorben' : 'death'),
+                            'value' => (!empty($entryData['dateOfDeath']['value'] ?? '') ?
+                                oes_convert_date_to_formatted_string($entryData['dateOfDeath']['raw'][0]) :
                                     '') .
                                 (isset($entryData['placeOfDeath']['value']) ?
                                     (',<span class="oes-lod-table-additional">' . $entryData['placeOfDeath']['value'] . '</span>') :
@@ -306,7 +307,9 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['professionOrOccupation']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-briefcase"></i>',
+                            'label' => ($this->language === 'german' ?
+                                'Beruf oder Beschäftigung' :
+                                'profession or occupation'),
                             'value' => $entryData['professionOrOccupation']['value']
                         ];
                 } /**
@@ -319,7 +322,9 @@ if (!class_exists('GND_API')) {
                         preg_match('#\((.*?)\)#', $entryData['hasGeometry']['raw'][0][0], $coordinates);
                         if (isset($coordinates[1]))
                             $modifiedEntries[] = [
-                                'label' => '<i class="fa fa-globe"></i>',
+                                'label' => ($this->language === 'german' ?
+                                    'Geographischer Bezug' :
+                                    'place or geographic name'),
                                 'value' => oes_convert_coordinates_decimal_to_degree(trim($coordinates[1]))
                             ];
                     }
@@ -332,9 +337,9 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['dateOfConferenceOrEvent']) || isset($entryData['placeOfConferenceOrEvent']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-calendar"></i>',
-                            'value' => (isset($entryData['dateOfConferenceOrEvent']['value']) ?
-                                    date_format(date_create($entryData['dateOfConferenceOrEvent']['raw'][0]), 'd.m.Y') :
+                            'label' => ($this->language === 'german' ? 'Datum' : 'date'),
+                            'value' => (!empty($entryData['dateOfConferenceOrEvent']['value'] ?? '') ?
+                                oes_convert_date_to_formatted_string($entryData['dateOfConferenceOrEvent']['raw'][0]) :
                                     '') .
                                 (isset($entryData['placeOfConferenceOrEvent']['value']) ?
                                     (',<span class="oes-lod-table-additional">' .
@@ -344,7 +349,7 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['topic']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-tags"></i>',
+                            'label' => ($this->language === 'german' ? 'Themen' : 'topic'),
                             'value' => $entryData['topic']['value']
                         ];
 
@@ -357,7 +362,7 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['gndSubjectCategory']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-tags"></i>',
+                            'label' => ($this->language === 'german' ? 'GND-Sachgruppe' : 'GND subject category'),
                             'value' => $entryData['gndSubjectCategory']['value']
                         ];
 
@@ -372,25 +377,29 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['abbreviatedNameForTheCorporateBody']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-user"></i>',
+                            'label' => ($this->language === 'german' ?
+                                'Abgekürzter Name der Körperschaft	' :
+                                'abbreviated name for the corporate body'),
                             'value' => $entryData['abbreviatedNameForTheCorporateBody']['value']
                         ];
 
                     if (isset($entryData['hierarchicalSuperiorOfTheCorporateBody']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-sitemap"></i>',
+                            'label' => ($this->language === 'german' ?
+                                'Administrative Überordnung der Körperschaft' :
+                                'hierarchical superior of the corporate body'),
                             'value' => $entryData['hierarchicalSuperiorOfTheCorporateBody']['value']
                         ];
 
                     if (isset($entryData['placeOfBusiness']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-map-marker"></i>',
+                            'label' => ($this->language === 'german' ? 'Sitz' : 'place of business'),
                             'value' => $entryData['placeOfBusiness']['value']
                         ];
 
                     if (isset($entryData['homepage']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-home"></i>',
+                            'label' => ($this->language === 'german' ? 'Homepage' : 'homepage'),
                             'value' => $entryData['homepage']['value']
                         ];
 
@@ -403,12 +412,14 @@ if (!class_exists('GND_API')) {
 
                     if (isset($entryData['gndSubjectCategory']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-tags"></i>',
+                            'label' => ($this->language === 'german' ? 'GND-Sachgruppe' : 'GND subject category'),
                             'value' => $entryData['gndSubjectCategory']['value']
                         ];
                     if (isset($entryData['broaderTermGeneral']))
                         $modifiedEntries[] = [
-                            'label' => '<i class="fa fa-tags"></i>',
+                            'label' => ($this->language === 'german' ?
+                                'Oberbegriff allgemein' :
+                                'broader term general'),
                             'value' => $entryData['broaderTermGeneral']['value']
                         ];
 
@@ -420,7 +431,9 @@ if (!class_exists('GND_API')) {
                 /* add geographic information for all */
                 if (isset($entryData['geographicAreaCode']))
                     $modifiedEntries[] = [
-                        'label' => '<i class="fa fa-map-marker"></i>',
+                        'label' => ($this->language === 'german' ?
+                            'Ländercode' :
+                            'geographic area code'),
                         'value' => $entryData['geographicAreaCode']['value']
                     ];
 
@@ -447,40 +460,45 @@ if (!class_exists('GND_API')) {
             if (has_filter('oes/api_gnd_display_entry'))
                 $html = apply_filters('oes/api_gnd_display_entry', $title, $table, $this->imageHTML, $entry['entry'],
                     $this->types);
-            else{
+            else {
                 $additionalInfo = '';
                 if (isset($entry['entry']['biographicalOrHistoricalInformation']))
                     $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
-                        ($this->language === 'german' ? 'Biografische oder historische Angaben' : 'Biographical or historical Information') .
+                        ($this->language === 'german' ?
+                            'Biografische oder historische Angaben' :
+                            'Biographical or historical Information') .
                         '</h4>' .
-                        $entry['entry']['biographicalOrHistoricalInformation']['value'] . '</div>';
+                        '<div>' . $entry['entry']['biographicalOrHistoricalInformation']['value'] . '</div>' .
+                        '</div>';
 
                 if (isset($entry['entry']['definition']))
                     $additionalInfo .= '<div><h4 class="oes-content-table-header">' . __('Definition', 'oes') . '</h4>' .
-                        $entry['entry']['definition']['value'] . '</div>';
+                        '<div>' . $entry['entry']['definition']['value'] . '</div>' .
+                        '</div>';
 
                 if (isset($entry['entry']['id']))
                     $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
                         __('GND Link', 'oes') . '</h4>' .
-                        $entry['entry']['id']['value'] . '</div>';
+                        '<div>' . $entry['entry']['id']['value'] . '</div>' .
+                        '</div>';
 
                 if (isset($entry['entry']['sameAs']))
-                    $additionalInfo .= '<h4 class="oes-content-table-header">' .
+                    $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
                         ($this->language === 'german' ? 'Weitere Links' : 'Further Links') .
                         '</h4>' .
-                        $entry['entry']['sameAs']['value'];
+                        '<div>' . $entry['entry']['sameAs']['value'] . '</div>' .
+                        '</div>';
 
-                return sprintf('<div class="oes-lod-box-title"><h3 class="oes-content-table-header">%s</h3></div>' .
-                    '<div class="oes-lod-box-container-inner">' .
-                    '%s' .
-                    '<div class="oes-lod-box-content">%s</div>' .
+                return '<div class="oes-lod-box-title">' .
+                    '<h3 class="oes-content-table-header">' . $title . '</h3>' .
                     '</div>' .
-                    '<div class="oes-lod-box-additional-info">%s</div>',
-                    $title,
-                    (empty($this->imageHTML) ? '' : ('<div class="oes-lod-box-image-inner">' . $this->imageHTML . '</div>')),
-                    $table,
-                    $additionalInfo
-                );
+                    '<div class="oes-lod-box-container-inner">' .
+                    (empty($this->imageHTML) ?
+                        '' :
+                        ('<div class="oes-lod-box-image-inner">' . $this->imageHTML . '</div>')) .
+                    '<div class="oes-lod-box-content">' . $table . '</div>' .
+                    '</div>' .
+                    '<div class="oes-lod-box-additional-info">' . $additionalInfo . '</div>';
             }
 
             return $html;

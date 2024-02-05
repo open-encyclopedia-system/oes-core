@@ -5,6 +5,7 @@ namespace OES\Admin\Tools;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Admin\add_oes_notice_after_refresh;
+use function OES\Admin\display_admin_note;
 
 if (!class_exists('Tool')) :
 
@@ -44,6 +45,12 @@ if (!class_exists('Tool')) :
 
         /** @var bool Flag indicating if redirect after tool action is required. */
         public bool $redirect = true;
+
+        /** @var array Store admin notices to be displayed during steps. */
+        public array $admin_notices = [];
+
+        /** @var array Hidden inputs for form. */
+        public array $hidden_inputs = [];
 
 
         /**
@@ -103,7 +110,7 @@ if (!class_exists('Tool')) :
         {
             add_meta_box('oes-tool-' . $this->name,
                 empty($this->postbox['name']) ? 'Postbox name missing' : $this->postbox['name'],
-                [$this, 'display_tool'],
+                [$this, 'display'],
                 $this->postbox['screen'],
                 $this->postbox['context'],
                 $this->postbox['priority']
@@ -115,7 +122,7 @@ if (!class_exists('Tool')) :
          * Display the tool interface as a form.
          * @return void
          */
-        function display_tool(): void
+        function display(): void
         {
 
             /* redirect form to current page */
@@ -136,9 +143,21 @@ if (!class_exists('Tool')) :
                 <input type="hidden" name="_wp_http_referer" value="<?php echo $redirect; ?>">
                 <?php
                 $this->html();
+                $this->hidden_inputs_html();
                 ?>
             </form>
             <?php
+        }
+
+
+        /**
+         * Display the tool messages as admin notice.
+         */
+        function display_admin_notices()
+        {
+            if (!empty($this->admin_notices))
+                foreach ($this->admin_notices as $notice)
+                    display_admin_note($notice);
         }
 
 
@@ -228,6 +247,19 @@ if (!class_exists('Tool')) :
         {
         }
 
+
+        /**
+         * Add hidden inputs.
+         * @return void
+         */
+        function hidden_inputs_html(): void
+        {
+            foreach ($this->hidden_inputs as $name => $value)
+                printf('<input type="hidden" name="%s" value="%s">',
+                    $name,
+                    $value
+                );
+        }
 
         /**
          * Display the tools parameters for form.

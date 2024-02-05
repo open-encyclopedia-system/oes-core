@@ -1,0 +1,23 @@
+.wp-block-oes-archive-loop .oes-archive-wrapper {
+  padding-bottom: 2rem;
+}
+.wp-block-oes-archive-loop .oes-archive-table-wrapper table {
+  padding: 0.5rem 1rem 1rem 14px;
+}
+.wp-block-oes-archive-loop .oes-alphabet-initial {
+  color: var(--wp--preset--color--secondary);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+.wp-block-oes-archive-loop .oes-additional-info {
+  font-size: 0.9rem;
+}
+.wp-block-oes-archive-loop .oes-additional-info:before {
+  content: "(";
+  padding-left: 5px;
+}
+.wp-block-oes-archive-loop .oes-additional-info:after {
+  content: ")";
+}
+
+/*# sourceMappingURL=style.css.map */

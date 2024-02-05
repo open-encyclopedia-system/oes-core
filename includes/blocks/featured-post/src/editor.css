@@ -1,0 +1,13 @@
+@import url("../../blocks.css");
+.wp-block-oes-featured-post .oes-editor-feature-post-post-type {
+  padding-bottom: 10px;
+}
+.wp-block-oes-featured-post .oes-block-render-editor {
+  font-style: italic;
+}
+.wp-block-oes-featured-post .oes-block-render-editor span {
+  font-style: normal;
+  font-weight: bold;
+}
+
+/*# sourceMappingURL=editor.css.map */

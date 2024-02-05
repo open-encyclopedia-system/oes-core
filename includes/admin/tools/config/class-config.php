@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Tools')) oes_include('/includes/admin/tools/tool.class.php');
+if (!class_exists('Tools')) oes_include('admin/tools/tool.class.php');
 
 if (!class_exists('Config')) :
 
@@ -25,6 +25,18 @@ if (!class_exists('Config')) :
         /** @var array The configurations to be displayed. */
         public array $table_data = [];
 
+        /** @var array The option configurations. */
+        public array $options = [
+            'name' => '',
+            'encoded' => false
+        ];
+
+        /** @var bool Show information even if form is empty. */
+        public bool $empty_allowed = false;
+
+        /** @var bool Add a hidden input to trigger config update even on empty. */
+        public bool $empty_input = false;
+
 
         //Overwrite parent
         function initialize_parameters($args = []): void
@@ -39,10 +51,7 @@ if (!class_exists('Config')) :
             /* get data to be displayed */
             $html = '';
             $dataHTML = $this->data_html();
-            if (!empty($dataHTML)) {
-
-                /* Title */
-                if (!empty($this->title)) $html .= '<div><h2>' . $this->title . '</h2></div>';
+            if (!empty($dataHTML) || $this->empty_allowed) {
 
                 /* Information */
                 $informationHTML = $this->information_html();
@@ -51,11 +60,24 @@ if (!class_exists('Config')) :
                 /* Data */
                 $html .= '<div>' . $dataHTML . '</div>';
 
+                $html .= $this->additional_html();
+
                 /* Buttons */
-                if (!oes_user_is_read_only()) $html .= '<div class="buttons">' . get_submit_button() . '</div>';
+                if (!\OES\Rights\user_is_read_only())
+                    $html .= '<div class="' . (empty($dataHTML) ? 'oes-display-none' : '') . '">' .
+                        get_submit_button() . '</div>';
             } else $html = $this->empty();
 
             echo $html;
+        }
+
+
+        /**
+         * Prepare hidden inputs for form.
+         */
+        function set_hidden_inputs()
+        {
+            if($this->empty_input) $this->hidden_inputs = ['oes_hidden' => true];
         }
 
 
@@ -85,7 +107,18 @@ if (!class_exists('Config')) :
          */
         function empty(): string
         {
-            return 'No configuration options found for your project.';
+            return __('No configuration options found for your project.', 'oes');
+        }
+
+
+        /**
+         * Prepare text to be displayed after tool.
+         *
+         * @return string Returns additional text.
+         */
+        function additional_html(): string
+        {
+            return '';
         }
 
 
@@ -97,7 +130,7 @@ if (!class_exists('Config')) :
         function data_html(): string
         {
             /* prepare data */
-            $html = '';
+            $this->set_hidden_inputs();
             $this->set_table_data_for_display();
 
             /* get inner tables */
@@ -105,13 +138,17 @@ if (!class_exists('Config')) :
             foreach ($this->table_data ?? [] as $singleTable)
                 if (!empty($singleTable)) {
                     if (isset($singleTable['standalone']) && $singleTable['standalone'] && !empty($innerTable))
-                        $innerTable .= '</table><table class="oes-config-table oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">';
+                        $innerTable .= '</table>' .
+                            '<table class="oes-config-table oes-option-table oes-toggle-checkbox ' .
+                            'oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">';
                     $innerTable .= $this->data_html_table($singleTable);
                 }
 
             /* wrap tables if not empty*/
+            $html = '';
             if (!empty($innerTable))
-                $html = '<table class="oes-config-table oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">' .
+                $html = '<table class="oes-config-table oes-option-table oes-toggle-checkbox oes-replace-select2-inside ' .
+                    'striped wp-list-table widefat fixed table-view-list" id="oes-config-table">' .
                     $innerTable . '</table>';
 
             return $html;
@@ -166,7 +203,8 @@ if (!class_exists('Config')) :
 
                         case 'target':
                             $rowHtml .= '<tr class="oes-expandable-row" style="display:none"><td></td><td>' .
-                                '<table class="oes-option-table oes-toggle-checkbox striped wp-list-table widefat fixed table-view-list"><tbody>' .
+                                '<table class="oes-option-table oes-toggle-checkbox striped wp-list-table widefat fixed table-view-list">' .
+                                '<tbody>' .
                                 $cellsHtml .
                                 '</tbody></table></td></tr>';
                             break;
@@ -192,239 +230,163 @@ if (!class_exists('Config')) :
         //Implement parent
         function admin_post_tool_action(): void
         {
-            /* get global cache and form params */
+            if (isset($_POST['post_types']) ||
+                isset($_POST['taxonomies']) ||
+                isset($_POST['fields']) ||
+                isset($_POST['oes_config']) ||
+                isset($_POST['media']) ||
+                isset($_POST['oes_hidden'])) $this->update_config_posts();
+            if (!empty($this->options['name'] ?? '')) $this->update_options();
+            foreach ($_POST['oes_option'] ?? [] as $option => $value)
+                $this->update_single_option($option, $value);
+        }
+
+
+        /**
+         * Update config posts.
+         *
+         * @return void
+         */
+        function update_config_posts(): void
+        {
+            /* modify data */
+            $data = $this->get_post_data();
+
+            /* get global form params */
             $oes = OES();
 
-            /* update post types on change */
-            if (isset($_POST['post_types']) && !empty($_POST['post_types']) && !empty($oes->post_types)) {
-                $cleanFormValues = oes_stripslashes_array($_POST['post_types']);
-                foreach ($oes->post_types as $postTypeKey => $postType)
-                    if (isset($postType['post_id']) && isset($cleanFormValues[$postTypeKey]))
-                        if ($post = get_post($postType['post_id'])) {
+            /* update post types and taxonomies on change */
+            foreach (['post_types', 'taxonomies'] as $component)
+                if (isset($data[$component]) && !empty($data[$component]) && !empty($oes->$component))
+                    foreach ($oes->$component as $key => $objectData)
+                        if (isset($data[$component][$key])) {
 
-                            $updateObject = false;
-                            $argsAll = json_decode($post->post_content, true);
+                            $value = $data[$component][$key];
+                            foreach ($value as $valueComponentKey => $valueComponent)
+                                foreach ($valueComponent as $paramKey => $param) {
 
-                            /* prepare new content */
-                            foreach ($cleanFormValues[$postTypeKey] as $argsKey => $componentContainer)
-                                foreach ($componentContainer as $subComponentKey => $subComponentContainer)
-                                    if (!isset($argsAll[$argsKey][$subComponentKey]) ||
-                                        $subComponentContainer !== $argsAll[$argsKey][$subComponentKey]) {
+                                    /* update versioning post */
+                                    if ($paramKey == 'parent' || $paramKey == 'version') {
+                                        $versioningOesObjectID = \OES\Model\get_oes_object_option($param, $component);
+                                        $args['oes_args'][$paramKey == 'parent' ? 'version' : 'parent'] = $key;
+                                        $success = oes_config_update_post_object($versioningOesObjectID, $args);
+                                        if ($success != 'success')
+                                            $this->tool_messages['schema_update']['error'][] = $success;
 
-                                        /* get new value (modify values from checkboxes and array returns) */
-                                        switch ($subComponentKey) {
-                                            case 'theme_labels':
-                                                $newValues = oes_merge_array_recursively($argsAll[$argsKey][$subComponentKey],
-                                                    $subComponentContainer);
-                                                break;
-
-                                            case 'display_titles':
-                                                $newValues = array_merge($argsAll[$argsKey][$subComponentKey],
-                                                    $subComponentContainer);
-                                                break;
-
-                                            default:
-                                                $newValues = $this->get_clean_option_value($subComponentContainer,
-                                                    $argsAll[$argsKey][$subComponentKey] ?? '');
+                                        /* update old post */
+                                        if (isset($objectData[$paramKey]) &&
+                                            !empty($objectData[$paramKey]) &&
+                                            $objectData[$paramKey] != $param) {
+                                            $oldObjectID = \OES\Model\get_oes_object_option(
+                                                $objectData[$paramKey],
+                                                $component);
+                                            $args['oes_args'][$paramKey == 'parent' ? 'version' : 'parent'] = '';
+                                            $success = oes_config_update_post_object($oldObjectID, $args);
+                                            if ($success != 'success')
+                                                $this->tool_messages['schema_update']['error'][] = $success;
                                         }
 
+                                    } elseif (isset($param['pattern']))
+                                        $value[$valueComponentKey][$paramKey]['pattern'] = json_decode(
+                                            str_replace('\\', '', $param['pattern']) ?: '{}',
+                                            true);
+                                }
 
-                                        if (!isset($argsAll[$argsKey][$subComponentKey]) ||
-                                            $newValues != $argsAll[$argsKey][$subComponentKey]) {
-                                            $updateObject = true;
-                                            $argsAll[$argsKey][$subComponentKey] = $newValues;
-                                        }
-                                    }
-
-                            /* update post if not the same */
-                            if ($updateObject) {
-
-                                /* UPDATE CONFIGURATION ***************************************************************/
-                                $result = wp_update_post([
-                                    'ID' => $post->ID,
-                                    'post_content' => json_encode($argsAll, JSON_UNESCAPED_UNICODE)
-                                ]);
-
-                                /* check for errors */
-                                if (is_wp_error($result))
-                                    $this->tool_messages['schema_update']['error'][] =
-                                        __('Error while trying to update post for post schema. Error messages: ', 'oes') .
-                                        '<br>' . implode(' ', $result->get_error_messages());
-                            }
+                            $oesObjectID = \OES\Model\get_oes_object_option($key, $component);
+                            $success = oes_config_update_post_object($oesObjectID, oes_stripslashes_array($value));
+                            if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
                         }
-            }
-
-            /* update taxonomies on change */
-            if (isset($_POST['taxonomies']) && !empty($_POST['taxonomies']) && !empty($oes->taxonomies)) {
-                $cleanFormValues = oes_stripslashes_array($_POST['taxonomies']);
-                foreach ($oes->taxonomies as $taxonomyKey => $taxonomy)
-                    if (isset($taxonomy['post_id']) && isset($cleanFormValues[$taxonomyKey]))
-                        if ($post = get_post($taxonomy['post_id'])) {
-
-                            $updateObject = false;
-                            $argsAll = json_decode($post->post_content, true);
-
-                            /* prepare new content */
-                            foreach ($cleanFormValues[$taxonomyKey] as $argsKey => $componentContainer)
-                                foreach ($componentContainer as $subComponentKey => $subComponentContainer)
-                                    if (!isset($argsAll[$argsKey][$subComponentKey]) ||
-                                        $subComponentContainer !== $argsAll[$argsKey][$subComponentKey]) {
-
-                                        /* get new value (modify values from checkboxes and array returns) */
-                                        switch ($subComponentKey) {
-                                            case 'theme_labels':
-                                                $newValues = oes_merge_array_recursively($argsAll[$argsKey][$subComponentKey],
-                                                    $subComponentContainer);
-                                                break;
-
-                                            case 'display_titles':
-                                                $newValues = array_merge($argsAll[$argsKey][$subComponentKey],
-                                                    $subComponentContainer);
-                                                break;
-
-                                            default:
-                                                $newValues = $this->get_clean_option_value($subComponentContainer,
-                                                    $argsAll[$argsKey][$subComponentKey] ?? '');
-                                        }
-
-                                        if (!isset($argsAll[$argsKey][$subComponentKey]) ||
-                                            $newValues != $argsAll[$argsKey][$subComponentKey]) {
-                                            $updateObject = true;
-                                            $argsAll[$argsKey][$subComponentKey] = $newValues;
-                                        }
-                                    }
-
-                            /* update post if not the same */
-                            if ($updateObject) {
-
-                                /* UPDATE CONFIGURATION ***************************************************************/
-                                $result = wp_update_post([
-                                    'ID' => $post->ID,
-                                    'post_content' => json_encode($argsAll, JSON_UNESCAPED_UNICODE)
-                                ]);
-
-                                /* check for errors */
-                                if (is_wp_error($result))
-                                    $this->tool_messages['schema_update']['error'][] =
-                                        __('Error while trying to update post for post schema. Error messages: ', 'oes') .
-                                        '<br>' . implode(' ', $result->get_error_messages());
-                            }
-                        }
-            }
-
 
             /* update fields on change */
-            if (isset($_POST['fields']) && !empty($_POST['fields']) && !empty($oes->post_types)) {
-                $cleanFormValues = oes_stripslashes_array($_POST['fields']);
+            if (isset($data['fields']) && !empty($data['fields']) && !empty($oes->post_types))
                 foreach ($oes->post_types as $postTypeKey => $postType)
-                    if (isset($cleanFormValues[$postTypeKey]) && isset($oes->post_types[$postTypeKey]['acf_ids']))
-                        foreach ($oes->post_types[$postTypeKey]['acf_ids'] as $acfPostID)
-                            if ($post = get_post($acfPostID)) {
+                    foreach ($oes->post_types[$postTypeKey]['acf_ids'] ?? [] as $acfPostID)
+                        if (isset($data['fields'][$postTypeKey])) {
+                            $success = oes_config_update_field_group_object(
+                                $acfPostID,
+                                oes_stripslashes_array($data['fields'][$postTypeKey])
+                            );
+                            if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
+                        }
 
-                                $updateObject = false;
-                                $argsAll = json_decode($post->post_content, true);
-                                $argsFields = $argsAll['acf_add_local_field_group']['fields'] ?? [];
-
-                                /* prepare new content */
-                                if (!empty($argsFields))
-                                    foreach ($argsFields as $intKey => $field)
-                                        if (isset($field['type']) && $field['type'] === 'repeater')
-                                            foreach ($field['sub_fields'] as $intSubField => $subField) {
-                                                if (isset($subField['key']) && isset($cleanFormValues[$postTypeKey][$subField['key']]))
-                                                    foreach ($cleanFormValues[$postTypeKey][$subField['key']] as $propertyKey => $newValue)
-                                                        if (!isset($subField[$propertyKey]) || $newValue !== $subField[$propertyKey]) {
-                                                            $updateObject = true;
-                                                            $argsAll['acf_add_local_field_group']['fields'][$intKey]['sub_fields'][$intSubField][$propertyKey] = $newValue;
-                                                        }
-                                            }
-                                        elseif (isset($field['key']) && isset($cleanFormValues[$postTypeKey][$field['key']]))
-                                            foreach ($cleanFormValues[$postTypeKey][$field['key']] as $propertyKey => $newValue)
-                                                if (!isset($field[$propertyKey]) || $newValue !== $field[$propertyKey]) {
-                                                    $updateObject = true;
-                                                    $argsAll['acf_add_local_field_group']['fields'][$intKey][$propertyKey] = $newValue;
-                                                }
-
-                                /* update post if not the same */
-                                if ($updateObject) {
-
-                                    /* UPDATE CONFIGURATION ***********************************************************/
-                                    $result = wp_update_post([
-                                        'ID' => $acfPostID,
-                                        'post_content' => json_encode($argsAll, JSON_UNESCAPED_UNICODE)
-                                    ]);
-
-                                    /* check for errors */
-                                    if (is_wp_error($result))
-                                        $this->tool_messages['schema_update']['error'][] =
-                                            __('Error while trying to update post for post schema. Error messages: ', 'oes') .
-                                            '<br>' . implode(' ', $result->get_error_messages());
-                                }
-                            }
+            /* update media on change */
+            if (isset($data['media']) && !empty($data['media'])) {
+                $success = oes_config_update_media_object(oes_stripslashes_array($data['media']));
+                if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
             }
 
-
             /* update general configs on change */
-            if (isset($_POST['oes_config']) && !empty($_POST['oes_config']) &&
-                $oes->config_post && $post = get_post($oes->config_post)) {
-                $cleanFormValues = oes_stripslashes_array($_POST['oes_config']);
-
-                $updateObject = false;
-                $argsAll = json_decode($post->post_content, true);
-
-                /* prepare new content */
-                foreach ($cleanFormValues as $componentKey => $componentContainer)
-                    if (!isset($argsAll[$componentKey]) ||
-                        $componentContainer != $argsAll[$componentKey]) {
-
-                        /* get new value (modify values from checkboxes and array returns) */
-                        if (in_array($componentKey, ['theme_labels', 'media']))
-                            $newValues = oes_combine_array_recursively($componentContainer, $argsAll[$componentKey]);
-                        elseif ($componentKey === 'theme_index_pages')
-                            $newValues = oes_combine_array_recursively($componentContainer, $argsAll[$componentKey], 2);
-                        else
-                            $newValues = ($this->get_clean_option_value($componentContainer, $argsAll[$componentKey] ?? ''));
-
-                        if (!isset($argsAll[$componentKey]) || $newValues != $argsAll[$componentKey]) {
-                            $updateObject = true;
-                            $argsAll[$componentKey] = $newValues;
-                        }
-                    }
-
-
-                /* update post if not the same */
-                if ($updateObject) {
-
-                    /* UPDATE CONFIGURATION ***************************************************************************/
-                    $result = wp_update_post([
-                        'ID' => $post->ID,
-                        'post_content' => json_encode($argsAll, JSON_UNESCAPED_UNICODE)]);
-
-                    /* check for errors */
-                    if (is_wp_error($result))
-                        $this->tool_messages['schema_update']['error'][] =
-                            __('Error while trying to update post for post schema. Error messages: ', 'oes') .
-                            '<br>' . implode(' ', $result->get_error_messages());
-                }
+            if (isset($data['oes_config']) && !empty($data['oes_config'])) {
+                $success = oes_config_update_general_object(oes_stripslashes_array($data['oes_config']));
+                if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
             }
         }
 
 
         /**
-         * Clean up value (replace checkboxes and array returns)
+         * Get post data.
          *
-         * @param mixed $newValue The new value
-         * @param mixed $oldValue The old value
-         * @return bool|int|mixed|string[] The clean new value
+         * @return array Return post data.
          */
-        function get_clean_option_value($newValue, $oldValue)
+        function get_post_data(): array
         {
-            /* replace double quotes, single quotes and backslashes etc... */
-            $newValue = oes_replace_for_serializing($newValue);
-            if (is_bool($oldValue) && !is_bool($newValue)) return $newValue === "on";
-            elseif ($newValue === 'hidden') return (is_array($oldValue) ? [] : ($newValue === false));
-            elseif (is_int($oldValue) || (is_null($oldValue) && ($newValue !== '0'))) return intval($newValue);
-            elseif (is_array($oldValue) && is_string($newValue)) return [$newValue];
-            return $newValue;
+            return $this->get_modified_post_data($_POST);
+        }
+
+
+        /**
+         * Modify post data.
+         *
+         * @return array Return modified post data.
+         */
+        function get_modified_post_data(array $data): array
+        {
+            return $data;
+        }
+
+
+        /**
+         * Update options.
+         *
+         * @return void
+         */
+        function update_options(): void
+        {
+            $optionName = $this->get_option_name();
+            if ($optionName) {
+                $option = $this->options['name'] ?? '';
+                $value = isset($_POST[$option]) ?
+                    (($this->options['encoded'] ?? false) ? json_encode($_POST[$option]) : $_POST[$option]) :
+                    '';
+
+                if (!oes_option_exists($optionName)) add_option($optionName, $value);
+                else update_option($optionName, $value);
+            }
+        }
+
+
+        /**
+         * Update a single option.
+         *
+         * @param string $option The option name.
+         * @param mixed $value The option value.
+         * @return void
+         */
+        function update_single_option(string $option, $value): void
+        {
+            if (!oes_option_exists($option)) add_option($option, $value);
+            else update_option($option, $value);
+        }
+
+
+        /**
+         * Get option name.
+         *
+         * @return bool|string Return option name.
+         */
+        function get_option_name()
+        {
+            return $this->options['name'] ?? false;
         }
     }
 endif;

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/title",
+  "version": "0.1.0",
+  "title": "Display Title",
+  "category": "oes-schema",
+  "description": "Display the OES display title which may differ from the WordPress title.",
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}

@@ -24,7 +24,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  *
  * @return int|false The number of rows inserted, or false on error.
  */
-function insert_operation(string $operation, string $object, string $object_id, string $value, string $key = '', string $type = '', array $args = [])
+function insert_operation(
+    string $operation,
+    string $object,
+    string $object_id,
+    string $value,
+    string $key = '',
+    string $type = '',
+    array  $args = [])
 {
     /* prepare arguments */
     $argsForInsert = [
@@ -43,7 +50,7 @@ function insert_operation(string $operation, string $object, string $object_id, 
     ];
 
     global $wpdb;
-    return $wpdb->insert($wpdb->prefix . 'oes_operation', $argsForInsert);
+    return $wpdb->insert($wpdb->prefix . 'oes_operations', $argsForInsert);
 }
 
 
@@ -59,7 +66,7 @@ function update_operation($id, array $values)
 {
     if (!empty($values)) {
         global $wpdb;
-        return $wpdb->update($wpdb->prefix . 'oes_operation', $values, ['id' => (int)$id]);
+        return $wpdb->update($wpdb->prefix . 'oes_operations', $values, ['id' => (int)$id]);
     } else return false;
 }
 
@@ -74,7 +81,7 @@ function update_operation($id, array $values)
 function get_all_operation(array $args = [])
 {
     global $wpdb;
-    $table = $wpdb->prefix . 'oes_operation';
+    $table = $wpdb->prefix . 'oes_operations';
 
     $additional = 'ORDER BY `operation_sequence` DESC';
     $where = "`id` IS NOT NULL";
@@ -97,7 +104,7 @@ function get_all_operation(array $args = [])
 function delete_operation($id)
 {
     global $wpdb;
-    return $wpdb->delete($wpdb->prefix . 'oes_operation', ['id' => (int)$id]);
+    return $wpdb->delete($wpdb->prefix . 'oes_operations', ['id' => (int)$id]);
 }
 
 
@@ -109,7 +116,7 @@ function delete_operation($id)
 function delete_all_operation()
 {
     global $wpdb;
-    return $wpdb->query('TRUNCATE TABLE ' . $wpdb->prefix . 'oes_operation');
+    return $wpdb->query('TRUNCATE TABLE ' . $wpdb->prefix . 'oes_operations');
 }
 
 
@@ -125,9 +132,8 @@ function get_operation($id)
     $id = (int)$id;
     if (!$id) return false;
 
-
-    $oesTableOperationName = $wpdb->prefix . 'oes_operation';
-    $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM $oesTableOperationName WHERE id = %d LIMIT 1", $id));
+    $oesTable = $wpdb->prefix . 'oes_operations';
+    $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM $oesTable WHERE id = %d LIMIT 1", $id));
 
     if (!$row) return false;
     return $row;
@@ -192,8 +198,6 @@ function display_all_operations(array $args = []): void
             switch ($op->operation_status) {
 
                 case 'ignored':
-
-                    /* add data */
                     $tableData['ignored'][$op->operation_object][$op->operation_type][$op->operation][$identifier]['rows'][$op->id]['values'][] = [
                         'info' => $op->operation_comment,
                         'key' => $op->operation_key,
@@ -203,8 +207,6 @@ function display_all_operations(array $args = []): void
                     break;
 
                 case 'success':
-
-                    /* add data */
                     $tableData['success'][$op->operation_object][$op->operation_type][$op->operation][$identifier]['rows'][$op->id]['values'][] = [
                         'info' => __('Successfully executed.', 'oes'),
                         'key' => $op->operation_key,
@@ -214,8 +216,6 @@ function display_all_operations(array $args = []): void
                     break;
 
                 case 'error':
-
-                    /* add data */
                     $tableData['error'][$op->operation_object][$op->operation_type][$op->operation][$identifier]['rows'][$op->id]['values'][] = [
                         'info' => $op->operation_comment,
                         'key' => $op->operation_key,
@@ -225,8 +225,6 @@ function display_all_operations(array $args = []): void
                     break;
 
                 case 'ignored_partly':
-
-                    /* add data */
                     $tableData['ignored'][$op->operation_object][$op->operation_type][$op->operation][$identifier]['rows'][$op->id]['values'][] = [
                         'info' => $op->operation_comment,
                         'key' => $op->operation_key,
@@ -234,7 +232,7 @@ function display_all_operations(array $args = []): void
                         'value' => $op->operation_value
                     ];
 
-                    /* add to executable */
+                    /* add additionally to executable */
                     if (!isset($tableData['executable'][$op->operation_object][$op->operation_type][$op->operation][$identifier]))
                         $tableData['executable'][$op->operation_object][$op->operation_type][$op->operation][$identifier] = [
                             'id' => $objectID,
@@ -242,8 +240,6 @@ function display_all_operations(array $args = []): void
                         ];
 
                 default:
-
-                    /* add data */
                     $tableData['executable'][$op->operation_object][$op->operation_type][$op->operation][$identifier]['rows'][$op->id] = $data;
                     break;
 
@@ -290,7 +286,6 @@ function display_all_operations(array $args = []): void
         <div class="oes-operations">
             <div class="oes-operations-container"><?php
 
-
                 foreach ($tableHTMLArray as $section => $sectionData)
                     if (isset($sectionData['html']) && !empty($sectionData['html'])) {
 
@@ -322,7 +317,12 @@ function display_all_operations(array $args = []): void
  *
  * @return string Return the operation row as HTML string.
  */
-function get_html_operation_row(string $objectType, array $data, bool $isTaxonomy = false, string $section = 'executable', array $args = []): string
+function get_html_operation_row(
+    string $objectType,
+    array  $data,
+    bool   $isTaxonomy = false,
+    string $section = 'executable',
+    array  $args = []): string
 {
     $executable = ($section === 'executable');
 
@@ -356,32 +356,48 @@ function get_html_operation_row(string $objectType, array $data, bool $isTaxonom
         $navigation = '';
         if (sizeof($objects) > $countRowsMax) {
 
-            $url = admin_url('admin.php?page=tools_operations&select=' . ($_GET['select'] ?? $section) . '&type=' . ($_GET['type'] ?? ($args['type'] ??'all')));
+            $url = admin_url('admin.php?page=tools_operations&select=' . ($_GET['select'] ?? $section) .
+                '&type=' . ($_GET['type'] ?? ($args['type'] ?? 'all')));
             $maxPages = ceil(sizeof($objects) / $countRowsMax);
 
             $navigation = ($paging > 1) ?
-                sprintf('<a class="first-page button" href="%s"><span class="screen-reader-text">First page</span><span aria-hidden="true">«</span></a>' .
-                    '<a class="previous-page button" href="%s"><span class="screen-reader-text">Previous page</span><span aria-hidden="true">‹</span></a>',
+                sprintf('<a class="first-page button" href="%s">' .
+                    '<span class="screen-reader-text">%s</span><span aria-hidden="true">«</span>' .
+                    '</a>' .
+                    '<a class="previous-page button" href="%s">' .
+                    '<span class="screen-reader-text">%s</span><span aria-hidden="true">‹</span>' .
+                    '</a>',
+                    __('First page', 'oes'),
                     $url,
                     $url . ($paging > 2 ? ('&paging=' . ($paging - 1)) : ''),
+                    __('Previous page', 'oes')
                 ) :
-                ('<span class="pagination-links"><span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>' .
-                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>');
+                ('<span class="pagination-links">' .
+                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">«</span>' .
+                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">‹</span>' .
+                    '</span>');
 
-            $navigation .= sprintf('<span class="oes-paging-info">%s<span class="tablenav-paging-text"> of <span class="total-pages">%s</span></span></span>',
-                $paging,
-                $maxPages
-            );
+            $navigation .= '<span class="oes-paging-info">' . $paging .
+                '<span class="tablenav-paging-text">' . __(' of ', 'oes') .
+                '<span class="total-pages">' . $maxPages . '</span></span>' .
+                '</span>';
 
             $navigation .= ($paging < $maxPages) ?
-                sprintf('<a class="next-page button" href="%s"><span class="screen-reader-text">Next page</span><span aria-hidden="true">›</span></a>' .
-                    '<a class="last-page button" href="%s"><span class="screen-reader-text">Last page</span><span aria-hidden="true">»</span></a>',
+                sprintf('<a class="next-page button" href="%s">' .
+                    '<span class="screen-reader-text">%s</span><span aria-hidden="true">›</span>' .
+                    '</a>' .
+                    '<a class="last-page button" href="%s">' .
+                    '<span class="screen-reader-text">%s</span><span aria-hidden="true">»</span>' .
+                    '</a>',
+                    __('Next page', 'oes'),
                     $url . '&paging=' . ($paging + 1),
                     $url . '&paging=' . $maxPages,
+                    __('Last page', 'oes')
                 ) :
-                ('<span class="pagination-links"><span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>' .
-                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>');
-
+                ('<span class="pagination-links">' .
+                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">›</span>' .
+                    '<span class="tablenav-pages-navspan button disabled" aria-hidden="true">»</span>' .
+                    '</span>');
         }
         $rowHTML .= '<div class="tablenav"><div class="oes-pt-1-0 tablenav-pages">' . $navigation . '</div></div>';
 
@@ -402,7 +418,11 @@ function get_html_operation_row(string $objectType, array $data, bool $isTaxonom
                         $additional = '';
                         if ($executable)
                             $additional =
-                                sprintf('<td rowspan="%s" class="oes-operation-additional-info"><div><span>%s</span>%s</div><div><span>%s</span>%s</div><div><span>%s</span>%s</div><div><span>%s</span>%s</div></td>',
+                                sprintf('<td rowspan="%s" class="oes-operation-additional-info">' .
+                                    '<div><span>%s</span>%s</div>' .
+                                    '<div><span>%s</span>%s</div>' .
+                                    '<div><span>%s</span>%s</div>' .
+                                    '<div><span>%s</span>%s</div></td>',
                                     sizeof($operationsContainer['values']),
                                     __('Author', 'oes'),
                                     $operationsContainer['author'] ?: '-',
@@ -441,7 +461,8 @@ function get_html_operation_row(string $objectType, array $data, bool $isTaxonom
                                 sprintf('<tr%s><td>%s</td><td><strong>%s</strong></td><td>%s</td>%s</tr>',
                                     $first ? ' class="oes-operation-container-row"' : '',
                                     $singleValue['key_label'],
-                                    $singleValue['value_new'] ?: '<span class="oes-operation-empty-value">' . __('[empty]', 'oes') . '</span>',
+                                    $singleValue['value_new'] ?:
+                                        '<span class="oes-operation-empty-value">' . __('[empty]', 'oes') . '</span>',
                                     ($singleValue['value_old'] ?:
                                         '<span class="oes-operation-empty-value">' . __('[empty]', 'oes') . '</span>'),
                                     $first ? $additional : ''
@@ -449,7 +470,8 @@ function get_html_operation_row(string $objectType, array $data, bool $isTaxonom
                                 sprintf('<tr%s><td>%s</td><td><strong>%s</strong></td><td>%s</td></tr>',
                                     $first ? ' class="oes-operation-container-row"' : '',
                                     $singleValue['key_label'],
-                                    $singleValue['value'] ?: '<span class="oes-operation-empty-value">' . __('[empty]', 'oes') . '</span>',
+                                    $singleValue['value'] ?:
+                                        '<span class="oes-operation-empty-value">' . __('[empty]', 'oes') . '</span>',
                                     $singleValue['info']
                                 );
                         }
@@ -458,23 +480,32 @@ function get_html_operation_row(string $objectType, array $data, bool $isTaxonom
 
                 /* prepare header row */
                 $summary = $objectID ?
-                    sprintf('%s operation%s for <a href="%s" target="_blank">%s</a>',
-                        $countRows,
-                        (sizeof($objectData['rows'] ?? []) > 1 ? 's' : ''),
-                        ($isTaxonomy ? get_edit_term_link($objectID, $objectType) : get_edit_post_link($objectID)),
-                        ($isTaxonomy ? get_term($objectID, $objectType)->name : oes_get_display_title($objectID))
-                    ) :
-                    sprintf(__('%s operation%s for new %s "%s".', 'oes'),
-                        $countRows,
-                        (sizeof($objectData['rows'] ?? []) > 1 ? 's' : ''),
-                        ($isTaxonomy ? 'term' : 'post'),
-                        '<strong>' . (empty($title) ? 'Title missing' : $title) . '</strong>'
+                    ($countRows . ' ' .
+                        _n('operation for ',
+                            'operations for ',
+                            (sizeof($objectData['rows'] ?? [])),
+                            'oes') .
+                        ' ' .
+                        sprintf('<a href="%s" target="_blank">%s</a>',
+                            ($isTaxonomy ? get_edit_term_link($objectID, $objectType) : get_edit_post_link($objectID)),
+                            ($isTaxonomy ? get_term($objectID, $objectType)->name : oes_get_display_title($objectID))
+                        )) :
+                    ($countRows . ' ' .
+                        _n('operation for new ',
+                            'operations for new ',
+                            (sizeof($objectData['rows'] ?? [])),
+                            'oes') .
+                        ' ' .
+                        ($isTaxonomy ? 'term' : 'post') .
+                        ' "' . '<strong>' . (empty($title) ? 'Title missing' : $title) . '</strong>' . '".'
                     );
 
                 /* prepare table */
                 if (!empty($rows)) {
                     $rowHTML .= '<tr class="oes-expandable-header oes-capabilities-header-row">' .
-                        '<td class="oes-expandable-row-20"><a href="javascript:void(0)" class="oes-plus oes-dashicons" onclick="oesConfigTableToggleRow(this)"></a></td>' .
+                        '<td class="oes-expandable-row-20">' .
+                        '<a href="javascript:void(0)" class="oes-plus oes-dashicons" onclick="oesConfigTableToggleRow(this)"></a>' .
+                        '</td>' .
                         '<td colspan="3">' . $summary . '</td>' .
                         '<td>' . implode(', ', $status) . '</td>' .
                         ($executable ?

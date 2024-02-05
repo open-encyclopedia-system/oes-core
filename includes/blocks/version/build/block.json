@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/version-info",
+  "version": "0.1.0",
+  "title": "Version Information",
+  "category": "oes-schema",
+  "description": "Display the OES version information.",
+  "keywords": [
+    "publication",
+    "edit",
+    "date"
+  ],
+  "styles": [
+    {
+      "name": "default",
+      "label": "Vertical Line",
+      "isDefault": true
+    },
+    {
+      "name": "oes-list",
+      "label": "List"
+    },
+    {
+      "name": "table",
+      "label": "Table"
+    }
+  ],
+  "attributes": {
+    "version": {
+      "type": "boolean",
+      "default": true
+    },
+    "pub_date": {
+      "type": "boolean",
+      "default": true
+    },
+    "edit_date": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

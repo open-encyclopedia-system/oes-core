@@ -35,3 +35,8 @@ function oesToggleGalleryPanel(show) {
     parent.find('.oes-figure-thumbnail').removeClass('active');
     jQuery('.thumbnail-' + show.id).addClass('active');
 }
+
+
+function oesTriggerById(id){
+    jQuery('#' + id).toggle();
+}

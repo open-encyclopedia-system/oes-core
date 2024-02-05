@@ -1,0 +1,23 @@
+@charset "UTF-8";
+#oes-search-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 95%;
+  z-index: 100;
+}
+
+.oes-close {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  font-size: 2rem;
+  color: inherit;
+}
+
+.oes-close:after {
+  content: "×";
+}
+
+/*# sourceMappingURL=style.css.map */

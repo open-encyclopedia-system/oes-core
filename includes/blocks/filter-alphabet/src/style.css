@@ -1,0 +1,16 @@
+ul.oes-alphabet-list.oes-horizontal-list {
+  margin-left: -10px;
+  margin-right: -10px;
+  overflow-wrap: break-word;
+}
+ul.oes-alphabet-list.oes-horizontal-list li {
+  padding: 0.25rem 0.5rem;
+}
+ul.oes-alphabet-list.oes-horizontal-list li .active {
+  background-color: var(--wp--preset--color--secondary);
+}
+ul.oes-alphabet-list.oes-horizontal-list li:first-child {
+  padding-left: 10px;
+}
+
+/*# sourceMappingURL=style.css.map */

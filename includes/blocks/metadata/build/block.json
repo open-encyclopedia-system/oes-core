@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/metadata",
+  "version": "0.1.0",
+  "title": "Metadata",
+  "category": "oes-schema",
+  "description": "Display the metadata of the OES post.",
+  "keywords": [
+    "further",
+    "information",
+    "meta data"
+  ],
+  "attributes": {
+    "include_toc": {
+      "type": "boolean",
+      "default": true
+    },
+    "labels": {
+      "type": "object"
+    }
+  },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Default",
+      "isDefault": true
+    },
+    {
+      "name": "oes-simple",
+      "label": "Simple"
+    },
+    {
+      "name": "oes-block",
+      "label": "Block"
+    },
+    {
+      "name": "oes-list",
+      "label": "List"
+    }
+  ],
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php"
+}

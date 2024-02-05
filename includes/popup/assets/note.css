@@ -1,0 +1,53 @@
+/*----------------------------------------------------------------------------------------------------------------------
+Notes for Gutenberg
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-notes-admin-button {
+  background-image: url("note.png") !important;
+}
+
+/* oesnote:first-of-type::before */
+.block-editor-rich-text__editable oesnote::before,
+.acf-block-preview oesnote::before {
+  content: "note";
+  color: #888;
+  font-size: 12px;
+  position: relative;
+  top: -5px;
+  margin-right: 3px;
+  margin-left: 3px;
+}
+
+oesnote {
+  background: lightgrey;
+}
+
+/*----------------------------------------------------------------------------------------------------------------------
+CSS Styling for notes in frontend.
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-note {
+  padding-left: 2px;
+  padding-right: 2px;
+  font-style: normal;
+}
+.oes-note a sup:before {
+  content: "[";
+}
+.oes-note a sup:after {
+  content: "]";
+}
+
+/* notes list */
+.oes-notes-list .note-columns-2 {
+  margin-right: 5px;
+  margin-left: 5px;
+}
+.oes-notes-list .note-columns-2 > div {
+  width: 45%;
+  padding: 5px 10px;
+  border-right: 1px dashed lightgrey;
+}
+.oes-notes-list .note-columns-2 > div:last-child {
+  border-right: none;
+}
+
+/*# sourceMappingURL=note.css.map */

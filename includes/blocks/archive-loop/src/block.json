@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/archive-loop",
+  "version": "0.1.0",
+  "title": "Archive Loop",
+  "category": "theme",
+  "description": "Display the archive data loop.",
+  "keywords": [
+    "list",
+    "collection"
+  ],
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "attributes": {
+    "alphabet": {
+      "type": "boolean",
+      "default": false
+    },
+    "language": {
+      "type": "string"
+    },
+    "archive_data": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Default",
+      "isDefault": true
+    },
+    {
+      "name": "oes-simple",
+      "label": "Simple"
+    },
+    {
+      "name": "oes-block",
+      "label": "Block"
+    }
+  ],
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php",
+  "viewScript": "file:./view.js"
+}

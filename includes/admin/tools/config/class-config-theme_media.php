@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Theme_Media')) :
 
@@ -21,7 +21,7 @@ if (!class_exists('Theme_Media')) :
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
                 __('The OES feature <b>Media</b> allows you to define the display behaviour of images in the ' .
-                    'frontend.', 'oes') .
+                    'frontend. This applies only to media displayed in OES blocks (e.g. "Featured Image").', 'oes') .
                 '</p></div>';
         }
 
@@ -30,6 +30,7 @@ if (!class_exists('Theme_Media')) :
         function set_table_data_for_display()
         {
             $oes = OES();
+
             /* prepare image fields options */
             $fields = array_merge([
                 'title' => ['key' => 'title', 'label' => 'Title'],
@@ -52,14 +53,14 @@ if (!class_exists('Theme_Media')) :
                         'cells' => [
                             [
                                 'type' => 'th',
-                                'value' => '<strong>' . __('Credit Label', 'oes') .
-                                    '</strong><div>' . __('The credit label is displayed beneath the image', 'oes') . '</div>'
+                                'value' => '<strong>' . __('Credit Label', 'oes') . '</strong>' .
+                                    '<div>' . __('The credit label is displayed beneath the image', 'oes') . '</div>'
                             ],
                             [
                                 'class' => 'oes-table-transposed',
                                 'value' => oes_html_get_form_element('text',
-                                    'oes_config[media][credit_text]',
-                                    'oes_config-media-credit_text',
+                                    'media[credit_text]',
+                                    'media-credit_text',
                                     $oes->media_groups['credit_text'] ?? ''
                                 )
                             ]
@@ -69,14 +70,15 @@ if (!class_exists('Theme_Media')) :
                         'cells' => [
                             [
                                 'type' => 'th',
-                                'value' => '<strong>' . __('Credit field', 'oes') .
-                                    '</strong><div>' . __('The credit field and is displayed after the credit label', 'oes') . '</div>'
+                                'value' => '<strong>' . __('Credit field', 'oes') . '</strong>' .
+                                    '<div>' . __('The credit field and is displayed after the credit label', 'oes') .
+                                    '</div>'
                             ],
                             [
                                 'class' => 'oes-table-transposed',
                                 'value' => oes_html_get_form_element('select',
-                                    'oes_config[media][credit_label]',
-                                    'oes_config-media-credit_label',
+                                    'media[credit_label]',
+                                    'media-credit_label',
                                     $oes->media_groups['credit_label'] ?? 'none',
                                     ['options' => array_merge(['none' => '-'], $fieldOptions)])
                             ]
@@ -92,11 +94,16 @@ if (!class_exists('Theme_Media')) :
                             [
                                 'class' => 'oes-table-transposed',
                                 'value' => oes_html_get_form_element('select',
-                                    'oes_config[media][show_in_panel]',
-                                    'oes_config-media-show_in_panel',
+                                    'media[show_in_panel]',
+                                    'media-show_in_panel',
                                     $oes->media_groups['show_in_panel'] ?? [],
-                                    ['options' => $fieldOptions, 'multiple' => true, 'class' => 'oes-replace-select2',
-                                        'reorder' => true])
+                                    [
+                                        'options' => $fieldOptions,
+                                        'multiple' => true,
+                                        'class' => 'oes-replace-select2',
+                                        'reorder' => true,
+                                        'hidden' => true
+                                    ])
                             ]
                         ]
                     ]

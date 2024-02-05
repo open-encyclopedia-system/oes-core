@@ -4,328 +4,259 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
 /**
- * Set archive parameters and data for post type and additional objects.
- *
- * @param array $args Additional parameters. Valid parameters are:
- *  'execute-loop'  : Execute the loop even if a cache exists.
+ * Prepare data before display according to data type.
  *
  * @return void
  */
-function oes_set_archive_data(array $args = []): void
+function oes_prepare_data(): void
 {
-
-    /* merge args */
-    $args = array_merge([
-        'execute-loop' => false,
-        'post-type' => false,
-        'archive-class' => false,
-        'language' => 'all'
-    ], $args);
-
-    /* get global parameters */
-    global $oes, $post_type, $oes_additional_objects, $oes_is_index, $oes_post_type, $oes_index_objects;
-    $oes_post_type = empty($post_type) ? $args['post-type'] : $post_type;
-
-    /* check if index */
-    if (!$oes_is_index && !empty($oes->theme_index_pages))
-        foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
-            if (in_array($post_type, $indexPage['objects'] ?? [])) {
-                $oes_is_index = $indexPageKey;
-                $oes_index_objects = $indexPage['objects'];
-            }
-
-    /* check for cache */
-    $cache = false;
-    if ($post_type) $cache = oes_get_cache($post_type);
-    elseif ($args['post-type']) $cache = oes_get_cache($args['post-type']);
-    elseif (sizeof($oes_additional_objects) > 1) $cache = get_option('oes_cache_index');
-    elseif (isset($oes_additional_objects[0])) $cache = get_option('oes_cache_' . $oes_additional_objects[0]);
-
-    if ($cache && !$args['execute-loop']) {
-        $archive = [
-            'archive' => unserialize($cache->cache_value_raw),
-            'table-array' => unserialize($cache->cache_value_html)
-        ];
-    }
-    else {
-
-        /**
-         * Filters if archive loop uses arguments.
-         *
-         * @param array $args The arguments.
-         */
-        if (has_filter('oes/theme_archive_args'))
-            $args = apply_filters('oes/theme_archive_args', $args);
-
-        /**
-         * Filters if archive loop uses additional arguments.
-         *
-         * @param array $additionalArgs The additional arguments.
-         */
-        $additionalArgs = [];
-        if (has_filter('oes/theme_archive_additional_args'))
-            $additionalArgs = apply_filters('oes/theme_archive_additional_args', $additionalArgs);
-
-        /* execute the loop */
-        global $post_type, $oes_taxonomy;
-        $archiveClass = $args['archive-class'] ?:
-            ($post_type ? $post_type . '_Archive' : ($oes_taxonomy ? $oes_taxonomy . '_Archive': 'OES_Archive'));
-        $oesArchive = class_exists($archiveClass) ?
-            new $archiveClass($args) :
-            new OES_Archive($args);
-
-        if (!empty($oes_additional_objects)) $oesArchive->set_additional_objects($oes_additional_objects, $additionalArgs);
-        $archive = [
-            'archive' => (array)$oesArchive,
-            'table-array' => $oesArchive->get_data_as_table()
-        ];
-    }
-
-    /* prepare archive count */
-    global $oes_filter, $oes_archive_count;
-    $oes_filter = $archive['archive']['filter_array'];
-
-    $oes_archive_count = (($archive['archive']['characters'] && sizeof($archive['archive']['characters']) > 0 &&
-        $archive['archive']['count']) ?
-        $archive['archive']['count'] :
-        false);
-
-    global $oes_archive_data;
-    $oes_archive_data = $archive;
+    oes_prepare_language();
+    if (is_front_page() || is_page()) oes_set_page_data();
+    elseif (is_single()) oes_prepare_single();
+    elseif (is_tax()) oes_prepare_tax();
+    elseif (is_archive()) oes_set_archive_data();
+    elseif (is_search()) oes_prepare_search();
+    else oes_prepare_data_other();
 }
 
 
 /**
- * Get the alphabet filter (list of all characters with filter functions).
+ * Set post data for OES_Post object. (Prepare rendered content to derive table of content etc).
  *
- * @param array $characters All starting characters of archive items.
- *
- * @return array The alphabet list
- */
-function oes_archive_get_alphabet_filter(array $characters): array
-{
-
-    /* prepare alphabet array */
-    $alphabetArray = [];
-    $allAlphabet = array_merge(range('A', 'Z'), ['other']);
-
-    /* first entry */
-    global $oes, $oes_language;
-    $consideredLanguage = (!$oes_language || $oes_language === 'all') ? 'language0' : $oes_language;
-    $allButton = $oes->theme_labels['archive__filter__all_button'][$consideredLanguage] ?? 'ALL';
-    $alphabetArray[] = [
-        'style' => ' class="active-li"',
-        'content' => '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="all" ' .
-            'onClick="oesApplyAlphabetFilter(this)">' .
-            $allButton . '</a>'
-    ];
-
-    /* loop through entries */
-    foreach ($allAlphabet as $firstCharacter) {
-
-        /* check if last key */
-        $styleText = '';
-
-        /* check if not part of alphabet */
-        if ($firstCharacter == 'other') $firstCharacterDisplay = '#';
-        else {
-            $firstCharacterDisplay = $firstCharacter;
-
-            /* make sure it's uppercase */
-            $firstCharacter = strtoupper($firstCharacter);
-        }
-
-        /* check if in list */
-        if (in_array($firstCharacter, $characters)) {
-
-            /* add character to list */
-            $alphabetArray[] = [
-                'style' => $styleText . ' class="active-li"',
-                'content' => '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="' .
-                    strtolower($firstCharacter) . '" onClick="oesApplyAlphabetFilter(this)">' .
-                    $firstCharacterDisplay . '</a>'
-            ];
-        } else {
-
-            /* add character to list */
-            $alphabetArray[] = [
-                'style' => $styleText . ' class="inactive"',
-                'content' => '<span>' . $firstCharacterDisplay . '</span>'
-            ];
-        }
-    }
-
-    return $alphabetArray;
-}
-
-
-/**
- * Add a field group to the page object containing the language field.
- *
- * @param array $fieldTypes
+ * @param int $postID The post id. Default is current post ID.
  * @return void
  */
-function oes_add_fields_to_page(array $fieldTypes = []): void
+function oes_set_post_data(int $postID = 0): void
 {
-
-    add_action('oes/data_model_registered', function () use ($fieldTypes) {
-
-        $fields = [];
-        if (empty($fieldTypes) ||
-            in_array('language', $fieldTypes) ||
-            in_array('translation', $fieldTypes)) {
-
-            /* prepare languages */
-            $languages = [];
-            $oes = OES();
-            if (!empty($oes->languages))
-                foreach ($oes->languages as $languageKey => $language) $languages[$languageKey] = $language['label'];
-
-            if (empty($fieldTypes) || in_array('language', $fieldTypes))
-                $fields[] = [
-                    'key' => 'field_oes_post_language',
-                    'label' => 'Language',
-                    'name' => 'field_oes_post_language',
-                    'type' => 'select',
-                    'instructions' => '',
-                    'required' => true,
-                    'choices' => $languages
-                ];
-
-            if (empty($fieldTypes) || in_array('translation', $fieldTypes))
-                $fields[] = [
-                    'key' => 'field_oes_page_translations',
-                    'label' => 'Translations',
-                    'name' => 'field_oes_page_translations',
-                    'type' => 'relationship',
-                    'return_format' => 'id',
-                    'post_type' => ['page'],
-                    'filters' => ['search']
-                ];
-        }
-
-        if (empty($fieldTypes) || in_array('toc', $fieldTypes))
-            $fields[] = [
-                'key' => 'field_oes_page_include_toc',
-                'label' => 'Include Table of Content',
-                'name' => 'field_oes_page_include_toc',
-                'type' => 'true_false',
-                'instructions' => '',
-                'default_value' => true
-            ];
-
-
-        /**
-         * Filter page fields before registration.
-         *
-         * @param array $fields The current fields.
-         */
-        if (has_filter('oes/data_model_register_page_fields'))
-            $fields = apply_filters('oes/data_model_register_page_fields', $fields);
-
-
-        if (!empty($fields) && function_exists('acf_add_local_field_group'))
-            acf_add_local_field_group([
-                'key' => 'group_oes_page',
-                'title' => 'Page',
-                'fields' => $fields,
-                'location' => [[[
-                    'param' => 'post_type',
-                    'operator' => '==',
-                    'value' => 'page'
-                ]]]
-            ]);
-    });
-}
-
-
-/**
- * Set post data for OES_Post object.
- *
- * @param array $args Additional parameters. Valid parameters are:
- *  'post-id'  : The post id.
- * @return void
- */
-function oes_set_post_data(array $args = []): void
-{
-
-    /* get the post id */
-    $postID = $args['post-id'] ?? get_the_ID();
-
-    /* check if post type for index */
-    global $post_type, $oes, $oes_language, $oes_post, $oes_is_index;
-    $oes_is_index = in_array($post_type, $oes->theme_index['objects'] ?? []);
-
-    /* get post object (prepare rendered content to derive table of content etc) */
-    $cleanLanguage = $oes_language === 'all' ? 'language0' : $oes_language;
+    global $oes_post, $post_type;
+    if (!$postID) $postID = get_the_ID();
     $oes_post = class_exists($post_type) ?
-        new $post_type($postID, $cleanLanguage) :
-        new OES_Post($postID, $cleanLanguage);
-
+        new $post_type($postID) :
+        new OES_Post($postID);
 }
 
 
 /**
- * Set post data for OES_Post object "Page".
+ * Set post data for OES_Post object "Page". (Prepare rendered content to derive table of content etc.)
  *
- * @param array $args Additional parameters. Valid parameters are:
- *  'post-id'  : The post id.
+ * @param int $postID The post id. Default is current post ID.
  * @return void
  */
-function oes_set_page_data(array $args = []): void
+function oes_set_page_data(int $postID = 0): void
 {
-    /* get the post id */
-    $postID = $args['post-id'] ?? get_the_ID();
-
-    /* get post object (prepare rendered content to derive table of content etc) */
-    global $oes_language, $oes_post;
-    $cleanLanguage = $oes_language === 'all' ? 'language0' : $oes_language;
-    $oes_post = new OES_Page($postID, $cleanLanguage);
+    global $oes_post;
+    if (!$postID) $postID = get_the_ID();
+    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Page';
+    $oes_post = class_exists($projectClass) ?
+        new $projectClass($postID) :
+        new OES_Page($postID);
 }
 
 
 /**
  * Set term data for OES Taxonomy object.
  *
- * @param array $args Additional parameters. Valid parameters are:
- *  'term-id'  : The term id.
+ * @param int $termID The term id.
  * @return void
  */
-function oes_set_term_data(array $args = []): void
+function oes_set_term_data(int $termID = 0): void
 {
-    /* get global parameters */
-    global $taxonomy, $term, $oes_language, $oes_term;
-
-    /* get the term id */
-    $termID = $args['term-id'] ?? false;
-
-    /* get term object */
-    $cleanLanguage = $oes_language === 'all' ? 'language0' : $oes_language;
-    if(!$termID || !get_term($termID)){
-        $termID = get_term_by('slug', $term, $taxonomy)->term_id ?? false;
-    }
+    global $taxonomy, $term, $oes_term;
+    if (!$termID || !get_term($termID)) $termID = get_term_by('slug', $term, $taxonomy)->term_id ?? false;
     $oes_term = class_exists($taxonomy) ?
-        new $taxonomy($termID, $cleanLanguage) :
-        new OES_Taxonomy($termID, $cleanLanguage);
+        new $taxonomy($termID) :
+        new OES_Taxonomy($termID);
 }
 
 
 /**
- * OES filters the content when calling the Post or Term Object. If the additional text needs to be filtered, the
- * functions must be called without filter.
+ * Set archive parameters and data for post types and taxonomies.
  *
- * @param string $text The text to be filtered.
- * @param array $args Additional parameters to identify which functions should apply.
- * @return string The filtered text.
+ * @param string $class The archive class.
+ * @param array $args Additional parameters.
+ *
+ * @return void
  */
-function oes_apply_the_filter(string $text, array $args = []): string
+function oes_set_archive_data(string $class = '', array $args = []): void
 {
-    if(empty($args) || in_array('blocks', $args)) $text = do_blocks($text);
-    if(empty($args) || in_array('texturize', $args)) $text = wptexturize($text);
-    if(empty($args) || in_array('smilies', $args)) $text = convert_smilies($text);
-    if(empty($args) || in_array('paragraphs', $args)) $text = wpautop($text);
-    if(empty($args) || in_array('no_paragraphs_shortcode', $args)) $text = shortcode_unautop($text);
-    if(empty($args) || in_array('attachment', $args)) $text = prepend_attachment($text);
-    if(empty($args) || in_array('filter_tags', $args)) $text = wp_filter_content_tags($text);
-    return wp_replace_insecure_home_url($text);
+
+    if (empty($class)) {
+        global $post_type;
+        $class = $post_type . '_Post_Archive';
+        if (!class_exists($class)) $class = 'OES_Post_Archive';
+    }
+
+    /* execute the loop */
+    $oesArchive = class_exists($class) ?
+        new $class($args) :
+        new OES_Archive($args);
+
+    /* store archive in global variable */
+    global $oes_archive_data;
+    $oes_archive_data = [
+        'archive' => (array)$oesArchive,
+        'table-array' => $oesArchive->get_data_as_table()
+    ];
+
+    /* prepare archive count */
+    global $oes_filter, $oes_archive_count;
+    $oes_filter = $oesArchive->filter_array;
+
+    $oes_archive_count = (($oesArchive->characters && sizeof($oesArchive->characters) > 0 && $oesArchive->count) ?
+        $oesArchive->count :
+        false);
+}
+
+
+/**
+ * Prepare the page language by deriving the cookie value and evaluating the global language switched variable.
+ *
+ * @return void
+ */
+function oes_prepare_language(): void
+{
+    global $oes, $oes_language, $oes_language_switched;
+    if (sizeof($oes->languages) > 1 && $oes_language_switched) $oes_language = $oes_language_switched;
+    if (empty($oes_language)) $oes_language = $_COOKIE['oes_language'] ?? 'language0';
+}
+
+
+/**
+ * Prepare page data for single post.
+ * Check if archive is "flat" (redirect to archive), else set single post data.
+ *
+ * @return void
+ */
+function oes_prepare_single(): void
+{
+    global $oes, $post;
+    if ($oes->post_types[$post->post_type]['archive_on_single_page'] ?? false)
+        oes_redirect(get_post_type_archive_link($post->post_type) . '#' . $post->post_type . '-' . $post->ID);
+    else oes_set_post_data();
+}
+
+
+/**
+ * Prepare page data for tax (term) page.
+ * Check if redirect to archive (use term as filter), else prepare term data.
+ *
+ * @return void
+ */
+function oes_prepare_tax(): void
+{
+    global $taxonomy, $term, $oes;
+    if ($taxonomy &&
+        isset($oes->taxonomies[$taxonomy]['redirect']) &&
+        (($oes->taxonomies[$taxonomy]['redirect'] ?? false) !== 'none') &&
+        !isset($_GET['oesf_' . $taxonomy]) &&
+        $termObject = get_term_by('slug', $term, $taxonomy)) {
+        oes_redirect(get_post_type_archive_link(
+                $oes->taxonomies[$taxonomy]['redirect']) . '?oesf_' . $taxonomy . '=' . $termObject->term_id);
+    } else oes_set_term_data();
+}
+
+
+/**
+ * Prepare page data for search page.
+ *
+ * @return void
+ */
+function oes_prepare_search(): void
+{
+
+    global $oes_search;
+    global $oes_archive_count;
+    $oes_search = new OES_Search(['language' => 'all']);
+    $oes_archive_count = $oes_search->count;
+
+    global $oes_is_search;
+    if (!empty($oes_search->search_term)) {
+        global $oes_archive_data, $oes_archive_count, $oes_filter;
+        $oes_search->get_results();
+        $oes_archive_count = $oes_search->count;
+        $oes_filter = $oes_search->filter_array;
+        $oes_archive_data = [
+            'archive' => (array)$oes_search,
+            'table-array' => $oes_search->get_data_as_table()
+        ];
+    }
+    $oes_is_search = true;
+}
+
+
+/**
+ * Prepare page data for index page.
+ *
+ * @param string $indexPageKey The index page key.
+ * @return void
+ */
+function oes_prepare_index(string $indexPageKey): void
+{
+    global $oes, $oes_is_index, $oes_is_index_page;
+    if ($oes->theme_index_pages[$indexPageKey]['slug'] !== 'hidden') {
+        $oes_is_index = $indexPageKey;
+        $oes_is_index_page = true;
+
+        $archiveClass = $indexPageKey . '_Index_Archive';
+        if (!class_exists($archiveClass)) $archiveClass = 'OES_Index_Archive';
+        oes_set_archive_data($archiveClass);
+
+        /* check if additional redirect action */
+        do_action('oes/redirect_template', 'prepare_index');
+    }
+}
+
+
+/**
+ * Prepare page data for taxonomy archive.
+ *
+ * @return void
+ */
+function oes_prepare_taxonomies(): void
+{
+    global $oes;
+    foreach ($oes->taxonomies as $taxonomyKey => $singleTaxonomy) {
+
+        $taxonomyObject = get_taxonomy($taxonomyKey);
+
+        /* Archive pages */
+        if (($taxonomyObject->rewrite['slug'] ?? false) &&
+            oes_get_current_url(false) ==
+            (get_site_url() . '/' . ($taxonomyObject->rewrite['slug'] ?? $taxonomyKey) . '/') &&
+            !is_page(($taxonomyObject->rewrite['slug'] ?? $taxonomyKey))) {
+
+            if (!empty($oes->theme_index_pages))
+                foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
+                    if (in_array($taxonomyKey, $indexPage['objects'] ?? [])) {
+                        global $oes_is_index;
+                        $oes_is_index = $indexPageKey;
+                    }
+
+            $archiveClass = $taxonomyKey . '_Taxonomy_Archive';
+            if (!class_exists($archiveClass)) $archiveClass = 'OES_Taxonomy_Archive';
+            oes_set_archive_data($archiveClass, ['taxonomy' => $taxonomyKey]);
+
+            /* check if additional redirect action */
+            do_action('oes/redirect_template', 'prepare_taxonomies');
+        }
+    }
+}
+
+
+/**
+ * Prepare other page data.
+ *
+ * @return void
+ */
+function oes_prepare_data_other(): void
+{
+    /* check if index page */
+    global $oes;
+    if (!empty($oes->theme_index_pages))
+        foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
+            if (oes_get_current_url(false) === get_site_url() . '/' . ($indexPage['slug'] ?? 'index') . '/')
+                oes_prepare_index($indexPageKey);
+
+    /* check if page is taxonomy archive */
+    oes_prepare_taxonomies();
 }

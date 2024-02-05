@@ -5,8 +5,7 @@ namespace OES\Admin\DB;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use WP_Error;
-use function OES\ACF\get_field_display_value;
-use function OES\acf\oes_get_field;
+
 
 if (!class_exists('Operation')) :
 
@@ -101,7 +100,7 @@ if (!class_exists('Operation')) :
             /* prepare general information */
             $generalInformation = [
                 'author' => get_the_author_meta('display_name', $this->operation_author),
-                'date' => date('d.m.Y H:m', strtotime($this->operation_date)),
+                'date' => date_i18n('d.m.Y H:m', strtotime($this->operation_date)),
                 'comment' => $this->operation_comment,
                 'status' => $this->operation_status
             ];
@@ -113,8 +112,7 @@ if (!class_exists('Operation')) :
              * @param string $this- >id The operation id.
              * @param array $generalInformation The general information.
              */
-            if (has_filter('oes/get_operation_data_labels'))
-                $generalInformation = apply_filters('oes/get_operation_data_labels', $this->id, $generalInformation);
+            $generalInformation = apply_filters('oes/get_operation_data_labels', $this->id, $generalInformation);
 
 
             /* set general data */
@@ -126,7 +124,6 @@ if (!class_exists('Operation')) :
                 $this->key_args = empty($args) ? 'invalid' : $args;
                 $this->validate_single_parameter('operation_sequence', '2');
             }
-
 
             /* check if post or term */
             $checkID = $this->operation_object_id;
@@ -153,7 +150,8 @@ if (!class_exists('Operation')) :
 
                 } else {
                     $checkID = false;
-                    $this->data_for_display['info'][] = sprintf(__('Object with the ID \'%s\' does not exist. Create new object.'),
+                    $this->data_for_display['info'][] = sprintf(
+                        __('Object with the ID \'%s\' does not exist. Create new object.', 'oes'),
                         $this->operation_object_id
                     );
                 }
@@ -279,14 +277,16 @@ if (!class_exists('Operation')) :
                     $success = update_operation($this->id, [$key => $value_target, 'operation_status' => 'updated']);
 
                 if ($success) {
-                    $this->data_for_display['info'][] = sprintf(__('Change %s from \'%s\' to \'%s\'.'),
+                    $this->data_for_display['info'][] = sprintf(
+                        __('Change %s from \'%s\' to \'%s\'.', 'oes'),
                         $matchLabel[$key],
                         $this->$key,
                         $value_target
                     );
                     $this->$key = $value_target;
                 } else {
-                    $this->data_for_display['info'][] = sprintf(__('There was an error trying to change %s from \'%s\' to \'%s\'.'),
+                    $this->data_for_display['info'][] = sprintf(
+                        __('There was an error trying to change %s from \'%s\' to \'%s\'.', 'oes'),
                         $matchLabel[$key],
                         $this->$key,
                         $value_target
@@ -318,7 +318,8 @@ if (!class_exists('Operation')) :
                     'operation_status' => ($this->key_args && !$force) ? 'ignored_partly' : 'ignored'
                 ]);
 
-                if (!$success) $this->data_for_display['info'][] = __('There was an error trying to ignore the operation');
+                if (!$success)
+                    $this->data_for_display['info'][] = __('There was an error trying to ignore the operation', 'oes');
                 else {
                     $this->operation_status = ($this->key_args && !$force) ? 'ignored_partly' : 'ignored';
                     $this->operation_comment = $newMessage;
@@ -335,7 +336,8 @@ if (!class_exists('Operation')) :
         function get_data_for_display(): array
         {
             $this->validate_parameters();
-            if (!isset($this->data_for_display['values']) || empty($this->data_for_display['values'])) $this->set_data_for_display();
+            if (!isset($this->data_for_display['values']) || empty($this->data_for_display['values']))
+                $this->set_data_for_display();
             return $this->data_for_display;
         }
 
@@ -384,8 +386,7 @@ if (!class_exists('Operation')) :
                  *
                  * @param array $labelMatch The considered label.
                  */
-                if (has_filter('oes/get_operation_data_labels'))
-                    $labelMatch = apply_filters('oes/get_operation_data_labels', $labelMatch);
+                $labelMatch = apply_filters('oes/get_operation_data_labels', $labelMatch);
 
 
                 $data = [];
@@ -417,7 +418,9 @@ if (!class_exists('Operation')) :
 
                                     default:
                                         if ($this->operation_object_id)
-                                            $oldValue = property_exists($this->object, $key) ? $this->object->$key : '[unknown]';
+                                            $oldValue = property_exists($this->object, $key) ?
+                                                $this->object->$key :
+                                                '[unknown]';
                                         $newValue = $value;
                                         break;
                                 }
@@ -425,11 +428,14 @@ if (!class_exists('Operation')) :
                                 if ($this->operation_object_id && !property_exists($this->object, $key)) {
                                     $this->ignore_operation(sprintf(__('Unknown property key \'%s\'.', 'oes'), $key));
                                 } elseif ((string)$newValue === $oldValue) {
-                                    $this->ignore_operation(sprintf(__('New value for \'%s\' is same as old value.', 'oes'), $key));
+                                    $this->ignore_operation(sprintf(
+                                        __('New value for \'%s\' is same as old value.', 'oes'),
+                                        $key));
                                 } else {
                                     $data[] = [
                                         'key' => $key,
-                                        'key_label' => sprintf('<strong>%s</strong><code class="oes-object-identifier">%s</code>',
+                                        'key_label' => sprintf(
+                                            '<strong>%s</strong><code class="oes-object-identifier">%s</code>',
                                             $labelMatch[$key],
                                             $key
                                         ),
@@ -446,7 +452,9 @@ if (!class_exists('Operation')) :
 
                     /* no executable keys found */
                     if ($executableKeys < 1 && $this->operation_status !== 'success')
-                        $this->ignore_operation(__('No executable parameters found. Values are the same or have invalid keys.', 'oes'), true);
+                        $this->ignore_operation(
+                            __('No executable parameters found. Values are the same or have invalid keys.', 'oes'),
+                            true);
                 } else {
                     $this->ignore_operation(__('Invalid value. Value must be json encoded.', 'oes'));
                 }
@@ -474,7 +482,10 @@ if (!class_exists('Operation')) :
                         $this->operation_key_label = '<strong>' . $fieldObject['label'] . '</strong>' . $key;
 
                         /* get old value */
-                        if ($idForField) $oldValue = get_field_display_value($this->operation_key, $idForField, ['status' => 'all']);
+                        if ($idForField) $oldValue = oes_get_field_display_value(
+                            $this->operation_key,
+                            $idForField,
+                            ['status' => 'all']);
 
                         /* skip if value hasn't changed */
                         $displayArgs = [];
@@ -506,11 +517,15 @@ if (!class_exists('Operation')) :
                                         /* validate that value is a json decoded array of valid post IDs */
                                         if (is_array($decodedValue)) {
                                             foreach ($decodedValue as $singlePostID) {
-                                                if ($singlePost = get_post($singlePostID)) $displayedValue[] = $singlePost;
-                                                else $this->data_for_display['info'][] = sprintf(__('Post with ID \'%s\' not found.', 'oes'), $singlePostID);
+                                                if ($singlePost = get_post($singlePostID))
+                                                    $displayedValue[] = $singlePost;
+                                                else $this->data_for_display['info'][] = sprintf(
+                                                    __('Post with ID \'%s\' not found.', 'oes'),
+                                                    $singlePostID);
                                             }
                                         } else {
-                                            $this->data_for_display['info'][] = __('The value has not the right format.', 'oes');
+                                            $this->data_for_display['info'][] =
+                                                __('The value has not the right format.', 'oes');
                                         }
                                     }
 
@@ -536,7 +551,7 @@ if (!class_exists('Operation')) :
 
 
                             $displayArgs['value'] = $dbValue;
-                            $newValue = get_field_display_value($this->operation_key, false, $displayArgs);
+                            $newValue = oes_get_field_display_value($this->operation_key, false, $displayArgs);
 
                             if ((string)$newValue === (string)$oldValue && !empty($dbValue))
                                 $this->ignore_operation(__('New value is same as old value.', 'oes'));
@@ -551,8 +566,7 @@ if (!class_exists('Operation')) :
                     } else {
 
                         //@oesDevelopment Add exceptions for internal fields.
-
-                        $this->ignore_operation(sprintf(__('Operation key \'%s\' is unknown (not a field key).'),
+                        $this->ignore_operation(sprintf(__('Operation key \'%s\' is unknown (not a field key).', 'oes'),
                             $this->operation_key
                         ));
                     }
@@ -595,17 +609,22 @@ if (!class_exists('Operation')) :
                             /* update fields and post meta */
                             if ($fieldObject = get_field_object($this->operation_key, $this->operation_object_id)) {
                                 $value = $this->operation_value;
-                                if (in_array($fieldObject['type'], ['taxonomy', 'relationship', 'repeater'])) $value = json_decode($this->operation_value, true);
+                                if (in_array($fieldObject['type'], ['taxonomy', 'relationship', 'repeater']))
+                                    $value = json_decode($this->operation_value, true);
                                 $inserted = update_field($this->operation_key, $value, $this->operation_object_id);
                             } else {
-                                $inserted = oes_insert_post_meta($this->operation_object_id, [$this->operation_key => $this->operation_value]);
+                                $inserted = oes_insert_post_meta(
+                                    $this->operation_object_id,
+                                    [$this->operation_key => $this->operation_value]);
                             }
 
                             if (isset($inserted['error']) || !$inserted) {
                                 $this->update_database_after_execution('error', 0, (
                                     $inserted ?
                                         implode('<br>', $inserted['error']) :
-                                        sprintf(__('Could not update field \'%s\' with value \'%s\' for post with ID \'%s\'.', 'oes'),
+                                        sprintf(
+                                            __('Could not update field \'%s\' with value \'%s\' for post with ID ' .
+                                                '\'%s\'.', 'oes'),
                                             $this->operation_key,
                                             $this->operation_value,
                                             $this->operation_object_id
@@ -630,7 +649,8 @@ if (!class_exists('Operation')) :
 
                             /* 'post' , 'wrong_parameter' */
                             if (isset($updated['post']))
-                                $this->update_database_after_execution(($updated['post'] instanceof WP_Error) ? 'error' : 'success');
+                                $this->update_database_after_execution(
+                                    ($updated['post'] instanceof WP_Error) ? 'error' : 'success');
 
                         } /* update post meta */
                         else {
@@ -639,24 +659,30 @@ if (!class_exists('Operation')) :
                             $previousValue = oes_get_field($this->operation_key, $this->operation_object_id);
                             if ($fieldObject = get_field_object($this->operation_key, $this->operation_object_id)) {
                                 $value = $this->operation_value;
-                                if (in_array($fieldObject['type'], ['taxonomy', 'relationship', 'repeater'])) $value = json_decode($this->operation_value, true);
+                                if (in_array($fieldObject['type'], ['taxonomy', 'relationship', 'repeater']))
+                                    $value = json_decode($this->operation_value, true);
                                 $inserted = update_field($this->operation_key, $value, $this->operation_object_id);
                             } else {
-                                $inserted = oes_insert_post_meta($this->operation_object_id, [$this->operation_key => $this->operation_value]);
+                                $inserted = oes_insert_post_meta(
+                                    $this->operation_object_id,
+                                    [$this->operation_key => $this->operation_value]);
                             }
 
                             if (isset($inserted['error'])) {
                                 $this->update_database_after_execution('error', 0, implode('<br>',
                                     $inserted ?
                                         $inserted['error'] :
-                                        sprintf(__('Could not update field \'%s\' with value \'%s\' for post with ID \'%s\'.', 'oes'),
+                                        sprintf(
+                                            __('Could not update field \'%s\' with value \'%s\' for post with ID ' .
+                                                '\'%s\'.', 'oes'),
                                             $this->operation_key,
                                             $this->operation_value,
                                             $this->operation_object_id
                                         )
                                 ));
                                 return false;
-                            } elseif(!$inserted && ($previousValue !== oes_get_field($this->operation_key, $this->operation_object_id))){
+                            } elseif(!$inserted &&
+                                ($previousValue !== oes_get_field($this->operation_key, $this->operation_object_id))){
                                 $this->update_database_after_execution('error');
                                 return true;
                             } else {
@@ -679,7 +705,10 @@ if (!class_exists('Operation')) :
                             if (isset($inserted['term'])) {
 
                                 if ($inserted['term'] instanceof WP_Error) {
-                                    $this->update_database_after_execution('error', 0, implode('</br>', $inserted['term']->errors[array_key_first($inserted['term']->errors)]));
+                                    $this->update_database_after_execution('error',
+                                        0,
+                                        implode('</br>',
+                                            $inserted['term']->errors[array_key_first($inserted['term']->errors)]));
                                     return false;
                                 } elseif(isset($inserted['term']['term_id'])) {
                                     $this->update_database_after_execution('success', $inserted['term']['term_id']);
@@ -728,7 +757,8 @@ if (!class_exists('Operation')) :
             if ($success) {
                 $this->data_for_display['info'][] = __('Successfully executed.', 'oes');
             } else {
-                $this->data_for_display['info'][] = __('There has been an error trying to update the database after execution.');
+                $this->data_for_display['info'][] =
+                    __('There has been an error trying to update the database after execution.', 'oes');
             }
         }
 
@@ -746,7 +776,7 @@ if (!class_exists('Operation')) :
             if (($tempID = (int)$this->operation_temp) > 0) {
 
                 global $wpdb;
-                $table = $wpdb->prefix . 'oes_operation';
+                $table = $wpdb->prefix . 'oes_operations';
                 $operations = $wpdb->get_results("SELECT * from $table WHERE `operation_temp` = $tempID");
 
                 if (!empty($operations))
@@ -757,14 +787,15 @@ if (!class_exists('Operation')) :
                         if ($success) {
                             $this->data_for_display['info'][] = __('Successfully executed.', 'oes');
                         } else {
-                            $this->data_for_display['info'][] = __('There has been an error trying to update the database after execution.');
+                            $this->data_for_display['info'][] =
+                                __('There has been an error trying to update the database after execution.', 'oes');
                         }
                     }
             }
             elseif(oes_starts_with($this->operation_temp, 'new_term_')){
 
                 global $wpdb;
-                $table = $wpdb->prefix . 'oes_operation';
+                $table = $wpdb->prefix . 'oes_operations';
                 $tempID = $this->operation_temp;
                 $operations = $wpdb->get_results("SELECT * from $table WHERE `operation_value` LIKE '%$tempID%'");
 
@@ -779,7 +810,8 @@ if (!class_exists('Operation')) :
                         if ($success) {
                             $this->data_for_display['info'][] = __('Successfully executed.', 'oes');
                         } else {
-                            $this->data_for_display['info'][] = __('There has been an error trying to update the database after execution.');
+                            $this->data_for_display['info'][] =
+                                __('There has been an error trying to update the database after execution.', 'oes');
                         }
                     }
             }

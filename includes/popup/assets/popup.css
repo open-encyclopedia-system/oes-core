@@ -1,0 +1,81 @@
+/*----------------------------------------------------------------------------------------------------------------------
+Popups for Gutenberg
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-popups-admin-button {
+  background: url("popup.png") 4px 5px no-repeat !important;
+  display: block;
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+}
+
+.block-editor-rich-text__editable oespopup::before,
+.acf-block-preview oespopup::before {
+  content: "popup";
+  color: #888;
+  font-size: 12px;
+  position: relative;
+  top: -5px;
+  margin-right: 3px;
+  margin-left: 3px;
+}
+
+oespopup {
+  background: lightblue;
+}
+
+/*----------------------------------------------------------------------------------------------------------------------
+CSS Styling for popup in frontend.
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-popup-icon {
+  background: url("popup.png");
+  width: 1rem;
+  height: 1rem;
+  display: inline-block;
+}
+
+.oes-popup--selected {
+  background: #eee;
+  border-radius: 2px;
+}
+
+.oes-popup__connector {
+  background: #000;
+  position: absolute;
+  width: 0.9px;
+}
+
+.oes-popup__popup {
+  display: none;
+  font-size: 80%;
+  color: var(--wp--preset--color--text);
+}
+.oes-popup__popup a {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
+/* default tooltip style for desktop */
+.oes-popup__popup--tooltip {
+  position: absolute;
+  left: 0;
+  border: 1px solid var(--wp--preset--color--text);
+  background: #fff;
+  padding: 0.7em 1em;
+  max-width: 300px;
+  box-shadow: 1px 1px 1px #eee;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* default expandable style for mobile */
+.oes-popup__popup--expandable {
+  display: block;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+/*# sourceMappingURL=popup.css.map */

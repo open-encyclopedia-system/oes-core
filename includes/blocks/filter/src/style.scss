@@ -1,0 +1,30 @@
+ul.oes-filter-list-container {
+
+	.wp-block-details.active,
+	li.active a {
+		color: var(--wp--preset--color--secondary);
+	}
+
+	.oes-archive-filter-item a {
+		display:flex;
+		justify-content: space-between;
+		word-break: break-word;
+		 text-decoration: none;
+	 }
+
+	.oes-filter-item-count {
+		padding: 0 5px;
+		margin-right: 5px;
+		word-break: keep-all;
+	}
+
+	.inactive .oes-filter-item-count {
+		display: none;
+	}
+
+	.oes-filter-list {
+		padding-left: 14px;
+		padding-top: 1rem;
+		padding-bottom: 1rem;
+	}
+}

@@ -1,7 +1,7 @@
 # Open Encyclopedia System
 Tags: publishing, encyclopedia
 Requires at least: 5.9
-Tested up to: 6.2
+Tested up to: 6.4.2
 Requires PHP: 7.4, 8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -21,28 +21,28 @@ information about the project and existing OES applications please visit our
 
 ## Features
 * Publish citable articles
-* Include version control for published articles
+* Set up version control for published articles
 * Edit and administer relations between entities
 * Use linked open data APIs to GND
 * Manage user, posts, entities, access rights and role models
-* Use the OES configuration interface to change the appearance of the published articles
+* Use the OES configuration interface to change the display of the published articles
 
 ## Links
 * [Website](https://www.open-encyclopedia-system.org/)
 
 ## Dependencies
-An OES application consists of a OES plugin, an additional OES project plugin which implements the OES features for the
-application and an optional OES theme.
+An OES application consists of a OES Core plugin, an additional OES project plugin which implements the OES features 
+for the application and an optional OES theme.
 
 OES depends on the WordPress plugin ACF:
-Advanced Custom Fields, version 6.0., URL: https://www.advancedcustomfields.com/.
+Advanced Custom Fields, version 6.2.4, URL: https://www.advancedcustomfields.com/.
 
 ## Installation
 1. Download the OES plugin from gitHub and add it to your WordPress plugin directory.
 2. Download and activate the dependencies.
 3. Activate the OES plugin.
-4. Create your OES project plugin or download and activate the OES Demo plugin.
-5. (Optional) Download and activate the OES theme.
+4. Create your OES project plugin or download, activate and initialize the OES Demo plugin (follow the installation instructions in the OES Demo plugin).
+5. (Optional) Download and activate an OES theme.
 
 ## Support
 This repository is not suitable for support.
@@ -69,3 +69,21 @@ License as published by the Free Software Foundation; either version 2 of the Li
 version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+# Changelog
+
+## 2.3.0
+* new - OES Factory
+* new - OES template blocks and styles
+* new - OES popup editor tool
+* move - "Data Model" from "OES Settings" to "OES Tools"
+* move - oesApplyFilter => oesFilter.apply
+* move - $oes_frontpage replace by $oes_post->is_frontpage
+* move - ACF field option "date_format" is replaced by global format parameter in OES settings
+* remove - Post Type Arguments (like "edit screen"), ACF has now configuration option. Change your data model with the OES Factory or model.json.
+* remove - OES()->main_language, oes_nav_language. Main language is always "language0"
+* remove - $oes_redirect_archive, use action hook "template_redirect" instead
+* remove - \OES\Admin\get_block_data, use $block instead
+* move - tools "Delete", "Update", "Cache" => OES Legacy (Module) Plugin
+* move - \OES\get_post_dtm_parts_from_array => OES Legacy (Module) Plugin, use \OES\Formula\calculate_value instead
+* move - media blocks: include OES Module "Media" if you want to use legacy blocks 'Panel', 'Image Panel', 'Gallery Panel'.

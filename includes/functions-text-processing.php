@@ -44,7 +44,6 @@ function oes_ends_with(string $string, string $needle): bool
  */
 function oes_cast_to_string($input = null, bool $ignoreEmpty = false): string
 {
-
     /* $input is already string */
     if (is_string($input)) return $input;
 
@@ -90,15 +89,10 @@ function oes_cast_to_string($input = null, bool $ignoreEmpty = false): string
  */
 function oes_array_to_string_flat($input = null): string
 {
-
-    /* $input is not an array */
-    if (!is_array($input)) return '';
-
-    /* $input is missing or null */
-    if (!isset($input)) return '';
+    /* exit early if input is not an array, missing or null */
+    if (!is_array($input) || !isset($input)) return '';
 
     $returnString = '';
-
     foreach ($input as $entry) {
         if (is_array($entry)) $returnString .= '[' . oes_array_to_string_flat($entry) . ']';
         else $returnString .= oes_cast_to_string($entry);
@@ -190,7 +184,11 @@ function oes_replace_from_serializing($value)
  *
  * @oesDevelopment Improve encoding for csv with Windows-1251.
  */
-function oes_csv_escape_string(string $input, string $separator = ';', string $inputEncoding = 'utf-8', string $encoding = "windows-1251"): string
+function oes_csv_escape_string(
+    string $input,
+    string $separator = ';',
+    string $inputEncoding = 'utf-8',
+    string $encoding = "windows-1251"): string
 {
     $returnString = $input;
 
@@ -230,7 +228,11 @@ function oes_replace_string_for_anchor(string $inputString): string
  *
  * @return string|bool Returns the html representation of the accordion or true if print.
  */
-function oes_accordion(string $wrapperString = '', string $panelString = '', string $triggerString = '', array $args = [])
+function oes_accordion(
+    string $wrapperString = '',
+    string $panelString = '',
+    string $triggerString = '',
+    array  $args = [])
 {
 
     $args = array_merge([
@@ -282,7 +284,7 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
 
     $returnArrayString = [];
 
-    /* get all keys --------------------------------------------------------------------------------------------------*/
+    /* get all keys */
     $keys = [$needle];
 
     /* gather paragraphs by striping content of tags and replacing line breaks */
@@ -308,7 +310,7 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
                     $searchParagraph = strtolower($paragraph);
                 } else $searchParagraph = $paragraph;
 
-                /* check if occurrence in sentence -------------------------------------------------------------------*/
+                /* check if occurrence in sentence */
                 if (stripos($searchParagraph, $key) !== false) {
 
                     /* check occurrences */
@@ -330,16 +332,14 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
                                     /* check if search term inside note */
                                     if (stripos($singleNote, $key) !== false) {
                                         $notes[$i - 1] .= '<span class="oes-search-highlighted-note">';
-                                        $notes[$i] = str_replace('</oesnote>', '</oesnote></span>', $notes[$i]);
+                                        $notes[$i] = str_replace('</oesnote>',
+                                            '</oesnote></span>',
+                                            $notes[$i]);
                                     }
-
                                 }
                             }
-
                             $highlightedParagraph = implode('<oesnote>', $notes);
-
                         }
-
                     }
 
                     /* check search result after filtering */
@@ -389,18 +389,56 @@ function oes_convert_coordinates_decimal_to_degree(string $points): string
  * Convert a date string to a formatted string.
  *
  * @param string $date The date as string.
- * @param string $locale The locale. Default is 'en_US'.
+ * @param string $locale The locale. Default is 'en_BE'.
  * @param int $dateType The date type.
  * @param int $timeType The time type.
  * @return string Returns the formatted string.
  */
-function oes_convert_date_to_formatted_string(string $date, string $locale = 'en_US', int $dateType = 1, int $timeType = -1): string
+function oes_convert_date_to_formatted_string(
+    string $date,
+    string $locale = '',
+    int    $dateType = -1,
+    int    $timeType = -1): string
 {
     $formattedString = '';
     if ($date) {
+        if (empty($locale)) {
+            global $oes_language;
+            $locale = $args['date-locale'] ?? (OES()->languages[$oes_language]['locale'] ?? 'en_BE');
+        }
+
+        if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
         $timestamp = strtotime(str_replace('/', '-', $date));
         $formatter = new IntlDateFormatter($locale, $dateType, $timeType);
         $formattedString = $formatter->format($timestamp);
     }
     return $formattedString;
+}
+
+
+/**
+ * Generate a table of contents header. Return the title with an anchor indicating the header level.
+ *
+ * @param string $headerText The header text.
+ * @param int $level The header level. Default is 1.
+ * @param array $args Additional parameter. Valid parameters are:
+ *  'id'                    : The id for the header. Default is false.
+ *  'table-header-class'    : The header class. Default is 'oes-content-table-header'.
+ *
+ * @return string Returns a string containing header text, header class an anchor for display.
+ */
+function oes_generate_header_for_table_of_contents(string $headerText, int $level = 2, array $args = []): string
+{
+    /* validate level */
+    if (!in_array($level, [1, 2, 3, 4, 5, 6])) $level = 2;
+
+    /* check for (more) class(es) */
+    preg_match('/class="([^<>]*)"/', $headerText, $headingClass);
+    $headingClass = array_merge($headingClass, [$args['table-header-class'] ?? 'oes-content-table-header']);
+
+    /* prepare anchor by replacing space in title */
+    $id = isset($args['id']) ? strtolower($args['id']) : oes_replace_string_for_anchor(strip_tags($headerText));
+
+    return '<h' . $level . ' class="' . implode(' ', $headingClass) . '" id="' . $id . '">' .
+        $headerText . '</h' . $level . '>';
 }

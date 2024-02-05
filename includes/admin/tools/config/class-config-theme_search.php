@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Theme_Search')) :
 
@@ -20,10 +20,8 @@ if (!class_exists('Theme_Search')) :
         function information_html(): string
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
-                __('The OES feature <b>Search</b> allows you to ' .
-                    'define an index page on which post types will be displayed that are linked to the main ' .
-                    'post type (usually a type of article). The index post types will include a display of their ' .
-                    'connection within the encyclopaedia on the frontend single display.', 'oes') .
+                __('The OES feature <b>Search</b> allows you to define which parts of the encyclopdia can be ' .
+                    'searched and how they are to be displayed.', 'oes') .
                 '</p></div>';
         }
 
@@ -31,7 +29,50 @@ if (!class_exists('Theme_Search')) :
         //Overwrite parent
         function set_table_data_for_display()
         {
+            $oes = OES();
+
             /* general options */
+            $innerRows[] = [
+                'cells' => [
+                    [
+                        'type' => 'th',
+                        'value' => '<strong>' . __('Maximum paragraphs in search result', 'oes') . '</strong>' .
+                            '<div>' .
+                            __('The maximum of paragraphs when displaying the preview in search results',
+                                'oes') .
+                            '</div>'
+                    ],
+                    [
+                        'class' => 'oes-table-transposed',
+                        'value' => oes_html_get_form_element('number',
+                            'oes_config[search][max_preview_paragraphs]',
+                            'oes_config-search-max_preview_paragraphs',
+                            $oes->search['max_preview_paragraphs'] ?? 1,
+                            ['min' => 0, 'max' => 100])
+                    ]
+                ]
+            ];
+            foreach($oes->languages as $languageKey => $languageData){
+                $innerRows[] = [
+                    'cells' => [
+                        [
+                            'type' => 'th',
+                            'value' => '<strong>' . __('Type Filter Label', 'oes') .
+                                ' (' . ($languageData['label'] ?? $languageKey) . ')'.
+                                '</strong><div>' . __('Label of the type filter', 'oes') . '</div>'
+                        ],
+                        [
+                            'class' => 'oes-table-transposed',
+                            'value' => oes_html_get_form_element('text',
+                                'oes_config[search][type_label][' . $languageKey . ']',
+                                'oes_config-search-type_label-' . $languageKey,
+                                $oes->search['type_label'][$languageKey] ?? '')
+                        ]
+                    ]
+                ];
+            }
+
+
             $this->table_data = [
                 [
                     'type' => 'thead',
@@ -49,25 +90,7 @@ if (!class_exists('Theme_Search')) :
                     ]
                 ],
                 [
-                    'rows' => [
-                        [
-                            'cells' => [
-                                [
-                                    'type' => 'th',
-                                    'value' => '<strong>' . __('Maximum paragraphs in search result', 'oes') . '</strong>' .
-                                        '<div>' . __('The maximum of paragraphs when displaying the preview in search results') . '</div>'
-                                ],
-                                [
-                                    'class' => 'oes-table-transposed',
-                                    'value' => oes_html_get_form_element('number',
-                                        'oes_config[search][max_preview_paragraphs]',
-                                        'oes_config-search-max_preview_paragraphs',
-                                        $oes->search['max_preview_paragraphs'] ?? 1,
-                                        ['min' => 0, 'max' => 100])
-                                ]
-                            ]
-                        ]
-                    ]
+                    'rows' => $innerRows
                 ],
                 [
                     'type' => 'thead',
@@ -87,9 +110,6 @@ if (!class_exists('Theme_Search')) :
             ];
 
 
-            /* get global OES instance */
-            $oes = OES();
-
             /* add header and options for page */
             $rows = [
                 [
@@ -102,24 +122,27 @@ if (!class_exists('Theme_Search')) :
                     ]
                 ],
                 [
-                'cells' => [
-                    [
-                        'type' => 'th',
-                        'value' => '<strong>' . __('Page', 'oes') . '</strong>'
-                    ],
-                    [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('select',
-                            'oes_config[search][postmeta_fields][page]',
-                            'oes_config-search-postmeta_fields-page',
-                            $oes->search['postmeta_fields']['page'] ?? [],
-                            ['options' => ['title' => 'Title (Display Title)', 'content' => 'Content (Editor)'],
-                                'multiple' => true,
-                                'class' => 'oes-replace-select2',
-                                'reorder' => true])
+                    'cells' => [
+                        [
+                            'type' => 'th',
+                            'value' => '<strong>' . __('Page', 'oes') . '</strong>'
+                        ],
+                        [
+                            'class' => 'oes-table-transposed',
+                            'value' => oes_html_get_form_element('select',
+                                'oes_config[search][postmeta_fields][page]',
+                                'oes_config-search-postmeta_fields-page',
+                                $oes->search['postmeta_fields']['page'] ?? [],
+                                [
+                                    'options' => ['title' => 'Title (Display Title)', 'content' => 'Content (Editor)'],
+                                    'multiple' => true,
+                                    'class' => 'oes-replace-select2',
+                                    'reorder' => true,
+                                    'hidden' => true
+                                ])
+                        ]
                     ]
-                ]
-            ]];
+                ]];
 
 
             /* add options for post types */
@@ -145,14 +168,20 @@ if (!class_exists('Theme_Search')) :
                                 'oes_config[search][postmeta_fields][' . $postTypeKey . ']',
                                 'oes_config-search-postmeta_fields-' . $postTypeKey,
                                 $oes->search['postmeta_fields'][$postTypeKey] ?? [],
-                                ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true])
+                                [
+                                    'options' => $options,
+                                    'multiple' => true,
+                                    'class' => 'oes-replace-select2',
+                                    'reorder' => true,
+                                    'hidden' => true
+                                ])
                         ]
                     ]
                 ];
             }
 
             /* add options for taxonomies */
-            if(!empty($oes->taxonomies))
+            if (!empty($oes->taxonomies))
                 $rows[] = [
                     'cells' => [
                         [
@@ -182,7 +211,13 @@ if (!class_exists('Theme_Search')) :
                                 'oes_config[search][taxonomies][' . $taxonomyKey . ']',
                                 'oes_config-search-taxonomies-' . $taxonomyKey,
                                 $oes->search['taxonomies'][$taxonomyKey] ?? [],
-                                ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true])
+                                [
+                                    'options' => $options,
+                                    'multiple' => true,
+                                    'class' => 'oes-replace-select2',
+                                    'reorder' => true,
+                                    'hidden' => true
+                                ])
                         ]
                     ]
                 ];

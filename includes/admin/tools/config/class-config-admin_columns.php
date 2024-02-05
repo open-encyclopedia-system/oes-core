@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Admin_Columns')) :
 
@@ -63,7 +63,13 @@ if (!class_exists('Admin_Columns')) :
                                 'post_types[' . $postTypeKey . '][oes_args][admin_columns]',
                                 'post_types-' . $postTypeKey . '-oes_args-admin_columns',
                                 $postTypeData['admin_columns'] ?? [],
-                                ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true])
+                                [
+                                    'options' => $options,
+                                    'multiple' => true,
+                                    'class' => 'oes-replace-select2',
+                                    'reorder' => true,
+                                    'hidden' => true
+                                ])
                         ]
                     ]
                 ];
@@ -116,7 +122,13 @@ if (!class_exists('Admin_Columns')) :
                                 'taxonomies[' . $taxonomyKey . '][oes_args][admin_columns]',
                                 'taxonomies-' . $taxonomyKey . '-oes_args-admin_columns',
                                 $taxonomyData['admin_columns'] ?? [],
-                                ['options' => $options, 'multiple' => true, 'class' => 'oes-replace-select2', 'reorder' => true])
+                                [
+                                    'options' => $options,
+                                    'multiple' => true,
+                                    'class' => 'oes-replace-select2',
+                                    'reorder' => true,
+                                    'hidden' => true
+                                ])
                         ]
                     ]
                 ];

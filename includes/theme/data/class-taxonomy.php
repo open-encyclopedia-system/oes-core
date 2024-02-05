@@ -20,23 +20,24 @@ if (!class_exists('OES_Taxonomy')) {
 
 
         //Overwrite parent
-        function add_class_variables(array $additionalParameters): void
+        public function set_parameters(): void
         {
+            $this->language = $this->get_language();
+            $this->set_title();
+
             if ($term = get_term($this->object_ID)) {
 
                 /* get global OES instance parameter */
-                global $oes;
+                global $oes, $oes_language;
 
                 /* set taxonomy */
                 $this->taxonomy = $term->taxonomy;
 
                 /* set taxonomy label */
-                if ($this->taxonomy) {
-                    $cleanLanguage = ($this->language === 'all' || empty($this->language)) ? 'language0' : $this->language;
-                    $this->taxonomy_label = $oes->taxonomies[$this->taxonomy]['label_translations'][$cleanLanguage] ??
+                if ($this->taxonomy)
+                    $this->taxonomy_label = $oes->taxonomies[$this->taxonomy]['label_translations'][$oes_language] ??
                         ($oes->taxonomies[$this->taxonomy]['label'] ??
                             (get_taxonomy($this->taxonomy)->labels->singular_name ?? 'Label missing'));
-                }
 
                 /* check if term is part of the index */
                 if (!empty($oes->theme_index_pages))
@@ -44,74 +45,74 @@ if (!class_exists('OES_Taxonomy')) {
                         if (in_array($this->taxonomy, $indexPage['objects'] ?? []))
                             $this->part_of_index_pages[] = $indexPageKey;
 
-                /* add general themes */
-                if (isset($oes->theme_labels))
-                    $this->theme_labels = array_merge($oes->theme_labels, $this->theme_labels);
-
-                /* check for taxonomy specific labels */
+                /* set theme labels */
+                $this->theme_labels = $oes->theme_labels;
                 if (isset($oes->taxonomies[$this->taxonomy]['theme_labels']))
-                    $this->theme_labels = $oes->taxonomies[$this->taxonomy]['theme_labels'];
+                    $this->theme_labels = array_merge($this->theme_labels,
+                        $oes->taxonomies[$this->taxonomy]['theme_labels']);
             }
         }
 
 
         //Overwrite parent
-        function set_title(): void
+        public function set_title(): void
         {
-            $this->title = oes_get_display_title(get_term($this->object_ID), ['language' => $this->language]) ?? $this->object_ID;
+            $this->title = oes_get_display_title(get_term($this->object_ID));
         }
 
 
         //Overwrite parent
-        function prepare_html_main(array $args = []): array
+        public function prepare_html_main_classic(array $args = []): array
         {
-            /* prepare content array */
-            $prepareContentArray = [];
+            $contentArray = [];
 
-            /* check for language */
-            if (isset($args['language'])) $this->language = $args['language'];
-
-            /* prepare title */
             /* prepare title */
             if (!$this->has_theme_subtitle)
-                $contentArray['010_title'] = sprintf('<div class="oes-sub-subheader-container"><div class="oes-sub-subheader"><h1 class="oes-single-title">%s</h1></div></div>',
-                    $this->title
-                );
+                $contentArray['010_title'] = '<div class="oes-sub-subheader-container">' .
+                    '<div class="oes-sub-subheader">' .
+                    '<h1 class="oes-single-title">' . $this->title . '</h1>' .
+                    '</div>' .
+                    '</div>';
 
             /* add index information single__toc__index */
-            $prepareContentArray['index'] = !empty($this->part_of_index_pages) ? $this->get_index_connections() : '';
-            $contentArray['400_index'] = $prepareContentArray['index'] ?? '';
+            global $oes_language;
+            if(!empty($this->part_of_index_pages))
+                $contentArray['400_index'] = '<div class="oes-index-connections">' .
+                    oes_get_index_html([
+                        'language' => $oes_language,
+                        'display-header' => $this->get_theme_label('single__toc__index')]) .
+                    '</div>';
 
             /* prepare description */
-            if ($this->language === 'language0') {
+            global $oes_language;
+            if ($oes_language === 'language0') {
                 if ($description = get_term($this->object_ID)->description)
                     if (!empty($description))
-                        $contentArray['100_description'] = '<div class="oes-term-single-description">' . $description . '</div>';
-            } else {
-                if ($metaData = get_term_meta($this->object_ID))
-                    if (isset($metaData['description_' . $this->language][0]) && !empty($metaData['description_' . $this->language][0]))
                         $contentArray['100_description'] = '<div class="oes-term-single-description">' .
-                            $metaData['description_' . $this->language][0] .
+                            $description .
+                            '</div>';
+            } else {
+                if ($metadata = get_term_meta($this->object_ID))
+                    if (isset($metadata['description_' . $oes_language][0]) &&
+                        !empty($metadata['description_' . $oes_language][0]))
+                        $contentArray['100_description'] = '<div class="oes-term-single-description">' .
+                            $metadata['description_' . $oes_language][0] .
                             '</div>';
             }
 
-            /* check for modification */
-            $contentArray = $this->modify_content($contentArray);
-
-            ksort($contentArray);
             return $contentArray;
         }
 
 
         //Overwrite parent
-        function get_index_connected_posts($consideredPostType, $postRelationship): array
+        public function get_index_connected_posts($consideredPostType, $postRelationship): array
         {
             /* prepare data */
             $connectedPosts = [];
 
             /* get considered post type */
-            if ($consideredPostType)
-                $connectedPosts = get_posts([
+            if ($consideredPostType) {
+                $collectPosts = get_posts([
                     'post_type' => $consideredPostType,
                     'numberposts' => -1,
                     'post_status' => 'any',
@@ -124,18 +125,26 @@ if (!class_exists('OES_Taxonomy')) {
                     ]
                 ]);
 
+                /* modify for post relationships */
+                if ($postRelationship === 'child_version')
+                    foreach ($collectPosts as $post) {
+                        $versionID = \OES\Versioning\get_current_version_id($post->ID);
+                        if ($versionID) $connectedPosts[] = get_post($versionID);
+                    }
+                elseif ($postRelationship === 'parent')
+                    foreach ($collectPosts as $post) {
+                        $versionID = \OES\Versioning\get_parent_id($post->ID);
+                        if ($versionID) $connectedPosts[] = get_post($versionID);
+                    }
+                else $connectedPosts = $collectPosts;
+            }
+
             return [$connectedPosts];
         }
 
 
-        /**
-         * Get html representation of breadcrumbs.
-         *
-         * @param array $args Additional arguments.
-         *
-         * @return string
-         */
-        function get_breadcrumbs_html(array $args = []): string
+        //Overwrite parent
+        public function get_breadcrumbs_html(array $args = []): string
         {
 
             global $oes;
@@ -144,14 +153,16 @@ if (!class_exists('OES_Taxonomy')) {
             if ($taxonomyObject = get_taxonomy($this->taxonomy)) {
                 $name = ($oes->taxonomies[$this->taxonomy]['label_translations_plural'][$this->language] ??
                     ($oes->taxonomies[$this->taxonomy]['label_translations'][$this->language] ??
-                    ($oes->taxonomies[$this->taxonomy]['label'] ?? $taxonomyObject->label)));
-                $link = (get_site_url() . '/' . $oes->taxonomies[$this->taxonomy]['rewrite']['slug'] . '/');
+                        ($oes->taxonomies[$this->taxonomy]['label'] ?? $taxonomyObject->label)));
+                $link = (get_site_url() . '/' .
+                    (get_taxonomy($this->taxonomy)->rewrite['slug'] ?? $this->taxonomy) . '/');
             }
 
             $header = ((isset($args['header']) && $args['header']) ?
                 ('<div class="oes-breadcrumbs-header">' .
                     ($oes->taxonomies[$this->taxonomy]['label_translations_plural'][$this->language] ??
-                        ($this->theme_labels['archive__header'][$this->language] ?? $this->taxonomy_label)) . '</div>') :
+                        ($this->get_theme_label('archive__header', $this->taxonomy_label))) .
+                    '</div>') :
                 '');
             return '<div class="oes-sidebar-wrapper">' .
                 $header .
@@ -160,7 +171,7 @@ if (!class_exists('OES_Taxonomy')) {
                 '<li>' .
                 '<a href="' . $link . '">' .
                 '<span class="oes-breadcrumbs-back-to-archive" >' .
-                ($this->theme_labels['archive__link_back'][$this->language] ?? 'See all') .
+                $this->get_theme_label('archive__link_back', 'See all') .
                 '</span>' .
                 $name .
                 '</a>' .

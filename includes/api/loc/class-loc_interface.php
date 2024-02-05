@@ -23,19 +23,17 @@ if (!class_exists('LOC_Interface')) {
 
         const SEARCH_PARAMETERS = [];
 
+
         //Overwrite parent
         function render_shortcode(array $args, string $content = ""): string
         {
             /* get loc object */
             if ($lodID = $args['id'] ?? false) {
 
-                /* get global OES instance parameter */
-                $oes = OES();
-
                 $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
-                $iconPathAbsolute = file_exists($oes->path_core_plugin . $iconPath) ?
-                    plugins_url($oes->basename . $iconPath) :
-                    plugins_url($oes->basename . '/includes/api/icon_lod_preview.png');
+                $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
+                    plugins_url(OES_BASENAME . $iconPath) :
+                    plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
 
 
                 /* if no modification exists, replace comma in label*/
@@ -73,6 +71,6 @@ if (!class_exists('LOC_Interface')) {
     }
 
     /* include loc api files and instantiate api interface */
-    oes_include('/includes/api/loc/class-loc_api.php');
+    oes_include('api/loc/class-loc_api.php');
     OES()->apis['loc'] = new LOC_Interface('loc');
 }

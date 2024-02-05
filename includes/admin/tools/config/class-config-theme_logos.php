@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Theme_Logos')) :
 
@@ -80,8 +80,7 @@ if (!class_exists('Theme_Logos')) :
              *
              * @param array $logoDataArray The logos and favicons for the OES theme.
              */
-            if (has_filter('oes/theme_logos'))
-                $logoDataArray = apply_filters('oes/theme_logos', $logoDataArray);
+            $logoDataArray = apply_filters('oes/theme_logos', $logoDataArray);
 
 
             $rows = [];

@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Project')) :
 
@@ -38,8 +38,7 @@ if (!class_exists('Project')) :
              *
              * @param array $options The project options.
              */
-            if (has_filter('oes/project_options'))
-                $this->project_options = apply_filters('oes/project_options', $this->project_options);
+            $this->project_options = apply_filters('oes/project_options', $this->project_options);
         }
 
 

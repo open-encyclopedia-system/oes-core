@@ -4,10 +4,6 @@ namespace OES\Figures;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-use function OES\ACF\get_field_display_value;
-use function OES\ACF\oes_get_field;
-use function OES\ACF\oes_get_field_object;
-
 
 /**
  * Get the html representation of a modal of an image.
@@ -32,7 +28,7 @@ function oes_get_modal_image(array $image, array $args = []): string
         $imagePathArray = wp_get_attachment_image_src($image['ID'], 'full');
         $imagePath = $imagePathArray[0] ?? $image['url'];
 
-        $expandIcon = '<span class="oes-expand-button oes-icon"></span>';
+        $expandIcon = '<span class="oes-expand-button oes-icon"><span class="dashicons dashicons-editor-expand"></span></span>';
 
 
         /**
@@ -41,8 +37,7 @@ function oes_get_modal_image(array $image, array $args = []): string
          * @param string $expandIcon The expand icon.
          * @param array $image The image.
          */
-        if (has_filter('oes/modal_image_expand_image'))
-            $expandIcon = apply_filters('oes/modal_image_expand_image', $expandIcon, $image);
+        $expandIcon = apply_filters('oes/modal_image_expand_image', $expandIcon, $image);
 
 
         /* modal toggle */
@@ -103,10 +98,10 @@ function oes_get_modal_image_data(array $image, array $args = []): array
     if ($creditText) {
 
         /* check if image attribute or image field */
-        if (isset($image[$creditText])) $caption .= ($creditText === 'date' ?
-            date("j F Y", strtotime(str_replace('/', '-', $image['date']))) :
+        if (isset($image[$creditText])) $caption .= (($creditText === 'date' && !empty($image['date'] ?? '')) ?
+            oes_convert_date_to_formatted_string($image['date']) :
             $image[$creditText]);
-        else $caption .= get_field_display_value($creditText, $image['ID']);
+        else $caption .= oes_get_field_display_value($creditText, $image['ID']);
     }
 
     $table = [];
@@ -132,8 +127,8 @@ function oes_get_modal_image_data(array $image, array $args = []): array
                     $label = $labelMatch[$fieldKey] ?? '';
                 }
 
-                $value = ($fieldKey === 'date' ?
-                    date_i18n(get_option('date_format') ?? "j F Y", strtotime(str_replace('/', '-', $image['date'])))  :
+                $value = (($fieldKey === 'date' && !empty($image['date'] ?? '')) ?
+                    oes_convert_date_to_formatted_string($image['date']) :
                     $image[$fieldKey]);
             } else {
 
@@ -149,7 +144,7 @@ function oes_get_modal_image_data(array $image, array $args = []): array
 
                 $value = '';
                 if(!empty(oes_get_field($fieldKey, $image['ID'])))
-                    $value = get_field_display_value($fieldKey, $image['ID']);
+                    $value = oes_get_field_display_value($fieldKey, $image['ID']);
             }
 
             if (!empty($value)) $table[$label] = $value;
@@ -163,8 +158,7 @@ function oes_get_modal_image_data(array $image, array $args = []): array
      * @param array $image The image.
      * @param array $args Additional parameters.
      */
-    if (has_filter('oes/modal_image_data_table'))
-        $table = apply_filters('oes/modal_image_data_table', $table, $image, $args);
+    $table = apply_filters('oes/modal_image_data_table', $table, $image, $args);
 
 
     /**
@@ -175,8 +169,7 @@ function oes_get_modal_image_data(array $image, array $args = []): array
      * @param array $image The image.
      * @param array $args Additional parameters.
      */
-    if (has_filter('oes/modal_image_data_caption'))
-        $caption = apply_filters('oes/modal_image_data_caption', $caption, $image, $table, $args);
+    $caption = apply_filters('oes/modal_image_data_caption', $caption, $image, $table, $args);
 
 
     /**
@@ -186,9 +179,7 @@ function oes_get_modal_image_data(array $image, array $args = []): array
      * @param array $image The image.
      * @param array $args Additional parameters.
      */
-    $modalSubtitle = '';
-    if (has_filter('oes/modal_image_modal_subtitle'))
-        $modalSubtitle = apply_filters('oes/modal_image_modal_subtitle', $table, $image, $args);
+    $modalSubtitle = apply_filters('oes/modal_image_modal_subtitle', '', $table, $image, $args);
 
 
     return ['caption' => $caption, 'table' => $table, 'modal_subtitle' => $modalSubtitle];

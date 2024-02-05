@@ -1,0 +1,9 @@
+.oes-translation-info span:before {
+  content: "(";
+  padding-left: 5px;
+}
+.oes-translation-info span:after {
+  content: ")";
+}
+
+/*# sourceMappingURL=style.css.map */

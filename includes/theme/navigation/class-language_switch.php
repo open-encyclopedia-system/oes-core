@@ -1,10 +1,9 @@
 <?php
 
-namespace OES\Multilingualism;
+namespace OES\Navigation;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-use function OES\ACF\oes_get_field;
 
 if (!class_exists('Language_Switch')) {
 
@@ -17,16 +16,16 @@ if (!class_exists('Language_Switch')) {
     {
 
         /** @var string The page language */
-        public string $oes_language = 'language0';
+        public string $language = 'language0';
 
         /** @var string Current URL */
         public string $current_url = '';
 
+        /** @var string Current abb */
+        public string $current_label = '';
+
         /** @var array The target language(s) */
         public array $target_languages = [];
-
-        /** @var array The additional parameters */
-        public array $args = [];
 
         /** @var array The links to the connected pages */
         public array $links = [];
@@ -37,7 +36,7 @@ if (!class_exists('Language_Switch')) {
          *
          * @param array $args Additional parameters
          */
-        function __construct(array $args = [])
+        public function __construct(array $args = [])
         {
             $this->set_parameters($args);
             $this->prepare_link();
@@ -50,19 +49,21 @@ if (!class_exists('Language_Switch')) {
          * @param array $args Additional parameters
          * @return void
          */
-        function set_parameters(array $args): void
+        public function set_parameters(array $args): void
         {
             /* prepare languages */
             global $oes_language, $oes;
-            $this->oes_language = $oes_language;
-            foreach ($oes->languages as $languageKey => $languageData)
-                if ($languageKey !== $this->oes_language)
-                    $this->target_languages[$languageKey] = $languageData['abb'] ?? $languageData['label'];
+            $this->language = $oes_language ?? 'language0';
+            foreach ($oes->languages as $languageKey => $languageData) {
+                if ($languageKey !== $this->language) {
+                    $this->links[$languageKey] = [
+                        'text' => $languageData['abb'] ?? $languageData['label'],
+                        'abb' => $languageData['abb'] ?? $languageKey
+                    ];
+                } else $this->current_label = $languageData['abb'] ?? $languageData['label'];
+            }
 
             $this->current_url = $args['current_url'] ?? oes_get_current_url(false);
-
-            /* set additional parameter */
-            $this->args = $args;
         }
 
 
@@ -71,7 +72,7 @@ if (!class_exists('Language_Switch')) {
          *
          * @return void
          */
-        function prepare_link(): void
+        public function prepare_link(): void
         {
             if (is_front_page()) $this->links_for_front_page();
             elseif (is_page()) $this->links_for_page();
@@ -84,151 +85,36 @@ if (!class_exists('Language_Switch')) {
 
 
         /**
-         * Get the html menu item representation of language switch link.
+         * Set links for front page.
+         * If a translation of this page exists, link to translation, otherwise change only language of page.
          *
-         * @param string $targetLanguage The target language.
-         * @param array $args Additional arguments.
-         * @return string Returns the html menu item representation of the language switch link.
+         * @return void
          */
-        function menu_item_html(string $targetLanguage = '', array $args = []): string
+        public function links_for_front_page(): void
         {
-            global $oes;
-            $item = $this->item_link_html($targetLanguage, $args);
-            $itemID = $args['id'] ?? '';
-            $itemClasses = $args['classes'] ?? (sizeof($oes->languages) > 2 ?
-                'nav-item menu-item menu-item-has-children' :
-                'menu-item');
+            foreach ($this->links as $language => $data) {
+                $url = home_url();
 
-            return sprintf('<li id="%s" class="%s">%s</li>',
-                $itemID,
-                $itemClasses,
-                $item
-            );
-        }
-
-
-        /**
-         * Get the html link representation of the language switch.
-         *
-         * @param string $targetLanguage The target language.
-         * @param array $args Additional arguments.
-         * @return string Returns the html link representation of the language switch.
-         */
-        function item_link_html(string $targetLanguage = '', array $args = []): string
-        {
-
-            $linkObjects = $this->item_link_object($targetLanguage, $args);
-
-            /* return link of menu item */
-            return sprintf('<a href="%s" class="%s">%s</a>',
-                $linkObjects['link'] ?? '',
-                $linkObjects['class'] ?? '',
-                $linkObjects['text'] ?? ''
-            );
-        }
-
-
-        /**
-         * Get the html link representation of the language switch.
-         *
-         * @param string $targetLanguage The target language.
-         * @param array $args Additional arguments.
-         * @return array Returns the html link object.
-         */
-        function item_link_object(string $targetLanguage = '', array $args = []): array
-        {
-            global $oes;
-            $linkClass = $args['link-class'] ?? 'oes-language-switch';
-
-            if (sizeof($oes->languages) > 2) {
-
-                $linkList = [];
-                foreach ($this->target_languages as $languageKey => $languageAbb)
-                    $linkList[$languageKey] = [
-                        'link' => home_url('/') . strtolower($languageAbb) . '/?oes-language-switch=true',
-                        'class' => $linkClass,
-                        'text' => $languageAbb
-                    ];
-                return $linkList;
-            } else {
-
-                /* take first target language if not specified */
-                if (empty($targetLanguage)) $targetLanguage = array_key_first($this->target_languages);
-
-                /* prepare link */
-                $link = $this->links[$targetLanguage]['link'] ?? '';
-                if (empty($link))
-                    $link = (home_url('/') . strtolower($this->target_languages[$targetLanguage] ?? '') . '/');
-
-                /* add switch info */
-                if (!empty($link))
-                    $link .= (parse_url($link, PHP_URL_QUERY) ? '&' : '?') .'oes-language-switch=' . $targetLanguage;
-
-
-                /**
-                 * Filters the language switch link.
-                 *
-                 * @param string $link The link.
-                 * @param Language_Switch $this The language switch object.
-                 * @param string $targetLanguage The target language.
-                 */
-                if (has_filter('oes/language_switch_link'))
-                    $link = apply_filters('oes/language_switch_link', $link, $this, $targetLanguage);
-
-
-                /* prepare link text */
-                $linkText = $this->links[$targetLanguage]['link-text'] ?? '';
-                if (empty($linkText))
-                    $linkText = $this->target_languages[$targetLanguage] ?? $targetLanguage;
-
-
-                /**
-                 * Filters the language switch link text.
-                 *
-                 * @param string $link The link text.
-                 * @param Language_Switch $this The language switch object.
-                 * @param string $targetLanguage The target language.
-                 */
-                if (has_filter('oes/language_switch_link_text'))
-                    $linkText = apply_filters('oes/language_switch_link_text', $linkText, $this, $targetLanguage);
-
-
-                /* return link as menu item */
-                return [
-                    'link' => $link,
-                    'class' => $linkClass,
-                    'text' => $linkText
-                ];
+                /* check if frontpage in other language exists */
+                if ($page = get_page_by_path(strtolower($data['abb']))) $url = get_permalink($page->ID);
+                $this->links[$language]['link'] = $url;
             }
         }
 
 
         /**
-         * Set links for front page.
-         *
-         * @return void
-         */
-        function links_for_front_page(): void
-        {
-            //@oesDevelopment Make sure, that page exists
-            foreach ($this->target_languages as $languageKey => $languageAbb)
-                $this->links[$languageKey]['link'] = home_url('/') . strtolower($languageAbb) . '/';
-        }
-
-
-        /**
          * Set links for page.
+         * If a translation of this page exists, link to translation, otherwise change only language of page.
          *
          * @return void
          */
-        function links_for_page(): void
+        public function links_for_page(): void
         {
-            /* check for translations */
             global $post;
             if ($translations = oes_get_field('field_oes_page_translations', $post->ID))
                 foreach ($translations as $translationID) {
                     $pageLanguage = oes_get_post_language($translationID);
-                    if ($pageLanguage && $pageLanguage !== $this->oes_language) {
+                    if ($pageLanguage && $pageLanguage !== $this->language) {
                         $this->links[$pageLanguage]['link'] = get_permalink($translationID);
                         break;
                     }
@@ -238,10 +124,11 @@ if (!class_exists('Language_Switch')) {
 
         /**
          * Set links for single.
+         * If a translation of this post exists, link to translation, otherwise change only language of post.
          *
          * @return void
          */
-        function links_for_single(): void
+        public function links_for_single(): void
         {
             global $oes_post;
             if (!empty($oes_post->translations)) {
@@ -249,46 +136,30 @@ if (!class_exists('Language_Switch')) {
                     if (isset($translation['id']) &&
                         isset($translation['language'])) {
                         $this->links[$translation['language']]['link'] = get_permalink($translation['id']);
-                        break;
                     }
-            } elseif (!empty($this->target_languages)) {
-                foreach ($this->target_languages as $languageKey => $data)
-                    $this->links[$languageKey]['link'] = get_permalink($oes_post->object_ID) .
-                        '';
             }
-
-            /* add item itself */
-            $this->links[$oes_post->language]['link'] = get_permalink($oes_post->object_ID);
         }
 
 
         /**
          * Set links for taxonomy.
+         * Change only language of page.
          *
          * @return void
          */
-        function links_for_tax(): void
+        public function links_for_tax(): void
         {
-            global $oes;
-            foreach ($this->target_languages as $languageKey => $languageAbb)
-                $this->links[$languageKey]['link'] = home_url('/') .
-                    ($languageKey !== $oes->main_language ? strtolower($languageAbb) . '/' : '');
         }
 
 
         /**
          * Set links for archive.
+         * Change only language of page.
          *
          * @return void
          */
-        function links_for_archive(): void
+        public function links_for_archive(): void
         {
-            global $post_type, $oes, $oes_post_type;
-            if ($consideredPostType = empty($post_type) ? $oes_post_type : $post_type)
-                foreach ($this->target_languages as $languageKey => $languageAbb)
-                    $this->links[$languageKey]['link'] = home_url('/') .
-                        ($languageKey !== $oes->main_language ? strtolower($languageAbb) . '/' : '') .
-                        (get_post_type_object($consideredPostType)->rewrite['slug'] ?? $post_type) . '/';
         }
 
 
@@ -297,63 +168,33 @@ if (!class_exists('Language_Switch')) {
          *
          * @return void
          */
-        function links_for_search(): void
+        public function links_for_search(): void
         {
-            global $oes;
-            foreach ($this->target_languages as $languageKey => $languageAbb)
-                $this->links[$languageKey]['link'] = get_site_url() . '/' .
-                    (isset($_GET['s']) ? '?s=' . $_GET['s'] : '');
+            foreach ($this->links as $languageKey => $languageAbb) {
+                $this->links[$languageKey]['link'] = get_site_url() . '/';
+                $this->links[$languageKey]['param']['s'] = $_GET['s'] ?? '';
+            }
         }
 
 
         /**
          * Set links for index.
+         * Change only language of page.
          *
          * @return void
          */
-        function links_for_index(): void
+        public function links_for_index(): void
         {
-            global $oes;
-            foreach ($this->target_languages as $languageKey => $languageAbb)
-                $this->links[$languageKey]['link'] = get_site_url() . '/' .
-                    ($languageKey !== $oes->main_language ?
-                        strtolower($languageAbb) . '/' :
-                        '') .
-                    ($oes->theme_index['slug'] ?? 'index') . '/';
         }
 
 
         /**
-         * Set links for taxonomies.
+         * Set links for taxonomy archives.
          *
          * @return void
          */
-        function links_for_taxonomies(): void
+        public function links_for_taxonomies(): void
         {
-            global $oes;
-            foreach ($oes->taxonomies as $taxonomyKey => $singleTaxonomy)
-                if (isset($singleTaxonomy['rewrite']['slug'])) {
-
-                    /* taxonomy archive in main language */
-                    if (!is_page($singleTaxonomy['rewrite']['slug']) &&
-                        $this->current_url === get_site_url() . '/' . $singleTaxonomy['rewrite']['slug'] . '/') {
-                        foreach ($this->target_languages as $languageKey => $languageAbb)
-                            $this->links[$languageKey]['link'] = home_url('/') .
-                                ($languageKey !== $oes->main_language ? strtolower($languageAbb) . '/' : '') .
-                                ($singleTaxonomy['rewrite']['slug'] ?? $taxonomyKey) . '/';
-                    } /* taxonomy archive in different language */
-                    else
-                        foreach ($oes->languages as $languageData)
-                            if (!is_page(strtolower($languageData['abb']) . '/' . $singleTaxonomy['rewrite']['slug']) &&
-                                $this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' .
-                                ($singleTaxonomy['rewrite']['slug'] ?? $taxonomyKey) . '/') {
-                                foreach ($this->target_languages as $languageKey => $languageAbb)
-                                    $this->links[$languageKey]['link'] = home_url('/') .
-                                        ($languageKey !== $oes->main_language ? strtolower($languageAbb) . '/' : '') .
-                                        ($singleTaxonomy['rewrite']['slug'] ?? $taxonomyKey) . '/';
-                            }
-
-                }
         }
 
 
@@ -362,7 +203,7 @@ if (!class_exists('Language_Switch')) {
          *
          * @return void
          */
-        function links_for_data_other(): void
+        public function links_for_data_other(): void
         {
             /* check if index page */
             if ($this->current_url === get_site_url() . '/' . ($oes->theme_index['slug'] ?? 'index') . '/')
@@ -373,7 +214,8 @@ if (!class_exists('Language_Switch')) {
             foreach ($oes->languages as $languageData) {
 
                 /* check if index page in different language */
-                if ($this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' . ($oes->theme_index['slug'] ?? 'index') . '/')
+                if ($this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' .
+                    ($oes->theme_index['slug'] ?? 'index') . '/')
                     $this->links_for_index();
             }
 
@@ -398,9 +240,175 @@ if (!class_exists('Language_Switch')) {
          *
          * @return void
          */
-        function links_for_data_custom(): void
+        public function links_for_data_custom(): void
         {
         }
 
+
+        /**
+         * Get the link text of the html representation of the language switch.
+         *
+         * @param string $targetLanguage The target language.
+         * @return string Returns the link text.
+         */
+        public function get_menu_item_title(string $targetLanguage = ''): string
+        {
+            /* take first target language if not specified */
+            if (empty($targetLanguage)) $targetLanguage = array_key_first($this->links);
+
+
+            /* prepare link text */
+            $linkText = $this->links[$targetLanguage]['text'] ?? '';
+            if (empty($linkText))
+                $linkText = $this->target_languages[$targetLanguage] ?? $targetLanguage;
+
+
+            /**
+             * Filters the language switch link text.
+             *
+             * @param string $link The link text.
+             * @param Language_Switch $this The language switch object.
+             * @param string $targetLanguage The target language.
+             */
+            return apply_filters('oes/language_switch_link_text', $linkText, $this, $targetLanguage);
+        }
+
+
+        /**
+         * Get the link of the language switch for the classic menu item.
+         *
+         * @param string $targetLanguage The target language.
+         * @return string Returns the menu item link.
+         */
+        public function get_menu_item_link(string $targetLanguage = ''): string
+        {
+            /* take first target language if not specified */
+            if (empty($targetLanguage)) $targetLanguage = array_key_first($this->links);
+
+            /* prepare link, and add switch info */
+            $link = $this->links[$targetLanguage]['link'] ?? '';
+            $link .= (parse_url($link, PHP_URL_QUERY) ? '&' : '?') . 'oes-language-switch=' . $targetLanguage;
+
+
+            /**
+             * Filters the language switch link.
+             *
+             * @param string $link The link.
+             * @param Language_Switch $this The language switch object.
+             * @param string $targetLanguage The target language.
+             */
+            return apply_filters('oes/language_switch_link', $link, $this, $targetLanguage);
+        }
+
+
+        /**
+         * Get the HTML representation of the language switch.
+         *
+         * @param string $style Optional style. Default displays all links. Valid options are:
+         *  'is-style-oes-popup'    : Display links as popup.
+         *  'is-style-oes-two'      : Display only one link.
+         *  'is-style-default'      : Display all links.
+         *
+         * @return string Return the HTML representation of the language switch.
+         */
+        public function html(string $style = 'is-style-oes-default'): string
+        {
+            switch ($style) {
+                case 'is-style-oes-popup':
+                    return $this->get_popup_links_html();
+
+                case 'is-style-oes-two':
+                    return $this->get_single_link_html();
+
+                case 'is-style-oes-default':
+                default:
+                    return $this->get_all_links_html();
+            }
+        }
+
+
+        /**
+         * Get one link (the link to the first target language). If only two languages exists, this is the
+         * opposite language.
+         *
+         * @return string Return single link.
+         */
+        public function get_single_link_html(): string
+        {
+            $firstKey = array_key_first($this->links);
+            if ($firstKey) return $this->prepare_single_link($firstKey, $this->links[$firstKey]);
+            else return sprintf('<a href="%s" class="%s">%s</a>',
+                'javascript:void(0);',
+                'oes-switch-active',
+                $this->current_label ?? $this->language
+            );
+        }
+
+
+        /**
+         * Get all links.
+         *
+         * @return string Return all links.
+         */
+        public function get_all_links_html(): string
+        {
+            /* prepare item itself */
+            $switchArray[$this->language] = sprintf('<a href="%s" class="%s">%s</a>',
+                'javascript:void(0);',
+                'oes-switch-active',
+                $this->current_label ?? $this->language
+            );
+            foreach ($this->links as $language => $data)
+                if ($this->language !== $language)
+                    $switchArray[$language] = $this->prepare_single_link($language, $data);
+            ksort($switchArray);
+
+            return '<span>' . implode(' | ', $switchArray) . '</span>';
+        }
+
+
+        /**
+         * Get links as popup.
+         *
+         * @return string Return popup.
+         */
+        public function get_popup_links_html(): string
+        {
+            $switchArray = [];
+            foreach ($this->links as $language => $data)
+                if ($this->language !== $language)
+                    $switchArray[$language] = $this->prepare_single_link($language, $data);
+            ksort($switchArray);
+
+            return \OES\Popup\get_single_html(
+                'oes-language-switch-list',
+                '<span class="oes-language-switch">' . $this->current_label . '</span>',
+                implode('', $switchArray)
+            );
+        }
+
+
+        /**
+         * Prepare a single link.
+         *
+         * @param string $language The target language for this link.
+         * @param array $data The language data.
+         * @return string Return a single link.
+         */
+        public function prepare_single_link(string $language, array $data): string
+        {
+            /* prepare url */
+            $url = ($data['link'] ?? '') . '?oes-language-switch=' . $language;
+
+            /* add additional parameters*/
+            if (isset($data['param']))
+                foreach ($data['param'] as $key => $value) $url .= '&' . $key . '=' . $value;
+
+            return sprintf('<a href="%s" class="%s">%s</a>',
+                $url,
+                ($data['class'] ?? ''),
+                $data['text'] ?? ''
+            );
+        }
     }
 }

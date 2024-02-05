@@ -1,0 +1,17 @@
+.oes-version-info ul.oes-horizontal-list li:after {
+  content: "|";
+  padding: 0 5px;
+}
+.oes-version-info ul.oes-horizontal-list li:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.oes-version-info ul.oes-horizontal-list li:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+.oes-version-info ul.oes-horizontal-list li:last-child:after {
+  display: none;
+}
+
+/*# sourceMappingURL=style.css.map */

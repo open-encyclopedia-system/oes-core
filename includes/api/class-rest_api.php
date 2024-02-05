@@ -39,8 +39,11 @@ if (!class_exists('Rest_API')) {
         /** @var bool|string The query parameter. */
         public $searchTerm = false;
 
-        /** @var string The interface language. Default is german. Valid values are 'english', 'german'. */
+        /** @var string The interface language. Default is 'german'. Valid values are 'english', 'german'. */
         public string $language = 'german';
+
+        /** @var string The post method. Default is 'get'. */
+        public string $method = 'get';
 
 
         /**
@@ -87,7 +90,12 @@ if (!class_exists('Rest_API')) {
             /* post request */
             $requestURL = $this->get_request_url($this->url, $args);
             $requestArgs = $this->get_request_args(['headers' => ['Content-Type' => 'application/json']], $args);
-            $response = wp_remote_get($requestURL, $requestArgs);
+
+            //Exit early
+            if(!$requestURL || !$requestArgs || !is_array($requestArgs)) return;
+
+            if($this->method == 'post') $response = wp_remote_post($requestURL, $requestArgs);
+            else $response = wp_remote_get($requestURL, $requestArgs);
 
             /* check if wp request was successful */
             if (is_wp_error($response))
@@ -127,9 +135,9 @@ if (!class_exists('Rest_API')) {
          *
          * @param array $array The current request arguments.
          * @param array $args The post arguments.
-         * @return array Return the modified request arguments.
+         * @return mixed Return the modified request arguments.
          */
-        function get_request_args(array $array, array $args = []): array
+        function get_request_args(array $array, array $args = [])
         {
             if(!empty($this->login) && !empty($this->password))
                 $array['Authorization'] = 'Basic ' . base64_encode($this->login . ':' . $this->password);
@@ -192,7 +200,8 @@ if (!class_exists('Rest_API')) {
 
                 /* loop through data and prepare for display */
                 $transformedDataEntry = [];
-                $propertyLabel = Geonames_Interface::PROPERTIES;
+                $apiInterface = $this->identifier . '_Inteface';
+                $propertyLabel = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
                 foreach ($entry as $propertyKey => $property) {
 
                     /* prepare property position */
@@ -250,10 +259,10 @@ if (!class_exists('Rest_API')) {
             return [
                 'entry' => $entry,
                 'id' => 'ID missing',
-                'name' => 'Name missing',
-                'type' => 'Type missing',
-                'link' => 'Link missing',
-                'link_frontend' => 'Link frontend missing'
+                'name' => 'name missing',
+                'type' => 'type missing',
+                'link' => 'link missing',
+                'link_frontend' => 'link frontend missing'
             ];
         }
 
@@ -273,7 +282,7 @@ if (!class_exists('Rest_API')) {
 
             /* prepare table */
             $tableData = $this->get_data_for_display_modify_table_data($entry);
-            $table = '<table class="oes-lod-box-table-data">';
+            $table = '<table class="is-style-oes-simple">';
             foreach ($tableData as $row)
                 $table .= '<tr><th>' . $row['label'] . '</th><td>' . $row['value'] . '</td></tr>';
             $table .= '</table>';

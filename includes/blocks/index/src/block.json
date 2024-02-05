@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/index",
+  "version": "0.1.0",
+  "title": "Index Entry",
+  "category": "oes-schema",
+  "description": "Display the index information for the OES post or term.",
+  "keywords": [
+    "register",
+    "connections"
+  ],
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Default",
+      "isDefault": true
+    },
+    {
+      "name": "oes-simple",
+      "label": "Simple"
+    },
+    {
+      "name": "oes-block",
+      "label": "Block"
+    }
+  ],
+  "attributes": {
+    "post_type": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string"
+    },
+    "archive_data": {
+      "type": "boolean",
+      "default": true
+    },
+    "labels": {
+      "type": "object"
+    },
+    "relationship": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php"
+}

@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "oes/filter-active",
+	"version": "0.1.0",
+	"title": "Active Filter",
+	"category": "oes-filter",
+	"description": "Display the active facet filters.",
+	"keywords": [
+		"selected",
+		"list",
+		"archive"
+	],
+	"styles": [
+		{
+			"name": "oes-default",
+			"label": "Default",
+			"isDefault": true
+		},
+		{
+			"name": "oes-box",
+			"label": "Box"
+		}
+	],
+	"supports": {
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"align": true,
+		"anchor": true,
+		"alignContent": true,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"alignText": true,
+		"fullHeight": true
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css"
+}

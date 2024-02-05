@@ -1,0 +1,18 @@
+.oes-notes-list {
+  list-style-type: none;
+  margin: 1em 0;
+  padding-left: 0;
+}
+.oes-notes-list li {
+  display: flex;
+  margin-bottom: 0.3em;
+}
+.oes-notes-list span {
+  font-size: 0.8em;
+  margin-right: 1.5em;
+  word-wrap: normal;
+  word-break: normal;
+  min-width: 15px;
+}
+
+/*# sourceMappingURL=style.css.map */

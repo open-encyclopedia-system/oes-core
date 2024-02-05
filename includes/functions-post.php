@@ -2,9 +2,6 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-use function OES\ACF\oes_get_field;
-use function OES\ACF\oes_get_field_object;
-
 
 /**
  * Get posts from database with WP_Query.
@@ -96,29 +93,35 @@ function oes_update_post_meta($postID, string $fieldName, $value = '', string $d
  * different from the WordPress post title, e.g. any text acf field of the post type.
  *
  * @param mixed $object A string containing the post ID.
+ * @param array $args Additional arguments. Valid arguments are: 'language', 'option'.
+ * @param string $option Determine title type. Valid options are: 'title_display', 'title_sorting_display',
+ * 'title_archive_display'.
+ *
  * @return string Returns a string containing the post title.
  */
-function oes_get_display_title($object = false, array $args = []): string
+function oes_get_display_title($object = false, array $args = [], string $option = ''): string
 {
-    $oes = OES();
+    global $oes, $oes_language;
+    $language = !empty($args['language'] ?? '') ? $args['language'] : $oes_language;
+    if(empty($language)) $language = 'language0';
+    $option = empty($option) ? ($args['option'] ?? 'title_display') : $option;
 
     /* check if post or term */
     if ($object instanceof WP_Term) {
 
-        $option = $args['option'] ?? 'title_display';
         $titleOption = $oes->taxonomies[$object->taxonomy]['display_titles'][$option] ?? false;
 
         $title = null;
-        if(!$titleOption || $titleOption === 'wp-title'){
+        if (!$titleOption || $titleOption === 'wp-title') {
 
             /* modify option if language dependent */
-            if (isset($args['language']) && $args['language'] !== 'language0') {
-                if ($metaData = get_term_meta($object->term_id))
-                    if (isset($metaData['name_' . $args['language']][0]) && !empty($metaData['name_' . $args['language']][0]))
-                        $title = $metaData['name_' . $args['language']][0];
+            if (!empty($language) && $language !== 'language0') {
+                if ($metadata = get_term_meta($object->term_id))
+                    if (isset($metadata['name_' . $language][0]) &&
+                        !empty($metadata['name_' . $language][0]))
+                        $title = $metadata['name_' . $language][0];
             }
-        }
-        elseif($title){
+        } elseif ($title) {
             $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
         }
 
@@ -129,21 +132,50 @@ function oes_get_display_title($object = false, array $args = []): string
         if (!$object) $object = get_the_ID();
 
         /* check if option is set */
-        $option = $args['option'] ?? 'title_display';
         $postType = get_post_type($object);
         $titleOption = $oes->post_types[$postType]['display_titles'][$option] ?? false;
 
         /* modify option if language dependent */
-        if (isset($args['language']) && $args['language'] !== 'language0' &&
+        if (!empty($language) && $language !== 'language0' &&
             isset($oes->post_types[$postType]['field_options'][$titleOption]['language_dependent']) &&
             $oes->post_types[$postType]['field_options'][$titleOption]['language_dependent'] &&
-            get_field($titleOption . '_' . $args['language'], $object))
-            $titleOption = $titleOption . '_' . $args['language'];
+            get_field($titleOption . '_' . $language, $object))
+            $titleOption = $titleOption . '_' . $language;
 
-        $title = ($titleOption && $titleOption != 'wp-title') ? oes_get_field($titleOption, $object, false) : null;
+        $title = ($titleOption && $titleOption != 'wp-title') ?
+            oes_get_field($titleOption, $object, false) :
+            null;
 
         return empty($title) ? get_the_title($object) : $title;
     }
+}
+
+
+/**
+ * Get the sorting title for post. This depends on the option parameter from OES settings, the sorting title can be
+ * different from the display title or the WordPress post title, e.g. any text acf field of the post type.
+ *
+ * @param mixed $object A string containing the post ID.
+ * @param array $args Additional arguments. Valid arguments are: 'language', 'option'.
+ * @return string Returns a string containing the post title.
+ */
+function oes_get_display_title_sorting($object = false, array $args = []): string
+{
+    return oes_replace_umlaute(oes_get_display_title($object, $args, 'title_sorting_display'));
+}
+
+
+/**
+ * Get the list display title for post. This depends on the option parameter from OES settings, the list display title
+ *  can be different from the display title or the WordPress post title, e.g. any text acf field of the post type.
+ *
+ * @param mixed $object A string containing the post ID.
+ * @param array $args Additional arguments. Valid arguments are: 'language', 'option'.
+ * @return string Returns a string containing the post title.
+ */
+function oes_get_display_title_archive($object = false, array $args = []): string
+{
+    return oes_get_display_title($object, $args, 'title_archive_display');
 }
 
 
@@ -201,7 +233,7 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
         'sort' => true,
         'status' => ['publish'],
         'separator' => false,
-        'language' => 'language0'
+        'language' => ''
     ], $args);
 
     /* prepare parameters for list display */
@@ -278,21 +310,21 @@ function oes_delete_post($postID, bool $forceDelete = false)
 function oes_insert_post(array $parameters, bool $update = true)
 {
 
-    /* Validate post id ----------------------------------------------------------------------------------------------*/
+    /* Validate post id */
     if (isset($parameters['ID']) && get_post($parameters['ID']) && !$update)
-        return sprintf(__('The post with post ID (%s) already exists.'), $parameters['ID']);
+        return sprintf(__('The post with post ID (%s) already exists.', 'oes'), $parameters['ID']);
 
-    /* Validate post type --------------------------------------------------------------------------------------------*/
+    /* Validate post type */
 
     /* exit early if no post type */
     if (empty($parameters['post_type'])) {
         return __('Post type  argument "post_type" is missing.', 'oes');
     } /* exit early if post type does not exist */
     else if (!post_type_exists($parameters['post_type'])) {
-        return sprintf(__('Post Type (%s) is not registered or inactive.'), $parameters['post_type']);
+        return sprintf(__('Post Type (%s) is not registered or inactive.', 'oes'), $parameters['post_type']);
     }
 
-    /* validate parameters -------------------------------------------------------------------------------------------*/
+    /* validate parameters */
     $wrongParameter = [];
     $args = [];
     foreach ($parameters as $key => $parameter) {
@@ -313,15 +345,14 @@ function oes_insert_post(array $parameters, bool $update = true)
              * @param string $parameter The post parent id.
              * @param array $parameters The post parameters.
              */
-            if (has_filter('oes/insert_post_parent'))
-                $parameter = apply_filters('oes/insert_post_parent', $parameter, $parameters);
-
-
-            $args[$key] = $parameter;
+            $args[$key] = apply_filters('oes/insert_post_parent', $parameter, $parameters);
         } else $args[$key] = $parameter;
     }
 
-    return ['post' => $update ? wp_update_post($args, true) : wp_insert_post($args, true), 'wrong_parameter' => $wrongParameter];
+    return [
+        'post' => $update ? wp_update_post($args, true) : wp_insert_post($args, true),
+        'wrong_parameter' => $wrongParameter
+    ];
 }
 
 
@@ -336,11 +367,11 @@ function oes_insert_post(array $parameters, bool $update = true)
  */
 function oes_insert_post_meta($postID, array $parameters, bool $add = false)
 {
-    /* Validate post id ----------------------------------------------------------------------------------------------*/
+    /* validate post id */
     if (!get_post($postID)) return sprintf(__('The post with post ID (%s) does not exists.', 'oes'), $postID);
     if (empty($parameters)) return sprintf(__('Parameters missing for post ID %s.', 'oes'), $postID);
 
-    /* Insert parameter ----------------------------------------------------------------------------------------------*/
+    /* insert parameter */
     $resultArray = [];
     $importedFields = 0;
     foreach ($parameters as $field => $parameter) {
@@ -372,6 +403,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
                         }
                     }
 
+
                     /**
                      * Filters the field parameters for a relationship field.
                      *
@@ -379,9 +411,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
                      * @param string $field The field key.
                      * @param mixed $postID the post id.
                      */
-                    if (has_filter('oes/import_relationship_field'))
-                        $parameterArray = apply_filters('oes/import_relationship_field',
-                            $parameterArray, $field, $postID);
+                    $parameterArray = apply_filters('oes/import_relationship_field', $parameterArray, $field, $postID);
 
                     /* remove duplicates and empty entries */
                     $parameterArray = array_unique($parameterArray);
@@ -434,8 +464,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
                      * @param mixed $postID the post id.
                      */
                     $newValue = $parameterArray;
-                    if (has_filter('oes/import_taxonomy_field'))
-                        $newValue = apply_filters('oes/import_taxonomy_field', $newValue, $field, $postID);
+                    $newValue = apply_filters('oes/import_taxonomy_field', $newValue, $field, $postID);
 
                     break;
 
@@ -452,8 +481,7 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
                      * @param string $field The field key.
                      * @param mixed $postID the post id.
                      */
-                    if (has_filter('oes/import_link_field'))
-                        $newValue = apply_filters('oes/import_link_field', $newValue, $field, $postID);
+                    $newValue = apply_filters('oes/import_link_field', $newValue, $field, $postID);
 
                     break;
 
@@ -487,24 +515,24 @@ function oes_insert_post_meta($postID, array $parameters, bool $add = false)
  */
 function oes_insert_term(array $parameters, bool $update = false)
 {
-    /* Validate term name for insert ---------------------------------------------------------------------------------*/
+    /* Validate term name for insert */
     if (!$parameters['term'] && !$update)
         return __('The term is missing a term name for insert.', 'oes');
 
-    /* Validate term id for update -----------------------------------------------------------------------------------*/
+    /* Validate term id for update */
     //@oesDevelopment Validate term id for update.
 
-    /* Validate taxonomy ---------------------------------------------------------------------------------------------*/
+    /* Validate taxonomy */
 
     /* exit early if no taxonomy */
     if (empty($parameters['taxonomy'])) {
         return __('Taxonomy argument "taxonomy" is missing.', 'oes');
     } /* exit early if taxonomy does not exist */
     else if (!taxonomy_exists($parameters['taxonomy'])) {
-        return sprintf(__('Taxonomy (%s) is not registered or inactive.'), $parameters['taxonomy']);
+        return sprintf(__('Taxonomy (%s) is not registered or inactive.', 'oes'), $parameters['taxonomy']);
     }
 
-    /* validate parameters -------------------------------------------------------------------------------------------*/
+    /* validate parameters */
     $wrongParameter = [];
     $args = [];
     foreach ($parameters as $key => $parameter) {
@@ -537,10 +565,10 @@ function oes_insert_term(array $parameters, bool $update = false)
  */
 function oes_insert_term_meta($termID, string $taxonomy, array $parameters)
 {
-    /* Validate post id ----------------------------------------------------------------------------------------------*/
+    /* Validate post id */
     if (!get_term($termID)) return sprintf(__('The term with term ID (%s) does not exists.', 'oes'), $termID);
 
-    /* Insert parameter ----------------------------------------------------------------------------------------------*/
+    /* Insert parameter */
     $resultArray = [];
     $importedFields = 0;
     foreach ($parameters as $field => $parameter) {
@@ -665,7 +693,7 @@ function get_connected_terms_as_list(int $postID, string $taxonomy, array $args 
  * @param string $language The language. Default is 'english'.
  * @return false|mixed|string Returns the taxonomy label as set in the global configuration options.
  */
-function get_taxonomy_label(string $taxonomy, string $language = 'english')
+function get_taxonomy_label(string $taxonomy, string $language = 'language0')
 {
     /* skip if invalid taxonomy */
     $taxonomyObject = get_taxonomy($taxonomy);
@@ -726,20 +754,33 @@ function oes_get_page_ID_from_GUID(string $guid): ?string
  * Get post language key.
  *
  * @param string|int $postID The post ID.
- * @return false|mixed Returns the language key or false.
+ * @return string Returns the language key.
  */
-function oes_get_post_language($postID)
+function oes_get_post_language($postID): string
 {
-    return oes_get_field('field_oes_post_language', $postID) ?? false;
+    $oes = OES();
+    $postType = get_post_type($postID);
+
+    /* return early if only one language or empty post type */
+    if (sizeof($oes->languages) < 2 || empty($postType)) return 'language0';
+
+    /* check if language is defined by schema */
+    $schemaLanguage = $oes->post_types[$postType]['language'] ?? '';
+    if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
+        if (oes_starts_with($schemaLanguage, 'parent__'))
+            $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($postID)) ?? 'language0';
+        else $language = oes_get_field($schemaLanguage, $postID) ?? 'language0';
+    } else $language = oes_get_field('field_oes_post_language', $postID) ?? 'language0';
+    return empty($language) ? 'all' : $language;
 }
 
 
 /**
- * Get post language key.
+ * Set post language.
  *
  * @param string|int $postID The post ID.
  * @param string $language The new language.
- * @return bool (boolean) Returns the language key or false.
+ * @return bool (boolean) Returns the language field key or false.
  */
 function oes_set_post_language($postID, string $language = 'language0'): bool
 {
@@ -772,4 +813,75 @@ function oes_check_if_gutenberg(string $post_type): bool
     return (get_all_post_type_supports($post_type) &&
         isset(get_all_post_type_supports($post_type)['editor']) &&
         get_post_type_object($post_type)->show_in_rest);
+}
+
+
+/**
+ * If the post is connected to a parent post, get the post ID of the parent post.
+ *
+ * @param string|int $postID The post ID.
+ * @return mixed Returns the post ID of the parent post or empty.
+ */
+function oes_get_parent_id($postID)
+{
+    return \OES\Versioning\get_parent_id($postID);
+}
+
+
+/**
+ * Get all children posts.
+ *
+ * @param int $postID The post ID.
+ * @param string $postType The considered post type.
+ * @param bool $recursive Include recursive all children of children. Default is true.
+ * @param array $args Additional arguments for get_posts call.
+ * @return array Return array of children posts as WP_Post objects .
+ */
+function oes_post_get_children(int $postID, string $postType = '', bool $recursive = true, array $args = []): array
+{
+    if (empty($postType)) $postType = get_post($postID)->post_type;
+
+    /* merge arguments for query */
+    $args = array_merge([
+        'numberposts' => -1,
+        'post_status' => 'publish',
+        'post_type' => $postType,
+        'post_parent' => $postID],
+        $args
+    );
+
+    /* get children */
+    $allChildren = get_posts($args);
+
+    /* call recursive for grand children */
+    if ($allChildren && $recursive)
+        foreach ($allChildren as $child) {
+            $grandChildren = oes_post_get_children($child->ID, $postType);
+            if ($grandChildren) $allChildren = array_merge($allChildren, $grandChildren);
+        }
+
+    return $allChildren;
+}
+
+
+/**
+ * Get all parent posts.
+ *
+ * @param bool $recursive Include recursive all parents of parents. Default is true.
+ * @return array Return array of parent posts as WP_Post objects.
+ */
+function oes_post_get_parents(int $postID, bool $recursive = true): array
+{
+    $parents = [];
+
+    /* check if single value */
+    if ($recursive) {
+        $childID = $postID;
+        while ($parent = get_post_parent($childID)) {
+            $parents[] = $parent;
+            $childID = $parent->ID;
+        }
+    } elseif ($parent = get_post_parent($postID)) $parents[] = $parent;
+
+    return $parents;
 }

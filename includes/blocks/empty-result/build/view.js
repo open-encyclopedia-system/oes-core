@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",(function(e){0===jQuery(".oes-post-filter-wrapper:visible").length?jQuery(".oes-archive-container-no-entries").show():jQuery(".oes-archive-container-no-entries").hide()}));

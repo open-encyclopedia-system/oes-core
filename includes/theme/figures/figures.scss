@@ -1,0 +1,129 @@
+
+/* Accordion */
+.oes-accordion {
+    cursor: pointer;
+    text-align: left;
+    outline: none;
+    transition: 0.4s;
+    font-weight: 600;
+    font-size: 14px
+}
+
+.oes-accordion a,
+.oes-accordion.active,
+.oes-accordion.active a,
+.oes-accordion:hover a,
+.oes-accordion:hover:before {
+    color: #004489;
+}
+
+.oes-accordion:hover {
+    color: #004489;
+}
+
+.oes-accordion-panel {
+    display: none;
+    overflow: hidden;
+    padding: 5px 10px;
+}
+
+.oes-accordion-body.active .oes-accordion-panel {
+    display: block;
+}
+
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- MODAL IMAGE ---------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+
+.oes-modal-toggle {
+    display: flex;
+    justify-content: center;
+}
+
+.oes-modal-toggle-container {
+    display: inline-block;
+    position: relative;
+}
+
+figure.oes-expand-image img {
+    max-width: 100%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+
+
+figure.oes-expand-image figcaption {
+    font-size: 0.8rem;
+    line-height: 1.2rem;
+    padding: 1rem;
+}
+
+.oes-modal-container {
+    position: fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    overflow-y: scroll;
+    overflow-x: hidden;
+    max-width: 100%;
+    z-index:1050;
+    padding-top: 5%;
+    transition: visibility .2s ease-in-out, transform .2s ease-in-out;
+    display:none;
+}
+
+.oes-modal-container .oes-modal-close {
+    position:absolute;
+    top: 2rem;
+    right: 2rem;
+    color: white;
+}
+
+.oes-modal-image-container {
+    display: flex;
+    justify-content: center;
+    padding-bottom:1rem;
+}
+
+.oes-modal-image-container img {
+    height: 100%;
+    object-fit: scale-down !important;
+    margin: auto;
+    text-align:center;
+    padding-right:0;
+}
+
+.oes-modal-content-text {
+    color:white;
+    margin: 5px auto auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    padding: 10px 0;
+    border-top: 1px solid white;
+}
+
+.oes-table-pop-up {
+    margin-top:1rem;
+}
+
+.oes-table-pop-up tr{
+    width:100%;
+}
+
+.oes-table-pop-up th {
+    white-space: nowrap;
+    padding-right:1rem;
+}
+
+.oes-table-pop-up th,
+.oes-table-pop-up td{
+    font-size:1rem;
+    vertical-align:top;
+    font-weight:normal;
+}

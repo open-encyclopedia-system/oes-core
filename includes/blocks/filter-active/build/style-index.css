@@ -1,0 +1,1 @@
+@charset "UTF-8";ul.oes-active-filter.is-style-oes-default li:after{content:"|";padding:0 5px}ul.oes-active-filter.is-style-oes-default li:last-child:after{content:"";padding:0}.oes-active-filter.is-style-oes-box a:after{content:"✕";padding:0 5px}

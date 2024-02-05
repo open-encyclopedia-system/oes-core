@@ -1,0 +1,20 @@
+ul.oes-active-filter.is-style-oes-default {
+
+  li:after {
+    content: "|";
+    padding: 0 5px;
+  }
+
+  li:last-child:after {
+    content: "";
+    padding: 0;
+  }
+}
+
+.oes-active-filter.is-style-oes-box {
+
+  a:after {
+    content: "\2715";
+    padding: 0 5px;
+  }
+}

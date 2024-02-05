@@ -18,7 +18,6 @@ if (!class_exists('GND_Interface')) {
         public string $identifier = 'gnd';
         public string $label = 'GND';
         public string $database_link = 'https://www.dnb.de/';
-        public bool $css = true;
 
         const PROPERTIES = [
             'biographicalOrHistoricalInformation' => ['link' => 'https://d-nb.info/standards/elementset/gnd#biographicalOrHistoricalInformation', 'label' => ['german' => 'Biografische oder historische Angaben', 'english' => 'Biographical or historical information'], 'position' => 20],
@@ -361,6 +360,6 @@ if (!class_exists('GND_Interface')) {
     }
 
     /* include gnd api files and instantiate api interface */
-    oes_include('/includes/api/gnd/class-gnd_api.php');
+    oes_include('api/gnd/class-gnd_api.php');
     OES()->apis['gnd'] = new GND_Interface('gnd');
 }

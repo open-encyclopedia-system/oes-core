@@ -1,0 +1,10 @@
+.oes-translation-info{
+	span:before {
+		content: "(";
+		padding-left: 5px;
+	}
+
+	span:after {
+		content: ")";
+	}
+}

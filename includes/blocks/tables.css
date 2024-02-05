@@ -1,0 +1,104 @@
+@charset "UTF-8";
+table {
+  width: 100%;
+}
+table th {
+  text-align: left;
+}
+
+.wp-block-table.is-style-oes-default,
+table.is-style-oes-default {
+  font-size: var(--wp--preset--font-size--small);
+  border: none;
+}
+.wp-block-table.is-style-oes-default tr,
+.wp-block-table.is-style-oes-default thead,
+.wp-block-table.is-style-oes-default tbody,
+table.is-style-oes-default tr,
+table.is-style-oes-default thead,
+table.is-style-oes-default tbody {
+  border: none;
+}
+.wp-block-table.is-style-oes-default tr th,
+.wp-block-table.is-style-oes-default tr td,
+table.is-style-oes-default tr th,
+table.is-style-oes-default tr td {
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  border-top: 1px solid var(--wp--preset--color--background);
+  padding: 0.5rem 0.5rem 0.5rem 0;
+  vertical-align: top;
+}
+.wp-block-table.is-style-oes-default tr:last-child th,
+.wp-block-table.is-style-oes-default tr:last-child td,
+table.is-style-oes-default tr:last-child th,
+table.is-style-oes-default tr:last-child td {
+  border-bottom: 1px solid var(--wp--preset--color--background);
+}
+.wp-block-table.is-style-oes-default tr th,
+table.is-style-oes-default tr th {
+  text-align: left;
+  font-weight: normal;
+  width: 30%;
+}
+.wp-block-table.is-style-oes-default ul.oes-field-value-list li:after,
+table.is-style-oes-default ul.oes-field-value-list li:after {
+  content: "∙";
+  padding: 0 5px;
+  color: var(--wp--preset--color--background);
+}
+.wp-block-table.is-style-oes-default ul.oes-field-value-list li:last-child:after,
+table.is-style-oes-default ul.oes-field-value-list li:last-child:after {
+  content: none;
+}
+
+.wp-block-table.is-style-oes-simple,
+table.is-style-oes-simple {
+  width: 100%;
+  margin: 4px 0;
+  line-height: normal;
+}
+.wp-block-table.is-style-oes-simple tr,
+.wp-block-table.is-style-oes-simple tr:last-child,
+table.is-style-oes-simple tr,
+table.is-style-oes-simple tr:last-child {
+  border-top: 1px solid var(--wp--preset--color--background);
+  border-bottom: 1px solid var(--wp--preset--color--background);
+}
+.wp-block-table.is-style-oes-simple tr th,
+.wp-block-table.is-style-oes-simple tr td,
+table.is-style-oes-simple tr th,
+table.is-style-oes-simple tr td {
+  vertical-align: top;
+  font-size: 0.9rem;
+  padding: 2px 2px 2px 0;
+  text-align: left;
+}
+.wp-block-table.is-style-oes-simple tr th,
+table.is-style-oes-simple tr th {
+  padding-right: 1rem;
+  width: 15%;
+  white-space: nowrap;
+  font-weight: normal;
+}
+
+.wp-block-table.is-style-oes-list,
+table.is-style-oes-list {
+  border: none;
+}
+.wp-block-table.is-style-oes-list tr,
+.wp-block-table.is-style-oes-list th,
+.wp-block-table.is-style-oes-list td,
+table.is-style-oes-list tr,
+table.is-style-oes-list th,
+table.is-style-oes-list td {
+  display: block;
+  border: none;
+}
+.wp-block-table.is-style-oes-list tr,
+table.is-style-oes-list tr {
+  padding-bottom: 1rem;
+}
+
+/*# sourceMappingURL=tables.css.map */

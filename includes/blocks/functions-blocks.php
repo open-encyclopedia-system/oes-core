@@ -1,31 +1,125 @@
 <?php
 
-namespace OES\Admin;
+namespace OES\Block;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
 /**
- * Get field data from block
- *
- * @param string $fieldName The field name or key
- * @param mixed $block The block data
- * @param mixed $postID The post_id of which the value is saved against
- *
- * @return false|mixed Return the block data or false.
+ * Register new category for OES Blocks.
  */
-function get_block_data(string $fieldName, $block, $postID = false)
+function category($categories): array
 {
-    if (is_preview()) return $block['data'][$fieldName] ?? false;
-    else return \OES\ACF\oes_get_field($fieldName, $postID) ?? false;
+    $categories[] = [
+        'slug' => 'oes-schema',
+        'title' => __('OES Schema', 'oes')
+    ];
+    $categories[] = [
+        'slug' => 'oes-filter',
+        'title' => __('OES Filter', 'oes')
+    ];
+    return $categories;
 }
 
 
 /**
- * Default render output if no callback defined.
+ * Register OES blocks.
+ *
  * @return void
  */
-function default_block_render(): void
+function register(): void {
+
+    $blocks = [
+        'archive-count' => [],
+        'archive-loop' => [],
+        'author-byline' => [],
+        'author-vita' => [],
+        'citation' => [],
+        'empty-result' => [],
+        'featured-image' => [],
+        'featured-post' => [],
+        'filter' => [],
+        'filter-active' => [],
+        'filter-alphabet' => [],
+        'filter-index' => [],
+        'index' => [],
+        'language-label' => [],
+        'language-switch' => [],
+        'literature' => [],
+        'metadata' => [],
+        'notes' => [],
+        'print' => [],
+        'search-panel' => [],
+        'table-of-contents' => [],
+        'terms' => [],
+        'translation' => [],
+        'title' => [],
+        'title-page' => [],
+        'version' => []
+    ];
+
+
+    /**
+     * Filters OES blocks to be registered.
+     *
+     * @param array $blocks The OES block configurations.
+     */
+    $blocks = apply_filters('oes/blocks_register', $blocks);
+
+
+    /* register all blocks */
+    foreach($blocks as $block => $blockArgs)
+        register_block_type(__DIR__ . '/' . $block . '/build', $blockArgs);
+}
+
+
+/**
+ * Enqueue assets.
+ *
+ * @return void
+ */
+function assets(): void
 {
-    echo 'No render callback or template defined.';
+    wp_enqueue_style(
+        'oes-tables',
+        plugins_url(OES_BASENAME . '/includes/blocks/tables.css')
+    );
+
+    wp_enqueue_style(
+        'oes-lists',
+        plugins_url(OES_BASENAME . '/includes/blocks/lists.css')
+    );
+}
+
+
+/**
+ * Register additional OES block styles.
+ *
+ * @return void
+ */
+function register_block_styles(): void
+{
+    register_block_style(
+        'core/table',
+        [
+            'name'  => 'oes-default',
+            'label' => 'OES Default'
+        ]
+    );
+
+    register_block_style(
+        'core/table',
+        [
+            'name'  => 'oes-simple',
+            'label' => 'OES Simple'
+        ]
+    );
+
+    register_block_style(
+        'core/table',
+        [
+            'name'  => 'oes-list',
+            'label' => 'OES List'
+        ]
+    );
 }

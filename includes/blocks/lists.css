@@ -1,0 +1,63 @@
+ul.oes-vertical-list {
+  list-style-type: none;
+  padding-inline-start: 0;
+}
+
+ul.oes-field-value-list {
+  list-style-type: none;
+  display: inline;
+  padding-inline-start: 0;
+  margin: 0;
+}
+ul.oes-field-value-list li {
+  display: inline;
+  padding: 0;
+  margin: 0;
+}
+ul.oes-field-value-list li:after {
+  content: ", ";
+}
+ul.oes-field-value-list li:last-child:after {
+  content: "";
+}
+
+ul.oes-horizontal-list {
+  margin-bottom: 0;
+  padding-inline-start: 0;
+}
+ul.oes-horizontal-list li {
+  display: inline;
+  padding: 0;
+  margin: 0;
+}
+
+ul.is-style-box li {
+  border: 1px solid var(--wp--preset--color--text);
+  padding: 4px 8px;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  font-size: var(--wp--preset--font-size--small);
+}
+ul.is-style-box li a {
+  text-decoration: none;
+}
+ul.is-style-box li:hover {
+  color: var(--wp--preset--color--text-invert);
+  background-color: var(--wp--preset--color--text);
+}
+ul.is-style-box li:hover a {
+  color: var(--wp--preset--color--text-invert);
+}
+
+ul.is-style-box.oes-field-value-list li:after {
+  content: "";
+}
+
+ul.oes-custom-ident li {
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+  padding-bottom: 0.5rem;
+}
+
+/*# sourceMappingURL=lists.css.map */

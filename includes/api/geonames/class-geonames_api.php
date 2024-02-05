@@ -15,7 +15,7 @@ if (!class_exists('Geonames_API')) {
      *
      * The parameter 'username' needs to be passed with each request. The username for your application can be
      * registered http://www.geonames.org/login.
-     * You will then receive an email with a confirmation link and after you have confirmed the email you can enable
+     * You will then receive an email with a confirmation link, and after you have confirmed the email you can enable
      * your account for the webservice on your account page http://www.geonames.org/manageaccount.
      *
      * services:

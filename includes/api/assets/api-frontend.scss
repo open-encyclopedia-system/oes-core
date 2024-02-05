@@ -1,0 +1,37 @@
+
+
+/* container */
+.oes-lod-popup__popup.oes-popup__popup--tooltip {
+  max-width: 50%;
+  right: 5%;
+}
+
+.oes-lod-box-container-inner {
+  display: flex;
+}
+
+/* link */
+.oes-lodlink img {
+  display:inline;
+}
+
+/* box */
+
+.oes-lod-box-image-inner {
+  max-width: 30%;
+
+  img {
+    max-width: 100%;
+    margin-right: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+.oes-lod-box-additional-info {
+  font-size: 14px;
+}
+
+.oes-lod-box-additional-info .oes-field-value-list {
+  padding-top: .5rem;
+  margin-top: .5rem;
+}

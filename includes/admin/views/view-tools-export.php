@@ -7,6 +7,12 @@ settings_errors();
 do_action('admin_notices');
 
 ?>
-<h1><?php _e('Export', 'oes'); ?></h1>
-<?php echo \OES\Admin\Tools\get_link_to_wordpress_tools(); ?>
-<div class="oes-pb-0-5 oes-form-wrapper-small"><?php \OES\Admin\Tools\display_tool('export'); ?></div>
+<div class="oes-page-header-wrapper">
+    <div class="oes-page-header">
+        <h1><?php _e('Export', 'oes'); ?></h1>
+    </div>
+</div>
+<div class="oes-page-body">
+    <?php echo \OES\Admin\Tools\get_link_to_wordpress_tools(); ?>
+    <?php \OES\Admin\Tools\display('export'); ?>
+</div>

@@ -4,7 +4,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('/includes/admin/tools/config/class-config.php');
+if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
 if (!class_exists('Theme_Colors')) :
 
@@ -107,8 +107,7 @@ if (!class_exists('Theme_Colors')) :
              *
              * @param array $colorDataArray The color for the OES theme.
              */
-            if (has_filter('oes/theme_colors'))
-                $colorDataArray = apply_filters('oes/theme_colors', $colorDataArray);
+            $colorDataArray = apply_filters('oes/theme_colors', $colorDataArray);
 
 
             $rows = [];

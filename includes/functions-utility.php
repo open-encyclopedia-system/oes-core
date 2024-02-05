@@ -9,12 +9,13 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * @param string $file A string containing the file name including the relative path to $root.
  * @param string $root Optional string containing the absolute path inside the plugin to the file.
  *  Default is OES Core Plugin path.
+ * @param bool $includes Use "includes" directory. Default is true.
  * @return void
  */
-function oes_include(string $file, string $root = ''): void
+function oes_include(string $file, string $root = '', bool $includes = true): void
 {
-    if (empty($root)) $root = OES()->path_core_plugin;
-    $path = oes_get_path($file, $root);
+    if (empty($root)) $root = OES_CORE_PLUGIN;
+    $path = oes_get_path(($includes ? '/includes/' : '/') . $file, $root);
     if (file_exists($path)) include_once($path);
 }
 
@@ -25,12 +26,13 @@ function oes_include(string $file, string $root = ''): void
  * @param string $file A string containing the file name including the relative path to $root.
  * @param string $root Optional string containing the absolute path inside the plugin to the file.
  *  Default is OES Project Plugin path.
+ * @param bool $includes Use "includes" directory. Default is true.
  * @return void
  */
-function oes_include_project(string $file, string $root = ''): void
+function oes_include_project(string $file, string $root = '', bool $includes = true): void
 {
-    if (empty($root)) $root = OES()->path_project_plugin;
-    if (function_exists('oes_include')) oes_include($file, $root);
+    if (empty($root)) $root = OES_PROJECT_PLUGIN;
+    if (function_exists('oes_include')) oes_include($file, $root, $includes);
 }
 
 
@@ -43,22 +45,7 @@ function oes_include_project(string $file, string $root = ''): void
  */
 function oes_get_path(string $path = '', string $root = ''): string
 {
-    if (empty($root)) $root = OES()->path_core_plugin;
-    return $root . $path;
-}
-
-
-/**
- * Validate file. Return true if file exists and is readable, return error message if not.
- *
- * @param string $file A string containing the file.
- * @return bool|string Returns true or error message.
- */
-function oes_validate_file(string $file)
-{
-    if (!file_exists($file)) return 'File not found ' . $file . '.';
-    else if (!is_readable($file)) return 'File not readable ' . $file . '.';
-    return true;
+    return (empty($root) ? OES_CORE_PLUGIN : $root) . $path;
 }
 
 
@@ -85,7 +72,7 @@ function oes_get_version(): ?string
 function oes_get_view(string $path = '', array $args = [], string $root = ''): void
 {
     /* get default path */
-    if (empty($root)) $root = OES()->path_core_plugin;
+    if (empty($root)) $root = OES_CORE_PLUGIN;
 
     /* allow view file name shortcut */
     if (!oes_ends_with($path, '.php'))
@@ -111,7 +98,7 @@ function oes_get_view(string $path = '', array $args = [], string $root = ''): v
 function oes_get_project_view(string $path = '', array $args = [], string $root = ''): void
 {
     /* get default path */
-    if (empty($root)) $root = OES()->path_project_plugin;
+    if (empty($root)) $root = OES_PROJECT_PLUGIN;
     if (function_exists('oes_get_view')) oes_get_view($path, $args, $root);
 }
 
@@ -120,23 +107,19 @@ function oes_get_project_view(string $path = '', array $args = [], string $root 
  * Get data from json file.
  *
  * @param string $path The file path.
- * @return array|mixed Returns decoded json file or empty.
+ * @return array Returns decoded json file or empty.
  */
-function oes_get_json_data_from_file(string $path)
+function oes_get_json_data_from_file(string $path): array
 {
-
-    /* get global OES variable to get and store file information */
-    $oes = OES();
-
     /* check if path empty */
     if (empty($path)) {
-        $oes->errors[] = sprintf(__('Empty file.', 'oes'), $path);
+        oes_write_log(__('Empty file.', 'oes'));
         return [];
     }
 
     /* check if file exists */
     if (!file_exists($path)) {
-        $oes->errors[] = sprintf(__('File "%s" not found.', 'oes'), $path);
+        oes_write_log(sprintf(__('File "%s" not found.', 'oes'), $path));
         return [];
     }
 
@@ -145,7 +128,7 @@ function oes_get_json_data_from_file(string $path)
 
     /* check if file is empty */
     if (empty($fileAsString)) {
-        $oes->errors[] = sprintf(__('File "%s" has no content.', 'oes'), $path);
+        oes_write_log(sprintf(__('File "%s" has no content.', 'oes'), $path));
         return [];
     }
 
@@ -158,13 +141,15 @@ function oes_get_json_data_from_file(string $path)
  *
  * @param string $name The file name (should end with .json)
  * @param array $data The data as array.
- * @return void
+ * @return bool Return false if json encoding run into a problem.
  */
-function oes_export_json_data(string $name, array $data): void
+function oes_export_json_data(string $name, array $data): bool
 {
     header('Content-disposition: attachment; filename=' . $name);
     header('Content-type: application/json');
-    echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    echo $json;
+    return is_string($json);
 }
 
 
@@ -213,6 +198,18 @@ function oes_hide_obsolete_menu_structure_filter(): void
 
 
 /**
+ * Add a field group to the page object containing the language field.
+ *
+ * @param array $fieldTypes
+ * @return void
+ */
+function oes_add_fields_to_page(array $fieldTypes = []): void
+{
+    \OES\Model\add_fields_to_page($fieldTypes);
+}
+
+
+/**
  * Get OES custom icon for menu icon.
  *
  * @param string $identifier The identifier for the custom icon. Valid options are: default, secondary, parent.
@@ -227,10 +224,9 @@ function oes_get_menu_icon_path(string $identifier = 'default'): string
     elseif ($identifier == 'admin') $customIconPath = '/assets/images/oes_cubic_18x18_admin.png';
 
     $menuIcon = false;
-    $oes = OES();
-    if (file_exists($oes->path_core_plugin . $customIconPath))
-        if (getimagesize($oes->path_core_plugin . $customIconPath))
-            $menuIcon = plugins_url($oes->basename . $customIconPath);
+    if (file_exists(OES_CORE_PLUGIN . $customIconPath))
+        if (getimagesize(OES_CORE_PLUGIN . $customIconPath))
+            $menuIcon = plugins_url(OES_BASENAME. $customIconPath);
 
     /* overwrite default */
     if (!$menuIcon) $menuIcon = 'dashicons-clipboard';
@@ -241,57 +237,58 @@ function oes_get_menu_icon_path(string $identifier = 'default'): string
 /**
  * Compare two arrays or values and merge recursively (array_merge_recursive didn't do the trick).
  *
- * @param mixed $value1 The array or value to be merged into.
- * @param mixed $value2 The array or value that will be merged into $value1.
+ * @param mixed $array1 The array or value to be merged into.
+ * @param mixed $array2 The array or value that will be merged into $array1.
  * @return mixed Returns the merged array or the merged value.
  */
-function oes_merge_array_recursively($value1, $value2, $inner = false)
+function oes_merge_array_recursively($array1, $array2, $inner = false)
 {
-    foreach ($value1 as $key => $value)
-        if (isset($value2[$key])) {
+    foreach ($array1 as $key => $value)
+        if (isset($array2[$key])) {
             if (!$inner && is_array($value)) {
-                $value1[$key] = oes_merge_array_recursively($value, $value2[$key], true);
-            } elseif ($value2[$key] != $value) {
-                $value1[$key] = $value2[$key];
+                $array1[$key] = oes_merge_array_recursively($value, $array2[$key], true);
+            } elseif ($array2[$key] != $value) {
+                $array1[$key] = $array2[$key];
             }
         }
-    return $value1;
+    return $array1;
 }
 
 
 /**
  * Compare two arrays or values and combine recursively (array_merge_recursive didn't do the trick).
  *
- * @param mixed $value1 The array or value to be combined into.
- * @param mixed $value2 The array or value that will be combined into $value1.
+ * @param mixed $array1 The array or value to be combined into.
+ * @param mixed $array2 The array or value that will be combined into $array1.
  * @return mixed Returns the combined array or the combined value.
  */
-function oes_combine_array_recursively($value1, $value2, $depth = 'all')
+function oes_combine_array_recursively($array1, $array2, $depth = 'all')
 {
 
     if ($depth === 'all' or (int)$depth > 0) {
 
         if (is_int($depth)) $depth--;
-        if (is_array($value1))
-            foreach ($value1 as $key => $value)
-                if (is_array($value2) && isset($value2[$key]))
-                    $value1[$key] = oes_combine_array_recursively($value, $value2[$key], $depth);
+        if (is_array($array1))
+            foreach ($array1 as $key => $value)
+                if (is_array($array2) && isset($array2[$key]))
+                    $array1[$key] = oes_combine_array_recursively($value, $array2[$key], $depth);
 
         /* add old values */
-        if (is_array($value2))
-            foreach ($value2 as $key2 => $value)
-                if (!isset($value1[$key2])) $value1[$key2] = $value;
+        if (is_array($array2))
+            foreach ($array2 as $key2 => $value)
+                if (!isset($array1[$key2])) $array1[$key2] = $value;
     }
 
-    return $value1;
+    return $array1;
 }
 
+
 /**
- * Check if option exists in database.
+ * Check if option exists in database. get_option will return false negatives for null, 0, '' and miss 'false'.
  *
  * @param string $option The option name.
  * @param bool $siteWide Search site wide. Default is false.
- * @return bool|int|mysqli_result|resource|null
+ * @return bool|int|mysqli_result|resource|null Return the option.
  */
 function oes_option_exists(string $option, bool $siteWide = false)
 {
@@ -302,61 +299,16 @@ function oes_option_exists(string $option, bool $siteWide = false)
 
 
 /**
- * Convert hex color string to rgb array
- *
- * @param string $hex The hex string.
- * @param bool $alpha The opacity argument.
- * @return array Return an array with rgb values. Return black, if conversion fails.
+ * Log messages for WordPress Debugging
+ * @oesDevelopment Choose other form of display, use messaging instead.
+ * 
+ * @param mixed $messages The log messages.
+ * @return bool Return false for further processing.
  */
-function oes_hex_to_rgb(string $hex, bool $alpha = false): array
-{
-    /* clean string */
-    $hex = str_replace('#', '', $hex);
-
-    $rgb = ['r' => 0, 'g' => 0, 'b' => 0];
-    switch(strlen($hex)){
-
-        case '6' :
-            $rgb = [
-                'r' => hexdec(substr($hex, 0, 2)),
-                'g' => hexdec(substr($hex, 2, 2)),
-                'b' => hexdec(substr($hex, 4, 2))
-            ];
-            break;
-
-        case'3':
-            $rgb = [
-                'r' => hexdec(str_repeat(substr($hex, 0, 1), 2)),
-                'g' => hexdec(str_repeat(substr($hex, 1, 1), 2)),
-                'b' => hexdec(str_repeat(substr($hex, 2, 1), 2))
-            ];
-            break;
+function oes_write_log($messages): bool {
+    if (true === WP_DEBUG) {
+        if (is_array($messages) || is_object($messages)) error_log(print_r($messages, true));
+        else error_log($messages);
     }
-
-    /* add alpha */
-    if ($alpha) $rgb['a'] = $alpha;
-    return $rgb;
-}
-
-
-/**
- * Convert hex color to gray scale.
- *
- * @param string $hex The hex color.
- * @param bool $invert Invert color.
- * @return string Return the gray scale hex color.
- */
-function oes_hex_color_to_grayscale(string $hex, bool $invert = false): string {
-
-    /* convert */
-    $rgb = oes_hex_to_rgb($hex);
-
-    /* optional invert color */
-    if($invert){
-        $rgb['r'] = 255 - $rgb['r'];
-        $rgb['g'] = 255 - $rgb['g'];
-        $rgb['b'] = 255 - $rgb['b'];
-    }
-    $convert  = dechex((int)(0.299 * $rgb['r']) + (int)(0.587 * $rgb['g']) + (int)(0.114 * $rgb['b']));
-    return sprintf("#%02x%02x%02x", $convert, $convert, $convert);
+    return false;
 }

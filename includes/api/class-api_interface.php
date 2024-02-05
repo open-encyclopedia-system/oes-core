@@ -21,15 +21,6 @@ if (!class_exists('API_Interface')) {
         /** @var string The database link. */
         public string $database_link = '';
 
-        /** @var array Options for admin (ajax) scripts. */
-        public array $admin_script_args = [];
-
-        /** @var array Options for frontend (ajax) scripts. */
-        public array $frontend_script_args = [];
-
-        /** @var bool Include css files. Path is /includes/api/[API key]/[API key].css. */
-        public bool $css = false;
-
         /** @var array The search options when using the LOD search interface. */
         public array $search_options = [];
 
@@ -57,118 +48,25 @@ if (!class_exists('API_Interface')) {
             $this->search_options = $this->set_search_options();
             $this->config_options = $this->set_config_options();
 
-            /* get global variable */
-            $oes = OES();
-
             /* register styles */
-            if ($this->css)
-                $oes->assets->add_style('oes-' . $apiKey, '/includes/api/' . $apiKey . '/' . $apiKey . '.css');
-
-            /* add config options to data model */
-            if ($apiConfigOptions = $this->config_options)
-                add_filter('oes/data_model_lod_fields', function ($lodOptions) use ($apiKey, $apiConfigOptions) {
-                    $lodOptions[$apiKey] = $apiConfigOptions;
-                    return $lodOptions;
-                });
-
-            /* register scripts for admin pages */
-            $scriptArgs = $this->admin_script_args;
-            add_action('admin_enqueue_scripts', function () use ($apiKey, $scriptArgs, $oes) {
-
-                /* enqueue general js */
-                global $post;
-                wp_register_script('oes-api',
-                    plugins_url($oes->basename . '/includes/api/api-admin.js'),
-                    ['jquery'], false, true);
-                wp_localize_script(
-                    'oes-api',
-                    'oesLodAJAX',
-                    [
-                        'ajax_url' => admin_url('admin-ajax.php'),
-                        'ajax_nonce' => wp_create_nonce('oes_lod_nonce'),
-                        'post_id' => $post ? $post->ID : false
-                    ]
-                );
-                wp_enqueue_script('oes-api');
-
-                /* only display on post admin pages */
-                if (!empty($scriptArgs))
-                    if ($post && file_exists($oes->path_core_plugin . '/includes/api/' . $apiKey . '/' . $apiKey . '-admin.js')) {
-                        if (isset($scriptArgs['post_id'])) $scriptArgs['post_id'] = $post->ID;
-
-                        wp_register_script('oes-' . $apiKey,
-                            plugins_url(OES()->basename . '/includes/api/' . $apiKey . '/' . $apiKey . '-admin.js'),
-                            ['jquery'], false, true);
-                        wp_localize_script(
-                            'oes-' . $apiKey,
-                            'oes' . ucfirst($apiKey) . 'AJAX',
-                            $scriptArgs
-                        );
-                        wp_enqueue_script('oes-' . $apiKey);
-                    }
-            });
-
-            /* register scripts for frontend */
-            $scriptArgsFrontend = $this->frontend_script_args;
-            add_action('wp_enqueue_scripts', function () use ($apiKey, $scriptArgsFrontend) {
-
-                /* general */
-                wp_register_script('oes-api-frontend',
-                    plugins_url(OES()->basename . '/includes/api/api-frontend.js'),
-                    ['jquery'], false, true);
-                wp_localize_script(
-                    'oes-api-frontend',
-                    'oesLodAJAX',
-                    [
-                        'ajax_url' => admin_url('admin-ajax.php'),
-                        'ajax_nonce' => wp_create_nonce('oes_lod_nonce')
-                    ]
-                );
-                wp_enqueue_script('oes-api-frontend');
-
-
-                /* apis */
-                if (!empty($scriptArgsFrontend))
-                    add_action('wp_enqueue_scripts', function () use ($apiKey, $scriptArgsFrontend) {
-                        wp_register_script('oes-' . $apiKey,
-                            plugins_url(OES()->basename . '/includes/api/' . $apiKey . '/' . $apiKey . '.js'),
-                            ['jquery'], false, true);
-                        wp_localize_script(
-                            'oes-' . $apiKey,
-                            'oes' . ucfirst($apiKey) . 'AJAX',
-                            $scriptArgsFrontend
-                        );
-                        wp_enqueue_script('oes-' . $apiKey);
-                    });
-            });
-
-
-            add_action(
-            /**
-             * Register lod sidebar script for block editor
-             * @oesDevelopment Handle through OES Assets class.
-             */
-                'init',
-                function () {
-                    wp_register_script(
-                        'oes-lod-sidebar',
-                        plugins_url(OES()->basename . '/includes/api/lod-sidebar.js'),
-                        ['wp-plugins', 'wp-edit-post', 'wp-element']
-                    );
-                });
-
-
-            add_action(
-            /**
-             * Enqueue lod sidebar scripts.
-             */
-                'enqueue_block_editor_assets',
-                function () {
-                    wp_enqueue_script('oes-lod-sidebar');
-                });
+            if (file_exists(oes_get_path('/includes/api/' . $this->identifier . '/' . $this->identifier . '.css',
+                OES_CORE_PLUGIN)))
+                add_action('wp_enqueue_scripts', [$this, 'enqueue_style']);
 
             /* add shortcode */
             add_shortcode($apiKey . 'link', [$this, 'render_shortcode']);
+        }
+
+
+        /**
+         * Enqueue the API style for frontend display.
+         * @return void
+         */
+        function enqueue_style(): void
+        {
+            wp_register_style('oes-' . $this->identifier,
+                plugins_url(OES_BASENAME . '/includes/api/' . $this->identifier . '/' . $this->identifier . '.css'));
+            wp_enqueue_style('oes-' . $this->identifier);
         }
 
 
@@ -184,13 +82,10 @@ if (!class_exists('API_Interface')) {
             /* get gnd object */
             if ($lodID = $args['id'] ?? false) {
 
-                /* get global OES instance parameter */
-                $oes = OES();
-
                 $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
-                $iconPathAbsolute = file_exists($oes->path_core_plugin . $iconPath) ?
-                    plugins_url($oes->basename . $iconPath) :
-                    plugins_url($oes->basename . '/includes/api/icon_lod_preview.png');
+                $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
+                    plugins_url(OES_BASENAME . $iconPath) :
+                    plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
 
                 /* if no modification exists, replace comma in label*/
                 $label = $args['label'] ?? $lodID;
@@ -208,13 +103,21 @@ if (!class_exists('API_Interface')) {
                 else
                     $label = str_replace(';', ',', $label);
 
-                return '<span class="oes-lod-container">' .
-                    sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s">%s%s</a>',
+                return '<span class="oes-lod-popup oes-popup" data-fn="popup_lod' . $lodID . '" ">' .
+                    sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s">%s&nbsp;%s</a>',
                         $this->identifier,
                         $lodID,
                         $label,
                         oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
-                    ) . '</span>';
+                    ) .
+                    '</span>' .
+                    '<span class="oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod' . $lodID . '" id="oes-lod-box-' . $lodID . '">' .
+                    oes_get_html_img(
+                        plugins_url(OES_BASENAME . '/assets/images/spinner.gif'),
+                        'waiting...',
+                        false,
+                        'oes-spinner') .
+                    '</span>';
 
             } else return $content;
         }
@@ -273,6 +176,12 @@ if (!class_exists('API_Interface')) {
                     ($property['label']['english'] ?? '[Label missing]') . ' (' . $key . ')';
             asort($properties);
 
+
+            /**
+             * Filter the API properties.
+             */
+            $properties = apply_filters('oes/data_model_lod_fields', $properties, $this->identifier);
+
             return [
                 'properties' => [
                     'label' => $this->label . ' Properties',
@@ -280,7 +189,8 @@ if (!class_exists('API_Interface')) {
                     'multiple' => true,
                     'capabilities' => ['backend', 'fields', 'lod'],
                     'skip_admin_config' => true,
-                    'options' => (empty(static::PROPERTIES) ? [] :
+                    'options' => (empty(static::PROPERTIES) ?
+                        [] :
                         [
                             $this->identifier => [
                                 'label' => $this->label . ' Basic',

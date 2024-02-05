@@ -1,0 +1,26 @@
+
+.oes-uppercase {
+    text-transform: uppercase;
+}
+
+.oes-align-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* @oesDevelopment media */
+.oes-expand-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: white;
+    background-color: black;
+    opacity: 50%;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.oes-expand-button:hover {
+    opacity: 100%;
+}

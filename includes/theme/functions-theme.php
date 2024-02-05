@@ -102,7 +102,7 @@ function oes_get_url_param(string $key = '')
  *
  * @return string Return HTML representation of result navigation.
  */
-function oes_theme_get_result_navigation_HTML(array $args = []): string
+function oes_theme_get_result_navigation_html(array $args = []): string
 {
 
     /* merge with defaults */
@@ -131,4 +131,315 @@ function oes_theme_get_result_navigation_HTML(array $args = []): string
         '<a class="oes-result-navigation-next disabled" title="Next Result"></a>' .
         $backText .
         '</div>';
+}
+
+
+/**
+ * Render as details block.
+ *
+ * @param string $trigger The trigger string.
+ * @param string $content The content string.
+ * @param string $id Additional anchor id for details tag.
+ * @return string Return the details block.
+ */
+function oes_get_details_block(string $trigger, string $content, string $id = ''): string
+{
+    return '<details class="wp-block-details"' . (empty($id) ? '' : ' id="' . $id . '"') . '>' .
+        '<summary>' . $trigger . '</summary>' .
+        $content .
+        '</details>';
+}
+
+
+/**
+ * Get the HTML representation of theme label.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the theme label.
+ */
+function oes_theme_label_html(array $args): string
+{
+    $args = array_merge([
+        'label' => false,
+        'default' => '',
+        'class' => false,
+        'wrapper-class' => ''
+    ], $args);
+
+    global $oes_language;
+    $label = '';
+    $language = (empty($oes_language) || $oes_language === 'all') ? 'language0' : $oes_language;
+    if ($args['label']) $label = oes_get_label($args['label'], $args['default'], $language);
+
+    return $args['class'] ?
+        sprintf('<div class="%s"><div class="%s">%s</div></div>',
+            $args['wrapper-class'],
+            $args['class'],
+            $label
+        ) :
+        $label;
+}
+
+
+/**
+ * Get the HTML representation of a language label.
+ *
+ * @param string|array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the language label.
+ */
+function oes_language_label_html($args): string
+{
+    global $oes_language;
+    if (is_string($args)) $args = [];
+    return $args[$oes_language] ?? ($args['default'] ?? '');
+}
+
+
+/**
+ * Get the HTML representation of the language switch.
+ *
+ * @param string|array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the language switch.
+ */
+function oes_language_switch_html($args): string
+{
+    $languageSwitch = oes_get_language_switch();
+    return $languageSwitch ? $languageSwitch->html($args['className'] ?? 'is-style-oes-default') : '';
+}
+
+
+/**
+ * Get language switch.
+ *
+ * @return mixed Return language switch.
+ */
+function oes_get_language_switch()
+{
+    global $oes_language_switch;
+    if (empty($oes_language_switch)) {
+
+        $languageSwitchClass = str_replace('-', '_', OES_BASENAME_PROJECT) . '_Language_Switch';
+        $oes_language_switch = class_exists($languageSwitchClass) ?
+            new $languageSwitchClass() :
+            new \OES\Navigation\Language_Switch();
+    }
+    return $oes_language_switch;
+}
+
+
+/**
+ * Get the HTML representation of table of content of an OES object.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the table of contents.
+ */
+function oes_table_of_contents_html(array $args): string
+{
+    $args = array_merge(['class' => ''], $args);
+    global $oes_post;
+    if (!empty($oes_post) && !empty($oes_post->table_of_contents)) {
+        $header = isset($args['header']) ?
+            $oes_post->generate_table_of_contents_header(
+                $args['header'],
+                $args['level'] ?? 2,
+                ['add-to-toc' => false]) :
+            '';
+        return '<div class="' . $args['class'] . '">' .
+            $header .
+            $oes_post->get_html_table_of_contents(['toc-header-exclude' => true]) .
+            '</div>';
+    }
+    return '';
+}
+
+
+/**
+ * Get the HTML representation of breadcrumbs of an OES object.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing breadcrumbs.
+ */
+function oes_breadcrumbs_html(array $args): string
+{
+    global $oes_post;
+    $args = array_merge(['header' => ($args['header'] ?? false)], $args);
+    if (!empty($oes_post)) return $oes_post->get_breadcrumbs_html($args);
+    return '';
+}
+
+
+/**
+ * Get the HTML representation of connected terms.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the connected terms.
+ */
+function oes_post_terms_html(array $args): string
+{
+    /* check for tags */
+    global $oes_post;
+
+    $args['taxonomies'] = (isset($args['taxonomies']) ?
+        explode(',', $args['taxonomies']) :
+        []);
+
+    $args = array_merge(['class' => 'oes-sidebar-tags', 'header' => ($args['header'] ?? false)], $args);
+    if (!empty($oes_post)) {
+        $tagString = $oes_post->get_html_terms($args['taxonomies'], $args);
+        return (!empty($tagString) ?
+            ('<div class="' . $args['class'] . '">' . $tagString . '</div>') :
+            '');
+    }
+    return '';
+}
+
+
+/**
+ * Get the HTML representation of connected terms.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the connected terms.
+ */
+function oes_field_html(array $args): string
+{
+    /* check for tags */
+    global $oes_post, $oes_language;
+    if (!empty($oes_post) && !empty($args['field'])) {
+
+        /* check for value */
+        $value = $oes_post->fields[$args['field']][$args['type'] ?? 'value-display'];
+        if (empty($value)) return '';
+
+        /* check for header */
+        $headerText = '';
+        if (!empty($args['header'] ?? '')) $headerText = $args['header'];
+        elseif ($oes_language && !empty($args['header_' . $oes_language] ?? ''))
+            $headerText = $args['header_' . $oes_language];
+
+        $header = empty($headerText) ?
+            '' :
+            $oes_post->generate_table_of_contents_header($headerText);
+
+        return $header . '<div class="' . $args['class'] . '">' . $value . '</div>';
+    }
+    return '';
+}
+
+
+/**
+ * Get the HTML representation of post reading time.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the reading time.
+ */
+function oes_reading_time_html(array $args): string
+{
+    $args = array_merge([
+        'label' => 'theme_label:general__reading_time',
+        'post_id' => get_the_ID(),
+        'wpm' => '300',
+        'unit' => ' min',
+        'class' => 'oes-reading-time',
+        'wrapper-class' => 'oes-reading-time-wrapper',
+        'tooltip' => true
+    ], $args);
+
+    global $oes_language;
+    $language = (empty($oes_language) || $oes_language === 'all') ? 'language0' : $oes_language;
+
+    /* get the content */
+    $content = get_the_content($args['post_id']);
+
+    /* add time for images */
+    $imagesCount = substr_count(strtolower($content), '<img ');
+
+    $content = wp_strip_all_tags($content);
+    $wordsCount = count(preg_split('/\s+/', $content));
+
+    $time = $args['wpm'] > 0 ? $wordsCount / $args['wpm'] : 0;
+
+    $minPerImage = 1 / 10;
+    if ($imagesCount > 0)
+        $time += $imagesCount * $minPerImage;
+
+    /* only display even minutes */
+    $cleanTime = ($time < 1) ? '< 1' : ceil($time);
+
+    $tooltip = '';
+    if ($args['tooltip']) {
+        $tooltip = '<div class="oes-tooltip">' .
+            '<span class="oes-tooltip-icon"></span>' .
+            '<span class="oes-tooltip-text">' .
+            sprintf(__('The reading time is calculated with %s words per minute.', 'oes'), $args['wpm']) . '</span>' .
+            '</div>';
+    }
+
+    return sprintf('<div class="%s"><div class="%s">%s</div>%s</div>',
+        $args['wrapper-class'],
+        $args['class'],
+        oes_get_label($args['label'], 'Reading Time: ', $language) . $cleanTime . $args['unit'],
+        $tooltip
+    );
+}
+
+
+/**
+ * Get the HTML representation of page print button.
+ *
+ * @param array $args Shortcode attributes.
+ *
+ * @return string Return the html string representing the print button.
+ */
+function oes_print_button_html(array $args = []): string
+{
+    global $oes_language;
+    $printButton = '<a href="javascript:void(0);" onClick="window.print();" ' .
+        'class="oes-print-button no-print">' .
+        (($args['icon'] ?? true) ? '<span class="dashicons dashicons-printer"></span>' : '') .
+        ($args[$oes_language] ?? oes_get_label('button__print')).
+        '</a>';
+
+    return ($args['wrapped'] ?? true) ?
+        ('<p>' . $printButton . '</p>') :
+        $printButton;
+}
+
+/**
+ * Redirect a theme page.
+ *
+ * @param string $location The path or URL to redirect to.
+ * @param bool $safe Indication if safe redirect. Default is false.
+ * @param int $status Optional. HTTP response status code to use. Default '302' (Moved Temporarily).
+ * @return void
+ */
+function oes_redirect(string $location, bool $safe = false, int $status = 302): void
+{
+    if (!$safe) wp_redirect($location, $status);
+    elseif (wp_safe_redirect($location, $status)) die();
+}
+
+
+/**
+ * Set up language cookie.
+ * @return void
+ */
+function oes_set_language_cookie(): void
+{
+    if (isset($_GET['oes-language-switch']) || !isset($_COOKIE['oes_language'])) {
+        global $oes;
+        $newValue = $_GET['oes-language-switch'] ?? 'language0';
+        if (isset($oes->languages[$newValue]))
+            if (setcookie('oes_language', $newValue, time() + (30 * DAY_IN_SECONDS), '/')) {
+                global $oes_language_switched;
+                $oes_language_switched = $newValue;
+            }
+    }
 }
