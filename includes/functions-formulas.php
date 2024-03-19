@@ -165,7 +165,7 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
             $value = '';
 
             /* check if value is empty and fallback field is set */
-            if ($fieldKey == 'none') $value = $part['string_value'] ?? '';
+            if ($fieldKey == 'none' || $fieldKey == 'no_field_key') $value = $part['string_value'] ?? '';
             elseif (empty($fieldValue))
                 if (isset($part['fallback']))
                     if ($fallbackFieldKey = $part['fallback']) {

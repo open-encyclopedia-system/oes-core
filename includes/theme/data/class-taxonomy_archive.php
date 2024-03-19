@@ -39,6 +39,21 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
 
 
         //Overwrite parent
+        public function prepare_filter(array $args): array
+        {
+            $taxonomy = $args['taxonomy-for-filter'] ?? $this->taxonomy;
+
+            global $oes;
+            $filterArray = [];
+            if (!empty($taxonomy))
+                foreach ($oes->taxonomies[$taxonomy]['archive_filter'] ?? [] as $filter) {
+                    if ($filter === 'alphabet') $filterArray['alphabet'] = true;
+                }
+            return $filterArray;
+        }
+
+
+        //Overwrite parent
         public function get_object_label(): string
         {
             global $oes, $oes_language;

@@ -15,6 +15,9 @@ if (!class_exists('OES_Page')) {
         //Overwrite parent
         public bool $has_theme_subtitle = true;
 
+        //Overwrite parent
+        public $post_type = 'page';
+
         /** @var array $translations The translations */
         public array $translations = [];
 
@@ -33,6 +36,9 @@ if (!class_exists('OES_Page')) {
                 foreach ($this->translations as $translation)
                     if ($translation['id'] === (int)$frontPageID) $this->is_frontpage = true;
             }
+
+            /* set theme labels */
+            $this->theme_labels = OES()->theme_labels;
         }
 
 

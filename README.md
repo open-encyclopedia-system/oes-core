@@ -72,6 +72,21 @@ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Ge
 
 # Changelog
 
+## 2.3.1
+* change - data model, default for "editorial_tab" is false
+* fix - cookie behaviour
+* fix - index archive page without filter
+* fix - sorting in metadata
+* fix - LOD copy behaviour
+* fix - import tool
+* fix - taxonomy archive, alphabet filter
+* fix - save media language label config
+* fix - figure table language dependent labels
+* fix - use alternatives for IntDateFormatter if intl is not included
+* improve - factory processing for language dependent fields
+* improve - post sorting in frontend
+* improve - sort search results after post type is optional
+
 ## 2.3.0
 * new - OES Factory
 * new - OES template blocks and styles

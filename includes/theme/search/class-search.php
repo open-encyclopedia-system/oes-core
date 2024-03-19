@@ -169,7 +169,11 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
                                 'language' => $object['language'] ?? 'language0',
                                 'data' => $archiveData ? ($object['occurrences'] ?? []) : [],
                                 'additional' => '<span class="oes-search-title-occurrences">' .
-                                    $occurrenceCount . ' ' . __('Occurrences', 'oes') .
+                                    $occurrenceCount . ' ' .
+                                    _n(oes_get_label('search__result__occurrence', 'Occurrence'),
+                                        oes_get_label('search__result__occurrences', 'Occurrences'),
+                                        $occurrenceCount,
+                                        'oes') .
                                     '</span>'
                             ];
 

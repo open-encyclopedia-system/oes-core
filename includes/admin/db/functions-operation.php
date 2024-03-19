@@ -356,7 +356,7 @@ function get_html_operation_row(
         $navigation = '';
         if (sizeof($objects) > $countRowsMax) {
 
-            $url = admin_url('admin.php?page=tools_operations&select=' . ($_GET['select'] ?? $section) .
+            $url = admin_url('admin.php?page=oes_tools_operations&select=' . ($_GET['select'] ?? $section) .
                 '&type=' . ($_GET['type'] ?? ($args['type'] ?? 'all')));
             $maxPages = ceil(sizeof($objects) / $countRowsMax);
 

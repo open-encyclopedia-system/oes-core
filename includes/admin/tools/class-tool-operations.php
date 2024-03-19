@@ -112,7 +112,7 @@ if (!class_exists('Operations')) :
 
                 foreach ($this->count_array as $type => $typeData)
                     printf('<a href="%s" class="nav-tab %s" data-type="%s">%s (%s)</a>',
-                        admin_url('admin.php?page=tools_operations&type=' . $type),
+                        admin_url('admin.php?page=oes_tools_operations&type=' . $type),
                         ($selectedType !== $type ? '' : 'nav-tab-active'),
                         $type,
                         (taxonomy_exists($type) ?
@@ -139,7 +139,7 @@ if (!class_exists('Operations')) :
                 foreach ($this->count_array[$selectedType]['count_per_operation'] as $operation => $count)
                     $operationsList[] = sprintf(
                             '<a href="%s" class="%s" data-type="%s">%s <span class="count">(%s)</span></a>',
-                        admin_url('admin.php?page=tools_operations&select=' . $operation . '&type=' . $selectedType),
+                        admin_url('admin.php?page=oes_tools_operations&select=' . $operation . '&type=' . $selectedType),
                         ($selectedOperation !== $operation ? '' : 'current'),
                         $operation,
                         $labelMatch[$operation] ?? 'Unknown',
@@ -176,7 +176,7 @@ if (!class_exists('Operations')) :
             echo '</p><p>';
             _e('You can import operations using the import tool.', 'oes');
             echo '</p>';
-            echo '<a href="' . admin_url('admin.php?page=tools_import') . '" class="button button-secondary">' .
+            echo '<a href="' . admin_url('admin.php?page=oes_tools_import') . '" class="button button-secondary">' .
                 __('Import Operations', 'oes') . '</a>';
             echo '</div>';
         }

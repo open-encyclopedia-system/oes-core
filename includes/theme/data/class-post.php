@@ -447,16 +447,18 @@ if (!class_exists('OES_Post')) {
 
                     /* then the other */
                     foreach ($oes->languages as $languageKey => $languageData)
-                        if ($languageKey !== $oes_language)
+                        if ($languageKey !== $oes_language) {
+                            $label = $this->get_theme_label('single__toc__index_language_header');
                             $contentArray['600_index_' . ++$i] =
                                 '<div class="oes-index-connections">' .
-                                '<div class="oes-index-language-dependent"><h2>' .
-                                $this->get_theme_label('single__toc__index_language_header') .
-                                '</h2></div>' .
+                                (empty($label) ?
+                                    '' :
+                                    '<div class="oes-index-language-dependent"><h2>' . $label . '</h2></div>') .
                                 oes_get_index_html([
                                     'display-header' => $this->get_theme_label('single__toc__index_contributor'),
                                     'language' => $languageKey]) .
                                 '</div>';
+                        }
                 } else
                     $contentArray['600_index'] = '<div class="oes-index-connections">' .
                         oes_get_index_html(

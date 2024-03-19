@@ -147,8 +147,8 @@ function render_menu_meta_box(): void
                 'object' => 'oes-menu-item-index.page',
                 'type_label' => 'OES Menu',
                 'title' => (empty($indexPage['label']['language0'] ?? '') ?
-                        ('[Index] (' . $indexKey . ')') :
-                        $indexPage['label']['language0']),
+                    ('[Index] (' . $indexKey . ')') :
+                    $indexPage['label']['language0']),
                 'url' => home_url(($indexPage['slug'] ?? 'index') . '/'),
                 'target' => '',
                 'attr_title' => '',
@@ -228,6 +228,7 @@ function nav_menu_item_title(string $title, WP_Post $item): string
         return $html;
     } elseif (property_exists($item, 'object') &&
         $item->object === 'oes-menu-item-language-switch' &&
+        $title === 'Language Switch' &&
         $languageSwitch = oes_get_language_switch()) $title = $languageSwitch->get_menu_item_title();
     return $title;
 }

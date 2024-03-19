@@ -103,11 +103,11 @@
 
                             /* prepare row and cells */
                             const tr = table[0].insertRow(),
-                                td5 = tr.insertCell(),
-                                td4 = tr.insertCell(),
-                                td3 = tr.insertCell(),
-                                td2 = tr.insertCell(),
                                 td1 = tr.insertCell(),
+                                td2 = tr.insertCell(),
+                                td3 = tr.insertCell(),
+                                td4 = tr.insertCell(),
+                                td5 = tr.insertCell(),
                                 id = data.response[i]['id'],
                                 name = data.response[i]['name'];
 
@@ -229,7 +229,7 @@
 
             /* get entry */
             for (let j = 0; j < result_array.length; j++) {
-                if (result_array[j]['id'] === el.name) entry = result_array[j]['entry'];
+                if (result_array[j]['id'] == el.name) entry = result_array[j]['entry'];
             }
 
             /* loop through fields */
@@ -301,7 +301,8 @@
 
         /* get entry */
         for (let j = 0; j < result_array.length; j++) {
-            if (result_array[j]['id'] === el.dataset.lod) entry = result_array[j]['entry'];
+            if (result_array[j]['id'] == el.dataset.lod)
+                entry = result_array[j]['entry'];
         }
 
         /* close all LoD panels */

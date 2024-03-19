@@ -57,7 +57,7 @@ if (!class_exists('Container')) :
             $this->main_slug = $this->page_parameters['menu_slug'];
 
             /* create info page */
-            if (!empty($this->info_page)) {
+            if (!empty($this->info_page) && !empty($this->info_page['elements'])) {
                 new Subpage([
                     'subpage' => true,
                     'page_parameters' => [
@@ -100,7 +100,6 @@ if (!class_exists('Container')) :
                 if (!$this->info_page['elements'] && $position === 1) {
 
                     /* redirect first sub-menu. @oesDevelopment Is there a better way to do this? */
-                    $pageSlug = $this->page_parameters['menu_slug'];
                     add_action('admin_init', function () use ($pageSlug) {
                         global $plugin_page;
                         if ($plugin_page === $pageSlug) {
@@ -141,7 +140,10 @@ if (!class_exists('Container')) :
                 $this->subpage_data[$page] = [
                     'label' => $label,
                     'href' => $href,
-                    'display_summary' => in_array($page, $this->info_page['elements'] ?: []),
+                    'display_summary' => in_array($page,
+                        is_array($this->info_page['elements']) ?
+                        $this->info_page['elements'] :
+                        []),
                     'columns' => $columns,
                     'field' => $page['field'] ?? false
                 ];

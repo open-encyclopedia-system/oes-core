@@ -116,8 +116,11 @@ function oes_set_archive_data(string $class = '', array $args = []): void
 function oes_prepare_language(): void
 {
     global $oes, $oes_language, $oes_language_switched;
-    if (sizeof($oes->languages) > 1 && $oes_language_switched) $oes_language = $oes_language_switched;
-    if (empty($oes_language)) $oes_language = $_COOKIE['oes_language'] ?? 'language0';
+    if(sizeof($oes->languages) < 2) $oes_language = 'language0';
+    else {
+        if ($oes_language_switched) $oes_language = $oes_language_switched;
+        if (empty($oes_language)) $oes_language = $_COOKIE['oes_language'] ?? 'language0';
+    }
 }
 
 
@@ -171,14 +174,16 @@ function oes_prepare_search(): void
 
     global $oes_is_search;
     if (!empty($oes_search->search_term)) {
-        global $oes_archive_data, $oes_archive_count, $oes_filter;
-        $oes_search->get_results();
-        $oes_archive_count = $oes_search->count;
-        $oes_filter = $oes_search->filter_array;
-        $oes_archive_data = [
-            'archive' => (array)$oes_search,
-            'table-array' => $oes_search->get_data_as_table()
-        ];
+        global $oes, $oes_archive_data, $oes_archive_count, $oes_filter;
+        if($oes->block_theme) {
+            $oes_search->get_results();
+            $oes_archive_count = $oes_search->count;
+            $oes_filter = $oes_search->filter_array;
+            $oes_archive_data = [
+                'archive' => (array)$oes_search,
+                'table-array' => $oes_search->get_data_as_table()
+            ];
+        }
     }
     $oes_is_search = true;
 }

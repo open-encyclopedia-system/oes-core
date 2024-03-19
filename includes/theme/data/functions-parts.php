@@ -347,6 +347,13 @@ function oes_get_archive_loop_html(array $args = []): string
                     $groupHeader,
                     $containerString);
         }
+
+
+        /**
+         * Add optional html after list.
+         */
+        $html = apply_filters('oes/theme_archive_list_after', $html, $tableArray, $args);
+
     }
 
     return $html;
@@ -619,8 +626,8 @@ function oes_get_author_vita_html(array $args = []): string
         $vitaParam = \OES\Schema\get_post_type_params($oes_post->post_type, 'vita');
         if (!empty($vitaParam)) {
             if (isset($oes_post->fields[$vitaParam . '_' . $oes_language]))
-                return $oes_post->fields[$vitaParam . '_' . $oes_language]['value-display'];
-            else return $oes_post->fields[$vitaParam]['value-display'];
+                return $oes_post->fields[$vitaParam . '_' . $oes_language]['value-display'] ?? '';
+            else return $oes_post->fields[$vitaParam]['value-display'] ?? '';
         }
     }
     return '';

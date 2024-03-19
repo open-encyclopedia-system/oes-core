@@ -481,10 +481,15 @@ if (!class_exists('OES_Object')) {
                                 /* @oesDevelopment What if multiple post types? */
                                 $this->index_considered_post_type = $consideredPostType;
 
+                                /* assume child relationship if parent post type */
+                                $thisPostRelationship = $postRelationship;
+                                if(empty($postRelationship) && !empty($oes->post_types[$consideredPostType]['version']))
+                                    $thisPostRelationship = 'child_version';
+
                                 /* get table data */
                                 $tableData = $this->get_index_connections_table(
                                     $consideredPostType,
-                                    $postRelationship,
+                                    $thisPostRelationship,
                                     $args);
 
                                 /* get html representation of connected posts */

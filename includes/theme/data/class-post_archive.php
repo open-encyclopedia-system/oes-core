@@ -147,32 +147,32 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         public function loop_objects(): void
         {
 
-            if (!empty($this->taxonomy) && $this->post_type) $this->loop_objects_filtered();
-            elseif (is_archive()) {
+            if (!empty($this->taxonomy) && $this->post_type)
+                $this->loop_objects_filtered();
+            elseif (is_archive() && !is_tax()) {
                 if (have_posts())
                     while (have_posts()) {
                         the_post();
                         $post = get_post(get_the_ID());
                         $this->loop_results_post($post);
                     }
-            } else {
-                if (post_type_exists($this->post_type)) {
+            }
+            elseif (post_type_exists($this->post_type)) {
 
-                    /* query posts */
-                    $posts = new WP_Query([
-                        'post_type' => $this->post_type,
-                        'post_status' => 'publish',
-                        'posts_per_page' => -1
-                    ]);
+                /* query posts */
+                $posts = new WP_Query([
+                    'post_type' => $this->post_type,
+                    'post_status' => 'publish',
+                    'posts_per_page' => -1
+                ]);
 
-                    /* loop through results */
-                    if ($posts->have_posts())
-                        while ($posts->have_posts()) {
-                            $posts->the_post();
-                            $post = get_post(get_the_ID());
-                            $this->loop_results_post($post);
-                        }
-                }
+                /* loop through results */
+                if ($posts->have_posts())
+                    while ($posts->have_posts()) {
+                        $posts->the_post();
+                        $post = get_post(get_the_ID());
+                        $this->loop_results_post($post);
+                    }
             }
         }
 

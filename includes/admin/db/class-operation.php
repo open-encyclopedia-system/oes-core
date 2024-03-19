@@ -109,10 +109,10 @@ if (!class_exists('Operation')) :
             /**
              * Filters the general data of operation
              *
-             * @param string $this- >id The operation id.
              * @param array $generalInformation The general information.
+             * @param string $this- >id The operation id.
              */
-            $generalInformation = apply_filters('oes/get_operation_data_labels', $this->id, $generalInformation);
+            $generalInformation = apply_filters('oes/get_operation_data_labels', $generalInformation, $this->id);
 
 
             /* set general data */

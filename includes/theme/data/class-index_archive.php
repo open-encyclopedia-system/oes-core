@@ -61,7 +61,10 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
             global $oes, $oes_is_index, $oes_is_index_page;
             if ($oes_is_index &&
                 $oes_is_index_page &&
-                in_array('alphabet', $oes->theme_index_pages[$oes_is_index]['archive_filter'] ?? false))
+                in_array('alphabet',
+                    is_array($oes->theme_index_pages[$oes_is_index]['archive_filter']) ?
+                    $oes->theme_index_pages[$oes_is_index]['archive_filter'] :
+                    []))
                 $filter = ['alphabet' => true];
             return $filter;
         }

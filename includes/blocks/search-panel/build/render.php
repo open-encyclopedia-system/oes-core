@@ -6,5 +6,5 @@
 <div id="oes-search-panel" style="display:none;"><?php
     echo render_block_core_template_part([
         'slug' => 'search-panel',
-        'theme' => wp_get_theme()->__get('template')]); ?>
+        'theme' => wp_get_theme()->get_stylesheet()]); ?>
 </div>

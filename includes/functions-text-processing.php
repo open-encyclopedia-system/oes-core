@@ -402,15 +402,34 @@ function oes_convert_date_to_formatted_string(
 {
     $formattedString = '';
     if ($date) {
-        if (empty($locale)) {
-            global $oes_language;
-            $locale = $args['date-locale'] ?? (OES()->languages[$oes_language]['locale'] ?? 'en_BE');
-        }
 
-        if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
         $timestamp = strtotime(str_replace('/', '-', $date));
-        $formatter = new IntlDateFormatter($locale, $dateType, $timeType);
-        $formattedString = $formatter->format($timestamp);
+
+        /* Usually php intl is installed and included as extension. If not, use deprecated function strftotime. */
+        if(class_exists('IntlDateFormatter')) {
+
+            if (empty($locale)) {
+                global $oes_language;
+                $locale = $args['date-locale'] ?? (OES()->languages[$oes_language]['locale'] ?? 'en_BE');
+            }
+
+            if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
+            $formatter = new IntlDateFormatter($locale, $dateType, $timeType);
+            $formattedString = $formatter->format($timestamp);
+        }
+        else {
+
+            global $oes_language;
+
+            /**
+             * Filters if format for strftime.
+             *
+             * @param string $format The format.
+             * @param string $language The language.
+             */
+            $format = apply_filters('oes\strtotime_format', '%d.%m.%Y', $oes_language);
+            $formattedString = strftime($format, $timestamp);
+        }
     }
     return $formattedString;
 }

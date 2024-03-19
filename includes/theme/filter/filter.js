@@ -213,6 +213,14 @@
 
 
     /**
+     * Update the count.
+     */
+    oesFilter.updateCount = function(){
+        updateFilterCount();
+    }
+
+
+    /**
      * Initialize filter.
      */
     function init() {

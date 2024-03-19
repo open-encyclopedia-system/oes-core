@@ -159,11 +159,49 @@ if (!class_exists('Schema_OES_Archive')) :
             $oes = OES();
             $taxonomyData = $oes->taxonomies[$this->object];
 
+            /* get options */
+            $selects = oes_get_object_select_options($this->object, false, ['title' => true]);
+            $titleOptions = $selects['title'] ?? [];
+
             /* prepare filter option */
             $options = []; //@oesDevelopment Add more filter options.
             $optionsArchiveFilter = array_merge(['alphabet' => 'Alphabet'], $options);
             $this->table_data[] = [
                 'rows' => [
+                    [
+                        'cells' => [
+                            [
+                                'type' => 'th',
+                                'value' => '<strong>' . __('Title for list display', 'oes') . '</strong>' .
+                                    '<div>' . __('The field to be displayed as title on archive pages', 'oes') . '</div>'
+                            ],
+                            [
+                                'class' => 'oes-table-transposed',
+                                'value' => oes_html_get_form_element('select',
+                                    'taxonomies[' . $this->object . '][oes_args][display_titles][title_archive_display]',
+                                    'taxonomies-' . $this->object . '-oes_args-display_titles-title_archive_display',
+                                    $taxonomyData['display_titles']['title_archive_display'] ?? 'wp-title',
+                                    ['options' => $titleOptions])
+                            ]
+                        ]
+                    ],
+                    [
+                        'cells' => [
+                            [
+                                'type' => 'th',
+                                'value' => '<strong>' . __('Sorting title for list display', 'oes') . '</strong>' .
+                                    '<div>' . __('The field to be sorted after on archive pages', 'oes') . '</div>'
+                            ],
+                            [
+                                'class' => 'oes-table-transposed',
+                                'value' => oes_html_get_form_element('select',
+                                    'taxonomies[' . $this->object . '][oes_args][display_titles][title_sorting_display]',
+                                    'taxonomies-' . $this->object . '-oes_args-display_titles-title_sorting_display',
+                                    $taxonomyData['display_titles']['title_sorting_display'] ?? 'wp-title',
+                                    ['options' => $titleOptions])
+                            ]
+                        ]
+                    ],
                     [
                         'cells' => [
                             [

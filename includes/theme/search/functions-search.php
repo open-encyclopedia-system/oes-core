@@ -43,9 +43,13 @@ function oes_get_search_data(array $args = []): OES_Search
  *  'language'      : The considered language.
  *  'filter'        : The filter.
  *  'filter_array'  : The filter data.
+ * @param array $additionalArgs Further additional parameters. Valid parameters are:
+ *  'sort_by_language'      : Sort the results by language.
+ *  'sort_by_post_type'     : Sort by post type.
+ *
  * @return array[] Returns search results.
  */
-function oes_search_get_results(array $args = []): array
+function oes_search_get_results(array $args = [], array $additionalArgs = []): array
 {
     /* get global OES instance parameter */
     global $oes, $oes_language;
@@ -65,6 +69,9 @@ function oes_search_get_results(array $args = []): array
         'filter' => [],
         'filter_array' => []
     ], $args);
+    $sortByLanguage = $additionalArgs['sort_by_language'] ?? true;
+    $sortByPostType = $additionalArgs['sort_by_post_type'] ?? true;
+
     $searchTerm = $args['search_term'] ?? false;
 
     /* set language */
@@ -175,8 +182,7 @@ function oes_search_get_results(array $args = []): array
                                                     implode('</li><li>', $fieldOccurrences) .
                                                     '</li></ul>';
 
-                                        }
-                                        else {
+                                        } else {
                                             $value = $results[0]['unfiltered'];
                                             $occurrences += $results[0]['occurrences'];
                                         }
@@ -218,7 +224,7 @@ function oes_search_get_results(array $args = []): array
                         if (!$postLanguage || $postLanguage === 'all')
                             $postLanguage = $oes_language;
 
-                        $preparedPosts[$postLanguage][$post->post_type][$occurrences][$titleForSorting . (10000 - $preparedID)] = [
+                        $preparedPost = [
                             'id' => $preparedID,
                             'title' => $titleDisplay,
                             'permalink' => get_permalink($preparedID),
@@ -229,6 +235,16 @@ function oes_search_get_results(array $args = []): array
                             'occurrences-count' => $occurrences,
                             'language' => $postLanguage
                         ];
+
+                        if ($sortByLanguage && $sortByPostType)
+                            $preparedPosts[$postLanguage][$post->post_type][$occurrences][$titleForSorting . (10000 - $preparedID)] = $preparedPost;
+                        elseif ($sortByLanguage)
+                            $preparedPosts[$postLanguage][$occurrences][$titleForSorting . (10000 - $preparedID)] = $preparedPost;
+                        elseif ($sortByPostType)
+                            $preparedPosts[$post->post_type][$occurrences][$titleForSorting . (10000 - $preparedID)] = $preparedPost;
+                        else
+                            $preparedPosts[$occurrences][$titleForSorting . (10000 - $preparedID)] = $preparedPost;
+
                         $postIDs[] = $preparedID;
                         $count++;
                     }

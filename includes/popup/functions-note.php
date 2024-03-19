@@ -51,12 +51,15 @@ function render_single_note(array $args, string $content = ""): string
     $content = str_replace(['<oesnotep>', '</oesnotep>'], ['', '<br/>'], $content);
 
     /* create note */
-    return get_single_html(
-        $number,
-        '<sup id="popup' . $number . '">' . $number . '</sup>',
-        $content,
-        ['trigger' => 'oes-note',
-            'popup' => 'oes_note_popup']);
+    global $oes_is_pdf;
+    return ($oes_is_pdf ?? false) ?
+        ('<span id="note' . $number . '" class="oes-pdf-note oes-pdf-link">[' . $number . ']</span>') :
+        get_single_html(
+            $number,
+            '<sup id="popup' . $number . '">' . $number . '</sup>',
+            $content,
+            ['trigger' => 'oes-note',
+                'popup' => 'oes_note_popup']);
 }
 
 
@@ -71,14 +74,14 @@ function render_single_note(array $args, string $content = ""): string
 function get_rendered_notes_list($args, string $content = ""): string
 {
     /* get global parameters */
-    global $oesNotes;
+    global $oesNotes, $oes_is_pdf;
     $postID = $GLOBALS['post']->ID;
 
     /* return early if no notes available */
     if (empty($oesNotes[$postID]) || !isset($oesNotes[$postID]['notes'])) return '';
 
     /* loop through notes */
-    $content .= ($args['header'] ?? '') .'<ul class="oes-notes-list">';
+    $notesList = '';
     foreach ($oesNotes[$postID]['notes'] as $number => $note) {
 
         /* check for paragraphs */
@@ -143,17 +146,25 @@ function get_rendered_notes_list($args, string $content = ""): string
             }
         }
 
-        $content .= sprintf('<li id="oes-note-list-%s"><span><a href="#popup%s">%s</a></span><div class="%s">%s</div></li>',
+        $notesList .= $oes_is_pdf ?
+            sprintf('<div><div class="oes-pdf-note">%s</div><div class="oes-pdf-note-text %s">%s</div></div>',
+                $number,
+                'note' . intval($number),
+                empty($modifiedNote) ? $note : $modifiedNote) :
+            sprintf('<li id="oes-note-list-%s">' .
+                '<span class="oes-notes-list-number"><a href="#popup%s">%s</a></span>' .
+                '<div class="%s">%s</div></li>',
                 $number,
                 $number,
                 $number,
                 'note' . intval($number),
                 empty($modifiedNote) ? $note : $modifiedNote);
-
     }
-    $content .= '</ul>';
 
-    return $content;
+    return ($args['header'] ?? '') . (
+        $oes_is_pdf ?
+            '<div class="oes-notes-list oes-pdf-replace-list">' . $notesList . '</div>' :
+            '<ul class="oes-notes-list">' . $notesList . '</ul>');
 }
 
 

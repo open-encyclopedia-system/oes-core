@@ -7,7 +7,7 @@
  * Plugin Name: OES Core
  * Plugin URI: http://www.open-encyclopedia-system.org/
  * Description: Building and maintaining online encyclopedias.
- * Version: 2.3.0
+ * Version: 2.3.1
  * Author: Maren Welterlich-Strobl, Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
  * Author URI: https://www.cedis.fu-berlin.de/cedis/mitarbeiter/beschaeftigte/mstrobl.html
  * License: GPLv2 or later
@@ -798,6 +798,38 @@ if (!class_exists('OES_Core')) :
                         if (isset($field[$apiKey . '_properties']))
                             $this->$component[$key]['field_options'][$field['key']][$apiKey . '_properties'] =
                                 $field[$apiKey . '_properties'];
+            }
+        }
+
+
+        /**
+         * Set field options for media field groups.
+         *
+         * @param array $fields The fields.
+         * @return void
+         */
+        function set_media_field_options(array $fields): void
+        {
+            foreach ($fields as $field) {
+
+                /* add field parameters */
+                $this->media_groups['image'][$field['key']]['label'] = $field['label'];
+                $this->media_groups['image'][$field['key']]['type'] = $field['type'];
+
+                /* add translations */
+                if (!empty($this->languages))
+                    foreach ($this->languages as $languageKey => $language) {
+                        $this->media_groups['image'][$field['key']]['label_translation_' . $languageKey] =
+                            $field['label_translation_' . $languageKey] ?? $field['label'];
+                    }
+
+                /* check if field option */
+                foreach ([
+                             'pattern' => [],
+                             'language_dependent' => false,
+                             'display_option' => 'none',
+                             'display_prefix' => ''] as $optionKey => $option)
+                    $this->media_groups['image'][$field['key']][$optionKey] = $field[$optionKey] ?? $option;
             }
         }
     }

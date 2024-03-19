@@ -47,8 +47,8 @@ if (!class_exists('Theme_Labels_Media')) :
                     $cells[] = [
                         'class' => 'oes-table-transposed',
                         'value' => oes_html_get_form_element('text',
-                            'oes_config[media][image][' . $fieldKey . '][' . $language . ']',
-                            'oes_config-media-image-' . $fieldKey . '-' . $language,
+                            'media[image][' . $fieldKey . '][' . $language . ']',
+                            'media-image-' . $fieldKey . '-' . $language,
                             $field[$language] ?? ''
                         )
                     ];
@@ -71,8 +71,8 @@ if (!class_exists('Theme_Labels_Media')) :
                     $cells[] = [
                         'class' => 'oes-table-transposed',
                         'value' => oes_html_get_form_element('text',
-                            'oes_config[media][acf_add_local_field_group][fields][' . $fieldKey . '][' . $language . ']',
-                            'oes_config-media-acf_add_local_field_group-fields-' . $fieldKey . '-' . $language,
+                            'media[acf_add_local_field_group][fields][' . $fieldKey . '][' . $language . ']',
+                            'media-acf_add_local_field_group-fields-' . $fieldKey . '-' . $language,
                             $mediaField[$language] ?? ''
                         )
                     ];

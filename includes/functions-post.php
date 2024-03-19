@@ -121,9 +121,8 @@ function oes_get_display_title($object = false, array $args = [], string $option
                         !empty($metadata['name_' . $language][0]))
                         $title = $metadata['name_' . $language][0];
             }
-        } elseif ($title) {
+        } else
             $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
-        }
 
         return empty($title) ? $object->name : $title;
     } else {
@@ -239,12 +238,7 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
     /* prepare parameters for list display */
     $listItems = [];
     $sortedArray = $inputArray;
-
-    /* sort array */
-    if ($args['sort']) {
-        if (is_array($inputArray)) $sortedArray = oes_sort_post_array_by_title($inputArray);
-        else $sortedArray = [$inputArray];
-    }
+    if (!is_array($inputArray)) $sortedArray = [$inputArray];
 
     /* prepare items */
     foreach ($sortedArray as $item) {
@@ -258,21 +252,25 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
         /* term */
         if ($item instanceof WP_Term) {
             $title = oes_get_display_title($item, ['language' => $args['language']]);
+            $sortedTitle = oes_get_display_title_sorting($item, ['language' => $args['language']]);
             $args['permalink'] = $args['permalink'] ? get_term_link($item->term_id) : false;
             $itemText = $args['permalink'] ? oes_get_html_anchor($title, $args['permalink']) : $title;
-            $listItems[] = $itemText;
+            $listItems[$sortedTitle] = $itemText;
         } /* post */
         elseif ($item instanceof WP_Post) {
             /* check if status */
             if ((is_string($args['status']) && $args['status'] == 'all') ||
                 in_array($item->post_status, $args['status'])) {
                 $title = oes_get_display_title($item->ID, ['language' => $args['language']]);
+                $sortedTitle = oes_get_display_title_sorting($item->ID, ['language' => $args['language']]);
                 $args['permalink'] = $args['permalink'] ? get_permalink($item->ID) : false;
                 $itemText = $args['permalink'] ? oes_get_html_anchor($title, $args['permalink']) : $title;
-                $listItems[] = $itemText;
+                $listItems[$sortedTitle] = $itemText;
             }
         }
     }
+
+    if ($args['sort']) ksort($listItems);
 
     /* return html representation */
     return $args['separator'] ? implode($args['separator'], $listItems) :

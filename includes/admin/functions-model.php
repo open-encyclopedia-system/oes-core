@@ -473,7 +473,8 @@ function register_local_field_group($postID, string $objectKey, bool $factoryMod
 
 
             /* store additional parameter for fields in cache */
-            if ($objectKey != 'media')
+            if ($objectKey == 'media') $oes->set_media_field_options($acfGroup['fields'] ?? []);
+            else
                 $oes->set_field_options(
                     ($isTaxonomy ? 'taxonomies' : 'post_types'),
                     $objectKey,
@@ -634,7 +635,7 @@ function get_post_type_oes_args_defaults(): array
         'archive' => [],
         'archive_filter' => [],
         'lod' => false,
-        'editorial_tab' => true,
+        'editorial_tab' => false,
         'label' => '',
         'theme_labels' => [],
         'type' => 'other'
@@ -673,7 +674,7 @@ function get_taxonomy_oes_args_defaults(): array
         'archive' => [],
         'archive_filter' => [],
         'lod' => false,
-        'editorial_tab' => true,
+        'editorial_tab' => false,
         'label' => '',
         'theme_labels' => [],
         'type' => 'other',
@@ -808,14 +809,7 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
     if (empty($languageFieldGroup)) return [$fieldGroup];
 
     /* prepare field group with language dependent fields */
-    foreach ($languageFieldGroup as $languageKey => $fields)
-        $languageDependentFields = array_merge(['0_1' => [
-            'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
-            'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
-            'type' => 'tab',
-            'label' => $languages[$languageKey]['label'] ?? $languageKey,
-            'placement' => 'left'
-        ]], $fields);
+    $languageFieldGroupTitles = [];
     $languageDependentFields['0_0'] = [
         'name' => 'field_language_group_message',
         'key' => 'field_language_group_message',
@@ -823,12 +817,27 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
         'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
         'label' => ''
     ];
-    ksort($languageDependentFields);
+    foreach ($languageFieldGroup as $languageKey => $fields) {
+        $languageDependentFields = array_merge(['0_1' => [
+            'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
+            'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
+            'type' => 'tab',
+            'label' => $languages[$languageKey]['label'] ?? $languageKey,
+            'placement' => 'left'
+        ]], $fields);
+        $languageFieldGroupTitles[] = $languages[$languageKey]['label'] ?? $languageKey;
+    }
     $languageFieldGroupArgs = [
         'key' => $fieldGroup['key'] . '_language_labels',
-        'title' => $fieldGroup['title'] . ' Language Labels',
+        'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
         'location' => $fieldGroup['location'],
-        'fields' => $languageDependentFields,
+        'fields' => array_merge(['0_0' => [
+            'name' => 'field_language_group_message',
+            'key' => 'field_language_group_message',
+            'type' => 'message',
+            'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
+            'label' => '']
+        ], $languageDependentFields)
     ];
 
     return ['all' => $fieldGroup, 'language' => $languageFieldGroupArgs];
@@ -1005,7 +1014,7 @@ function insert_taxonomy_as_an_oes_object(array $data = []): bool
 
     /* prepare registration */
     $oesArgs = validate_taxonomy_oes_args($data['oes_args'] ?? []);
-    $args = validate_register_taxonomy($taxonomyKey, $data['register_args']);
+    $args = validate_register_taxonomy($taxonomyKey, $data['register_args'] ?? []);
     $fieldGroups = validate_acf_field_group(
         $taxonomyKey,
         $data['acf_add_local_field_group'] ?? [],

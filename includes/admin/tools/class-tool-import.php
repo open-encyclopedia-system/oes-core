@@ -37,10 +37,7 @@ if (!class_exists('Import')) :
         {
 
             $file = wp_import_handle_upload();
-
-            if (isset($file['file'])) {
-                $this->handle_upload($file);
-            }
+            if (isset($file['file'])) $this->handle_upload($file);
 
             echo '<div class="narrow">';
             $this->display_admin_notices();
@@ -59,7 +56,7 @@ if (!class_exists('Import')) :
                 'template %shere%s. You can import any database parameter with an import file ' .
                 'but we recommend to only import the parameter as provided in the import template. A ' .
                 'full documentation for e.g. post type parameters can be found here: %s.', 'oes'),
-                '<a href="' . admin_url('admin.php?page=tools_export') . '">',
+                '<a href="' . admin_url('admin.php?page=oes_tools_export') . '">',
                 '</a>',
                 '<a href="https://developer.wordpress.org/reference/classes/wp_post/">' .
                 'https://developer.wordpress.org/reference/classes/wp_post/</a>'
@@ -80,7 +77,7 @@ if (!class_exists('Import')) :
             echo '</p>';
 
 
-            //@oesDevelopment Modify wp_import_upload_form('admin.php?page=tools_import');
+            //@oesDevelopment Modify wp_import_upload_form('admin.php?page=oes_tools_import');
             $bytes = apply_filters('import_upload_size_limit', wp_max_upload_size());
             $size = size_format($bytes);
             $upload_dir = wp_upload_dir();
@@ -94,8 +91,8 @@ if (!class_exists('Import')) :
             <?php
             else :
                 ?>
-                <form enctype="multipart/form-data" id="import-upload-form" method="post" class="wp-upload-form"
-                      action="<?php echo esc_url(wp_nonce_url('admin.php?page=tools_import', 'import-upload')); ?>">
+                <form enctype="multipart/form-data" id="import-upload-form" method="POST" class="wp-upload-form"
+                      action="<?php echo esc_url(wp_nonce_url('admin.php?page=oes_tools_import', 'import-upload')); ?>">
                     <p>
                         <?php
                         printf(
@@ -130,7 +127,7 @@ if (!class_exists('Import')) :
                 'how many operations are currently stored in the database.', 'oes');
             echo '</p>';
             printf('<a href="%s" class="button button-secondary">%s (%s)</a>',
-                admin_url('admin.php?page=tools_operations'),
+                admin_url('admin.php?page=oes_tools_operations'),
                 __('See Operations', 'oes'),
                 $operations
             );
@@ -462,7 +459,8 @@ if (!class_exists('Import')) :
                             'sequence' => $data['sequence'] ?? 0,
                             'status' => 'imported']);
                     if ($success) $countSuccess++;
-                    else $this->admin_notices[] = [
+                    else
+                        $this->admin_notices[] = [
                         'notice' => '<p>' .
                             sprintf(__('Error while inserting operation for row %s.', 'oes'), $tempID) .
                             '</p>',
@@ -497,13 +495,13 @@ if (!class_exists('Import')) :
             if ($countSuccess)
                 $this->admin_notices[] = [
                     'notice' => sprintf(
-                            _n('1 operation has been inserted into the database',
-                            '%s operations have been inserted into the database',
+                            _n('1 operation has been inserted into the database. ',
+                            '%s operations have been inserted into the database. ',
                                 $countSuccess,
                                 'oes'),
                             $countSuccess) .
                         sprintf(__('You can see the prepared operations %shere%s.', 'oes'),
-                            '<a href="' . admin_url('admin.php?page=tools_operations') . '">',
+                            '<a href="' . admin_url('admin.php?page=oes_tools_operations') . '">',
                             '</a>'),
                     'type' => 'info'
                 ];

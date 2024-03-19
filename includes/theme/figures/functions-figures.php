@@ -112,11 +112,9 @@ function oes_get_modal_image_data(array $image, array $args = []): array
             if (isset($image[$fieldKey])) {
 
                 /* get label */
-                $label = '';
-                if(isset($oes->media_groups['image'][$fieldKey][$oes_language]))
-                    $label = $oes->media_groups['image'][$fieldKey][$oes_language];
+                $label = $oes->media_groups['image'][$fieldKey]['label_translation_' . $oes_language] ?? '';
 
-                if(empty($label)){
+                if (empty($label)) {
                     $labelMatch = [
                         'title' => 'Title',
                         'date' => 'Publication Date',
@@ -132,18 +130,16 @@ function oes_get_modal_image_data(array $image, array $args = []): array
                     $image[$fieldKey]);
             } else {
 
-                $label = oes_get_field_object($fieldKey)['label'] ?? $fieldKey;
-                if(isset($oes->media_groups['fields'])){
-                    foreach($oes->media_groups['fields'] as $mediaField){
-                        if(isset($mediaField[$oes_language]) &&
-                            isset($mediaField['key']) &&
-                            $mediaField['key'] === $fieldKey)
-                            $label = $mediaField['label'];
-                    }
-                }
+                $fieldObject = oes_get_field_object($fieldKey);
+                $label = $fieldObject['label_translation_' . $oes_language] ?? ($fieldObject['label'] ?? $fieldKey);
+                foreach ($oes->media_groups['fields'] ?? [] as $mediaField)
+                    if (isset($mediaField[$oes_language]) &&
+                        isset($mediaField['key']) &&
+                        $mediaField['key'] === $fieldKey)
+                        $label = $mediaField['label'];
 
                 $value = '';
-                if(!empty(oes_get_field($fieldKey, $image['ID'])))
+                if (!empty(oes_get_field($fieldKey, $image['ID'])))
                     $value = oes_get_field_display_value($fieldKey, $image['ID']);
             }
 

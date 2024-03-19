@@ -123,7 +123,8 @@ function import_model_to_factory(bool $dataFromFile = false): void
 
         /* loop through OES objects */
         foreach (Model\get_oes_objects(false) as $post)
-            if (!in_array($post->post_name, ['oes_config', 'media'])) {
+            if (!in_array($post->post_name, ['oes_config', 'media']) &&
+                !oes_ends_with($post->post_name, 'language')) {
 
                 /* prepare acf object */
                 $factoryPost = json_decode($post->post_content, true);
@@ -208,8 +209,8 @@ function import_model_from_factory(bool $deleteMissingObjects = true): void
         }
 
 
-    /* do field groups last */
-    foreach($acfFieldGroups as $factoryPost) {
+    /* do field groups, do language field groups last */
+    foreach ($acfFieldGroups as $factoryPost) {
         $args = unserialize($factoryPost->post_content);
         if ($objectKey = ($args['location'][0][0]['value'] ?? false)) {
 
@@ -220,58 +221,64 @@ function import_model_from_factory(bool $deleteMissingObjects = true): void
             $args['fields'] = validate_fields(acf_get_fields($factoryPost->ID));
             $args['title'] = $factoryPost->post_title;
             $args['key'] = $factoryPost->post_name;
-            $parentOesObjectID = false;
-
-            if ($fieldGroupID = Model\get_oes_object_option(
+            $fieldGroupID = Model\get_oes_object_option(
                 $objectKey,
                 'group',
-                $languageGroup)) {
-                Model\update_oes_object_post_field_group($fieldGroupID, $args);
-                $collectOESObjectIDs[] = $fieldGroupID;
-            } elseif ($parentOesObjectID = Model\get_oes_object_option(
-                $objectKey,
-                $args['location'][0][0]['param'])) {
-                $fieldGroupID = Model\insert_oes_object_post(
-                    ('group_' . $objectKey),
+                $languageGroup);
+            $parentOesObjectID = $fieldGroupID ?
+                false :
+                Model\get_oes_object_option(
                     $objectKey,
-                    $args,
-                    false,
-                    $parentOesObjectID);
-                if (is_int($fieldGroupID)) $collectOESObjectIDs[] = $fieldGroupID;
-            }
+                    $args['location'][0][0]['param']);
 
-            /* check for additional language dependent field group */
-            if (!$languageGroup) {
+            /* process objects and collect language objects (they are always generated!), */
+            if (!oes_ends_with($factoryPost->post_name, 'language')) {
 
-                /* skip if language field group exists */
-                $fieldGroupID = Model\get_oes_object_option($objectKey, 'group', true);
-                if (!$fieldGroupID) {
-
-                    /* check if language dependency exists */
-                    $fieldGroups = Model\validate_acf_field_group(
+                /* update or insert object */
+                if ($fieldGroupID) {
+                    Model\update_oes_object_post_field_group($fieldGroupID, $args);
+                    $collectOESObjectIDs[] = $fieldGroupID;
+                } elseif ($parentOesObjectID) {
+                    $fieldGroupID = Model\insert_oes_object_post(
+                        ('group_' . $objectKey),
                         $objectKey,
                         $args,
-                        $data['labels']['singular_label'] ?? $objectKey);
+                        false,
+                        $parentOesObjectID);
+                    if (is_int($fieldGroupID)) $collectOESObjectIDs[] = $fieldGroupID;
+                }
 
-                    if (isset($fieldGroups['language'])) {
+                /* check for additional language dependent field group */
+                $fieldGroups = Model\validate_acf_field_group(
+                    $objectKey,
+                    $args,
+                    $data['labels']['singular_label'] ?? $objectKey);
+
+                if (isset($fieldGroups['language'])) {
+
+                    if ($fieldGroupID = Model\get_oes_object_option($objectKey, 'group', true)) {
+                        Model\update_oes_object_post_field_group($fieldGroupID, $fieldGroups['language']);
+                        $collectOESObjectIDs[] = $fieldGroupID;
+                    } else {
                         if (!$parentOesObjectID)
                             $parentOesObjectID = Model\get_oes_object_option(
                                 $objectKey,
                                 $args['location'][0][0]['param']);
-                        $languageFieldGroupID = Model\insert_oes_object_post_field_group(
-                            $objectKey,
-                            $objectKey,
-                            $fieldGroups['language'],
-                            $parentOesObjectID,
-                            'language');
-                        if (is_int($languageFieldGroupID)) $collectOESObjectIDs[] = $languageFieldGroupID;
-                    }
 
+                        if ($parentOesObjectID) {
+                            $fieldGroupID = Model\insert_oes_object_post_field_group(
+                                $objectKey,
+                                $objectKey,
+                                $fieldGroups['language'],
+                                $parentOesObjectID,
+                                'language');
+                            if (is_int($fieldGroupID)) $collectOESObjectIDs[] = $fieldGroupID;
+                        }
+                    }
                 }
             }
         }
     }
-
 
     /* delete missing object and corresponding option */
     if ($deleteMissingObjects && !empty($collectOESObjectIDs))
@@ -310,6 +317,9 @@ function validate_object_args(array $args = []): array
     /* clean up meta box for taxonomies */
     foreach (['meta_box_cb', 'meta_box_sanitize_cb'] as $key)
         if (isset($args[$key]) && empty($args[$key])) $args[$key] = null;
+
+    /* clean up query_var @oesDevelopment Is this necessary? */
+    if(isset($args['query_var'])) $args['query_var'] = true;
 
     return $args;
 }
@@ -358,12 +368,11 @@ function set_global_parameters(array $args, array $post): array
                     if ($component == 'taxonomy') {
 
                         /* make sure taxonomy label exists */
-                        if(empty($oesArgs['label'] ?? []))
+                        if (empty($oesArgs['label'] ?? []))
                             $oesArgs['label'] = $post['labels']['menu_name'] ?? $objectKey;
 
                         $oes->set_taxonomy_parameters($objectKey, $oesArgs);
-                    }
-                    elseif ($component == 'post_type') $oes->set_post_type_parameters($objectKey, $oesArgs);
+                    } elseif ($component == 'post_type') $oes->set_post_type_parameters($objectKey, $oesArgs);
 
                     /* get field group and language field group, then store field parameters */
                     foreach ([true, false] as $languageGroup)
@@ -391,7 +400,7 @@ function set_global_parameters(array $args, array $post): array
 function additional_field_settings_tabs(array $tabs = []): array
 {
     $tabs['oes'] = 'OES';
-    if(sizeof(OES()->languages ?? []) > 1) $tabs['oes_language'] = 'OES Label';
+    if (sizeof(OES()->languages ?? []) > 1) $tabs['oes_language'] = 'OES Label';
     return $tabs;
 }
 
@@ -404,7 +413,8 @@ function additional_field_settings_tabs(array $tabs = []): array
  */
 function render_field_settings_tab(array $field): void
 {
-    if($field['type'] === 'text') {
+    $configuration = false;
+    if ($field['type'] === 'text') {
         acf_render_field_setting($field, [
             'label' => __('Display options', 'oes'),
             'instructions' => '',
@@ -424,17 +434,23 @@ function render_field_settings_tab(array $field): void
             'name' => 'display_prefix',
             'type' => 'text'
         ], true);
+
+        $configuration = true;
     }
-    elseif ((sizeof(OES()->languages) > 1) && in_array($field['type'], ['text', 'textarea', 'wysiwyg'])) {
-            acf_render_field_setting($field, [
-                'label' => __('Language Dependent', 'oes'),
-                'instructions' => 'Field value depends on language.',
-                'name' => 'language_dependent',
-                'type' => 'true_false',
-                'ui' => 1
-            ], true);
-        }
-    else echo '<div class="acf-field">' .
+
+    if ((sizeof(OES()->languages) > 1) && in_array($field['type'], ['text', 'textarea', 'wysiwyg'])) {
+        acf_render_field_setting($field, [
+            'label' => __('Language Dependent', 'oes'),
+            'instructions' => 'Field value depends on language.',
+            'name' => 'language_dependent',
+            'type' => 'true_false',
+            'ui' => 1
+        ], true);
+
+        $configuration = true;
+    }
+
+    if (!$configuration) echo '<div class="acf-field">' .
         '<div class="acf-label">' .
         'No OES configuration options for this field type.' .
         '</div>' .
@@ -451,7 +467,7 @@ function render_field_settings_tab(array $field): void
 function render_field_settings_tab_language(array $field): void
 {
 
-    foreach(OES()->languages as $languageKey => $languageData)
+    foreach (OES()->languages as $languageKey => $languageData)
         acf_render_field_setting($field, [
             'label' => __('Language Label for ', 'oes') . ($languageData['label'] ?? $languageKey),
             'instructions' => 'Field label for this language.',

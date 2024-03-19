@@ -7,7 +7,7 @@
   display: flex;
   margin-bottom: 0.3em;
 }
-.oes-notes-list span {
+.oes-notes-list .oes-notes-list-number {
   font-size: 0.8em;
   margin-right: 1.5em;
   word-wrap: normal;

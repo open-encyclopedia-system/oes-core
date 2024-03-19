@@ -310,26 +310,29 @@ function oes_post_terms_html(array $args): string
 function oes_field_html(array $args): string
 {
     /* check for tags */
-    global $oes_post, $oes_language;
-    if (!empty($oes_post) && !empty($args['field'])) {
+    global $oes_post, $oes_term, $oes_language;
+    if ((empty($oes_post) && empty($oes_term)) || empty($args['field'])) return '';
 
-        /* check for value */
-        $value = $oes_post->fields[$args['field']][$args['type'] ?? 'value-display'];
-        if (empty($value)) return '';
 
-        /* check for header */
-        $headerText = '';
-        if (!empty($args['header'] ?? '')) $headerText = $args['header'];
-        elseif ($oes_language && !empty($args['header_' . $oes_language] ?? ''))
-            $headerText = $args['header_' . $oes_language];
+    /* check for value */
+    $value = empty($oes_post) ?
+        oes_get_field($args['field'], $oes_term->taxonomy . '_' . $oes_term->object_ID) :
+        ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
+    if (empty($value)) return '';
 
-        $header = empty($headerText) ?
-            '' :
+    /* check for header */
+    $headerText = '';
+    if (!empty($args['header'] ?? '')) $headerText = $args['header'];
+    elseif ($oes_language && !empty($args['header_' . $oes_language] ?? ''))
+        $headerText = $args['header_' . $oes_language];
+
+    $header = '';
+    if (!empty($headerText))
+        $header = empty($oes_post) ?
+            $oes_term->generate_table_of_contents_header($headerText) :
             $oes_post->generate_table_of_contents_header($headerText);
 
-        return $header . '<div class="' . $args['class'] . '">' . $value . '</div>';
-    }
-    return '';
+    return $header . '<div class="' . ($args['class'] ?? '') . '">' . $value . '</div>';
 }
 
 
@@ -404,7 +407,7 @@ function oes_print_button_html(array $args = []): string
     $printButton = '<a href="javascript:void(0);" onClick="window.print();" ' .
         'class="oes-print-button no-print">' .
         (($args['icon'] ?? true) ? '<span class="dashicons dashicons-printer"></span>' : '') .
-        ($args[$oes_language] ?? oes_get_label('button__print')).
+        ($args[$oes_language] ?? oes_get_label('button__print')) .
         '</a>';
 
     return ($args['wrapped'] ?? true) ?
