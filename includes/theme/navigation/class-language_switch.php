@@ -290,6 +290,11 @@ if (!class_exists('Language_Switch')) {
             $link .= (parse_url($link, PHP_URL_QUERY) ? '&' : '?') . 'oes-language-switch=' . $targetLanguage;
 
 
+            /* add additional parameters*/
+            if (isset($this->links[$targetLanguage]['param']))
+                foreach ($this->links[$targetLanguage]['param'] as $key => $value) $link .= '&' . $key . '=' . $value;
+
+
             /**
              * Filters the language switch link.
              *

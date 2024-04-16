@@ -144,7 +144,7 @@ if (!class_exists('Page')) :
             foreach ($menu as $offset => $section) {
                 if (substr($section[2], 0, 9) == 'separator') $index++;
                 if ($offset >= $position) {
-                    $menu[$position] = ['', 'read', "separator$index", '', 'wp-menu-separator'];
+                    $menu[(int) $position] = ['', 'read', "separator$index", '', 'wp-menu-separator'];
                     break;
                 }
             }

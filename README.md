@@ -31,7 +31,7 @@ information about the project and existing OES applications please visit our
 * [Website](https://www.open-encyclopedia-system.org/)
 
 ## Dependencies
-An OES application consists of a OES Core plugin, an additional OES project plugin which implements the OES features 
+An OES application consists of a OES Core plugin, an additional OES project plugin which implements the OES features
 for the application and an optional OES theme.
 
 OES depends on the WordPress plugin ACF:
@@ -71,6 +71,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 # Changelog
+
+## 2.3.2
+* fix - classic language switch on search page
+* fix - save schema options
 
 ## 2.3.1
 * change - data model, default for "editorial_tab" is false

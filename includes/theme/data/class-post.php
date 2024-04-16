@@ -804,7 +804,7 @@ if (!class_exists('OES_Post')) {
 
             /* check for pattern */
             $pattern = $oes->post_types[$this->post_type]['citation']['pattern'] ?? [];
-            if (empty($citation) && !empty($pattern))
+            if ((empty($citation) || trim(strip_tags($citation)) == 'generate') && !empty($pattern))
                 $citation = calculate_value($pattern,
                     $this->object_ID,
                     $args['separator']);

@@ -146,7 +146,7 @@ function overwrite_visibility_via_css(): void
         .wrap .wp-heading-inline + .page-title-action, /* overwrite 'Add ...' button */
         .oes-create-new-version, /* overwrite 'Create New Version' */
         .oes-copy-version, /* overwrite  'Copy Version' */
-        .oes-create-language-version, /* overwrite 'Create Language Version' */
+        .oes-create-language-version, /* overwrite 'Create Language Parent' */
         .edit-tag-actions a, /* overwrite 'Delete' link for tags editor */
         #edit-slug-buttons button[type="button"], /* overwrite 'Edit' button in slug editor */
         .editor-post-switch-to-draft, /* switch to draft button in block editor */

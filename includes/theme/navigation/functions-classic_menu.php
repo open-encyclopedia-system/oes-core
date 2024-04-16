@@ -251,6 +251,7 @@ function nav_menu_link_attributes(array $args, WP_Post $item): array
         $args['id'] = 'oes-search';
     elseif (property_exists($item, 'object') &&
         $item->object === 'oes-menu-item-language-switch' &&
-        $languageSwitch = oes_get_language_switch()) $args['href'] = $languageSwitch->get_menu_item_link();
+        $languageSwitch = oes_get_language_switch())
+        $args['href'] = $languageSwitch->get_menu_item_link();
     return $args;
 }

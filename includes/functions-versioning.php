@@ -383,8 +383,8 @@ function meta_box_parent_post(WP_Post $post, array $callbackArgs): void
                 <a href="admin.php?action=oes_create_translation&post=<?php echo $post->ID;
                 ?>&language=<?php echo $translationLanguage; ?>&nonce=<?php echo wp_create_nonce('oes-create-translation-' . $post->ID); ?>"
                    class="button button-large"
-                   title="Create Language Version" rel="permalink"><?php
-                printf(__('Create Language Version [%s]', 'oes'), $translationLanguageLabel); ?></a><?php
+                   title="Create Language Parent" rel="permalink"><?php
+                printf(__('Create Language Parent [%s]', 'oes'), $translationLanguageLabel); ?></a><?php
             endif;
             ?>
         </div><?php
