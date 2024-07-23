@@ -52,6 +52,41 @@ if (!class_exists('Theme_Search')) :
                     ]
                 ]
             ];
+
+            /* Prepare order */
+            $orderSelects = [];
+            foreach ($oes->post_types as $postTypeKey => $postTypeData)
+                $orderSelects[$postTypeKey] = $postTypeData['label'] ?? $postTypeKey;
+            foreach ($oes->taxonomies as $taxonomyKey => $taxonomyData)
+                $orderSelects[$taxonomyKey] = $taxonomyData['label'] ?? $taxonomyKey;
+            $innerRows[] = [
+                'cells' => [
+                    [
+                        'type' => 'th',
+                        'value' => '<strong>' . __('Order of searched objects', 'oes') . '</strong>' .
+                            '<div>' .
+                            __('The order of the post types and taxonomies in which the results are output',
+                                'oes') .
+                            '</div>'
+                    ],
+                    [
+                        'class' => 'oes-table-transposed',
+                        'value' => oes_html_get_form_element('select',
+                            'oes_config[search][order]',
+                            'oes_config-search-order',
+                            $oes->search['order'] ?? [],
+                            [
+                                'options' => $orderSelects,
+                                'multiple' => true,
+                                'class' => 'oes-replace-select2',
+                                'reorder' => true,
+                                'hidden' => true
+                            ])
+                    ]
+                ]
+            ];
+
+
             foreach($oes->languages as $languageKey => $languageData){
                 $innerRows[] = [
                     'cells' => [

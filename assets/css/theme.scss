@@ -1,3 +1,11 @@
+.oes-hide {
+    visibility: hidden;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    margin-block-start: -1rem !important;
+    margin-block-end: 0 !important;
+}
 
 .oes-uppercase {
     text-transform: uppercase;
@@ -7,20 +15,4 @@
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-/* @oesDevelopment media */
-.oes-expand-button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    color: white;
-    background-color: black;
-    opacity: 50%;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.oes-expand-button:hover {
-    opacity: 100%;
 }

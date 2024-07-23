@@ -65,7 +65,7 @@ if (!class_exists('Config')) :
                 /* Buttons */
                 if (!\OES\Rights\user_is_read_only())
                     $html .= '<div class="' . (empty($dataHTML) ? 'oes-display-none' : '') . '">' .
-                        get_submit_button() . '</div>';
+                        $this->submit_html() . '</div>';
             } else $html = $this->empty();
 
             echo $html;
@@ -119,6 +119,17 @@ if (!class_exists('Config')) :
         function additional_html(): string
         {
             return '';
+        }
+
+
+        /**
+         * Prepare text to be displayed after tool.
+         *
+         * @return string Returns submit buttons and text.
+         */
+        function submit_html(): string
+        {
+            return get_submit_button();
         }
 
 

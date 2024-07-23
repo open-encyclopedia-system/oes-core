@@ -133,7 +133,9 @@ function oes_search_get_results(array $args = [], array $additionalArgs = []): a
                         foreach ($occurrencesContent as $singleOccurrence) {
                             if ($countParagraphs < $maxParagraphs)
                                 $occurrencesContentString .= $singleOccurrence['paragraph'] .
-                                    '<a href="' . get_permalink($preparedID) . '" class="oes-dot-dot-dot"></a>';
+                                    ($oes->block_theme ?
+                                        '' :
+                                        '<a href="' . get_permalink($preparedID) . '" class="oes-dot-dot-dot"></a>');
                             $occurrences += $singleOccurrence['occurrences'];
                             $countParagraphs++;
                         }
@@ -166,11 +168,13 @@ function oes_search_get_results(array $args = [], array $additionalArgs = []): a
                                                 /* if not first or single occurrence, add '...' before result text,
                                                 if not last or single occurrence, add '...' before result text */
                                                 $fieldOccurrences[] =
-                                                    (in_array($item['position'], ['first', 'single']) ?
+                                                    (($oes->block_theme ||
+                                                        in_array($item['position'], ['first', 'single'])) ?
                                                         '' :
                                                         '<span class="oes-dot-dot-dot"></span>') .
                                                     $item['unfiltered'] .
-                                                    (in_array($item['position'], ['last', 'single']) ?
+                                                    (($oes->block_theme ||
+                                                    in_array($item['position'], ['last', 'single'])) ?
                                                         '' :
                                                         '<span class="oes-dot-dot-dot"></span>');
 

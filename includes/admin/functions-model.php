@@ -68,8 +68,28 @@ function register_oes_object_post_type(): void
  */
 function register_oes_objects(bool $factoryMode = false): void
 {
+    $oesObjects = get_oes_objects();
+    if(empty($oesObjects) && is_admin()){
+        add_action('admin_notices', function () {
+            echo '<div class="notice notice-warning"><p>' .
+                __('There is no OES data model registered. Navigate to ', 'oes') .
+                oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
+                    admin_url('admin.php?page=oes_tools_model&tab=model')) .
+                __(' and use ' .
+                    'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
+                    'project plugin (this will only work if you have admin rights). After that you should see the '.
+                    'list of registered post types and taxonomies.<br>'.
+                    'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
+                    'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
+                    '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
+                '</p></div>';
+        });
+        return;
+    }
+
+
     /* loop through all post type and taxonomy objects and the OES general config */
-    foreach (get_oes_objects() as $post) {
+    foreach ($oesObjects as $post) {
 
         /* general config */
         if ($post->post_name == 'oes_config')
@@ -249,7 +269,7 @@ function export_model_to_json(): bool
     foreach (get_oes_objects(false, ['order' => 'ASC', 'orderby' => 'title']) as $post) {
 
         /* skip if language dependent field group */
-        if (oes_ends_with($post->post_name, '_language')) continue;
+        if (oes_starts_with($post->post_name, 'group_') && oes_ends_with($post->post_name, '_language')) continue;
         elseif ($post->post_name === 'oes_config')
             $exportData['oes_config'] = json_decode($post->post_content, true);
         elseif ($post->post_name === 'media')
@@ -465,7 +485,7 @@ function register_local_field_group($postID, string $objectKey, bool $factoryMod
     foreach (get_children(['post_parent' => $postID, 'post_type' => 'oes_object']) as $childPost)
         if ($acfGroup = json_decode($childPost->post_content, true) ?? []) {
 
-            if (!$factoryMode)
+            if (!$factoryMode || oes_ends_with($childPost->post_name, 'language'))
                 if (!acf_add_local_field_group($acfGroup))
                     oes_write_log(
                         sprintf(__('Error while adding acf local field group for %s.', 'oes'),
@@ -612,6 +632,10 @@ function validate_post_type_oes_args(array $oesArgs = []): array
         if (isset($data['label_translation_' . $languageKey]))
             $oesArgs['label_translation_' . $languageKey] = $data['label_translation_' . $languageKey] ?? '';
 
+    /* validate schema parameters, make sure they are of type array */
+    foreach (['metadata', 'authors', 'creators', 'literature', 'terms', 'external', 'lod', 'publications'] as $param)
+        if (isset($oesArgs[$param]) && is_bool($oesArgs[$param])) $oesArgs[$param] = [];
+
     return $oesArgs;
 }
 
@@ -651,7 +675,12 @@ function get_post_type_oes_args_defaults(): array
  */
 function validate_taxonomy_oes_args(array $oesArgs = []): array
 {
-    return array_merge(get_taxonomy_oes_args_defaults(), $oesArgs);
+    $oesArgs = array_merge(get_taxonomy_oes_args_defaults(), $oesArgs);
+
+    /* validate redirect */
+    if (is_bool($oesArgs['redirect'])) $oesArgs['redirect'] = 'none';
+
+    return $oesArgs;
 }
 
 
@@ -714,6 +743,13 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
         /* field name is missing */
         if (!$field['name']) $fieldGroup['fields'][$fieldKey]['name'] = $field['key'];
 
+        /* @acfPro make sure sub_fields have parent_repeater option */
+        if(isset($field['sub_fields'])){
+            foreach($field['sub_fields'] as $singleFieldKey => $singleField)
+                if(!isset($singleField['parent_repeater']))
+                    $fieldGroup['fields'][$fieldKey]['sub_fields'][$singleFieldKey]['parent_repeater'] = $field['key'];
+        }
+
         /* @oesLegacy field type is bidirectional */
         if (isset($field['inherit_to']) && !empty($field['inherit_to']) && is_array($field['inherit_to']))
             foreach ($field['inherit_to'] as $singleField) {
@@ -724,6 +760,27 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
                     unset($fieldGroup['fields'][$fieldKey]['inherit_to']);
                 }
             }
+
+        /* @oesLegacy field has pattern */
+        if (isset($field['pattern']['parts']) && !empty($field['pattern']['parts'])) {
+            $newPattern = [];
+            foreach ($field['pattern']['parts'] as $patternPart) {
+                $newPattern[] = [
+                    'string_value' => $patternPart['default'] ?? '',
+                    'required' => $patternPart['required'] ?? '',
+                    'prefix' => $patternPart['prefix'] ?? '',
+                    'suffix' => $patternPart['suffix'] ?? '',
+                    'separator' => $patternPart['separator'] ?? '',
+                    'field_key' => $patternPart['key'] ?
+                        ($patternPart['key'] === 'no_field_key' ? 'none' : $patternPart['key']) :
+                        'none',
+                    'fallback' => $patternPart['fallback_field_key'] ?
+                        ($patternPart['fallback_field_key'] === 'no_field_key' ? 'none' : $patternPart['fallback_field_key']) :
+                        'none'
+                ];
+            }
+            $fieldGroup['fields'][$fieldKey]['pattern'] = $newPattern;
+        }
 
         /* check if specific options */
         switch ($field['name']) {
@@ -810,34 +867,35 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
 
     /* prepare field group with language dependent fields */
     $languageFieldGroupTitles = [];
-    $languageDependentFields['0_0'] = [
-        'name' => 'field_language_group_message',
-        'key' => 'field_language_group_message',
-        'type' => 'message',
-        'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
-        'label' => ''
-    ];
+    $languageDependentFields = [];
+
     foreach ($languageFieldGroup as $languageKey => $fields) {
-        $languageDependentFields = array_merge(['0_1' => [
+        if (isset(OES()->post_types[$objectKey])) $languageDependentFields = array_merge(['0_1' => [
             'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
             'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
             'type' => 'tab',
             'label' => $languages[$languageKey]['label'] ?? $languageKey,
             'placement' => 'left'
         ]], $fields);
+        else $languageDependentFields = $fields;
         $languageFieldGroupTitles[] = $languages[$languageKey]['label'] ?? $languageKey;
     }
-    $languageFieldGroupArgs = [
-        'key' => $fieldGroup['key'] . '_language_labels',
-        'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
-        'location' => $fieldGroup['location'],
-        'fields' => array_merge(['0_0' => [
+
+    if (isset(OES()->post_types[$objectKey])) {
+        $languageDependentFields = array_merge(['0_0' => [
             'name' => 'field_language_group_message',
             'key' => 'field_language_group_message',
             'type' => 'message',
             'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
-            'label' => '']
-        ], $languageDependentFields)
+            'label' => ''
+        ]], $languageDependentFields);
+    }
+
+    $languageFieldGroupArgs = [
+        'key' => $fieldGroup['key'] . '_language_labels',
+        'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
+        'location' => $fieldGroup['location'],
+        'fields' => $languageDependentFields
     ];
 
     return ['all' => $fieldGroup, 'language' => $languageFieldGroupArgs];
@@ -949,7 +1007,7 @@ function insert_post_type_as_an_oes_object(array $data = []): bool
 
     /* prepare arguments */
     $oesArgs = validate_post_type_oes_args($data['oes_args'] ?? []);
-    $args = validate_register_post_type($postTypeKey, $data['register_args']);
+    $args = validate_register_post_type($postTypeKey, $data['register_args'] ?? []);
     $fieldGroups = validate_acf_field_group(
         $postTypeKey,
         $data['acf_add_local_field_group'] ?? [],
@@ -1327,7 +1385,7 @@ function get_schema_types(): array
 {
     $schemaTypes = [
         'other' => __('-', 'oes'),
-        'single-article' => __('Article', 'oes'),
+        'single-article' => __('Content', 'oes'),
         'single-contributor' => __('Contributor', 'oes'),
         'single-index' => __('Index Object', 'oes'),
         'single-internal' => __('Internal Object', 'oes')

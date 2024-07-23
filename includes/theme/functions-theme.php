@@ -315,9 +315,18 @@ function oes_field_html(array $args): string
 
 
     /* check for value */
-    $value = empty($oes_post) ?
-        oes_get_field($args['field'], $oes_term->taxonomy . '_' . $oes_term->object_ID) :
-        ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
+    if (empty($oes_post))
+        $value = oes_get_field($args['field'], $oes_term->taxonomy . '_' . $oes_term->object_ID);
+    else {
+        ;
+
+        if($args['parent'] ?? false) $value = oes_get_field_display_value($args['field'], $oes_post->parent_ID);
+        elseif($args['version'] ?? false) {
+            $currentVersion = \OES\Versioning\get_current_version_id($oes_post->object_ID);
+            if($currentVersion) $value = oes_get_field_display_value($args['field'], $currentVersion);
+        }
+        else $value = ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
+    }
     if (empty($value)) return '';
 
     /* check for header */

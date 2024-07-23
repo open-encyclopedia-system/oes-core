@@ -107,133 +107,163 @@ function oes_get_field_display_value(string $fieldName, $postID, array $args = [
 
     /* switch field type */
     $fieldObject = oes_get_field_object($fieldName, $postID);
-    if (isset($fieldObject['type']))
-        switch ($fieldObject['type']) {
+    if (isset($fieldObject['type'])) {
 
-            case 'relationship' :
-                $newArgs = $args;
-                $newArgs['class'] = $args['list-class'];
 
-                /* modify value for return format 'id' */
-                if (isset($fieldObject['return_format']) &&
-                    $fieldObject['return_format'] === 'id' &&
-                    is_array($value)) {
-                    $replaceValue = [];
-                    foreach ($value as $singleValue) $replaceValue[] = get_post($singleValue);
-                    $value = $replaceValue;
-                }
+        /**
+         * Filter the additional arguments.
+         *
+         * @param array $args Further arguments.
+         * @param mixed $value The field value.
+         * @param array $fieldObject The field object.
+         * @param int|boolean $postID An int containing the post ID.
+         */
+        if (has_filter('oes/get_field_display_value-' . $fieldName . '-args'))
+            $args = apply_filters('oes/get_field_display_value-' . $fieldName . '-args',
+                $args,
+                $value,
+                $fieldObject,
+                $postID);
 
-                return oes_display_post_array_as_list($value, $args['list-id'], $newArgs);
 
-            case 'post_object' :
-                return $value ?
-                    oes_get_html_anchor(oes_get_display_title($value, $args), get_permalink($value)) :
-                    '';
+        /**
+         * Filter the display value.
+         *
+         * @param array $fieldObject The field object.
+         * @param mixed $value The field value.
+         * @param array $args Further arguments.
+         * @param int|boolean $postID An int containing the post ID.
+         */
+        if (has_filter('oes/get_field_display_value-' . $fieldName))
+            return apply_filters('oes/get_field_display_value-' . $fieldName, $fieldObject, $value, $args, $postID);
+        else
+            switch ($fieldObject['type']) {
 
-            case 'select' :
-            case 'radio' :
-                $selectedValue = !empty($value) ? oes_get_select_field_value($fieldName, $postID) : '';
-                return is_array($selectedValue) ? implode(', ', $selectedValue) : $selectedValue;
+                case 'relationship' :
+                    $newArgs = $args;
+                    $newArgs['class'] = $args['list-class'];
 
-            case 'link' :
-                if (!empty($value)) {
-                    $url = $value['url'] ?? 'Link missing';
-                    return $args['value-is-link'] ?
-                        oes_get_html_anchor(
-                            empty($value['title']) ? $url : $value['title'],
-                            $url,
-                            false,
-                            false,
-                            $value['target'] ?? '_blank') :
-                        $url;
-                } else return '';
-
-            case 'url' :
-                return oes_get_html_anchor($value, $value, false, false, '_blank');
-
-            case 'taxonomy' :
-
-                /* get terms */
-                $tags = [];
-                if ($value)
-                    foreach (is_array($value) ? $value : explode(';', $value) as $tag)
-                        if ($getTerm = get_term($tag)) $tags[] = $getTerm;
-
-                return oes_display_post_array_as_list(
-                    $tags,
-                    $args['list-id'],
-                    [
-                        'class' => $args['list-class'],
-                        'permalink' => $args['value-is-link'],
-                        'language' => $args['language'] ?? ''
-                    ]);
-
-            case 'date_picker' :
-            case 'date_time_picker' :
-                return empty($value) ? '' : oes_convert_date_to_formatted_string($value);
-
-            case 'color_picker' :
-            case 'email' :
-            case 'number' :
-            case 'time_picker' :
-            case 'true_false' :
-            case 'text' :
-            case 'textarea' :
-            case 'wysiwyg' :
-                return is_string($value) ? $value : '';
-
-            case 'range' :
-            case 'button_group' :
-            case 'accordion' :
-            case 'checkbox' :
-            case 'file' :
-            case 'google_map' :
-            case 'image' :
-                return ''; //@oesDevelopment
-
-            case 'repeater' :
-
-                if ($value) {
-
-                    /**
-                     * Filters the repeater value.
-                     *
-                     * @param array $value The value.
-                     * @param array $fieldObject The field.
-                     */
-                    if (has_filter('oes/acf_pro_display_repeater_field')) {
-                        $value = apply_filters('oes/acf_pro_display_repeater_field', $value, $fieldObject);
-                    } elseif (is_array($value)) {
-
-                        /* flatten value */
-                        $flattenValue = [];
-                        if (!empty($fieldObject['sub_fields'])) {
-                            foreach ($value as $singleValue) {
-                                $singleValueDisplay = [];
-                                foreach ($fieldObject['sub_fields'] as $subFieldObject) {
-                                    $loopArgs = $args;
-                                    if (isset($singleValue[$subFieldObject['key']]))
-                                        $loopArgs['value'] = $singleValue[$subFieldObject['key']];
-                                    $displayValue = oes_get_field_display_value(
-                                        $subFieldObject['key'],
-                                        $postID,
-                                        $loopArgs);
-                                    $singleValueDisplay[] = (!is_string($displayValue) || empty($displayValue)) ?
-                                        '-' :
-                                        $displayValue;
-                                }
-                                $flattenValue[] = implode(', ', $singleValueDisplay);
-                            }
-                        }
-                        $value = empty($flattenValue) ? '' : implode('<br>', $flattenValue);
+                    /* modify value for return format 'id' */
+                    if (isset($fieldObject['return_format']) &&
+                        $fieldObject['return_format'] === 'id' &&
+                        is_array($value)) {
+                        $replaceValue = [];
+                        foreach ($value as $singleValue) $replaceValue[] = get_post($singleValue);
+                        $value = $replaceValue;
                     }
-                }
-                return $value;
 
-            default :
-                oes_write_log('Field type not found: ' . $fieldObject['type']);
-                return '';
-        }
+                    return oes_display_post_array_as_list($value, $args['list-id'], $newArgs);
+
+                case 'post_object' :
+                    return $value ?
+                        oes_get_html_anchor(oes_get_display_title($value, $args), get_permalink($value)) :
+                        '';
+
+                case 'select' :
+                case 'radio' :
+                    $selectedValue = !empty($value) ? oes_get_select_field_value($fieldName, $postID) : '';
+                    return is_array($selectedValue) ? implode(', ', $selectedValue) : $selectedValue;
+
+                case 'link' :
+                    if (!empty($value)) {
+                        $url = $value['url'] ?? 'Link missing';
+                        return $args['value-is-link'] ?
+                            oes_get_html_anchor(
+                                empty($value['title']) ? $url : $value['title'],
+                                $url,
+                                false,
+                                false,
+                                $value['target'] ?? '_blank') :
+                            $url;
+                    } else return '';
+
+                case 'url' :
+                    return oes_get_html_anchor($value, $value, false, false, '_blank');
+
+                case 'taxonomy' :
+
+                    /* get terms */
+                    $tags = [];
+                    if ($value)
+                        foreach (is_array($value) ? $value : explode(';', $value) as $tag)
+                            if ($getTerm = get_term($tag)) $tags[] = $getTerm;
+
+                    return oes_display_post_array_as_list(
+                        $tags,
+                        $args['list-id'],
+                        [
+                            'class' => $args['list-class'],
+                            'permalink' => $args['value-is-link'],
+                            'language' => $args['language'] ?? ''
+                        ]);
+
+                case 'date_picker' :
+                case 'date_time_picker' :
+                    return empty($value) ? '' : oes_convert_date_to_formatted_string($value);
+
+                case 'color_picker' :
+                case 'email' :
+                case 'number' :
+                case 'time_picker' :
+                case 'true_false' :
+                case 'text' :
+                case 'textarea' :
+                case 'wysiwyg' :
+                case 'range' :
+                    return is_string($value) ? $value : '';
+
+                case 'button_group' :
+                case 'accordion' :
+                case 'checkbox' :
+                case 'file' :
+                case 'google_map' :
+                case 'image' :
+                    return ''; //@oesDevelopment
+
+                case 'repeater' :
+
+                    if ($value) {
+
+                        /**
+                         * Filters the repeater value.
+                         *
+                         * @param array $value The value.
+                         * @param array $fieldObject The field.
+                         */
+                        if (has_filter('oes/acf_pro_display_repeater_field')) {
+                            $value = apply_filters('oes/acf_pro_display_repeater_field', $value, $fieldObject);
+                        } elseif (is_array($value)) {
+
+                            /* flatten value */
+                            $flattenValue = [];
+                            if (!empty($fieldObject['sub_fields'])) {
+                                foreach ($value as $singleValue) {
+                                    $singleValueDisplay = [];
+                                    foreach ($fieldObject['sub_fields'] as $subFieldObject) {
+                                        $loopArgs = $args;
+                                        if (isset($singleValue[$subFieldObject['key']]))
+                                            $loopArgs['value'] = $singleValue[$subFieldObject['key']];
+                                        $displayValue = oes_get_field_display_value(
+                                            $subFieldObject['key'],
+                                            $postID,
+                                            $loopArgs);
+                                        $singleValueDisplay[] = (!is_string($displayValue) || empty($displayValue)) ?
+                                            '-' :
+                                            $displayValue;
+                                    }
+                                    $flattenValue[] = implode(', ', $singleValueDisplay);
+                                }
+                            }
+                            $value = empty($flattenValue) ? '' : implode('<br>', $flattenValue);
+                        }
+                    }
+                    return $value;
+
+                default :
+                    oes_write_log('Field type not found: ' . $fieldObject['type']);
+                    return '';
+            }
+    }
 
     return '';
 }
@@ -391,7 +421,7 @@ function oes_get_object_select_options(
     if (!$args || ($args['title'] ?? false)) {
         $titleOptions['wp-title'] = $isPostType ? __('Post Title (WordPress)', 'oes') : __('Name (WordPress)', 'oes');
         foreach ($allFields as $fieldKey => $singleField)
-            if (in_array($singleField['type'], ['text', 'textarea', 'wysiwyg']))
+            if (in_array($singleField['type'], ['text', 'textarea', 'wysiwyg', 'date_picker']))
                 $titleOptions[$fieldKey] = empty($singleField['label']) ? $fieldKey : $singleField['label'];
         asort($titleOptions);
         $selects['title'] = $titleOptions;

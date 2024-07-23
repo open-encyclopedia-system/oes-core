@@ -12,14 +12,14 @@ export default function Edit({attributes, setAttributes, isSelected}) {
     if (oes_post && !isSelected) {
         return (<div {...useBlockProps()}>
             <div className="oes-block-render-editor">
-                {__('Render OES Feature Post for the post', 'oes')}
+                {__('Render OES Feature Post for the post ', 'oes')}
                 <span>{oes_post}</span>.
             </div>
         </div>);
     } else if (post_type && !isSelected) {
         return (<div {...useBlockProps()}>
             <div className="oes-block-render-editor">
-                {__('Render random OES Feature Post for the post type', 'oes')}
+                {__('Render random OES Feature Post for the post type ', 'oes')}
                 <span>{post_type}</span>.
             </div>
         </div>);

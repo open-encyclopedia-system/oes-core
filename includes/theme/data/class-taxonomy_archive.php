@@ -22,6 +22,9 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
         /** @var bool Consider only childless terms. */
         public bool $childless = true;
 
+        /** @var bool Consider only terms that have no parent term. */
+        public bool $only_first_level = false;
+
 
         //Overwrite parent
         public function set_parameters(array $args = []): void
@@ -71,18 +74,29 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
             if (taxonomy_exists($this->taxonomy)) {
 
                 /* prepare query args */
-                $queryArgs = [
+                $queryArgs = $this->modify_query_args([
                     'taxonomy' => $this->taxonomy,
                     'hide_empty' => $this->hide_on_empty,
-                    'childless' => $this->childless];
-                if (isset($args['parent'])) $queryArgs['parent'] = $args['parent'];
+                    'childless' => $this->childless]);
 
                 /* query terms */
                 $terms = get_terms($queryArgs);
 
                 /* loop through results */
-                if ($terms) foreach ($terms as $term) $this->loop_results_term($term);
+                if ($terms) foreach ($terms as $term)
+                    if(!$this->only_first_level || !$term->parent) $this->loop_results_term($term);
             }
+        }
+
+
+        /**
+         * Modify the query args.
+         *
+         * @param array $args The current query args.
+         * @return array The modified query args.
+         */
+        public function modify_query_args(array $args = []): array {
+            return $args;
         }
     }
 }

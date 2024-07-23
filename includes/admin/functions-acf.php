@@ -74,7 +74,7 @@ function enqueue_select2(): void
     /* END OF COPY */
 
     oes_add_style('oes-select2-overwrite', '/assets/css/select2-oes.css', [], '4.1.0-rc.0');
-    oes_add_script('oes-select-init', '/assets/js/select2-init.js', ['jquery'], '4.1.0-rc.0');
+    oes_add_script('oes-select-init', '/assets/js/select2-init.min.js', ['jquery'], '4.1.0-rc.0');
 }
 
 

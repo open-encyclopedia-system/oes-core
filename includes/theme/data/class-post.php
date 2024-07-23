@@ -104,6 +104,8 @@ if (!class_exists('OES_Post')) {
                 else $language = oes_get_field($schemaLanguage, $this->object_ID) ?? 'language0';
             } else $language = oes_get_field('field_oes_post_language', $this->object_ID) ?? 'language0';
 
+            /* if called in admin set global language */
+            if (empty($language) && empty($oes_language)) $language = 'language0';
 
             return (empty($language) || $language === 'all') ? $oes_language : $language;
         }
@@ -377,16 +379,19 @@ if (!class_exists('OES_Post')) {
 
             $contentArray['100_toc'] = (!isset($args['skip-toc']) || !$args['skip-toc']);
 
-            $contentArray['300_notes'] = $this->get_html_notes($args);
+            $contentArray['300_notes'] = $this->get_html_notes(array_merge($args, ['position' => 300]));
 
-            $contentArray['350_literature'] = oes_get_literature_html();
+            $contentArray['350_literature'] = oes_get_literature_html(array_merge($args, ['position' => 350]));
 
-            $contentArray['400_citation'] = oes_get_citation_html($args);
+            $contentArray['400_citation'] = oes_get_citation_html(array_merge($args, ['position' => 400]));
 
             $contentArray['500_metadata'] = $this->get_html_metadata_div(
                 $this->get_html_metadata_table_string($args),
-                ['display-header' =>
-                    $this->get_theme_label('single__toc__header_metadata', 'Metadata')]);
+                [
+                    'position' => 500,
+                    'display-header' =>
+                        $this->get_classic_metadata_header('single__toc__header_metadata', 'Metadata')
+                ]);
 
             return $contentArray;
         }
@@ -403,15 +408,15 @@ if (!class_exists('OES_Post')) {
         {
             $contentArray['500_metadata'] = $this->get_html_metadata_div(
                 $this->get_html_metadata_table_string($args),
-                ['display-header' => false]);
+                ['display-header' => $this->get_classic_metadata_header()]);
 
             if (!empty($this->part_of_index_pages)) {
                 global $oes_language;
                 $contentArray['600_index'] = '<div class="oes-index-connections">' .
-                        oes_get_index_html([
-                            'language' => $oes_language,
-                            'display-header' => $this->get_theme_label('single__toc__index')]) .
-                        '</div>';
+                    oes_get_index_html([
+                        'language' => $oes_language,
+                        'display-header' => $this->get_theme_label('single__toc__index')]) .
+                    '</div>';
             }
 
             return $contentArray;
@@ -431,7 +436,7 @@ if (!class_exists('OES_Post')) {
 
             $contentArray['500_metadata'] = $this->get_html_metadata_div(
                 $this->get_html_metadata_table_string($args),
-                ['display-header' => false]);
+                ['display-header' => $this->get_classic_metadata_header()]);
 
             if (!empty($this->part_of_index_pages)) {
                 global $oes, $oes_language;
@@ -482,13 +487,28 @@ if (!class_exists('OES_Post')) {
             $contentArray['500_metadata'] = $this->get_html_metadata_div(
                 $this->get_html_metadata_table_string($args),
                 ['display-header' =>
-                    $this->get_theme_label('single__toc__header_metadata', 'Metadata')]);
+                    $this->get_classic_metadata_header('single__toc__header_metadata', 'Metadata')]);
 
             $contentArray['600_index'] = (!empty($this->part_of_index_pages) ?
                 $this->get_index_connections('', '', $args) :
                 '');
 
             return $contentArray;
+        }
+
+
+        /**
+         * Get the metadata header for the classic theme.
+         *
+         * @param string $label The theme label key.
+         * @param string $string The header string.
+         * @return false|string Return header as string or false.
+         */
+        public function get_classic_metadata_header(string $label = '', string $string = '')
+        {
+            if (!empty($label)) return $this->get_theme_label($label, $string);
+            elseif (!empty($string)) return $string;
+            else return false;
         }
 
 
@@ -548,10 +568,18 @@ if (!class_exists('OES_Post')) {
         {
             $authorsArray = [];
             if (is_string($args)) $authorsArray[] = $this->fields[$args]['value-display'] ?? '';
-            foreach ($args['authors'] ?? [] as $authorFieldKey)
-                $authorsArray[] = $this->check_if_field_not_empty($authorFieldKey) ?
-                    $this->fields[$authorFieldKey]['value-display'] :
-                    '';
+            foreach ($args['authors'] ?? [] as $authorFieldKey) {
+                if (oes_starts_with($authorFieldKey, 'parent__')) {
+                    $fieldValue = oes_get_field_display_value(
+                        substr($authorFieldKey, 8),
+                        $this->parent_ID,
+                        ['list-class' => 'oes-field-value-list']);
+                    if (!empty($fieldValue)) $authorsArray[] = $fieldValue;
+                } else
+                    $authorsArray[] = $this->check_if_field_not_empty($authorFieldKey) ?
+                        $this->fields[$authorFieldKey]['value-display'] :
+                        '';
+            }
 
             /* return early on empty data */
             if (empty($authorsArray)) return '';
@@ -655,8 +683,7 @@ if (!class_exists('OES_Post')) {
                                 implode($separator, $selectLabels)
                             );
                         }
-                    }
-                    else $label .=  ' ' . $this->fields[$versionFieldKey]['value-display'];
+                    } else $label .= ' ' . $this->fields[$versionFieldKey]['value-display'];
                 }
 
 
@@ -778,7 +805,7 @@ if (!class_exists('OES_Post')) {
             $args = array_merge([
                 'field' => '',
                 'header' => '',
-                'separator' => ' '
+                'separator' => ''
             ], $args);
 
             /* get field key */
@@ -803,22 +830,14 @@ if (!class_exists('OES_Post')) {
             }
 
             /* check for pattern */
-            $pattern = $oes->post_types[$this->post_type]['citation']['pattern'] ?? [];
+            $pattern = $this->modify_citation_pattern($oes->post_types[$this->post_type]['citation']['pattern'] ?? []);
             if ((empty($citation) || trim(strip_tags($citation)) == 'generate') && !empty($pattern))
                 $citation = calculate_value($pattern,
                     $this->object_ID,
                     $args['separator']);
 
-
-            /**
-             * Filters the citation value before displaying.
-             *
-             * @param string $citation The citation value.
-             * @param array $pattern The citation pattern.
-             * @param mixed $objectID The object ID.
-             */
-            $citation = apply_filters('oes/post_citation_value', $citation, $pattern, $this->object_ID);
-
+            /* modify citation value */
+            $citation = $this->modify_citation_value($citation, $pattern);
 
             /* return early if citation is empty */
             if (empty($citation)) return '';
@@ -838,13 +857,54 @@ if (!class_exists('OES_Post')) {
                         [
                             'table-header-class' => 'oes-content-table-header' .
                                 (isset($args['add-to-toc']) ? '' : ' oes-exclude-heading-from-toc'),
-                            'position' => 2,
+                            'position' => $args['position'] ?? 2,
                             'add-number' => $args['add-number'] ?? false,
                             'add-to-toc' => $args['add-to-toc'] ?? true
                         ]);
             }
 
             return '<div class="oes-citation">' . $header . '<p>' . $citation . '</p></div>';
+        }
+
+
+        /**
+         * Modify the citation pattern.
+         *
+         * @param array $pattern The citation pattern.
+         * @return array The modified citation pattern.
+         */
+        public function modify_citation_pattern(array $pattern = []): array
+        {
+
+
+            /**
+             * Filters the citation pattern before calculation the citation value.
+             *
+             * @param array $pattern The citation pattern.
+             */
+            return apply_filters('oes/post_citation_value_pattern_' . $this->post_type, $pattern);
+        }
+
+
+        /**
+         * Modify the citation value.
+         *
+         * @param string $citation The citation value.
+         * @param array $pattern The citation pattern.
+         * @return string The modified citation.
+         */
+        public function modify_citation_value(string $citation = '', array $pattern = []): string
+        {
+
+
+            /**
+             * Filters the citation value before displaying.
+             *
+             * @param string $citation The citation value.
+             * @param array $pattern The citation pattern.
+             * @param mixed $objectID The object ID.
+             */
+            return apply_filters('oes/post_citation_value', $citation, $pattern, $this->object_ID);
         }
 
 
@@ -921,7 +981,7 @@ if (!class_exists('OES_Post')) {
                     [
                         'table-header-class' => 'oes-content-table-header' .
                             (isset($args['add-to-toc']) ? '' : ' oes-exclude-heading-from-toc'),
-                        'position' => 2,
+                        'position' => $args['position'] ?? 2,
                         'add-to-toc' => $args['add-to-toc'] ?? true
                     ]);
 
@@ -933,18 +993,19 @@ if (!class_exists('OES_Post')) {
 
 
         /**
-         * Modify field data before adding it to the html representation of metadata.
+         * Modify field data display value before adding it to the html representation of metadata.
          *
          * @param array $field The field information.
          * @param string $loop The loop indicator (for filter).
          *
          * @return array Returns the modified field information.
          */
-        public function modify_metadata(array $field, string $loop): array
+        public function modify_metadata_value(array $field, string $loop): array
         {
+            $field = $this->modify_metadata($field, $loop);
 
             if (($field['further_options']['display_option'] ?? 'none') !== 'none') {
-                $link = $field['value'];
+                $link = $field['db_value'] ?? $field['value'];
                 if ($field['further_options']['display_prefix'] ?? false)
                     $link = $field['further_options']['display_prefix'] . $link;
                 switch ($field['further_options']['display_option']) {
@@ -980,6 +1041,20 @@ if (!class_exists('OES_Post')) {
                 !empty($this->fields[$field['key'] . '_label']['value-display']))
                 $field['value-display'] = $this->fields[$field['key'] . '_label']['value-display'];
 
+            return $field;
+        }
+
+
+        /**
+         * Modify field data before adding it to the html representation of metadata.
+         *
+         * @param array $field The field information.
+         * @param string $loop The loop indicator (for filter).
+         *
+         * @return array Returns the modified field information.
+         */
+        public function modify_metadata(array $field, string $loop): array
+        {
             return $field;
         }
 
@@ -1062,7 +1137,7 @@ if (!class_exists('OES_Post')) {
                 foreach ($collectData as $field)
                     $tableDataString .= sprintf('<tr><th>%s</th><td>%s</td></tr>',
                         $field['label'] ?? 'Label missing',
-                        $field['value'] ?? 'Value Display missing'
+                        $field['value-display'] ?? 'Value Display missing'
                     );
 
             /* return table representation*/
@@ -1082,17 +1157,22 @@ if (!class_exists('OES_Post')) {
 
             if (empty($tableString)) return '';
 
-            return '<div class="oes-metadata">' .
-                $this->generate_table_of_contents_header(
+            /* prepare header */
+            $header = '';
+            if ($args['display-header'] ?? true)
+                $header = $this->generate_table_of_contents_header(
                     $args['display-header'] ?? 'Metadata',
                     $args['level'] ?? 2,
                     [
                         'table-header-class' => 'oes-content-table-header' .
                             (isset($args['add-to-toc']) ? '' : ' oes-exclude-heading-from-toc'),
-                        'position' => 2,
+                        'position' => $args['position'] ?? 2,
                         'add-number' => $args['add-number'] ?? false,
                         'add-to-toc' => $args['add-to-toc'] ?? true
-                    ]) .
+                    ]);
+
+            return '<div class="oes-metadata">' .
+                $header .
                 '<div class="oes-metadata-table-container">' .
                 '<table class="' . ($this->block_theme ?
                     ($args['className'] ?? '') :
@@ -1131,12 +1211,13 @@ if (!class_exists('OES_Post')) {
 
                         /* check for post relationship */
                         $versionPosts = [];
-                        if ($postRelationship === 'child_version')
-                            foreach ($field['value'] as $post) {
-                                $versionID = get_current_version_id($post->ID);
-                                if ($versionID) $versionPosts[] = get_post($versionID);
-                            }
-                        elseif ($postRelationship === 'parent')
+                        if ($postRelationship === 'child_version') {
+                            if (is_array($field['value']))
+                                foreach ($field['value'] as $post) {
+                                    $versionID = get_current_version_id($post->ID ?? $post);
+                                    if ($versionID) $versionPosts[] = get_post($versionID);
+                                }
+                        } elseif ($postRelationship === 'parent')
                             foreach ($field['value'] as $post) {
                                 $versionID = oes_get_parent_id($post->ID ?? $post);
                                 if ($versionID) $versionPosts[] = get_post($versionID);
@@ -1172,6 +1253,7 @@ if (!class_exists('OES_Post')) {
                     $pseudoField = [
                         'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$oes_language] ??
                             (get_taxonomy($taxonomyKey)->label ?? $taxonomyKey),
+                        'value-display' => implode(', ', $terms[$taxonomyKey]),
                         'value' => implode(', ', $terms[$taxonomyKey]),
                         'db_value' => $terms[$taxonomyKey],
                         'key' => $fieldKey,
@@ -1179,13 +1261,14 @@ if (!class_exists('OES_Post')) {
                     ];
 
                     /* modify or augment values, alternatively call function.  */
-                    return $this->modify_metadata($pseudoField, $loop);
+                    return $this->modify_metadata_value($pseudoField, $loop);
                 }
 
             } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent__')) {
 
                 /* add to table data */
                 $parentField = substr($fieldKey, 8);
+
                 $parentFieldValue = oes_get_field_display_value(
                     $parentField,
                     $this->parent_ID,
@@ -1202,13 +1285,17 @@ if (!class_exists('OES_Post')) {
                     $pseudoField = [
                         'label' => $label,
                         'db_value' => oes_get_field($parentField, $this->parent_ID),
+                        'value-display' => $parentFieldValue,
                         'value' => $parentFieldValue,
                         'key' => $fieldKey,
-                        'type' => get_field_object($parentField)['type'] ?? 'unknown'
+                        'type' => get_field_object($parentField)['type'] ?? 'unknown',
+                        'further_options' => [
+                            'display_option' => $oes->post_types[$parentPostType]['field_options'][$parentField]['display_option'] ?? 'none'
+                        ]
                     ];
 
                     /* modify or augment values, alternatively call function.  */
-                    return $this->modify_metadata($pseudoField, $loop);
+                    return $this->modify_metadata_value($pseudoField, $loop);
                 }
 
             } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent_taxonomy__')) {
@@ -1221,6 +1308,7 @@ if (!class_exists('OES_Post')) {
                     $pseudoField = [
                         'label' => $oes->taxonomies[$taxonomyKey]['label_translations'][$oes_language] ??
                             (get_taxonomy($taxonomyKey)->label ?? $taxonomyKey),
+                        'value-display' => implode(', ', $terms[$taxonomyKey]),
                         'value' => implode(', ', $terms[$taxonomyKey]),
                         'db_value' => $terms[$taxonomyKey],
                         'key' => $fieldKey,
@@ -1228,7 +1316,7 @@ if (!class_exists('OES_Post')) {
                     ];
 
                     /* modify or augment values, alternatively call function.  */
-                    return $this->modify_metadata($pseudoField, $loop);
+                    return $this->modify_metadata_value($pseudoField, $loop);
                 }
             } elseif (isset($this->fields[$fieldKey]['value'])) {
 
@@ -1245,7 +1333,7 @@ if (!class_exists('OES_Post')) {
 
 
                 /* modify or augment values, alternatively call function.  */
-                $field = $this->modify_metadata($field, $loop);
+                $field = $this->modify_metadata_value($field, $loop);
 
                 /* check if field is to be skipped */
                 if (isset($field['skip']) && $field['skip']) return false;
@@ -1298,6 +1386,7 @@ if (!class_exists('OES_Post')) {
                 /* add to table data */
                 return [
                     'label' => $label,
+                    'value-display' => $replaceValue,
                     'value' => $replaceValue,
                     'db_value' => $field['value'],
                     'key' => $fieldKey,
@@ -1383,6 +1472,76 @@ if (!class_exists('OES_Post')) {
         public function get_all_terms(array $taxonomies = [], array $args = []): array
         {
             return oes_get_terms($this->object_ID, $taxonomies);
+        }
+
+
+        /**
+         * Get all parent posts.
+         *
+         * @param bool $recursive Include recursive all parents of parents. Default is true.
+         * @return array Return array of parent posts as WP_Post objects.
+         */
+        function get_parents(bool $recursive = true): array
+        {
+            /* prepare return value */
+            $parents = [];
+
+            /* check if single value */
+            if ($recursive) {
+                $childID = $this->object_ID;
+                while ($parent = get_post_parent($childID)) {
+                    $parents[] = $parent;
+                    $childID = $parent->ID;
+                }
+            } elseif ($parent = get_post_parent($this->object_ID)) $parents[] = $parent;
+
+            return $parents;
+        }
+
+
+        /**
+         * Get all children posts.
+         *
+         * @param bool $recursive Include recursive all children of children. Default is true.
+         * @param array $args Additional arguments for get_posts call.
+         * @return array Return array of children posts as WP_Post objects .
+         */
+        function get_children(bool $recursive = true, array $args = []): array
+        {
+            return $this->get_children_recursive($this->object_ID, $recursive, $args);
+        }
+
+
+        /**
+         * Get all children posts recursively.
+         *
+         * @param int $objectID The post ID to be considered for children.
+         * @param bool $recursive Include recursive all children of children. Default is true.
+         * @param array $args Additional arguments for get_posts call.
+         * @return array Return array of children posts as WP_Post objects .
+         */
+        function get_children_recursive(int $objectID, bool $recursive = true, array $args = []): array
+        {
+            /* merge arguments for query */
+            $args = array_merge([
+                'numberposts' => -1,
+                'post_status' => 'publish',
+                'post_type' => get_post($this->object_ID)->post_type,
+                'post_parent' => $objectID],
+                $args
+            );
+
+            /* get children */
+            $allChildren = get_posts($args);
+
+            /* call recursive for grand children */
+            if ($allChildren && $recursive)
+                foreach ($allChildren as $child) {
+                    $grandChildren = $this->get_children_recursive($child->ID);
+                    if ($grandChildren) $allChildren = array_merge($allChildren, $grandChildren);
+                }
+
+            return $allChildren;
         }
 
 

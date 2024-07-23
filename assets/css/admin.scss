@@ -47,6 +47,20 @@ CSS Styling for admin layer.
   }
 }
 
+.block-editor-rich-text__editable.oes-hide {
+  visibility: visible !important;
+  color: gray !important;
+  height: initial !important;
+  margin: initial !important;
+  padding: initial !important;
+  margin-block-start: 1em !important;
+  margin-block-end: initial !important;
+}
+
+.block-editor-rich-text__editable.oes-hide:before {
+  content: "[hidden] ";
+}
+
 /* Paddings and margins */
 .oes-p-5px {
   padding: 5px;
@@ -762,6 +776,27 @@ table.oes-config-table tbody {
   > th:first-child {
     border-right: none;
   }
+}
+
+/* Shortcode */
+.oes-shortcode-inner-setting,
+.oes-shortcode-inner-settings-element {
+  margin-bottom: 10px;
+}
+
+.oes-shortcode-buttons {
+  input.button {
+    margin-right: 5px;
+  }
+}
+
+.oes-shortcode-container {
+  padding: 7px 10px;
+  background: #ffffff;
+  border: 1px solid #e1e1e1;
+  font-family: Consolas, Monaco, monospace;
+  font-size: 13px;
+  margin-bottom: 1rem;
 }
 
 /* Logo settings */

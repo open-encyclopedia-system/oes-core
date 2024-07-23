@@ -1,8 +1,8 @@
 # Open Encyclopedia System
 Tags: publishing, encyclopedia
-Requires at least: 5.9
-Tested up to: 6.4.2
-Requires PHP: 7.4, 8.1
+Requires at least: 6.0
+Tested up to: 6.6
+Requires PHP: 8.1 or later
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,7 +35,7 @@ An OES application consists of a OES Core plugin, an additional OES project plug
 for the application and an optional OES theme.
 
 OES depends on the WordPress plugin ACF:
-Advanced Custom Fields, version 6.2.4, URL: https://www.advancedcustomfields.com/.
+Advanced Custom Fields, version 6.3.4, URL: https://www.advancedcustomfields.com/.
 
 ## Installation
 1. Download the OES plugin from gitHub and add it to your WordPress plugin directory.
@@ -63,7 +63,7 @@ online encyclopedia and a WordPress theme. Download the OES Demo plugin and the 
 If you want to contribute to OES please contact the help desk info@open-encyclopedia-system.org.
 
 ## Licencing
-Copyright (C) 2023 Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
+Copyright (C) 2024 Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
 License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
 version.
@@ -71,6 +71,24 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 # Changelog
+
+## 2.3.3
+* new - display status of bidirectional fields
+* new - configuration for order in which sort results are displayed per post type
+* new - post methods to modify pattern calculation
+* new - introducting shortcode tools (to create shortcodes displaying data like maps)
+* new - block "Search Terms"
+* new - introducing attachment class
+* new - introducing filter for not-latin alphabet filter
+* new - add parent field value for oes_field shortcode
+* new - consider date fields for field display title option
+* new - introducing OES panel class and its decendents
+* improve - date formatting options
+* improve - template redirection
+* improve - block options for block theme
+* improve - for classic theme: table of content positions
+* improve - clean up css and js files
+* fix - operation tool
 
 ## 2.3.2
 * fix - classic language switch on search page

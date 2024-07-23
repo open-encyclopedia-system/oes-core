@@ -59,7 +59,7 @@ if (!class_exists('Operations')) :
                     if ($status == 'ignored_partly') {
                         $this->count_array[$type]['count_per_operation']['ignored'] =
                             ($this->count_array[$type]['count_per_operation']['ignored'] ?? 0) + $countPerStatus->count;
-                        $this->count_array[$type]['count'] = $this->count_array[$type]['count'] + $countPerStatus->count;
+                        $this->count_array[$type]['count'] = ($this->count_array[$type]['count'] ?? 0) + $countPerStatus->count;
                     }
 
                     $status = in_array($status, ['success', 'error', 'ignored']) ? $status : 'executable';

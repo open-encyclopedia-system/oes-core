@@ -57,7 +57,9 @@ if (!class_exists('Container')) :
             $this->main_slug = $this->page_parameters['menu_slug'];
 
             /* create info page */
-            if (!empty($this->info_page) && !empty($this->info_page['elements'])) {
+            if (!empty($this->info_page) &&
+                !empty($this->info_page['elements']) &&
+                (($this->info_page['elements'] ?? '') != 'hidden')) {
                 new Subpage([
                     'subpage' => true,
                     'page_parameters' => [
@@ -437,7 +439,7 @@ if (!class_exists('Container')) :
             $tabString = '<h2 class="nav-tab-wrapper">';
 
             /* add info tab */
-            if (!empty($this->info_page['elements']))
+            if (!empty($this->info_page['elements']) && $this->info_page['elements'] != 'hidden')
                 $tabString .= oes_get_html_anchor(
                     $this->info_page['label'] ?? 'Title missing',
                     'admin.php?page=' . $this->page_parameters['menu_slug'],

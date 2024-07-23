@@ -250,6 +250,9 @@ function oes_html_get_form_element(
                     __('Place text here', 'oes') :
                     $args['placeholder']) .
                 '"';
+            if (isset($args['rows'])) $additional .= ' rows="' . $args['rows'] . '"';
+            if (isset($args['cols'])) $additional .= ' cols="' . $args['cols'] . '"';
+
             $formHtml = sprintf('<textarea id="%s" name="%s" %s>%s</textarea>',
                 $id,
                 $name,
@@ -407,78 +410,274 @@ function oes_get_featured_post_html($featuredPost = false, array $args = []): st
  * @param array $image The image post as array.
  * @param array $args Additional parameters.
  */
-function oes_get_modal_image(array $image, array $args = []): string
+function oes_get_image_panel_content(array $image, array $args = []): string
+{
+    if (!$image['ID']) return '';
+    $imageModalData = $args['image_modal'] ?? \OES\Figures\oes_get_modal_image_data($image);
+    $imageHTML = $args['image_html'] ?? oes_get_panel_image_HTML($image);
+    $modalHTML = $args['modal_html'] ?? oes_get_panel_image_modal_HTML($image, $imageModalData);
+    $figcaptionHTML = $args['figcaption_html'] ?? oes_get_panel_image_figcaption_HTML($image, $imageModalData);
+
+    return '<figure class="oes-panel-figure ' . ($args['figure-class'] ?? '') . '"' .
+        (isset($args['figure-id']) ? ' id="' . $args['figure-id'] . '"' : '') . '>' .
+        $imageHTML .
+        $modalHTML .
+        '<figcaption>' . $figcaptionHTML . '</figcaption>' .
+        '</figure>';
+}
+
+
+/**
+ * Get the image HTML representation for an OES panel.
+ *
+ * @param array $image The image.
+ * @param bool $modal Indicating if panel adds a modal (popup).
+ * @param bool $slider Add slider buttons.
+ * @param array $args Additional parameters.
+ * @return string Return the image HTML representation.
+ */
+function oes_get_panel_image_HTML(array $image, bool $modal = true, bool $slider = false, array $args = []): string
 {
     if (!$image['ID']) return '';
 
-    /* get image data */
-    $imageModalData = \OES\Figures\oes_get_modal_image_data($image);
+    /* prepare slider */
+    $sliderHTML = '';
+    if ($slider) $sliderHTML = $args['slider'] ?? oes_get_gallery_panel_slider_HTML();
 
+    return $modal ?
+        ('<div class="oes-panel-image oes-modal-toggle">' .
+            '<div class="oes-panel-image-container oes-modal-toggle-container">' .
+            '<img id="oes-panel-image-center" src="' . ($image['url'] ?? '') . '" alt="' . ($image['alt'] ?? 'empty') . '">' .
+            oes_get_expand_icon_for_modal_toggle_HTML() .
+            '</div>' .
+            $sliderHTML .
+            '</div>') :
+        ('<div class="oes-panel-image">' .
+            '<div class="oes-panel-image-container">' .
+            '<img id="oes-panel-image-center" src="' . ($image['url'] ?? '') . '" alt="' . ($image['alt'] ?? 'empty') . '">' .
+            '</div>' .
+            $sliderHTML .
+            '</div>');
+}
+
+
+/**
+ * Get the expand icon.
+ *
+ * @return string Return the expand icon.
+ */
+function oes_get_expand_icon_for_modal_toggle_HTML(): string
+{
     /**
      * Filters the expand icon
      *
      * @param string $expandIcon The expand icon.
-     * @param array $image The image.
      */
-    $expandIcon = apply_filters('oes/modal_image_expand_image',
-        '<span class="oes-expand-button oes-icon"><span class="dashicons dashicons-editor-expand"></span></span>',
-        $image);
+    return apply_filters('oes/modal_image_expand_image',
+        '<span class="oes-expand-button oes-icon"><span class="dashicons dashicons-editor-expand"></span></span>');
+}
 
-    /* modal toggle */
-    $modalToggle = '<div class="oes-modal-toggle oes-modal-toggle">' .
-        '<div class="oes-modal-toggle-container">' .
-        '<img src="' . ($image['url'] ?? '') . '" alt="' . ($image['alt'] ?? 'empty') . '">' .
-        $expandIcon .
-        '</div>' .
-        '</div>';
 
-    /* table */
+/**
+ * Get the image modal HTML representation for an OES panel.
+ *
+ * @param array $image The image.
+ * @param array $imageModalData The image modal data (including caption and table data).
+ * @return string Return the image modal HTML representation.
+ */
+function oes_get_panel_image_modal_HTML(array $image, array $imageModalData = []): string
+{
+    if (!$image['ID']) return '';
+    if (empty($imageModalData)) $imageModalData = \OES\Figures\oes_get_modal_image_data($image);
+    return oes_get_panel_image_modal_container_HTML(
+        $image,
+        oes_get_panel_image_modal_table_HTML($imageModalData, $image['ID']));
+}
+
+
+/**
+ * Get the html representation of a panel image modal table.
+ *
+ * @param array $imageModalData The image modal data.
+ * @param string $imageID The image ID.
+ * @param bool $active Indicating if active image.
+ * @return string Return the html representation of image modal table.
+ */
+function oes_get_panel_image_modal_table_HTML(array  $imageModalData = [],
+                                              string $imageID = '',
+                                              bool   $active = true): string
+{
     $tableRows = '';
-    if (!empty($imageModalData['table'] ?? []))
-        foreach ($imageModalData['table'] as $description => $value)
-            $tableRows .= sprintf('<tr><th>%s</th><td>%s</td></tr>', $description, $value);
-    $table = empty($tableRows) ? '' :
-        '<div class="oes-modal-content-text"><div>' .
-        ($imageModalData['modal_subtitle'] ?? '') .
+    foreach ($imageModalData['table'] ?? [] as $value)
+        $tableRows .= '<tr><th>' . ($value['label'] ?? '') . '</th><td>' . ($value['value'] ?? '') . '</td></tr>';
+    return empty($tableRows) ? '' :
+        '<div class="oes-modal-content-text oes-modal-content-text-' . $imageID .
+        ($active ? ' active' : '') . '">' .
+        '<div class="oes-modal-content-subtitle">' . ($imageModalData['modal_subtitle'] ?? '') . '</div>' .
         '<table class="oes-table-pop-up">' .
-        $tableRows . '</table></div></div>';
+        $tableRows . '</table>' .
+        '</div>';
+}
 
-    /* modal */
-    $modal = '<div class="oes-modal-container">' .
+
+/**
+ * Get the html representation of a panel image modal container.
+ *
+ * @param array $image The (active) image.
+ * @param string $tableHTML The panel image modal table data.
+ * @param bool $slider Indicating if panel includes slider.
+ * @param array $args Additional parameters.
+ * @return string Return the panel image modal container.
+ */
+function oes_get_panel_image_modal_container_HTML(array  $image,
+                                                  string $tableHTML = '',
+                                                  bool   $slider = false,
+                                                  array  $args = []): string
+{
+
+    /* prepare slider */
+    $sliderHTML = '';
+    if ($slider)
+        $sliderHTML = $args['slider'] ?? oes_get_gallery_panel_slider_HTML();
+
+    return '<div class="oes-modal-container">' .
         '<span class="oes-modal-close dashicons dashicons-no"></span>' .
         '<div class="oes-modal-image-container">' .
-        '<img alt="' . ($image['alt'] ?? 'empty') . '" src="">' .
-        '</div>' . $table .
+        '<img class="oes-modal-image-' . $image['id'] . '" src="' . ($image['url'] ?? '') .
+        '" alt="' . ($image['alt'] ?? 'empty') . '" id="oes-modal-image-center">' .
+        '</div>' .
+        $sliderHTML .
+        $tableHTML .
         '</div>';
+}
 
-    /* prepare caption */
-    $caption = '';
-    if (isset($args['number']) && !empty($args['number']) &&
-        isset($args['include_number_in_subtitle']) && $args['include_number_in_subtitle'])
-        $caption = '<span class="oes-figure-title-label">' . $args['number_prefix'] . $args['number'] . ':</span> ';
-    $caption .= ($imageModalData['caption'] ?: '');
+
+/**
+ * Get the image figcaption HTML representation for an OES panel.
+ *
+ * @param array $image The image.
+ * @param array $imageModalData The image modal data (including caption and table data).
+ * @return string Return the image figcaption HTML representation.
+ */
+function oes_get_panel_image_figcaption_HTML(array $image, array $imageModalData = [], bool $active = true): string
+{
+    if (!$image['ID']) return '';
+    if (empty($imageModalData)) $imageModalData = \OES\Figures\oes_get_modal_image_data($image);
 
 
     /**
-     * Filters the image model caption.
+     * Filters the image model figcaption.
      *
      * @param string $title The modal caption.
-     * @param array $table The image model table data.
      * @param array $image The image.
+     * @param array $table The image model data.
+     * @param array $args Additional args.
+     *
      */
-    $caption = apply_filters('oes/get_modal_image_caption',
-        $caption,
-        $image,
-        $table,
-        $args['additional-args'] ?? []);
+    return '<div class="oes-panel-figcaption oes-panel-figcaption-' . $image['ID'] .
+        ($active ? ' active' : '') . '"">' .
+        apply_filters('oes/get_modal_image_caption',
+            ($imageModalData['caption'] ?: ''),
+            $image,
+            $imageModalData,
+            $args['additional-args'] ?? []) .
+        '</div>';
+}
 
 
-    /* prepare image modal */
-    return '<figure class="oes-expand-image ' . ($args['figure-class'] ?? '') . '"' .
+/**
+ * Get the html representation of a modal of a gallery.
+ *
+ * @param array $figures An array of figures.
+ * @param array $args Additional parameters.
+ */
+function oes_get_modal_gallery(array $figures, array $args = []): string
+{
+    /* prepare first image */
+    $firstFigure = $figures[0] ?? false;
+    $firstImage = $firstFigure['image'] ?? false;
+    if (!$firstImage['ID']) return '';
+
+    /* prepare carousel image, figcaption and table for all figures */
+    $carouselHTML = $args['carousel_html'] ?? '';
+    $figcaptionHTML = $args['figcaption_html'] ?? '';
+    $tablesHTML = $args['tables_html'] ?? '';
+    $first = true;
+    foreach ($figures as $figure) {
+
+        /* skip if image ID or url is missing */
+        if (!isset($figure['imageID']) || empty($figure['image']['url'] ?? '')) continue;
+
+        if (!isset($args['carousel_html']))
+            $carouselHTML .= oes_get_panel_gallery_carousel_item_HTML($figure['image'], $first);
+        if (!isset($args['figcaption_html']))
+            $figcaptionHTML .= oes_get_panel_image_figcaption_HTML($figure['image'], $figure['modal'], $first);
+        if (!isset($args['tables_html']))
+            $tablesHTML .= oes_get_panel_image_modal_table_HTML($figure['modal'], $figure['imageID'], $first);
+        $first = false;
+    }
+
+    $imageHTML = $args['image_html'] ??
+        oes_get_panel_image_HTML($firstImage, $args['modal'] ?? true, $args['slider'] ?? true, $args);
+    $modalHTML = '';
+    if ($args['modal'] ?? true) $modalHTML = $args['modal_html'] ??
+        oes_get_panel_image_modal_container_HTML($firstImage, $tablesHTML, true, $args);
+
+    return '<figure class="oes-panel-figure oes-gallery-image ' . ($args['figure-class'] ?? '') . '"' .
         (isset($args['figure-id']) ? ' id="' . $args['figure-id'] . '"' : '') . '>' .
-        $modalToggle . $modal .
-        '<figcaption>' . $caption . '</figcaption>' .
+        $imageHTML .
+        $modalHTML .
+        '<div class="oes-figure-slider-panel">' . $carouselHTML . '</div>' .
+        '<figcaption>' . $figcaptionHTML . '</figcaption>' .
         '</figure>';
+}
+
+
+/**
+ * Get the html representation of a panel gallery carousel item.
+ *
+ * @param array $figure A single figure.
+ * @param bool $active Indicating if active figure.
+ * @return string Return html representation of a panel gallery carousel item.
+ */
+function oes_get_panel_gallery_carousel_item_HTML(array $figure, bool $active = true): string
+{
+    $url = $figure['url'] ?? '';
+    $thumbnail = wp_get_attachment_image_src($figure['ID']);
+    $medium = wp_get_attachment_image_src($figure['ID'], 'medium');
+    $large = wp_get_attachment_image_src($figure['ID'], 'large');
+
+    return sprintf('<figure class="oes-figure-thumbnail %s">' .
+        '<img decoding="async" data-id="%s" src="%s" alt="%s" class="oes-gallery-carousel-thumbnail wp-image-%s" ' .
+        'srcset="%s, %s, %s" sizes="(max-width: %spx) 100vw, %spx">' .
+        '</figure>',
+        ($active ? 'active' : ''),
+        $figure['ID'],
+        $url,
+        $figure['alt'] ?? '',
+        $figure['ID'],
+        ($large[0] ?? $url) . ' ' . ($large[1] ?? '602') . 'w',
+        ($medium[0] ?? $url) . ' ' . ($medium[1] ?? '300') . 'w',
+        ($thumbnail[0] ?? $url) . ' ' . ($thumbnail[1] ?? '150') . 'w',
+        ($large[1] ?? '602'),
+        ($large[1] ?? '602')
+    );
+}
+
+
+/**
+ * Get the gallery panel slider as HTML representation.
+ *
+ * @return string Return the gallery panel slider as HTML representation.
+ */
+function oes_get_gallery_panel_slider_HTML(): string
+{
+    return '<span class="oes-gallery-slider-previous oes-slider-button">' .
+        '<span class="dashicons dashicons-arrow-left-alt2"></span>' .
+        '</span>' .
+        '<span class="oes-gallery-slider-next oes-slider-button">' .
+        '<span class="dashicons dashicons-arrow-right-alt2"></span>' .
+        '</span>';
 }
 
 

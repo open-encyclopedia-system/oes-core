@@ -53,8 +53,28 @@ if (!class_exists('Theme_Media')) :
                         'cells' => [
                             [
                                 'type' => 'th',
+                                'value' => '<strong>' . __('Title field', 'oes') . '</strong>' .
+                                    '<div>' . __('The field that is used as title', 'oes') . '</div>'
+                            ],
+                            [
+                                'class' => 'oes-table-transposed',
+                                'value' => oes_html_get_form_element('select',
+                                    'media[title]',
+                                    'media-title',
+                                    $oes->media_groups['title'] ?? 'title',
+                                    ['options' => $fieldOptions]
+                                )
+                            ]
+                        ]
+                    ],
+                    [
+                        'cells' => [
+                            [
+                                'type' => 'th',
                                 'value' => '<strong>' . __('Credit Label', 'oes') . '</strong>' .
-                                    '<div>' . __('The credit label is displayed beneath the image', 'oes') . '</div>'
+                                    '<div>' . __('The credit label is displayed beneath the image ' .
+                                        '(split language dependent label by semicolon, e.g. ' .
+                                        '"Credit;Attribution")', 'oes') . '</div>'
                             ],
                             [
                                 'class' => 'oes-table-transposed',

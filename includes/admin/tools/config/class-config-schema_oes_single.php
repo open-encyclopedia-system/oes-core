@@ -197,8 +197,10 @@ if (!class_exists('Schema_OES_Single')) :
                         'reorder' => true,
                         'hidden' => true
                     ];
-                    $value = $postTypeData[$paramKey] ?? [];
-                } else $value = $postTypeData[$paramKey] ?? '';
+                    $value = is_array($postTypeData[$paramKey]) ? $postTypeData[$paramKey] : [];
+                } else $value = is_bool($postTypeData[$paramKey]) ?
+                    '' :
+                    ($postTypeData[$paramKey] ?? '');
 
                 /* prepare select options */
                 $args['options'] = $param['options'] ??

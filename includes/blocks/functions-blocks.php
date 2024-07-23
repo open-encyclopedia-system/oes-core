@@ -50,6 +50,7 @@ function register(): void {
         'notes' => [],
         'print' => [],
         'search-panel' => [],
+        'search-terms' => [],
         'table-of-contents' => [],
         'terms' => [],
         'translation' => [],

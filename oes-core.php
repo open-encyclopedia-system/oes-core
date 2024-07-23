@@ -7,7 +7,7 @@
  * Plugin Name: OES Core
  * Plugin URI: http://www.open-encyclopedia-system.org/
  * Description: Building and maintaining online encyclopedias.
- * Version: 2.3.2
+ * Version: 2.3.3
  * Author: Maren Welterlich-Strobl, Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
  * Author URI: https://www.cedis.fu-berlin.de/cedis/mitarbeiter/beschaeftigte/mstrobl.html
  * License: GPLv2 or later
@@ -87,7 +87,7 @@ if (!class_exists('OES_Core')) :
     {
 
         /** @var string The OES Core plugin version. */
-        public string $version = '2.3.0';
+        public string $version = '2.3.3';
 
         /** @var string The OES Database version. */
         public string $db_version = '2.0';
@@ -239,6 +239,7 @@ if (!class_exists('OES_Core')) :
              */
             oes_include('admin/tools/class-tool.php');
             oes_include('admin/tools/functions-tool.php');
+            oes_include('admin/functions-shortcode.php');
             add_action('admin_init', '\OES\Admin\Tools\include_tools');
 
 
@@ -363,7 +364,7 @@ if (!class_exists('OES_Core')) :
             oes_include('popup/class-popups.php');
             oes_add_style('oes-popup', '/includes/popup/assets/popup.css');
             oes_add_script('oes-popup', '/includes/popup/assets/popup.js');
-            oes_add_script_admin('oes-admin-popup', '/assets/js/admin-popup.js', ['jquery']);
+            oes_add_script_admin('oes-admin-popup', '/assets/js/admin-popup.min.js', ['jquery']);
             oes_add_script_admin('oes-popup-admin', '/includes/popup/assets/popup-admin.js',
                 ['wp-rich-text', 'wp-element', 'wp-editor']);
             oes_include('popup/functions-popup.php');
@@ -407,14 +408,14 @@ if (!class_exists('OES_Core')) :
             oes_include('theme/data/class-object.php');
             oes_include('theme/data/class-post.php');
             oes_include('theme/data/class-page.php');
+            oes_include('theme/data/class-attachment.php');
             oes_include('theme/data/class-taxonomy.php');
             oes_include('theme/data/class-archive.php');
             oes_include('theme/data/class-post_archive.php');
             oes_include('theme/data/class-taxonomy_archive.php');
             oes_include('theme/data/class-index_archive.php');
             add_action('template_redirect', 'oes_prepare_data');
-            oes_add_script('oes-theme', '/assets/js/theme.js', ['jquery']);
-
+            add_filter('body_class', 'oes_body_class');
 
             /** Include figures ----------------------------------------------------------------------------------------
              * This enables the feature "Figures". It modifies the display of images and galleries by adding a lightbox
@@ -422,7 +423,12 @@ if (!class_exists('OES_Core')) :
              */
             if (!$features || ($features['figures'] ?? false)) {
                 oes_include('theme/figures/functions-figures.php');
-                oes_add_style('oes-figures', '/includes/theme/figures/figures.css');
+                oes_include('theme/figures/functions-panel.php');
+                oes_include('theme/figures/class-panel.php');
+                oes_include('theme/figures/class-gallery_panel.php');
+                oes_include('theme/figures/class-image_panel.php');
+                oes_add_style('oes-panel', '/includes/theme/figures/panel.css');
+                oes_add_script('oes-figures', '/includes/theme/figures/figures.min.js', ['jquery']);
             }
 
 
@@ -431,7 +437,7 @@ if (!class_exists('OES_Core')) :
              * frontend.
              */
             oes_include('theme/filter/functions-filter.php');
-            oes_add_script('oes-filter', '/includes/theme/filter/filter.js');
+            oes_add_script('oes-filter', '/includes/theme/filter/filter.min.js');
 
 
             /** Include label ------------------------------------------------------------------------------------------
@@ -813,13 +819,13 @@ if (!class_exists('OES_Core')) :
             foreach ($fields as $field) {
 
                 /* add field parameters */
-                $this->media_groups['image'][$field['key']]['label'] = $field['label'];
-                $this->media_groups['image'][$field['key']]['type'] = $field['type'];
+                $this->media_groups['fields'][$field['key']]['label'] = $field['label'];
+                $this->media_groups['fields'][$field['key']]['type'] = $field['type'];
 
                 /* add translations */
                 if (!empty($this->languages))
                     foreach ($this->languages as $languageKey => $language) {
-                        $this->media_groups['image'][$field['key']]['label_translation_' . $languageKey] =
+                        $this->media_groups['fields'][$field['key']]['label_translation_' . $languageKey] =
                             $field['label_translation_' . $languageKey] ?? $field['label'];
                     }
 
@@ -829,7 +835,7 @@ if (!class_exists('OES_Core')) :
                              'language_dependent' => false,
                              'display_option' => 'none',
                              'display_prefix' => ''] as $optionKey => $option)
-                    $this->media_groups['image'][$field['key']][$optionKey] = $field[$optionKey] ?? $option;
+                    $this->media_groups['fields'][$field['key']][$optionKey] = $field[$optionKey] ?? $option;
             }
         }
     }

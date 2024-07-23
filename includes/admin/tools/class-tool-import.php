@@ -22,7 +22,7 @@ if (!class_exists('Import')) :
         public array $new_terms = [];
 
         /** All parameters for wp_insert_term. */
-        const ARGS_WP_INSERT_TERM = ['term', 'taxonomy', 'alias_of', 'description', 'parent', 'slug'];
+        const ARGS_WP_INSERT_TERM = ['term_id', 'term', 'taxonomy', 'alias_of', 'description', 'parent', 'slug'];
 
         /** All parameters for wp_insert_post. Additional: import_id for import matching. */
         const ARGS_WP_INSERT_POST = ['ID', 'import_id', 'post_type', 'post_title', 'post_status', 'post_author',
@@ -324,6 +324,17 @@ if (!class_exists('Import')) :
                     /* check if successful */
                     if ($post instanceof WP_Post || !empty($collectDataForOperation)) {
 
+                        /* update post data --------------------------------------------------------------------------*/
+                        if (sizeof($values['post']) > 2) {
+                            if (empty($collectDataForOperation))
+                                $collectDataForOperation = [
+                                    'insert_or_update' => 'update',
+                                    'object_id' => $post->ID,
+                                    'row' => $row
+                                ];
+                            $collectDataForOperation['object_args'] = $values['post'];
+                        }
+
                         /* update fields and post meta ---------------------------------------------------------------*/
                         if (!empty($values['meta'])) {
                             if (empty($collectDataForOperation))
@@ -369,12 +380,14 @@ if (!class_exists('Import')) :
 
                     /* insert term or skip */
                     $term = false;
-                    if (isset($values['skip_insert']) && $values['skip_insert']) {
+                    if (isset($values['skip_insert']) && $values['skip_insert'])
                         $term = intval($values['skip_insert']['term_id']) ?
                             get_term($values['skip_insert']['term_id']) : false;
-                    } elseif (isset($values['term']['term_id'])) {
+                    elseif ($operation == 'update' &&
+                        isset($values['term']['term_id']) &&
+                        !empty($values['term']['term_id']))
                         $term = get_term($values['term']['term_id']) ?? false;
-                    } else
+                    else
                         $collectDataForOperation = [
                             'operation' => 'term',
                             'args' => [
@@ -385,6 +398,17 @@ if (!class_exists('Import')) :
                     /* check if successful */
                     $isTerm = $term instanceof WP_Term;
                     if ($isTerm || !empty($collectDataForOperation)) {
+
+                        /* update term data --------------------------------------------------------------------------*/
+                        if (sizeof($values['term']) > 2) {
+                            if (empty($collectDataForOperation))
+                                $collectDataForOperation = [
+                                    'insert_or_update' => 'update',
+                                    'object_id' => $term->term_id,
+                                    'row' => $row
+                                ];
+                            $collectDataForOperation['object_args'] = $values['term'];
+                        }
 
                         /* update fields and post meta ---------------------------------------------------------------*/
                         if (!empty($values['meta'])) {
@@ -461,11 +485,11 @@ if (!class_exists('Import')) :
                     if ($success) $countSuccess++;
                     else
                         $this->admin_notices[] = [
-                        'notice' => '<p>' .
-                            sprintf(__('Error while inserting operation for row %s.', 'oes'), $tempID) .
-                            '</p>',
-                        'type' => 'error'
-                    ];
+                            'notice' => '<p>' .
+                                sprintf(__('Error while inserting operation for row %s.', 'oes'), $tempID) .
+                                '</p>',
+                            'type' => 'error'
+                        ];
                 }
 
 
@@ -496,7 +520,7 @@ if (!class_exists('Import')) :
                 $this->admin_notices[] = [
                     'notice' => sprintf(
                             _n('1 operation has been inserted into the database. ',
-                            '%s operations have been inserted into the database. ',
+                                '%s operations have been inserted into the database. ',
                                 $countSuccess,
                                 'oes'),
                             $countSuccess) .

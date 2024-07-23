@@ -64,7 +64,7 @@ if (!class_exists('Theme_Labels_Media')) :
                 $cells = [[
                     'type' => 'th',
                     'value' => '<strong>' . ($mediaField['label'] ?? '') . '</strong>' .
-                        '<code class="oes-object-identifier">' . ($mediaField['key'] ?? '') . '</code>'
+                        '<code class="oes-object-identifier">' . $fieldKey . '</code>'
                 ]];
 
                 foreach ($languages as $language)
@@ -73,7 +73,7 @@ if (!class_exists('Theme_Labels_Media')) :
                         'value' => oes_html_get_form_element('text',
                             'media[acf_add_local_field_group][fields][' . $fieldKey . '][' . $language . ']',
                             'media-acf_add_local_field_group-fields-' . $fieldKey . '-' . $language,
-                            $mediaField[$language] ?? ''
+                            $mediaField['label_translation_' . $language] ?? ''
                         )
                     ];
 

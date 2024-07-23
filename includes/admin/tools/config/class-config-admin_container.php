@@ -54,7 +54,9 @@ if (!class_exists('Admin_Container')) :
             /* add container page for versioning posts */
             $containerAll = $oes->admin_pages['container'] ?? [];
             foreach ($oes->post_types as $postTypeKey => $postType)
-                if (!empty($postType['parent'] ?? '') && !isset($containerAll[$postTypeKey])) {
+                if ((!empty($postType['parent'] ?? '') ||
+                    ($postType['parent'] ?? '') !== 'none') &&
+                    !isset($containerAll[$postTypeKey])) {
                     $containerAll[$postTypeKey] = \OES\Admin\prepare_container_page_args($postTypeKey);
                 }
 

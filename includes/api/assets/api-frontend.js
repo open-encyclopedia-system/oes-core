@@ -1,6 +1,6 @@
 /* execute api request */
 jQuery(".oes-lodlink").on("click", function (event) {
-
+    
     const id = this.dataset.lodid,
         box_exists = this.nextSibling;
 

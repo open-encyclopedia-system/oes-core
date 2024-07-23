@@ -1,4 +1,3 @@
-
 /* @oesDevelopment Replaced this by ACF select2 */
 
 /* initialize select2 */

@@ -43,7 +43,7 @@ endif;
         '</p>';
         echo '<h2>' . __('Types', 'oes') . '</h2>';
         echo '<p>' .
-            __('The OES schema is divided into different object types: <b>Articles</b> are post objects with ' .
+            __('The OES schema is divided into different object types: <b>Content</b> are post objects with ' .
                 'scientific texts ' .
                 'whose text bodies are enriched and classified by metadata. <b>Contributors</b> are post object types ' .
                 'that represent the authorship of articles. <b>Index</b> elements are post objects that form the ' .

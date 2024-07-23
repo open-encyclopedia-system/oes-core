@@ -193,7 +193,7 @@ function oes_csv_escape_string(
     $returnString = $input;
 
     if (preg_match('/[\r\n"' . preg_quote($separator, '/') . ']/', $returnString))
-        return '"' . str_replace('"', '""', $returnString) . '"';
+        return str_replace('"', '“', $returnString);
     else return $returnString;
 }
 
@@ -209,6 +209,26 @@ function oes_replace_string_for_anchor(string $inputString): string
     $string = preg_replace('/\s+/', '_', $inputString);
     $string = preg_replace('/[^a-zA-Z0-9_]/', '', oes_replace_umlaute($string));
     return strtolower($string);
+}
+
+
+/**
+ * Get a language label from a string that splits the language labels by semicolon, e.g. "Label 1; Label 2".
+ *
+ * @param string $input The label string.
+ * @param string $language The considered language.
+ * @return string Return the label for the considered language.
+ */
+function oes_get_language_label_from_string(string $input, string $language = ''): string
+{
+    if(empty($language)) {
+        global $oes_language;
+        $language = $oes_language;
+    }
+    $inputArray = explode(';', $input);
+    if(sizeof($inputArray) < 2 || $language === 'language0') return $inputArray[0] ?? '';
+    elseif($languageInt = (int)substr($language, 8)) return $inputArray[$languageInt] ?? '';
+    return '';
 }
 
 
@@ -400,6 +420,7 @@ function oes_convert_date_to_formatted_string(
     int    $dateType = -1,
     int    $timeType = -1): string
 {
+    global $oes_language;
     $formattedString = '';
     if ($date) {
 
@@ -414,15 +435,21 @@ function oes_convert_date_to_formatted_string(
             }
 
             if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
-            $formatter = new IntlDateFormatter($locale, $dateType, $timeType);
+
+
+            /**
+             * Filter the intl date formatter.
+             *
+             * @param IntlDateFormatter $formatter The formatter.
+             */
+            $formatter = apply_filters('oes\intl_date_formatter', new IntlDateFormatter($locale, $dateType, $timeType));
             $formattedString = $formatter->format($timestamp);
         }
         else {
 
-            global $oes_language;
 
             /**
-             * Filters if format for strftime.
+             * Filter format for strftime.
              *
              * @param string $format The format.
              * @param string $language The language.
@@ -431,7 +458,25 @@ function oes_convert_date_to_formatted_string(
             $formattedString = strftime($format, $timestamp);
         }
     }
-    return $formattedString;
+
+
+    /**
+     * Filters the formatted date value.
+     *
+     * @param string $formattedString The formatted string.
+     * @param string $date The date as string.
+     * @param string $language The language.
+     * @param string $locale The locale. Default is 'en_BE'.
+     * @param int $dateType The date type.
+     * @param int $timeType The time type.
+     */
+    return apply_filters('oes\convert_date_to_formatted_string',
+        $formattedString,
+        $date,
+        $oes_language,
+        $locale,
+        $dateType,
+        $timeType);
 }
 
 

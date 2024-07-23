@@ -483,7 +483,7 @@ if (!class_exists('OES_Object')) {
 
                                 /* assume child relationship if parent post type */
                                 $thisPostRelationship = $postRelationship;
-                                if(empty($postRelationship) && !empty($oes->post_types[$consideredPostType]['version']))
+                                if (empty($postRelationship) && !empty($oes->post_types[$consideredPostType]['version']))
                                     $thisPostRelationship = 'child_version';
 
                                 /* get table data */
@@ -642,8 +642,11 @@ if (!class_exists('OES_Object')) {
              * Filters the table data with index connection data.
              *
              * @param array $tableData The table data with connected index posts.
+             * @param string $postType The considered post type.
+             * @param string $relationship Add specification for post such as 'parent', 'child_version'.
+             * @param array $args Additional arguments
              */
-            return apply_filters('oes/post_index_get_index_connections', $tableData);
+            return apply_filters('oes/post_index_get_index_connections', $tableData, $postType, $relationship, $args);
         }
 
 
@@ -749,22 +752,27 @@ if (!class_exists('OES_Object')) {
                     if (!empty($rows))
                         foreach ($rows as $row) {
 
-                            $content = '<div class="oes-archive-table-wrapper wp-block-group collapse">' .
-                                '<div class="oes-details-wrapper-before"></div>' .
-                                '<table class="' . ($args['style'] ?? '') . ' oes-archive-table is-style-oes-default">' .
-                                $this->get_index_entry_preview($row) .
-                                '</table>' .
-                                '<div class="oes-details-wrapper-after"></div>';
+                            $content = '';
+                            if ($args['archive_data'] ?? true) {
+                                $content = '<div class="oes-archive-table-wrapper wp-block-group collapse">' .
+                                    '<div class="oes-details-wrapper-before"></div>' .
+                                    '<table class="' . ($args['style'] ?? '') . ' oes-archive-table is-style-oes-default">' .
+                                    $this->get_index_entry_preview($row) .
+                                    '</table>' .
+                                    '<div class="oes-details-wrapper-after"></div>';
+                            }
 
                             $indexElements[$fieldKey][($row['title-sort'] ?? $row['title']) . $row['id']] =
                                 '<div class="wp-block-group oes-index-connection-wrapper oes-post-filter-wrapper ' .
                                 'oes-post-all">' .
-                                '<div class="wp-block-group">' .
-                                oes_get_details_block(
-                                    $this->get_index_entry_title($row),
-                                    $content
-                                ) .
-                                '</div>' .
+                                (empty($content) ?
+                                    $this->get_index_entry_title($row) :
+                                    ('<div class="wp-block-group">' .
+                                        oes_get_details_block(
+                                            $this->get_index_entry_title($row),
+                                            $content
+                                        ) .
+                                        '</div>')) .
                                 '</div>';
                         }
 

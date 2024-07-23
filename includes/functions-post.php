@@ -145,6 +145,15 @@ function oes_get_display_title($object = false, array $args = [], string $option
             oes_get_field($titleOption, $object, false) :
             null;
 
+        /* modify if sorting title is date field (reverse order) */
+        if($option === 'title_sorting_display' &&
+            $titleOption !== 'wp-title' &&
+            $titleOption !== 'default' &&
+            isset($oes->post_types[$postType]['field_options'][$titleOption]) &&
+            $oes->post_types[$postType]['field_options'][$titleOption]['type'] === 'date_picker'){
+            $title = (string)(-(int)$title);
+        }
+
         return empty($title) ? get_the_title($object) : $title;
     }
 }

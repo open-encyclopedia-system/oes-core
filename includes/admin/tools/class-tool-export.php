@@ -88,23 +88,23 @@ if (!class_exists('Export')) :
                 </div>
                 <div class="oes-toggle-checkbox">
                     <div class="oes-tools-checkbox-single">
-                        <span><?php _e('Generate an import template for the selected post type or taxonomy.',
+                        <span><?php _e('Generate an import template for the selected post type or taxonomy',
                                 'oes'); ?></span>
                         <input type="checkbox" id="import_template" name="import_template">
                         <label class="oes-toggle-label" for="import_template"></label>
                     </div>
                     <div class="oes-tools-checkbox-single">
-                        <span><?php _e(' Exclude Post Content.', 'oes'); ?></span>
+                        <span><?php _e('Exclude post content', 'oes'); ?></span>
                         <input type="checkbox" id="exclude_content" name="exclude_content">
                         <label class="oes-toggle-label" for="exclude_content"></label>
                     </div>
                     <div class="oes-tools-checkbox-single">
-                        <span><?php _e('Reduced Post Information.', 'oes'); ?></span>
+                        <span><?php _e('Reduced post information', 'oes'); ?></span>
                         <input type="checkbox" id="reduced_info" name="reduced_info">
                         <label class="oes-toggle-label" for="reduced_info"></label>
                     </div>
                     <div class="oes-tools-checkbox-single">
-                        <span><?php _e('Use clear names.', 'oes'); ?></span>
+                        <span><?php _e('Use clear names', 'oes'); ?></span>
                         <input type="checkbox" id="clear_names" name="clear_names">
                         <label class="oes-toggle-label" for="clear_names"></label>
                     </div>
@@ -151,7 +151,8 @@ if (!class_exists('Export')) :
                 $this->get_selected_data([$postType],
                     $_POST['exclude_content'] ?? false,
                     $_POST['clear_names'] ?? false,
-                    $_POST['reduced_info'] ?? false);
+                    $_POST['reduced_info'] ?? false
+                );
 
                 /* create file name */
                 $fileName = 'oes-export-' . $postType . '-' . date('Y-m-d') . '.' . $fileType;
@@ -175,12 +176,15 @@ if (!class_exists('Export')) :
                     /* open raw memory as file so no temp files needed, might run out of memory though */
                     $file = fopen('php://temp', 'w');
 
+                    /* add BOM to fix UTF-8 in Excel */
+                    fputs($file, $bom = (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+
                     /* check if creation successful */
                     if (!$file) return;
 
                     /* write content to file */
                     foreach ($data as $row) {
-                        $line = array_map("utf8_decode", $row);
+                        $line = $row; //array_map("utf8_decode", $row);
                         fputcsv($file, $line, ';');
                     }
 
@@ -198,7 +202,7 @@ if (!class_exists('Export')) :
 
 
             /* set browser information to save file instead of displaying it */
-            header('Content-Type: application/csv');
+            header('Content-Type: text/csv; charset=utf-8');
             header('Content-Disposition: attachment; filename="' . $fileName . '"');
 
 
@@ -220,10 +224,10 @@ if (!class_exists('Export')) :
          * @param bool $reduced_info Only use reduced post info.
          */
         function get_selected_data(
-                array $postTypes,
-                bool $exclude_content = false,
-                bool $clear_names = false,
-                bool $reduced_info = false)
+            array  $postTypes,
+            bool   $exclude_content = false,
+            bool   $clear_names = false,
+            bool   $reduced_info = false)
         {
             /* bail early if $postType has wrong type */
             if (!is_array($postTypes) || !$postTypes)
@@ -257,7 +261,7 @@ if (!class_exists('Export')) :
 
                             /* collect post data */
                             $readPostArray = [];
-                            if($reduced_info){
+                            if ($reduced_info) {
                                 $readPostArray['ID'] = $readPost->ID;
                                 $readPostArray['post_author'] = $readPost->post_author;
                                 $readPostArray['post_title'] = $readPost->post_title;
@@ -269,8 +273,7 @@ if (!class_exists('Export')) :
                                     $content = esc_attr(wp_strip_all_tags($readPost->post_content));
                                     $readPostArray['post_content'] = $content;
                                 }
-                            }
-                            else {
+                            } else {
                                 $readPostArray = $readPost->to_array();
 
                                 /* optional: exclude content */
@@ -296,7 +299,7 @@ if (!class_exists('Export')) :
                                                 case 'relationship':
                                                     $value = '';
                                                     $ids = unserialize($field[0]);
-                                                    if(is_array($ids)){
+                                                    if (is_array($ids)) {
                                                         $listItems = [];
                                                         foreach ($ids as $id) $listItems[] = oes_get_display_title($id);
                                                         $value = implode(', ', $listItems);
@@ -314,13 +317,13 @@ if (!class_exists('Export')) :
                                     if (!isset($readPostArray['fields'][$key])) {
 
                                         /* check if database value */
-                                        if (preg_match_all("/(?:(?:\"(?:\\\\\"|[^\"])+\")|(?:'(?:\\\'|[^'])+'))/is",
-                                            $field[0], $matches)) {
+                                        $serialized = unserialize($field[0]);
+                                        if ($serialized) {
 
                                             /* avoid quotes in database values */
-                                            array_walk_recursive($matches, 'oes_replace_double_quote');
+                                            array_walk_recursive($serialized, 'oes_replace_double_quote');
 
-                                            $readPostArray['fields'][$key] = oes_array_to_string_flat($matches);
+                                            $readPostArray['fields'][$key] = oes_array_to_string_flat($serialized);
                                         } else {
                                             $readPostArray['fields'][$key] = $field[0];
                                         }
@@ -374,13 +377,14 @@ if (!class_exists('Export')) :
                                     if (!oes_starts_with($key, '_')) {
 
                                         /* check if database value */
-                                        if (preg_match_all("/(?:(?:\"(?:\\\\\"|[^\"])+\")|(?:'(?:\\\'|[^'])+'))/is",
-                                            $field[0], $matches)) {
+                                        /* check if database value */
+                                        $serialized = unserialize($field[0]);
+                                        if ($serialized) {
 
                                             /* avoid quotes in database values */
-                                            array_walk_recursive($matches, 'oes_replace_double_quote');
+                                            array_walk_recursive($serialized, 'oes_replace_double_quote');
 
-                                            $readTermArray['fields'][$key] = oes_array_to_string_flat($matches);
+                                            $readTermArray['fields'][$key] = oes_array_to_string_flat($serialized);
                                         } else {
                                             $readTermArray['fields'][$key] = $field[0];
                                         }
@@ -478,14 +482,7 @@ if (!class_exists('Export')) :
                 foreach ($columnHeader as $column) {
 
                     /* add value if post has a value for this field */
-                    if (isset($singlePost[$column])) {
-
-                        /* cast field value to string */
-                        $rowData = oes_cast_to_string($singlePost[$column]);
-
-                        /* add field value to row data (replace characters that break csv display) */
-                        $dataArrayRow[] = oes_csv_escape_string($rowData);
-                    } /* else leave empty */
+                    if (isset($singlePost[$column])) $dataArrayRow[] = oes_cast_to_string($singlePost[$column]);
                     else $dataArrayRow[] = null;
                 }
 

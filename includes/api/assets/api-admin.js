@@ -3,7 +3,7 @@
  */
 (function (oesLodAdmin, $, undefined) {
 
-
+    
     /**
      * Show and hide the search option panel for sidebar LoD panel.
      */

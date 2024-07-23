@@ -19,7 +19,9 @@ function display_factory_notice(): void
     <p><?php
         echo '<b>' . __('Data model is in factory mode.', 'oes') . '</b><br>' .
             __('Configure factory items ', 'oes') .
-            oes_get_html_anchor('here', admin_url('edit.php?post_type=acf-field-group')) . '.<br>' .
+            oes_get_html_anchor('here', admin_url('edit.php?post_type=acf-field-group')) . '. ' .
+            __('(Changes to language dependent fields will only be visible after importing the modified data model).',
+                'oes') . '<br>' .
             __('Reset or import to store as modified data model ', 'oes') .
             oes_get_html_anchor('here', admin_url('admin.php?page=oes_tools_model&tab=factory')) . '.'; ?></p>
     </div><?php

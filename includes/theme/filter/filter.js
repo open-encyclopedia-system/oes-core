@@ -33,14 +33,16 @@
      * Apply the filter to archive list.
      */
     oesFilter.applyAll = function () {
-        showWrappers();
-        applyFacetFilter();
-        applyRangeFilter();
-        applyAlphabetFilter();
-        updateWrapperVisibility();
-        updateFacetFilterCount();
-        updateFilterCount();
-        updateLocalStorage();
+        if (typeof oes_filter !== 'undefined') {
+            showWrappers();
+            applyFacetFilter();
+            applyRangeFilter();
+            applyAlphabetFilter();
+            updateWrapperVisibility();
+            updateFacetFilterCount();
+            updateFilterCount();
+            updateLocalStorage();
+        }
     }
 
 
@@ -221,9 +223,20 @@
 
 
     /**
+     * Set the OES filter variable if not defined.
+     */
+    function setFilterVariable() {
+        if(typeof oes_filter == 'undefined') oes_filter = [];
+    }
+
+
+    /**
      * Initialize filter.
      */
     function init() {
+
+        /* set filter variable */
+        setFilterVariable();
 
         /* get cookie */
         const selected_value_store = localStorage.getItem("oesSelectedFilter");
@@ -299,6 +312,9 @@
 
     /* @oesDevelopment Improve - very slow, only recommended if not many filter */
     function updateFacetFilterCount() {
+
+        /* set filter variable */
+        setFilterVariable();
 
         /* loop through facet filter */
         const facet_filter = $('.oes-archive-filter'),

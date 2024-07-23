@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function (event) {
 
 		const trigger = document.createElement('a');
 		trigger.setAttribute('class', 'oes-close button');
-		trigger.setAttribute('onClick', "oesTriggerById('oes-search-panel')");
+		trigger.setAttribute('onClick', "jQuery('#oes-search-panel').toggle()");
 		panel.children(":first").children(":first").append(trigger);
 
 		body.prepend(panel);

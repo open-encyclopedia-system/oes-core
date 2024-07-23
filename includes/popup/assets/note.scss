@@ -40,17 +40,39 @@ CSS Styling for notes in frontend.
 }
 
 /* notes list */
-.oes-notes-list .note-columns-2 {
-    margin-right: 5px;
-    margin-left: 5px;
+.oes-notes-list {
+    .note-columns-2,
+    .note-columns-3 {
+        margin-right: 5px;
+        margin-left: 5px;
+        display: flex;
 
-    > div {
-        width: 45%;
-        padding: 5px 10px;
-        border-right: 1px dashed lightgrey;
+        > div {
+            width: 45%;
+            padding: 5px 10px;
+            border-right: 1px dashed lightgrey;
+        }
+
+        > div:last-child {
+            border-right: none;
+        }
     }
 
-    > div:last-child {
-        border-right: none;
+    .note-columns-3 {
+        > div {
+            width: 32%;
+        }
+    }
+
+    .note-columns-4 {
+        > div {
+            width: 24%;
+        }
+    }
+
+    .note-columns-5 {
+        > div {
+            width: 19%;
+        }
     }
 }

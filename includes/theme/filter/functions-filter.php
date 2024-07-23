@@ -29,15 +29,18 @@ function oes_filter_html($args): string
             $filterItems = apply_filters('oes/filter_html_single_items_array', $container['items'], $filterKey);
 
 
-            $filterListItems = [];
-            foreach ($filterItems ?? [] as $itemKey => $itemLabel)
-                $filterListItems[oes_replace_umlaute($itemLabel) . $itemKey] = oes_get_filter_item_html(
-                        $itemKey,
-                        $itemLabel,
-                        $filterKey);
 
-            /* filter items list */
-            ksort($filterListItems);
+            /**
+             * Filters the sorting of filter items.
+             *
+             * @param array $filterItems The list items.
+             * @param string $filterKey The filter key.
+             */
+            if (has_filter('oes/filter_html_single_items_array_sorting'))
+                $filterListItems = apply_filters('oes/filter_html_single_items_array_sorting', $filterItems, $filterKey);
+            else $filterListItems = oes_prepare_filter_items($filterItems, $filterKey);
+            
+
             $filterList = '<ul class="oes-filter-list oes-vertical-list' .
                 ((($args['type'] ?? 'default') === 'accordion') ? ' collapse' : '') . '" id="oes-filter-component-' .
                 $filterKey . '">' . implode('', $filterListItems) . '</ul>';
@@ -46,8 +49,9 @@ function oes_filter_html($args): string
 
                 case 'accordion':
                     $listItems[$filterKey] =
-                        sprintf('<li><a href="#oes-filter-component-%s" data-toggle="collapse" ' .
+                        sprintf('<li id="%s"><a href="#oes-filter-component-%s" data-toggle="collapse" ' .
                             'aria-expanded="false" class="oes-filter-component oes-toggle-down-after">%s</a>%s</li>',
+                            'trigger_' . $filterKey,
                             $filterKey,
                             $container['label'] ?? 'Label missing',
                             $filterList
@@ -55,7 +59,9 @@ function oes_filter_html($args): string
                     break;
 
                 case 'classic':
-                    $listItems[$filterKey] = sprintf('<li><span class="oes-filter-component">%s</span>%s</li>',
+                    $listItems[$filterKey] =
+                        sprintf('<li id="%s"><span class="oes-filter-component">%s</span>%s</li>',
+                            'trigger_' . $filterKey,
                         $container['label'] ?? 'Label missing',
                         $filterList
                     );
@@ -91,6 +97,50 @@ function oes_filter_html($args): string
     </script><?php
 
     return '<ul class="oes-filter-list-container oes-vertical-list">' . implode('', $listItems) . '</ul>';
+}
+
+
+/**
+ * Sort the filter items.
+ * 
+ * @param array $filterItems The filter items.
+ * @param string $filterKey The filter key.
+ * @param string $option The sorting option. Options are frequency, sorting_title. Default is the item label.
+ * @return array Return the sorted filter items.
+ */
+function oes_prepare_filter_items(array $filterItems, string $filterKey, string $option = ''): array
+{
+    $filterListItems = [];
+    foreach ($filterItems ?? [] as $itemKey => $itemLabel) {
+
+        /* get sorting title. Options are frequency, sorting_title or item label. */
+        switch ($option) {
+
+            case 'frequency':
+                global $oes_filter, $oes_archive_data;
+                $sortingTitle = (isset($oes_filter['json'][$filterKey][$itemKey]) ?
+                        ((10000 + $oes_archive_data['archive']['count']) -
+                            sizeof($oes_filter['json'][$filterKey][$itemKey])) :
+                        0) . oes_replace_umlaute($itemLabel) . $itemKey;
+                break;
+
+            case 'sorting_title':
+                $sortingTitle = oes_replace_umlaute(oes_get_display_title($itemKey,
+                        ['option' => 'title_sorting_display'])) . $itemKey;
+                break;
+
+            default:
+                $sortingTitle = oes_replace_umlaute($itemLabel) . $itemKey;
+                break;
+        }
+
+        $filterListItems[$sortingTitle] = oes_get_filter_item_html(
+            $itemKey,
+            $itemLabel,
+            $filterKey);
+    }
+    ksort($filterListItems);
+    return $filterListItems;
 }
 
 

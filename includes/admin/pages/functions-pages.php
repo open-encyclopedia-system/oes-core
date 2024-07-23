@@ -114,7 +114,7 @@ function add_page_scripts(string $hook): void
     $file = '/includes/admin/pages/js/';
     wp_register_script(
         'oes-admin_page',
-        plugins_url(OES_BASENAME . $file . 'page.js'),
+        plugins_url(OES_BASENAME . $file . 'page.min.js'),
         ['jquery'],
         false,
         true);
@@ -125,7 +125,7 @@ function add_page_scripts(string $hook): void
     );
     wp_enqueue_script('oes-admin_page');
 
-    $file .= str_replace('-', '_', $hook) . '.js';
+    $file .= str_replace('-', '_', $hook) . '.min.js';
     if (file_exists(oes_get_path($file, OES_CORE_PLUGIN))) {
         wp_register_script(
             'oes-admin_' . $hook,

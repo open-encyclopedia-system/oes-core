@@ -14,7 +14,7 @@ function admin_scripts(): void
     global $post;
     wp_register_script(
         'oes-api',
-        plugins_url(OES_BASENAME . '/includes/api/assets/api-admin.js'),
+        plugins_url(OES_BASENAME . '/includes/api/assets/api-admin.min.js'),
         ['jquery'],
         false,
         true);
@@ -41,7 +41,7 @@ function admin_scripts(): void
 function scripts(): void
 {
     wp_register_script('oes-api',
-        plugins_url(OES_BASENAME . '/includes/api/assets/api-frontend.js'),
+        plugins_url(OES_BASENAME . '/includes/api/assets/api-frontend.min.js'),
         ['jquery'], false, true);
     wp_localize_script(
         'oes-api',
@@ -65,7 +65,7 @@ function sidebar_enqueue(): void
 {
     wp_register_script(
         'oes-lod-sidebar',
-        plugins_url(OES_BASENAME . '/includes/api/assets/lod-sidebar.js'),
+        plugins_url(OES_BASENAME . '/includes/api/assets/lod-sidebar.min.js'),
         ['wp-plugins', 'wp-edit-post', 'wp-element']
     );
     wp_enqueue_script('oes-lod-sidebar');

@@ -1,5 +1,4 @@
 let oesLanguageArray = oesLanguages;
-
 function oesConfigTableToggleRow(el){
     jQuery(el).toggleClass('active')
         .parent().parent().toggleClass('active')

@@ -132,8 +132,13 @@ if (!class_exists('Schema')) :
          */
         function get_option_array(string $component = ''): array
         {
-            $configuration = get_option(($this->options['prefix'] ?? '') . $component);
-            return $configuration ? json_decode($configuration, true) : [];
+            $optionDB = get_option(($this->options['prefix'] ?? '') . $component) ?? false;
+            if (!$optionDB) return [];
+
+            $optionArray = json_decode($optionDB, true);
+            if (!is_array($optionArray)) return [];
+
+            return $optionArray;
         }
 
 

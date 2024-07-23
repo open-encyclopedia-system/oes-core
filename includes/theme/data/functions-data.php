@@ -12,6 +12,7 @@ function oes_prepare_data(): void
 {
     oes_prepare_language();
     if (is_front_page() || is_page()) oes_set_page_data();
+    elseif(is_attachment()) oes_prepare_attachment();
     elseif (is_single()) oes_prepare_single();
     elseif (is_tax()) oes_prepare_tax();
     elseif (is_archive()) oes_set_archive_data();
@@ -50,6 +51,23 @@ function oes_set_page_data(int $postID = 0): void
     $oes_post = class_exists($projectClass) ?
         new $projectClass($postID) :
         new OES_Page($postID);
+}
+
+
+/**
+ * Set data for OES_Post object "Attachment".
+ *
+ * @param int $postID The post id. Default is current post ID.
+ * @return void
+ */
+function oes_set_attachment_data(int $postID = 0): void
+{
+    global $oes_post;
+    if (!$postID) $postID = get_the_ID();
+    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Attachment';
+    $oes_post = class_exists($projectClass) ?
+        new $projectClass($postID) :
+        new OES_Attachment($postID);
 }
 
 
@@ -140,6 +158,17 @@ function oes_prepare_single(): void
 
 
 /**
+ * Prepare data for attachment post.
+ *
+ * @return void
+ */
+function oes_prepare_attachment(): void
+{
+    oes_set_attachment_data();
+}
+
+
+/**
  * Prepare page data for tax (term) page.
  * Check if redirect to archive (use term as filter), else prepare term data.
  *
@@ -150,6 +179,7 @@ function oes_prepare_tax(): void
     global $taxonomy, $term, $oes;
     if ($taxonomy &&
         isset($oes->taxonomies[$taxonomy]['redirect']) &&
+        ($oes->taxonomies[$taxonomy]['redirect'] ?? false) &&
         (($oes->taxonomies[$taxonomy]['redirect'] ?? false) !== 'none') &&
         !isset($_GET['oesf_' . $taxonomy]) &&
         $termObject = get_term_by('slug', $term, $taxonomy)) {
@@ -169,7 +199,12 @@ function oes_prepare_search(): void
 
     global $oes_search;
     global $oes_archive_count;
-    $oes_search = new OES_Search(['language' => 'all']);
+
+    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Search';
+    $args = ['language' => 'all'];
+    $oes_search = class_exists($projectClass) ?
+        new $projectClass($args) :
+        new OES_Search($args);
     $oes_archive_count = $oes_search->count;
 
     global $oes_is_search;
@@ -219,7 +254,7 @@ function oes_prepare_index(string $indexPageKey): void
  */
 function oes_prepare_taxonomies(): void
 {
-    global $oes;
+    global $oes, $oes_taxonomy;
     foreach ($oes->taxonomies as $taxonomyKey => $singleTaxonomy) {
 
         $taxonomyObject = get_taxonomy($taxonomyKey);
@@ -228,7 +263,7 @@ function oes_prepare_taxonomies(): void
         if (($taxonomyObject->rewrite['slug'] ?? false) &&
             oes_get_current_url(false) ==
             (get_site_url() . '/' . ($taxonomyObject->rewrite['slug'] ?? $taxonomyKey) . '/') &&
-            !is_page(($taxonomyObject->rewrite['slug'] ?? $taxonomyKey))) {
+            !is_page($taxonomyObject->rewrite['slug'] ?? $taxonomyKey)) {
 
             if (!empty($oes->theme_index_pages))
                 foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
@@ -237,7 +272,9 @@ function oes_prepare_taxonomies(): void
                         $oes_is_index = $indexPageKey;
                     }
 
+            $oes_taxonomy = $taxonomyKey;
             $archiveClass = $taxonomyKey . '_Taxonomy_Archive';
+            if (!class_exists($archiveClass)) $archiveClass = $taxonomyKey . '_Archive';
             if (!class_exists($archiveClass)) $archiveClass = 'OES_Taxonomy_Archive';
             oes_set_archive_data($archiveClass, ['taxonomy' => $taxonomyKey]);
 
@@ -264,4 +301,35 @@ function oes_prepare_data_other(): void
 
     /* check if page is taxonomy archive */
     oes_prepare_taxonomies();
+}
+
+
+/**
+ * Add body class for created pages (index and taxonomy archives).
+ *
+ * @param array $classes The body classes.
+ * @return array The modified body classes.
+ */
+function oes_body_class(array $classes): array {
+
+    global $oes_is_index, $oes_taxonomy;
+    $removeError = false;
+    if(!empty($oes_is_index)) {
+        $classes[] = 'oes-index-archive';
+        $classes[] = 'oes-index-archive-' . $oes_is_index;
+        $removeError = true;
+    }
+
+    if(!empty($oes_taxonomy)){
+        $classes[] = 'oes-taxonomy-archive';
+        $classes[] = 'oes-taxonomy-archive-' . $oes_taxonomy;
+        $removeError = true;
+    }
+
+    /* remove error class */
+    if($removeError){
+        if (($key = array_search('error404', $classes)) !== false) unset($classes[$key]);
+    }
+
+    return $classes;
 }

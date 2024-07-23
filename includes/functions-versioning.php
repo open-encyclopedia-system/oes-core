@@ -340,7 +340,9 @@ function meta_box_parent_post(WP_Post $post, array $callbackArgs): void
 
     /* check if translation exists */
     $translationParent = get_translation_id($post->ID);
-    if ($translationParent && !$translationParent instanceof WP_Post && is_string($translationParent))
+    if ($translationParent &&
+        !$translationParent instanceof WP_Post &&
+        (is_string($translationParent) || is_int($translationParent)))
         $translationParent = get_post($translationParent) ?? false;
 
     /* Set languages */

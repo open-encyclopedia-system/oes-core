@@ -23,12 +23,18 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         /** @var bool Indicating if the loop has been executed. */
         public bool $loop_execute = false;
 
+        /** @var array $order_of_post_types The order in which the post types are displayed */
+        public array $order_of_post_types = [];
+
 
         //Overwrite parent
         public function set_parameters(array $args = []): void
         {
             global $s;
             $this->search_term = $s;
+            $this->order_of_post_types = (isset($args['order_of_post_types']) && is_array($args['order_of_post_types'])) ?
+                $args['order_of_post_types'] :
+                ((is_array(OES()->search['order'] ?? false) && OES()->search['order']) ? OES()->search['order'] : []);
         }
 
 
@@ -141,10 +147,12 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
 
             /* prepare table */
             $tableArray = [];
+            $tableArrayIndex = sizeof($this->order_of_post_types);
             foreach ($data as $objectContainer) {
 
                 $table = [];
                 $postTypeLabel = '';
+                $postTypeKey = '';
                 krsort($objectContainer);
                 foreach ($objectContainer as $occurrenceCount => $posts) {
 
@@ -181,21 +189,27 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
                             $table[] = $this->modify_prepare_row($prepareRowData, $object);
 
                             /* prepare post type label */
-                            if (empty($postTypeLabel)) $postTypeLabel = $object['type'];
+                            if (empty($postTypeLabel) && $object['type']) $postTypeLabel = $object['type'];
+                            if (empty($postTypeKey) && isset($object['post_type'])) $postTypeKey = $object['post_type'];
                         }
                 }
 
                 /* add table to array */
-                if (!empty($table))
-                    $tableArray[] = [
+                if (!empty($table)) {
+                    $index = in_array($postTypeKey, $this->order_of_post_types) ?
+                        array_search($postTypeKey, $this->order_of_post_types) :
+                        $tableArrayIndex++;
+                    $tableArray[$index] = [
                         'character' => $postTypeLabel,
                         'additional' => $languageLabel ?
                             '<span class="oes-additional-info">' . $languageLabel . '</span>' :
                             '',
                         'table' => $table
                     ];
+                }
             }
 
+            ksort($tableArray);
             return $tableArray;
         }
 

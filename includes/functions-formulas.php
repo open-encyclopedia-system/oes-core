@@ -115,7 +115,7 @@ function calculate_field_value_from_formula($value, $postID, array $field, bool 
 
     /* check for new value */
     if ($pattern = (OES()->post_types[get_post_type($postID)]['field_options'][$field['key']]['pattern'] ?? []))
-        if ($overwrite || empty($value) || $value === 'generate')
+        if ($overwrite || (empty($value) || $value !== 'generate'))
             if($newValue = calculate_value($pattern, $postID))
                 if($newValue !== $value) $value = $newValue;
 
@@ -141,7 +141,7 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
         
         /* @oesLegacy  rename pattern parameters */
         if (isset($part['default']) && !isset($part['string_value'])) $part['string_value'] = $part['default'];
-        if (isset($part['key']) && !isset($part['string_value'])) $part['string_value'] = $part['key'];
+        if (isset($part['key']) && !isset($part['field_key'])) $part['field_key'] = $part['key'];
         if (isset($part['fallback_field_key']) && !isset($part['fallback']))
             $part['fallback'] = $part['fallback_field_key'];
 

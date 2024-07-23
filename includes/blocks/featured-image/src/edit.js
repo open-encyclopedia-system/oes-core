@@ -33,7 +33,7 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                     (<details className="oes-post-terms-container wp-block-details" open>
                         <summary><span>{getDisplayValueFromArray(labels, '')}</span>
                         </summary>
-                        <figure className="oes-expand-image ">
+                        <figure className="oes-panel-figure ">
                             <div className="oes-modal-toggle oes-modal-toggle">
                                 <div className="oes-modal-toggle-container">
                                     <img src="" alt="The featured image"/>
@@ -44,7 +44,7 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                     </details>) :
                     (<div className="oes-post-terms-container">
                         <h5 className="oes-content-table-header">{getDisplayValueFromArray(labels, '')}</h5>
-                        <figure className="oes-expand-image ">
+                        <figure className="oes-panel-figure ">
                             <div className="oes-modal-toggle oes-modal-toggle">
                                 <div className="oes-modal-toggle-container">
                                     <img src="" alt="The featured image"/>

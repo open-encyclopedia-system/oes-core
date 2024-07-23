@@ -372,6 +372,7 @@ if (!class_exists('Operation')) :
                     'pinged' => 'ignore',
                     'post_modified' => 'ignore',
                     'post_modified_gmt' => 'ignore',
+                    'term_id' => 'Term ID',
                     'name' => 'Term Name',
                     'term' => 'Term Name',
                     'taxonomy' => 'Taxonomy',
@@ -620,15 +621,15 @@ if (!class_exists('Operation')) :
 
                             if (isset($inserted['error']) || !$inserted) {
                                 $this->update_database_after_execution('error', 0, (
-                                    $inserted ?
-                                        implode('<br>', $inserted['error']) :
-                                        sprintf(
-                                            __('Could not update field \'%s\' with value \'%s\' for post with ID ' .
-                                                '\'%s\'.', 'oes'),
-                                            $this->operation_key,
-                                            $this->operation_value,
-                                            $this->operation_object_id
-                                        )
+                                $inserted ?
+                                    implode('<br>', $inserted['error']) :
+                                    sprintf(
+                                        __('Could not update field \'%s\' with value \'%s\' for post with ID ' .
+                                            '\'%s\'.', 'oes'),
+                                        $this->operation_key,
+                                        $this->operation_value,
+                                        $this->operation_object_id
+                                    )
                                 ));
                                 return false;
                             } else {
@@ -648,9 +649,15 @@ if (!class_exists('Operation')) :
                             $updated = oes_insert_post(json_decode($this->operation_value, true));
 
                             /* 'post' , 'wrong_parameter' */
-                            if (isset($updated['post']))
-                                $this->update_database_after_execution(
-                                    ($updated['post'] instanceof WP_Error) ? 'error' : 'success');
+                            if (isset($updated['post'])) {
+                                if ($updated['post'] instanceof WP_Error) {
+                                    $this->update_database_after_execution('error');
+                                    return false;
+                                } else {
+                                    $this->update_database_after_execution('success');
+                                    return true;
+                                }
+                            }
 
                         } /* update post meta */
                         else {
@@ -681,8 +688,8 @@ if (!class_exists('Operation')) :
                                         )
                                 ));
                                 return false;
-                            } elseif(!$inserted &&
-                                ($previousValue !== oes_get_field($this->operation_key, $this->operation_object_id))){
+                            } elseif (!$inserted &&
+                                ($previousValue !== oes_get_field($this->operation_key, $this->operation_object_id))) {
                                 $this->update_database_after_execution('error');
                                 return true;
                             } else {
@@ -710,7 +717,7 @@ if (!class_exists('Operation')) :
                                         implode('</br>',
                                             $inserted['term']->errors[array_key_first($inserted['term']->errors)]));
                                     return false;
-                                } elseif(isset($inserted['term']['term_id'])) {
+                                } elseif (isset($inserted['term']['term_id'])) {
                                     $this->update_database_after_execution('success', $inserted['term']['term_id']);
                                     $this->update_all_operation_with_new_post_id($inserted['term']['term_id']);
                                     return true;
@@ -719,7 +726,30 @@ if (!class_exists('Operation')) :
 
                         } /* insert post meta */
                         else {
-                            //@oesDevelopment
+
+                            /* insert fields and term meta */
+                            $inserted = oes_insert_term_meta(
+                                $this->operation_object_id,
+                                $this->operation_type,
+                                [$this->operation_key => $this->operation_value]);
+
+                            if (isset($inserted['error']) || !$inserted) {
+                                $this->update_database_after_execution('error', 0, (
+                                $inserted ?
+                                    implode('<br>', $inserted['error']) :
+                                    sprintf(
+                                        __('Could not update field \'%s\' with value \'%s\' for term with term ID ' .
+                                            '\'%s\'.', 'oes'),
+                                        $this->operation_key,
+                                        $this->operation_value,
+                                        $this->operation_object_id
+                                    )
+                                ));
+                                return false;
+                            } else {
+                                $this->update_database_after_execution('success');
+                                return true;
+                            }
                         }
 
                         break;
@@ -791,8 +821,7 @@ if (!class_exists('Operation')) :
                                 __('There has been an error trying to update the database after execution.', 'oes');
                         }
                     }
-            }
-            elseif(oes_starts_with($this->operation_temp, 'new_term_')){
+            } elseif (oes_starts_with($this->operation_temp, 'new_term_')) {
 
                 global $wpdb;
                 $table = $wpdb->prefix . 'oes_operations';

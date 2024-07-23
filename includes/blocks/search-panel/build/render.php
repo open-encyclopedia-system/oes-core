@@ -1,5 +1,5 @@
 <div id="oes-search-panel-trigger" <?php echo get_block_wrapper_attributes(); ?> >
-    <a href="javascript:void(0);" onClick="oesTriggerById('oes-search-panel')"><?php
+    <a href="javascript:void(0);" onClick="jQuery('#oes-search-panel').toggle()"><?php
         echo oes_language_label_html(array_merge(['default' => 'Search'], $attributes['labels'] ?? [])); ?>
     </a>
 </div>

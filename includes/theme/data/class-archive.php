@@ -216,8 +216,7 @@ if (!class_exists('OES_Archive')) {
 
                 /* get first character of displayed title for character array */
                 $titleForSorting = oes_get_display_title_sorting();
-                $key = strtoupper(substr($titleForSorting, 0, 1));
-                if (!in_array($key, range('A', 'Z'))) $key = 'other';
+                $key = $this->get_key_for_alphabet_filter($titleForSorting);
                 if (!in_array($key, $this->characters)) $this->characters[] = $key;
 
                 /* check for filter */
@@ -241,6 +240,20 @@ if (!class_exists('OES_Archive')) {
                  */
                 do_action('oes/theme_archive_loop_results_post', $post->ID);
             }
+        }
+
+
+        /**
+         * Get first character from title, collecting for alphabet filter.
+         *
+         * @param string $title The post title.
+         * @return string Return the alphabet key.
+         */
+        function get_key_for_alphabet_filter(string $title): string
+        {
+            $key = strtoupper(substr($title, 0, 1));
+            if (!in_array($key, range('A', 'Z'))) $key = 'other';
+            return $key;
         }
 
 
@@ -408,7 +421,7 @@ if (!class_exists('OES_Archive')) {
             /* prepare table */
             $tableArray = [];
 
-            ksort($this->prepared_posts);
+            $this->sort_prepared_posts();
             foreach ($this->prepared_posts as $firstCharacter => $objectContainer) {
 
                 /* loop through single object */
@@ -504,6 +517,17 @@ if (!class_exists('OES_Archive')) {
             }
 
             return $tableArray;
+        }
+
+
+        /**
+         * Sort the prepared posts.
+         *
+         * @return void
+         */
+        public function sort_prepared_posts(): void
+        {
+            ksort($this->prepared_posts);
         }
 
 
