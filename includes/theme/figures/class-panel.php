@@ -104,7 +104,8 @@ if (!class_exists('OES_Panel')) {
          */
         function get_html(string $content = ''): string
         {
-            return '<div class="oes-panel-container oes-panel-container-' . $this->type . '" id="' . $this->id . '">' .
+            return '<div class="oes-panel-container oes-panel-container-' . $this->type . '"' .
+                (empty($this->id) ? '' : (' id="' . $this->id . '"')) . '>' .
                 '<div class="oes-accordion-wrapper">' . $this->get_html_header() .
                 '<div class="oes-accordion-panel oes-panel' . ($this->is_expanded ? ' active': '') . '">' .
                 $this->get_html_content($content) .

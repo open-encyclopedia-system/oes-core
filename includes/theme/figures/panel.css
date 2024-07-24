@@ -137,6 +137,7 @@ figure.oes-panel-figure figcaption .oes-modal-figcaption-credit-prefix {
   padding-bottom: 1rem;
 }
 .oes-modal-image-container img {
+  max-width: calc(100% - 4rem) !important;
   height: 100%;
   object-fit: scale-down !important;
   margin: auto;
@@ -220,6 +221,35 @@ figure.oes-panel-figure figcaption .oes-modal-figcaption-credit-prefix {
   .oes-panel-container .oes-slider-button,
   .oes-panel-container .oes-expand-button {
     display: none;
+  }
+  .oes-panel-container-gallery figcaption,
+  .oes-panel-container-gallery .oes-panel-image {
+    display: none;
+  }
+  .oes-panel-container-gallery .oes-figure-slider-panel {
+    text-align: left;
+  }
+  .oes-panel-container-gallery .oes-figure-slider-panel .oes-figure-thumbnail {
+    display: inline;
+    max-height: 600px;
+    height: auto;
+    max-width: 100%;
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-bottom: -0.5rem;
+  }
+  .oes-panel-container-gallery .oes-figure-slider-panel .oes-figure-thumbnail img {
+    max-width: 600px;
+    height: auto;
+    object-fit: scale-down;
+  }
+  .oes-panel-container-gallery .oes-figure-slider-panel .oes-panel-figcaption {
+    font-size: 0.8rem;
+    line-height: 1.2rem;
+    padding: 1rem 0.5rem;
+  }
+  .oes-panel-container-gallery .oes-figure-slider-panel .oes-panel-figcaption .oes-modal-figcaption {
+    margin-bottom: 0.5rem;
   }
 }
 

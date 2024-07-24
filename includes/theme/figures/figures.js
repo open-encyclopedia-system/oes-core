@@ -13,7 +13,8 @@ function oesOpenImageModal(modals) {
             const img = this.firstElementChild,
                 modal = this.parentElement.nextElementSibling,
                 close = modal.firstElementChild,
-                modalImg = close.nextElementSibling.firstElementChild;
+                modalContainer = jQuery(modal).find('.oes-modal-image-container').get(0),
+                modalImg = modalContainer.firstElementChild
 
             if (img && modalImg) {
                 modal.style.display = "block";
@@ -76,7 +77,7 @@ function oesGallerySlider(slider, next) {
     for (j = 0; j < slider.length; j++) {
         slider[j].addEventListener("click", function () {
 
-            const figure = this.parentElement.parentElement,
+            const figure = this.closest('figure'),
             activeImage = jQuery(figure).find('.oes-figure-thumbnail.active').get(0);
 
             /* get next element, if this is empty get first element of carousel */

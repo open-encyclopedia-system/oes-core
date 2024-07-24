@@ -15,7 +15,7 @@ $textInvert: var(--wp--preset--color--text-invert, var(--oes-primary-contrast, w
   cursor: pointer;
   text-align: left;
   outline: none;
-  transition: 0.4s;
+  transition: .4s;
   font-weight: 600;
   font-size: 14px
 }
@@ -58,7 +58,7 @@ figure.oes-panel-figure {
 
   img {
     max-width: 100%;
-    transition: 0.3s;
+    transition: .3s;
     margin-top: .5rem;
     margin-bottom: -.5rem;
   }
@@ -84,7 +84,7 @@ figure.oes-panel-figure {
   }
 
   figcaption {
-    font-size: 0.8rem;
+    font-size: .8rem;
     line-height: 1.2rem;
     padding: 1rem 2rem;
 
@@ -139,7 +139,7 @@ figure.oes-panel-figure {
   right: 0;
   bottom: 0;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(0, 0, 0, .9);
   overflow-y: scroll;
   overflow-x: hidden;
   max-width: 100%;
@@ -156,6 +156,7 @@ figure.oes-panel-figure {
 
 
   img {
+    max-width: calc(100% - 4rem) !important;
     height: 100%;
     object-fit: scale-down !important;
     margin: auto;
@@ -247,6 +248,45 @@ figure.oes-panel-figure {
     .oes-slider-button,
     .oes-expand-button {
       display: none;
+    }
+  }
+
+  .oes-panel-container-gallery {
+
+    figcaption,
+    .oes-panel-image {
+      display: none;
+    }
+
+    .oes-figure-slider-panel {
+      text-align: left;
+
+      .oes-figure-thumbnail {
+        display: inline;
+        max-height: 600px;
+        height: auto;
+        max-width: 100%;
+        width: 100%;
+        margin-top: .5rem;
+        margin-bottom: -.5rem;
+
+      }
+
+      .oes-figure-thumbnail img {
+        max-width: 600px;
+        height: auto;
+        object-fit: scale-down;
+      }
+
+      .oes-panel-figcaption {
+        font-size: .8rem;
+        line-height: 1.2rem;
+        padding: 1rem .5rem;
+
+        .oes-modal-figcaption {
+          margin-bottom: .5rem;
+        }
+      }
     }
   }
 }

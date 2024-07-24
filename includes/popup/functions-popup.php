@@ -87,7 +87,7 @@ function get_single_html(string $id, string $trigger = '', string $content = "",
     $content = apply_filters('oes/popup_content', $content, $id);
 
 
-    return '<span class="' . ($classes['trigger'] ?? '') . ' oes-popup" data-fn="' . $id . '" ">' .
+    return '<span class="' . ($classes['trigger'] ?? '') . ' oes-popup" data-fn="' . $id . '">' .
         '<a href="javascript:void(0)">' . $trigger . '</a>' .
         '</span>' .
         '<span class="' . ($classes['popup'] ?? '') . ' oes-popup__popup" data-fn="' . $id . '">' . $content . '</span>';

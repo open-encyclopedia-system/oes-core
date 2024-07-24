@@ -575,7 +575,7 @@ function oes_get_panel_image_figcaption_HTML(array $image, array $imageModalData
      *
      */
     return '<div class="oes-panel-figcaption oes-panel-figcaption-' . $image['ID'] .
-        ($active ? ' active' : '') . '"">' .
+        ($active ? ' active' : '') . '">' .
         apply_filters('oes/get_modal_image_caption',
             ($imageModalData['caption'] ?: ''),
             $image,

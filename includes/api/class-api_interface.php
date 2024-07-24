@@ -103,7 +103,7 @@ if (!class_exists('API_Interface')) {
                 else
                     $label = str_replace(';', ',', $label);
 
-                return '<span class="oes-lod-popup oes-popup" data-fn="popup_lod' . $lodID . '" ">' .
+                return '<span class="oes-lod-popup oes-popup" data-fn="popup_lod' . $lodID . '">' .
                     sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s">%s&nbsp;%s</a>',
                         $this->identifier,
                         $lodID,
