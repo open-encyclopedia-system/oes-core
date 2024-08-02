@@ -26,5 +26,10 @@ function redirect_page(array $templates): array
         else array_unshift($templates, $template);
     }
 
+    /* add language dependent template */
+    global $oes_language;
+    if($oes_language !== 'language0' && sizeof($templates) > 0)
+        array_unshift($templates, str_replace('.php', '-' . $oes_language . '.php', $templates[0]));
+
     return $templates;
 }

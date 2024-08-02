@@ -17,8 +17,8 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 function render_single_note(array $args, string $content = ""): string
 {
     /* get post id */
-    global $oesNotes;
-    $postID = $GLOBALS['post']->ID;
+    global $oes_post, $oesNotes;
+    $postID = $oes_post ? $oes_post->object_ID : $GLOBALS['post']->ID;
 
     /* get note number */
     $number = (!isset($oesNotes[$postID]) || count($oesNotes[$postID]['used_reference_numbers']) == 0) ?
@@ -74,8 +74,8 @@ function render_single_note(array $args, string $content = ""): string
 function get_rendered_notes_list($args, string $content = ""): string
 {
     /* get global parameters */
-    global $oesNotes, $oes_is_pdf;
-    $postID = $GLOBALS['post']->ID;
+    global $oesNotes, $oes_post, $oes_is_pdf;
+    $postID = $oes_post ? $oes_post->object_ID : $GLOBALS['post']->ID;
 
     /* return early if no notes available */
     if (empty($oesNotes[$postID]) || !isset($oesNotes[$postID]['notes'])) return '';

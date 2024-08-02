@@ -80,9 +80,9 @@ function calculate_post_title_from_formula(
  * @return string Return the calculated post name or empty.
  */
 function calculate_post_name_from_formula(
-    array $pattern,
-    $postID,
-    bool $overwrite = false,
+    array  $pattern,
+           $postID,
+    bool   $overwrite = false,
     string $separator = ''): string
 {
     if ($parts = $pattern['parts'] ?? false) {
@@ -116,8 +116,8 @@ function calculate_field_value_from_formula($value, $postID, array $field, bool 
     /* check for new value */
     if ($pattern = (OES()->post_types[get_post_type($postID)]['field_options'][$field['key']]['pattern'] ?? []))
         if ($overwrite || (empty($value) || $value !== 'generate'))
-            if($newValue = calculate_value($pattern, $postID))
-                if($newValue !== $value) $value = $newValue;
+            if ($newValue = calculate_value($pattern, $postID))
+                if ($newValue !== $value) $value = $newValue;
 
     return $value;
 }
@@ -138,7 +138,7 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
     /* get parts */
     $stringParts = [];
     foreach ($parts as $part) {
-        
+
         /* @oesLegacy  rename pattern parameters */
         if (isset($part['default']) && !isset($part['string_value'])) $part['string_value'] = $part['default'];
         if (isset($part['key']) && !isset($part['field_key'])) $part['field_key'] = $part['key'];
@@ -158,6 +158,22 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
                 $fieldKey = substr($fieldKey, 8);
                 $consideredID = get_parent_id($postID);
             }
+
+
+            /**
+             * Filters the considered ID.
+             *
+             * @param mixed $consideredID The considered ID.
+             * @param string $fieldKey The field key.
+             * @param string|int $postID The post ID.
+             * @param array $part The part data.
+             */
+            $consideredID = apply_filters('oes/calculate_value_part_considered_id',
+                $consideredID,
+                $part['field_key'] ?? $fieldKey,
+                $postID,
+                $part);
+
 
             /* get field value and parameters */
             $fieldObject = oes_get_field_object($fieldKey);

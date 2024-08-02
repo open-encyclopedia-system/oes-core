@@ -299,9 +299,9 @@ function oes_get_archive_loop_html(array $args = []): string
                                     if (!empty($dataRow['label'] ?? ''))
                                         $previewTable .= sprintf('<tr><th>%s</th><td>%s</td></tr>',
                                             $dataRow['label'],
-                                            $dataRow['value']);
+                                            do_shortcode($dataRow['value']));
                                     else
-                                        $previewTable .= '<tr><th colspan="2">' . $dataRow['value'] . '</th></tr>';
+                                        $previewTable .= '<tr><th colspan="2">' . do_shortcode($dataRow['value']) . '</th></tr>';
                                 }
 
                     /* Prepare read more button */

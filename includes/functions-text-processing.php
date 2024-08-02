@@ -206,9 +206,9 @@ function oes_csv_escape_string(
  */
 function oes_replace_string_for_anchor(string $inputString): string
 {
-    $string = preg_replace('/\s+/', '_', $inputString);
-    $string = preg_replace('/[^a-zA-Z0-9_]/', '', oes_replace_umlaute($string));
-    return strtolower($string);
+    $cleaned = preg_replace('/[^\p{L}\p{N}\-\_\:\.]/u', '', $inputString);
+    if (!preg_match('/^\p{L}/u', $cleaned)) $cleaned = 'id' . $cleaned;
+    return strtolower($cleaned);
 }
 
 

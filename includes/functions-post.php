@@ -121,8 +121,16 @@ function oes_get_display_title($object = false, array $args = [], string $option
                         !empty($metadata['name_' . $language][0]))
                         $title = $metadata['name_' . $language][0];
             }
-        } else
+        } else {
+
+            /* modify option if language dependent */
+            if (!empty($language) &&
+                $language !== 'language0' &&
+                $oes->taxonomies[$object->taxonomy]['field_options'][$titleOption . '_language1'])
+                $titleOption = $titleOption . '_language1';
+
             $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
+        }
 
         return empty($title) ? $object->name : $title;
     } else {

@@ -1,6 +1,6 @@
 # Open Encyclopedia System
 Tags: publishing, encyclopedia
-Requires at least: 6.0
+Requires at least: 6.5
 Tested up to: 6.6
 Requires PHP: 8.1 or later
 License: GPLv2 or later
@@ -71,6 +71,17 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 # Changelog
+
+## 2.3.4
+* new - enable language dependent templates
+* new - add language depenendent body class
+* new - filter 'oes/calculate_value_part_considered_id' to modify considered ID while calculating formula
+* improve - add non-latin characters for table of contents anchors
+* improve - term display title when language dependent
+* improve - enable shortcodes in archive data drop down
+* improve - store note and popup information per post ID
+* improve - dealing with sub_fields in factory mode
+* fix - figures labels in table, panel overlay
 
 ## 2.3.3
 * new - display status of bidirectional fields

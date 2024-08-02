@@ -4,6 +4,10 @@
   right: 5%;
 }
 
+table .oes-lod-popup__popup.oes-popup__popup--tooltip {
+  max-width: 90%;
+}
+
 .oes-lod-box-container-inner {
   display: flex;
 }

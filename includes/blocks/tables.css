@@ -29,6 +29,7 @@ table.is-style-oes-default tr td {
   border-top: 1px solid var(--wp--preset--color--background);
   padding: 0.5rem 0.5rem 0.5rem 0;
   vertical-align: top;
+  position: relative;
 }
 .wp-block-table.is-style-oes-default tr:last-child th,
 .wp-block-table.is-style-oes-default tr:last-child td,
@@ -74,6 +75,7 @@ table.is-style-oes-simple tr td {
   font-size: 0.9rem;
   padding: 2px 2px 2px 0;
   text-align: left;
+  position: relative;
 }
 .wp-block-table.is-style-oes-simple tr th,
 table.is-style-oes-simple tr th {

@@ -69,7 +69,7 @@ function register_oes_object_post_type(): void
 function register_oes_objects(bool $factoryMode = false): void
 {
     $oesObjects = get_oes_objects();
-    if(empty($oesObjects) && is_admin()){
+    if (empty($oesObjects) && is_admin()) {
         add_action('admin_notices', function () {
             echo '<div class="notice notice-warning"><p>' .
                 __('There is no OES data model registered. Navigate to ', 'oes') .
@@ -77,8 +77,8 @@ function register_oes_objects(bool $factoryMode = false): void
                     admin_url('admin.php?page=oes_tools_model&tab=model')) .
                 __(' and use ' .
                     'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
-                    'project plugin (this will only work if you have admin rights). After that you should see the '.
-                    'list of registered post types and taxonomies.<br>'.
+                    'project plugin (this will only work if you have admin rights). After that you should see the ' .
+                    'list of registered post types and taxonomies.<br>' .
                     'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
                     'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
                     '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
@@ -744,10 +744,15 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
         if (!$field['name']) $fieldGroup['fields'][$fieldKey]['name'] = $field['key'];
 
         /* @acfPro make sure sub_fields have parent_repeater option */
-        if(isset($field['sub_fields'])){
-            foreach($field['sub_fields'] as $singleFieldKey => $singleField)
-                if(!isset($singleField['parent_repeater']))
+        if (isset($field['sub_fields'])) {
+            foreach ($field['sub_fields'] as $singleFieldKey => $singleField) {
+                if (!isset($singleField['parent_repeater']))
                     $fieldGroup['fields'][$fieldKey]['sub_fields'][$singleFieldKey]['parent_repeater'] = $field['key'];
+
+                foreach (['parent', 'ID', 'prefix', 'value', '_name', '_valid'] as $unsetFieldKey)
+                    if (isset($singleField[$unsetFieldKey]))
+                        unset($fieldGroup['fields'][$fieldKey]['sub_fields'][$singleFieldKey][$unsetFieldKey]);
+            }
         }
 
         /* @oesLegacy field type is bidirectional */

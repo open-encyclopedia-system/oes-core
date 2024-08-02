@@ -145,7 +145,7 @@ function oes_get_image_table_data($image): array
         if (isset($image[$fieldKey])) {
 
             /* get label */
-            $label = $oes->media_groups['fields'][$fieldKey][$oes_language] ?? '';
+            $label = $oes->media_groups['image'][$fieldKey][$oes_language] ?? '';
             if (empty($label))
                 $label = [
                     'title' => 'Title',

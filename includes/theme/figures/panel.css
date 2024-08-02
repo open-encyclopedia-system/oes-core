@@ -139,7 +139,7 @@ figure.oes-panel-figure figcaption .oes-modal-figcaption-credit-prefix {
 .oes-modal-image-container img {
   max-width: calc(100% - 4rem) !important;
   height: 100%;
-  object-fit: scale-down !important;
+  object-fit: contain !important;
   margin: auto;
   text-align: center;
   padding-right: 0;

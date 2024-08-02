@@ -312,7 +312,7 @@ function oes_prepare_data_other(): void
  */
 function oes_body_class(array $classes): array {
 
-    global $oes_is_index, $oes_taxonomy;
+    global $oes_is_index, $oes_taxonomy, $oes_language;
     $removeError = false;
     if(!empty($oes_is_index)) {
         $classes[] = 'oes-index-archive';
@@ -325,6 +325,8 @@ function oes_body_class(array $classes): array {
         $classes[] = 'oes-taxonomy-archive-' . $oes_taxonomy;
         $removeError = true;
     }
+
+    if(!empty($oes_language)) $classes[] = 'oes-body-' . $oes_language;
 
     /* remove error class */
     if($removeError){

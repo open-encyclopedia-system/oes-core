@@ -27,6 +27,7 @@ table.is-style-oes-default {
     border-top: 1px solid var(--wp--preset--color--background);
     padding: .5rem .5rem .5rem 0;
     vertical-align: top;
+    position: relative;
   }
 
   tr:last-child th,
@@ -74,6 +75,7 @@ table.is-style-oes-simple {
     font-size: .9rem;
     padding: 2px 2px 2px 0;
     text-align: left;
+    position: relative;
   }
 
   tr th {
