@@ -7,7 +7,7 @@
  * Plugin Name: OES Core
  * Plugin URI: http://www.open-encyclopedia-system.org/
  * Description: Building and maintaining online encyclopedias.
- * Version: 2.3.3
+ * Version: 2.3.4
  * Author: Maren Welterlich-Strobl, Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
  * Author URI: https://www.cedis.fu-berlin.de/cedis/mitarbeiter/beschaeftigte/mstrobl.html
  * License: GPLv2 or later
