@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function oes_get_modal_image(array $image, array $args = []): string
 {
-    if ($image['ID'] ?? false) return '';
+    if (!($image['ID'] ?? false)) return '';
     return oes_get_image_panel_content($image, $args);
 }
 
