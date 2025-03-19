@@ -431,7 +431,7 @@ function oes_convert_date_to_formatted_string(
 
             if (empty($locale)) {
                 global $oes_language;
-                $locale = $args['date-locale'] ?? (OES()->languages[$oes_language]['locale'] ?? 'en_BE');
+                $locale = $args['date-locale'] ?? (OES()->languages[$oes_language ?? 'language0']['locale'] ?? 'en_BE');
             }
 
             if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;

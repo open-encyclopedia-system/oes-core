@@ -79,6 +79,12 @@ if (!class_exists('API_Interface')) {
          */
         function render_shortcode(array $args, string $content = ""): string
         {
+
+            /* count boxes */
+            global $oesAPIBox;
+            if(!is_int($oesAPIBox)) $oesAPIBox = 0;
+            ++$oesAPIBox;
+
             /* get gnd object */
             if ($lodID = $args['id'] ?? false) {
 
@@ -104,14 +110,15 @@ if (!class_exists('API_Interface')) {
                     $label = str_replace(';', ',', $label);
 
                 return '<span class="oes-lod-popup oes-popup" data-fn="popup_lod' . $lodID . '">' .
-                    sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s">%s&nbsp;%s</a>',
+                    sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s" data-boxid="%s">%s&nbsp;%s</a>',
                         $this->identifier,
                         $lodID,
+                        $oesAPIBox,
                         $label,
                         oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
                     ) .
                     '</span>' .
-                    '<span class="oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod' . $lodID . '" id="oes-lod-box-' . $lodID . '">' .
+                    '<span class="oes-lod-box-' . $oesAPIBox . ' oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod' . $lodID . '" id="oes-lod-box-' . $oesAPIBox . '">' .
                     oes_get_html_img(
                         plugins_url(OES_BASENAME . '/assets/images/spinner.gif'),
                         'waiting...',

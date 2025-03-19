@@ -72,6 +72,11 @@ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Ge
 
 # Changelog
 
+## 2.3.5
+* improve - add default language when converting date to language specific format
+* fix - display two GND boxes with same GND ID
+* fix - GND css
+
 ## 2.3.4
 * new - enable language dependent templates
 * new - add language depenendent body class

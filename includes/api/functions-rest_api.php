@@ -540,6 +540,7 @@ function lod_box()
             $restAPI->get_data(['lodid' => $_POST['param']['lodid']]);
             $response['html'] = $restAPI->get_data_for_display();
             $response['id'] = $_POST['param']['lodid'];
+            $response['boxid'] = $_POST['param']['boxid'];
         } else $response['response'] = json_encode(['error' => 'API Class not found.']);
     } else $response['response'] = json_encode(['No search term.']);
 

@@ -297,8 +297,10 @@ if (!class_exists('GND_API')) {
                     if (isset($entryData['dateOfDeath']) || isset($entryData['placeOfDeath']))
                         $modifiedEntries[] = [
                             'label' => ($this->language === 'german' ? 'Verstorben' : 'death'),
-                            'value' => (!empty($entryData['dateOfDeath']['value'] ?? '') ?
-                                oes_convert_date_to_formatted_string($entryData['dateOfDeath']['raw'][0]) :
+                            'value' => (isset($entryData['dateOfDeath']['value']) ?
+                                (strpos($entryData['dateOfDeath']['raw'][0], '-') > 0 ?
+                                    oes_convert_date_to_formatted_string($entryData['dateOfDeath']['raw'][0]) :
+                                    $entryData['dateOfDeath']['raw'][0]) :
                                     '') .
                                 (isset($entryData['placeOfDeath']['value']) ?
                                     (',<span class="oes-lod-table-additional">' . $entryData['placeOfDeath']['value'] . '</span>') :

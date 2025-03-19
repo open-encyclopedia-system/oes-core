@@ -10,3 +10,12 @@
     height: 14px;
     padding-right: 5px;
 }
+
+.oes-lod-popup__popup.oes-popup__popup--tooltip {
+  max-width: 100%;
+  width: 100%;
+}
+
+.oes-lod-box-image-inner {
+  margin-right: 10px;
+}

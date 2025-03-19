@@ -1,6 +1,6 @@
 /* execute api request */
 jQuery(".oes-lodlink").on("click", function (event) {
-    
+
     const id = this.dataset.lodid,
         box_exists = this.nextSibling;
 
@@ -15,6 +15,7 @@ jQuery(".oes-lodlink").on("click", function (event) {
         const params = {};
         params['api'] = this.dataset.api;
         params['lodid'] = id;
+        params['boxid'] = this.dataset.boxid;
 
         /* call rest api */
         jQuery.ajax({
@@ -25,7 +26,7 @@ jQuery(".oes-lodlink").on("click", function (event) {
             jQuery('.oes-spinner').each(function () {
                 this.style.display = 'none';
             });
-            jQuery('#oes-lod-box-' + data.id).each(function () {
+            jQuery('#oes-lod-box-' + data.boxid).each(function () {
                 this.innerHTML = data.html;
             });
         });
