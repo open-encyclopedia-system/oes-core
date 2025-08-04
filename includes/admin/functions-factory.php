@@ -126,17 +126,17 @@ function import_model_to_factory(bool $dataFromFile = false): void
         /* loop through OES objects */
         foreach (Model\get_oes_objects(false) as $post)
             if (!in_array($post->post_name, ['oes_config', 'media']) &&
-                !oes_ends_with($post->post_name, 'language')) {
+                !str_ends_with($post->post_name, 'language')) {
 
                 /* prepare acf object */
                 $factoryPost = json_decode($post->post_content, true);
 
                 /* add additional information for insert post type or taxonomy */
-                if (oes_starts_with($post->post_name, 'taxonomy'))
+                if (str_starts_with($post->post_name, 'taxonomy'))
                     $factoryPost['taxonomy'] = substr($post->post_name, 9);
-                elseif (oes_starts_with($post->post_name, 'group_media'))
+                elseif (str_starts_with($post->post_name, 'group_media'))
                     $factoryPost['post_type'] = 'attachment';
-                elseif (oes_starts_with($post->post_name, 'post_type'))
+                elseif (str_starts_with($post->post_name, 'post_type'))
                     $factoryPost['post_type'] = substr($post->post_name, 10);
 
                 /* set key and title */
@@ -183,7 +183,7 @@ function import_model_from_factory(bool $deleteMissingObjects = true): void
                 $type = isset($args['taxonomy']) ? 'taxonomy' : 'post_type';
 
                 /* validate taxonomy name */
-                if ($type == 'taxonomy' && !oes_starts_with($args['taxonomy'], 't_')) {
+                if ($type == 'taxonomy' && !str_starts_with($args['taxonomy'], 't_')) {
                     $args['taxonomy'] = 't_' . $args['taxonomy'];
                 }
 
@@ -219,7 +219,7 @@ function import_model_from_factory(bool $deleteMissingObjects = true): void
             /* check if field group belongs to attachment object */
             if ($args['location'][0][0]['param'] == 'attachment') $objectKey = 'media';
 
-            $languageGroup = oes_ends_with($factoryPost->post_name, 'language');
+            $languageGroup = str_ends_with($factoryPost->post_name, 'language');
             $args['fields'] = validate_fields(acf_get_fields($factoryPost->ID));
             $args['title'] = $factoryPost->post_title;
             $args['key'] = $factoryPost->post_name;
@@ -234,7 +234,7 @@ function import_model_from_factory(bool $deleteMissingObjects = true): void
                     $args['location'][0][0]['param']);
 
             /* process objects and collect language objects (they are always generated!), */
-            if (!oes_ends_with($factoryPost->post_name, 'language')) {
+            if (!str_ends_with($factoryPost->post_name, 'language')) {
 
                 /* update or insert object */
                 if ($fieldGroupID) {

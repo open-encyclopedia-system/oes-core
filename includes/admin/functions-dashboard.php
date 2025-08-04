@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * @file
+ * @todoReview Review for 2.4.x
+ * @oesDevelopment in 2.4.0:
+ *  - add bookmarks meta box
+ *  - add statistics meta box
+ *  - add_action('welcome_panel', '\OES\Dashboard\welcome_panel');
+ */
+
 namespace OES\Dashboard;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -28,9 +37,48 @@ function modify(): void
     remove_action('welcome_panel', 'wp_welcome_panel');
     remove_action('try_gutenberg_panel', 'wp_try_gutenberg_panel');
 
-    //@oesDevelopment add_action('welcome_panel', '\OES\Dashboard\welcome_panel');
-}
+    /* get options where feature options are stored */
+    $features = \OES\Admin\get_features();
 
+    /*
+    add_meta_box(
+        'dashboard_oes_profile',
+        'OES Bookmarks',
+        '\OES\Profile\dashboard_html',
+        'dashboard',
+        'side');
+
+    add_meta_box(
+        'dashboard_oes_statistics',
+        'OES Statistic',
+        '\OES\Profile\dashboard_html',
+        'dashboard',
+        'side');*/
+
+    if (!$features || ($features['manual'] ?? false))
+        add_meta_box(
+            'dashboard_oes_manual',
+            'OES Manual',
+            '\OES\Manual\dashboard_html',
+            'dashboard',
+            'normal');
+
+    if (!$features || ($features['remarks'] ?? false))
+        add_meta_box(
+            'dashboard_oes_remarks',
+            'OES Remarks',
+            '\OES\Remarks\dashboard_html',
+            'dashboard',
+            'normal');
+
+    if (!$features || ($features['task'] ?? false))
+        add_meta_box(
+            'dashboard_oes_task',
+            'OES Tasks',
+            '\OES\Tasks\dashboard_html',
+            'dashboard',
+            'normal');
+}
 
 /**
  * Modify the welcome panel to introduce users to WordPress.

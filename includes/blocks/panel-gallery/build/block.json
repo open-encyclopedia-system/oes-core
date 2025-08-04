@@ -1,0 +1,36 @@
+{
+  "apiVersion": 2,
+  "name": "oes/image-gallery-core",
+  "title": "OES Gallery Panel",
+  "description": "An expandable image gallery panel block.",
+  "category": "media",
+  "icon": "format-image",
+  "supports": {
+    "anchor": true,
+    "align": true,
+    "customClassName": true
+  },
+  "attributes": {
+    "gallery_title": {
+      "type": "string",
+      "default": ""
+    },
+    "gallery_number": {
+      "type": "boolean",
+      "default": false
+    },
+    "gallery_expanded": {
+      "type": "boolean",
+      "default": true
+    },
+    "images": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css"
+}

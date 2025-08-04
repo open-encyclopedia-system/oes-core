@@ -23,7 +23,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         public string $term = '';
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(array $args = []): void
         {
             /* set post type */
@@ -54,7 +54,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_object_label(): string
         {
             global $oes, $oes_language;
@@ -65,7 +65,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_filter(array $args): array
         {
             $postType = $args['post-type-for-filter'] ?? $this->post_type;
@@ -81,12 +81,12 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
                         /* check for further information */
                         $filterArgs = ['parent' => false];
                         $filterKey = $filter;
-                        if (oes_starts_with($filter, 'parent__')) {
+                        if (str_starts_with($filter, 'parent__')) {
                             $filterKey = substr($filter, 8);
                             $filterArgs['parent'] = true;
                         }
 
-                        if (oes_starts_with($filterKey, 'taxonomy__')) {
+                        if (str_starts_with($filterKey, 'taxonomy__')) {
                             $filterKey = substr($filterKey, 10);
                             if (taxonomy_exists($filterKey)) {
                                 $filterArgs['type'] = 'taxonomy';
@@ -94,7 +94,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
                                     $oes->taxonomies[$filterKey]['label_translations_plural'][$oes_language] ??
                                     get_taxonomy($filterKey)->label;
                             }
-                        } elseif (oes_starts_with($filterKey, 'post_type__')) {
+                        } elseif (str_starts_with($filterKey, 'post_type__')) {
                             $filterKey = substr($filterKey, 11);
                             if (post_type_exists($filterKey)) {
                                 $filterArgs['type'] = 'post_type';
@@ -102,7 +102,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
                                     ($oes->post_types[$filterKey]['label_translations_plural'][$oes_language] ??
                                         $filterKey);
                             }
-                        } elseif (oes_starts_with($filterKey, 'parent_taxonomy__')) {
+                        } elseif (str_starts_with($filterKey, 'parent_taxonomy__')) {
                             $filterKey = substr($filterKey, 17);
                             if (taxonomy_exists($filterKey)) {
                                 $filterArgs['type'] = 'taxonomy';
@@ -160,11 +160,11 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
             elseif (post_type_exists($this->post_type)) {
 
                 /* query posts */
-                $posts = new WP_Query([
+                $posts = new WP_Query(array_merge([
                     'post_type' => $this->post_type,
                     'post_status' => 'publish',
                     'posts_per_page' => -1
-                ]);
+                ], $this->query_parameters));
 
                 /* loop through results */
                 if ($posts->have_posts())

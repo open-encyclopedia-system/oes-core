@@ -58,7 +58,7 @@ function oes_render_block_core_heading(string $block_content, array $parsed_bloc
  */
 function oes_get_page_title(array $args = []): string
 {
-    global $oes_post, $oes_archive_data, $oes_term;
+    global $oes_post, $oes_archive, $oes_archive_data, $oes_term;
 
     /* get page title according to page type */
     $isLink = $args['is_link'] ?? false;
@@ -98,7 +98,7 @@ function oes_get_page_title(array $args = []): string
     } elseif ($oes_archive_data) {
 
         /* get title from archive object */
-        $title = $oes_archive_data['archive']['page_title'] ?? '';
+        $title = $oes_archive['page_title'] ?? ($oes_archive_data['page_title'] ?? '');
     } elseif (is_404()) $title = __('Error 404', 'oes');
     else $title = get_the_title();
 
@@ -182,251 +182,31 @@ function oes_archive_get_alphabet_filter(array $characters): array
     return $alphabetArray;
 }
 
-
 /**
- * Prepare the archive by evaluating archive loop.
+ * Returns the rendered HTML for an archive loop using a customizable class.
  *
- * @param array $args Additional arguments.
- * @return string The HTML representation of the archive list.
+ * @param array $args Optional. Arguments to pass to the archive loop renderer.
+ * @return string The rendered archive loop HTML.
  */
 function oes_get_archive_loop_html(array $args = []): string
 {
-
-    /* check if list already displayed (used by other plugins such as OES Timeline, OES Map) */
-    global $oes_archive_displayed;
-    $oes_archive_displayed = false;
-
+    $class = oes_get_project_class_name('OES_Archive_Loop');
 
     /**
-     * Display archive options via action hook.
+     * Filter to override the class used for rendering the archive loop.
+     *
+     * @see oes/theme_archive_loop_class
      */
-    do_action('oes/theme_archive_list');
+    $class = apply_filters('oes/theme_archive_loop_class', $class);
 
-
-    $html = '';
-    if (!$oes_archive_displayed) {
-
-        global $post_type, $oes_archive_data, $oes_archive_alphabet_initial, $oes_archive_skipped_posts, $oes_language,
-               $oes_is_search;
-        if (!$oes_archive_skipped_posts) $oes_archive_skipped_posts = [];
-        $consideredPostType = $oes_archive_data['archive']['post_type'] ?? $post_type;
-
-        /* return early if no data found */
-        $tableArray = $oes_archive_data['table-array'] ?? [];
-        if (empty($tableArray)) return '';
-
-
-        /**
-         * Add optional html before list.
-         */
-        $html = apply_filters('oes/theme_archive_list_before', $html, $tableArray, $args);
-
-
-        /* loop through table data */
-        foreach ($tableArray as $group) {
-
-            $thisCharacter = $group['character'] === "#" ?
-                'other' :
-                strtolower($group['character']);
-
-            /* optional: add group header, e.g. alphabet character */
-            $groupHeader = '';
-            if (($oes_archive_alphabet_initial || ($args['alphabet'] ?? false)) &&
-                isset($group['character']) &&
-                ($group['character'] !== 'none'))
-                $groupHeader .= '<div class="oes-alphabet-initial">' .
-                    $group['character'] .
-                    ($group['additional'] ?? '') .
-                    '</div>';
-
-
-            /**
-             * Filters the group header.
-             *
-             * @param string $groupHeader The group header.
-             * @param array $group The group data.
-             */
-            $groupHeader = apply_filters('oes/theme_archive_group_header', $groupHeader, $group);
-
-
-            /* loop through entries */
-            $containerString = '';
-            foreach ($group['table'] as $row)
-                if (isset($row['id']) &&
-                    !in_array($row['id'], $oes_archive_skipped_posts)) {
-
-                    /* check for language */
-                    if (!empty($args['language']) && $args['language'] !== 'all' &&
-                        !empty($row['language']) && $row['language'] !== 'all') {
-
-                        switch ($args['language']) {
-                            case 'current':
-                                $language = $oes_language;
-                                break;
-
-                            case 'opposite';
-                                $language = ($oes_language == 'language0') ? 'language1' : 'language0';
-                                break;
-
-                            default:
-                                $language = $args['language'];
-                                break;
-                        }
-                        if ($language !== $row['language']) continue;
-                    }
-
-                    /* check if title is link */
-                    $title = (isset($oes_archive_data['archive']) &&
-                        (($oes_archive_data['archive']['display_content'] ?? false) ||
-                            (!$oes_archive_data['archive']['title_is_link'] ?? false))) ?
-                        sprintf('<span class="oes-archive-title" id="%s">%s</span>',
-                            $post_type . '-' . $row['id'],
-                            $row['title']
-                        ) :
-                        sprintf('<a href="%s" class="oes-archive-title">%s</a>',
-                            $row['permalink'],
-                            $row['title']
-                        );
-
-                    /* check for archive preview */
-                    $previewTable = false;
-                    if (!($args['exclude-preview'] ?? false))
-                        if (($args['archive_data'] ?? true) && !empty($row['data']))
-                            foreach ($row['data'] as $dataRow)
-                                if (isset($dataRow['value']) &&
-                                    (!empty($dataRow['value']) &&
-                                        (is_string($dataRow['value']) && strlen(trim($dataRow['value'])) != 0))) {
-                                    if (!empty($dataRow['label'] ?? ''))
-                                        $previewTable .= sprintf('<tr><th>%s</th><td>%s</td></tr>',
-                                            $dataRow['label'],
-                                            do_shortcode($dataRow['value']));
-                                    else
-                                        $previewTable .= '<tr><th colspan="2">' . do_shortcode($dataRow['value']) . '</th></tr>';
-                                }
-
-                    /* Prepare read more button */
-                    $readMore = $oes_is_search ?
-                        sprintf('<tr><td colspan="2"><div class="wp-block-buttons"><div class="wp-block-button">' .
-                            '<a href="%s" class="wp-block-button__link wp-element-button">%s</a>' .
-                            '</div></div></td></tr>',
-                            $row['permalink'],
-                            oes_get_label('button__read_more', 'Read More', $oes_language)) :
-                        '';
-
-                    /* display row with preview */
-                    $displayRow = '';
-
-
-                    /**
-                     * Filter the display of a row (single result).
-                     *
-                     * @param array $row The single result.
-                     * @param string $title The single result title.
-                     * @param array $args Additional arguments.
-                     * @param string $previewTable The preview table string.
-                     * @param string $readMore The read more button string.
-                     */
-                    if (is_search() && has_filter('oes/archive_loop_display_row_search'))
-                        $displayRow = apply_filters('oes/archive_loop_display_row_search',
-                            $row,
-                            $title,
-                            $args,
-                            $previewTable,
-                            $readMore);
-
-                    /**
-                     * Filter the display of a row per post type.
-                     *
-                     * @param array $row The single result.
-                     * @param string $title The single result title.
-                     * @param array $args Additional arguments.
-                     * @param string $previewTable The preview table string.
-                     * @param string $readMore The read more button string.
-                     */
-                    elseif (!is_search() && has_filter('oes/archive_loop_display_row-' . $consideredPostType))
-                        $displayRow = apply_filters('oes/archive_loop_display_row-' . $consideredPostType,
-                            $row,
-                            $title,
-                            $args,
-                            $previewTable,
-                            $readMore);
-
-                    /**
-                     * Filter the display of a row.
-                     *
-                     * @param array $row The single result.
-                     * @param string $title The single result title.
-                     * @param array $args Additional arguments.
-                     * @param string $previewTable The preview table string.
-                     * @param string $readMore The read more button string.
-                     */
-                    elseif (!is_search() && has_filter('oes/archive_loop_display_row'))
-                        $displayRow = apply_filters('oes/archive_loop_display_row',
-                            $row,
-                            $title,
-                            $args,
-                            $previewTable,
-                            $readMore);
-                    elseif ($previewTable)
-                        $displayRow = sprintf(
-                            '<div class="wp-block-group oes-post-filter-wrapper oes-post-%s oes-post-filter-%s" data-post="%s">' .
-                            '<div class="wp-block-group">' .
-                            '<details class="wp-block-details">' .
-                            '<summary>%s</summary>' .
-                            '<div class="oes-archive-table-wrapper wp-block-group collapse" id="row%s">' .
-                            '<div class="oes-details-wrapper-before"></div>' .
-                            '<table class="%s">%s' .
-                            '</table>' .
-                            '<div class="oes-details-wrapper-after"></div>' .
-                            '</div>' .
-                            '</details>' .
-                            '</div>' .
-                            '</div>',
-                            oes_get_post_language($row['id']) ?: 'all',
-                            $row['id'],
-                            $row['id'],
-                            $title . (is_string($row['additional']) ? $row['additional'] : '') . ($row['content'] ?? ''),
-                            $row['id'],
-                            ($args['className'] ?? 'is-style-oes-default') . ' oes-archive-table',
-                            $previewTable . $readMore);
-                    elseif (!isset($args['skip-empty']) || !$args['skip-empty'])
-                        $displayRow = sprintf(
-                            '<div class="oes-post-filter-wrapper oes-post-%s oes-post-filter-%s" data-post="%s">%s</div>',
-                            oes_get_post_language($row['id']) ?: 'all',
-                            $row['id'],
-                            $row['id'],
-                            $title .
-                            (empty($row['additional']) || !is_string($row['additional']) ?
-                                '' :
-                                $row['additional']) .
-                            ($row['content'] ?? '')
-                        );
-
-                    $containerString .= $displayRow;
-                }
-
-            if (!empty($containerString))
-                $html .= sprintf(
-                    '<div class="oes-archive-wrapper oes-alphabet-filter-%s" data-alphabet="%s">%s' .
-                    '<div class="oes-alphabet-container">%s</div>' .
-                    '</div>',
-                    $thisCharacter,
-                    $thisCharacter,
-                    $groupHeader,
-                    $containerString);
-        }
-
-
-        /**
-         * Add optional html after list.
-         */
-        $html = apply_filters('oes/theme_archive_list_after', $html, $tableArray, $args);
-
+    if (!class_exists($class)) {
+        return '';
     }
 
-    return $html;
+    /** @var object $archiveLoop */
+    $archiveLoop = new $class($args);
+    return $archiveLoop->render();
 }
-
 
 /**
  * Get the html representation of the citation.
@@ -486,7 +266,7 @@ function oes_get_literature_html(array $args = []): string
             foreach ($postTypeData['literature'] as $literatureField) {
 
                 $postID = $oes_post->object_ID;
-                if (oes_starts_with($literatureField, 'parent__') && $oes_post->parent_ID) {
+                if (str_starts_with($literatureField, 'parent__') && $oes_post->parent_ID) {
                     $literatureField = substr($literatureField, 8);
                     $postID = $oes_post->parent_ID;
                 }
@@ -535,8 +315,8 @@ function oes_get_terms_html(array $args = []): string
         if (!empty($postTypeData['terms'])) {
 
             foreach ($postTypeData['terms'] as $taxonomy) {
-                if (oes_starts_with($taxonomy, 'taxonomy_')) $taxonomies[] = substr($taxonomy, 10);
-                elseif (oes_starts_with($taxonomy, 'parent_taxonomy_')) $taxonomies[] = substr($taxonomy, 17);
+                if (str_starts_with($taxonomy, 'taxonomy_')) $taxonomies[] = substr($taxonomy, 10);
+                elseif (str_starts_with($taxonomy, 'parent_taxonomy_')) $taxonomies[] = substr($taxonomy, 17);
             }
         }
 
@@ -589,14 +369,11 @@ function oes_get_terms(int $postID, array $taxonomies = []): array
     foreach ($taxonomies as $taxonomy)
         if (taxonomy_exists($taxonomy)) {
 
-            global $oes_language;
             $terms = get_the_terms($postID, $taxonomy);
             foreach ($terms ?: [] as $term) {
 
                 /* check for term name in other languages */
-                $termName = '';
-                if ($oes_language !== 'language0')
-                    $termName = get_term_meta($term->term_id, 'name_' . $oes_language, true);
+                $termName = oes_get_display_title(get_term($term->term_id));
 
                 $termArray[$taxonomy][] = oes_get_html_anchor(
                     '<span>' . (empty($termName) ? $term->name : $termName) . '</span>',
@@ -675,7 +452,7 @@ function oes_get_author_byline_html(array $args = []): string
 {
     global $oes_post;
     if (is_single() && $oes_post) {
-        $authorParam = \OES\Schema\get_post_type_params($oes_post->post_type, 'authors');
+        $authorParam = OES()->post_types[$oes_post->post_type]['authors'] ?? '';
         if (!empty($authorParam)) $args['authors'] = $authorParam;
         return $oes_post->get_author_info($args);
     }
@@ -693,7 +470,7 @@ function oes_get_author_vita_html(array $args = []): string
 {
     global $oes_post, $oes_language;
     if (is_single() && $oes_post) {
-        $vitaParam = \OES\Schema\get_post_type_params($oes_post->post_type, 'vita');
+        $vitaParam = OES()->post_types[$oes_post->post_type]['vita'] ?? '';
         if (!empty($vitaParam)) {
             if (isset($oes_post->fields[$vitaParam . '_' . $oes_language]))
                 return $oes_post->fields[$vitaParam . '_' . $oes_language]['value-display'] ?? '';

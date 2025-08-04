@@ -33,7 +33,7 @@ if (!class_exists('Operations')) :
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function html(): void
         {
             echo '<div class="narrow">';
@@ -237,7 +237,7 @@ if (!class_exists('Operations')) :
                                     $allOperations++;
                                 }
 
-                            } elseif (oes_starts_with($_POST['operation-action'], 'delete_')) {
+                            } elseif (str_starts_with($_POST['operation-action'], 'delete_')) {
                                 $statusKey = substr($_POST['operation-action'], 7);
                                 if ($operation->operation_status === $statusKey) {
 

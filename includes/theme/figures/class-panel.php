@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('OES_Panel')) {
@@ -7,209 +12,216 @@ if (!class_exists('OES_Panel')) {
     /**
      * Class OES_Panel
      *
-     * This class prepares an OES panel.
+     * Base class for rendering collapsible OES panels.
      */
     class OES_Panel
     {
+        /** @var string Panel type, to be overridden by subclasses. */
+        protected string $type = 'panel';
 
-        /** @var string $type The panel type (implemented and used by child classes). */
-        public string $type = 'panel';
+        /** @var string Unique panel ID (used as anchor). */
+        protected string $id = '';
 
-        /** @var string $id The panel id. */
-        public string $id = '';
+        /** @var string Caption to display in the panel header. */
+        protected string $caption = '';
 
-        /** @var string $caption The panel caption. */
-        public string $caption = '';
+        /** @var bool Always display header, even if caption is empty. */
+        protected bool $force_header = false;
 
-        /** @var bool $fore_header Display header even if caption is empty. */
-        public bool $force_header = false;
+        /** @var bool Whether the panel is expanded/open by default. */
+        protected bool $is_expanded = true;
 
-        /** @var bool $is_expanded Display the panel as expanded (active). */
-        public bool $is_expanded = true;
-
-        /** @var bool $is_pdf_mode Display for pdf. */
-        public bool $is_pdf_mode = false;
-
+        /** @var bool Whether the panel is rendered in PDF mode. */
+        protected bool $is_pdf_mode = false;
 
         /**
-         * OES_Panel constructor.
+         * Constructor.
          *
-         * @param array $args Additional arguments.
+         * @param array $args Optional panel arguments.
          */
         public function __construct(array $args = [])
         {
-            foreach ($args as $parameterKey => $parameter)
-                if (property_exists($this, $parameterKey) && gettype($this->$parameterKey) == gettype($parameter)) {
-                    $this->$parameterKey = $parameter;
+            foreach ($args as $key => $value) {
+                if (property_exists($this, $key) && gettype($this->$key) === gettype($value)) {
+                    $this->$key = $value;
+                } elseif ($key === 'active') {
+                    $this->is_expanded = $value;
                 }
+            }
+
             $this->validate_parameters();
             $this->set_additional_parameters($args);
         }
 
-
         /**
-         * Validate the panel parameters.
-         * @return void
+         * Validates input and prepares internal values.
          */
-        function validate_parameters(): void
+        protected function validate_parameters(): void
         {
             $this->calculate_anchor_id();
         }
 
-
         /**
-         * Check if id is set or can be calculated from caption.
-         *
-         * @return void
+         * Calculates ID from caption if not set.
          */
-        function calculate_anchor_id(): void
+        protected function calculate_anchor_id(): void
         {
             if (empty($this->id) && !empty($this->caption)) {
                 $id = preg_replace('/\s+/', '_', $this->caption);
                 $id = preg_replace('/[^a-zA-Z0-9_]/', '', oes_replace_umlaute($id));
-                if (!empty($id)) $this->id = 'panel_' . strtolower($id);
+                if (!empty($id)) {
+                    $this->id = 'panel_' . strtolower($id);
+                }
             }
         }
 
-
         /**
-         * Set additional parameters (implemented by child classes).
+         * Allows subclasses to handle custom arguments.
          *
-         * @param array $args The panel arguments passed by constructor.
-         * @return void
+         * @param array $args Panel arguments.
          */
-        function set_additional_parameters(array $args): void
+        protected function set_additional_parameters(array $args): void
         {
         }
 
-
         /**
-         * Get html representation of OES panel.
+         * Renders the panel HTML.
          *
-         * @param string $content The panel content.
-         * @param array $args Additional parameters.
-         * @return string Return the html representation of the OES panel.
+         * @param string $content Panel inner HTML.
+         * @param array $args Optional rendering options.
+         * @return string
          */
-        function html(string $content = '', array $args = []): string
+        public function html(string $content = '', array $args = []): string
         {
-            return $this->is_pdf_mode ? $this->get_html_pdf($content, $args) : $this->get_html($content);
+            return $this->is_pdf_mode
+                ? $this->get_html_pdf($content, $args)
+                : $this->get_html($content);
         }
 
-
         /**
-         * Get html representation of OES panel.
+         * Standard (web) panel HTML output.
          *
-         * @param string $content The panel content.
-         * @return string Return the html representation of the OES panel.
+         * @param string $content Panel content.
+         * @return string
          */
-        function get_html(string $content = ''): string
+        protected function get_html(string $content = ''): string
         {
-            return '<div class="oes-panel-container oes-panel-container-' . $this->type . '"' .
-                (empty($this->id) ? '' : (' id="' . $this->id . '"')) . '>' .
-                '<div class="oes-accordion-wrapper">' . $this->get_html_header() .
-                '<div class="oes-accordion-panel oes-panel' . ($this->is_expanded ? ' active': '') . '">' .
-                $this->get_html_content($content) .
-                '</div>' .
-                '</div>' .
-                '</div>';
+            $header = $this->get_html_header();
+            $expanded = empty($header) || $this->is_expanded;
+
+            return sprintf(
+                '<div class="oes-panel-container oes-panel-container-%s"%s>' .
+                '<div class="oes-accordion-wrapper">%s' .
+                '<div class="oes-accordion-panel oes-panel%s">%s</div>' .
+                '</div></div>',
+                esc_attr($this->type),
+                $this->id ? ' id="' . esc_attr($this->id) . '"' : '',
+                $header,
+                $expanded ? ' active' : '',
+                $this->get_html_content($content)
+            );
         }
 
-
         /**
-         * Get the html representation of the OES panel header.
+         * Panel header HTML.
          *
-         * @return string Return the html representation of the OES panel.
+         * @return string
          */
-        function get_html_header(): string
+        protected function get_html_header(): string
         {
-            /* return early if header is empty */
             $caption = $this->get_html_caption();
-            if(empty($caption) && !$this->force_header) return '';
 
-            return '<a class="oes-toggle-down-after oes-panel-header oes-accordion' .
-                ($this->is_expanded ? ' active': '') . '" role="button">' .
-                '<div class="oes-panel-title">' .
-                '<span class="oes-caption-container">' . $caption . '</span>' .
-                '</div>' .
-                '</a>';
+            if (empty($caption) && !$this->force_header) {
+                return '';
+            }
+
+            return sprintf(
+                '<a class="oes-toggle-down-after oes-panel-header oes-accordion%s" role="button">' .
+                '<div class="oes-panel-title"><span class="oes-caption-container">%s</span></div>' .
+                '</a>',
+                $this->is_expanded ? ' active' : '',
+                $caption
+            );
         }
 
-
         /**
-         * Get the header caption.
+         * Caption HTML inside the header.
          *
-         * @return string Return the header caption.
+         * @return string
          */
-        function get_html_caption(): string
+        protected function get_html_caption(): string
         {
-            if(empty($this->caption) && !$this->force_header) return '';
+            if (empty($this->caption) && !$this->force_header) {
+                return '';
+            }
+
             return $this->get_html_caption_prefix() .
-                '<span class="oes-caption-title">' . $this->caption . '</span>' .
+                '<span class="oes-caption-title">' . esc_html($this->caption) . '</span>' .
                 '<span class="oes-toggle-down-after oes-toggle-icon"></span>';
         }
 
-
         /**
-         * Get the html representation of the OES panel caption prefix.
+         * Optional caption prefix.
          *
-         * @return string Return the caption prefix.
+         * @return string
          */
-        function get_html_caption_prefix(): string
+        protected function get_html_caption_prefix(): string
         {
             return '';
         }
 
-
         /**
-         * Get the html representation of the OES panel content.
+         * Panel content HTML.
          *
-         * @param string $content The content.
-         * @return string Return the html representation of the OES panel content.
+         * @param string $content
+         * @return string
          */
-        function get_html_content(string $content = ''): string
+        protected function get_html_content(string $content = ''): string
         {
             return $content;
         }
 
-
         /**
-         * Get html representation of OES panel for pdf display.
+         * PDF version of the panel.
          *
-         * @param string $content The panel content.
-         * @param array $args Additional parameters.
-         * @return string Return the html representation of the OES panel.
+         * @param string $content
+         * @param array $args
+         * @return string
          */
-        function get_html_pdf(string $content = '', array $args = []): string
+        protected function get_html_pdf(string $content = '', array $args = []): string
         {
-            return '<div class="oes-pdf-panel-container oes-panel-container oes-panel-container-' . $this->type . '">' .
+            $titleClass = $args['pdf_title_class'] ?? 'oes-pdf-panel-title';
+
+            return sprintf(
+                '<div class="oes-pdf-panel-container oes-panel-container oes-panel-container-%s">' .
                 '<div class="oes-panel-wrapper">' .
-                '<div class="' . ($args['pdf_title_class'] ?? 'oes-pdf-panel-title') . '">' .
-                '<span class="oes-caption-title">' . $this->get_html_caption_pdf() . '</span>' .
-                '</div>' .
-                '<div class="oes-pdf-panel-box">' . $this->get_html_content_pdf($content) . '</div>' .
-                '</div>' .
-                '</div>';
+                '<div class="%s"><span class="oes-caption-title">%s</span></div>' .
+                '<div class="oes-pdf-panel-box">%s</div>' .
+                '</div></div>',
+                esc_attr($this->type),
+                esc_attr($titleClass),
+                $this->get_html_caption_pdf(),
+                $this->get_html_content_pdf($content)
+            );
         }
 
-
         /**
-         * Get the header caption for pdf display.
+         * Caption for PDF.
          *
-         * @return string Return the header caption.
+         * @return string
          */
-        function get_html_caption_pdf(): string
+        protected function get_html_caption_pdf(): string
         {
             return $this->get_html_caption();
         }
 
-
         /**
-         * Get the html representation of the OES panel content for pdf display.
+         * Panel content for PDF.
          *
-         * @param string $content The content.
-         * @return string Return the html representation of the OES panel content.
+         * @param string $content
+         * @return string
          */
-        function get_html_content_pdf(string $content = ''): string
+        protected function get_html_content_pdf(string $content = ''): string
         {
             return $this->get_html_content($content);
         }

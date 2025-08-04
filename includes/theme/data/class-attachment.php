@@ -15,11 +15,11 @@ if (!class_exists('OES_Attachment')) {
         /** @var string $attachment_type The attachment type */
         public string $attachment_type = 'file';
 
-        //Overwrite parent
+        /** @inheritdoc */
         public $post_type = 'media';
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(): void
         {
             $this->set_title();
@@ -29,10 +29,12 @@ if (!class_exists('OES_Attachment')) {
             foreach (['image', 'video', 'audio'] as $type)
                 if (wp_attachment_is($type, $post ? get_post($this->object_ID) : $post))
                     $this->attachment_type = $type;
+
+            $this->language = $this->get_language();
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_title(): void
         {
             $titleOption = OES()->media_groups['title'] ?? 'title';
@@ -57,7 +59,7 @@ if (!class_exists('OES_Attachment')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_index_connected_posts(string $consideredPostType, string $postRelationship = ''): array
         {
             /* prepare data */
@@ -101,14 +103,14 @@ if (!class_exists('OES_Attachment')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_html_main_block(array $args = []): array
         {
             return $this->prepare_html_main_attachment();
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_html_main_classic(array $args = []): array
         {
             return $this->prepare_html_main_attachment();

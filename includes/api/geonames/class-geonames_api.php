@@ -43,7 +43,7 @@ if (!class_exists('Geonames_API')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_request_url(string $url, array $args): string
         {
             $this->searchTerm = $args['search_term'] ?? '';
@@ -63,15 +63,15 @@ if (!class_exists('Geonames_API')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_data_from_response($response)
         {
             return $response->geonames ?? [$response];
         }
 
 
-        //Overwrite parent
-        function transform_data_entry($entry):array
+        /** @inheritdoc */
+        function transform_data_entry(mixed $entry):array
         {
 
             $entryID = $entry['geonameId']['value'] ?? false;
@@ -88,8 +88,8 @@ if (!class_exists('Geonames_API')) {
         }
 
 
-        //Overwrite parent
-        function get_data_for_display_modify_table_data($entry): array
+        /** @inheritdoc */
+        function get_data_for_display_modify_table_data(mixed $entry): array
         {
 
             $modifiedEntryKeys = ['geonameId', 'name', 'countryCode', 'countryName', 'lng', 'lat', 'wikipediaURL'];
@@ -102,8 +102,8 @@ if (!class_exists('Geonames_API')) {
         }
 
 
-        //Overwrite parent
-        function get_data_for_display_prepare_html(string $title, string $table, $entry): string
+        /** @inheritdoc */
+        function get_data_for_display_prepare_html(string $title, string $table, mixed $entry): string
         {
             return '<div class="oes-lod-box-title">' . $title . '</div>' . $table;
         }

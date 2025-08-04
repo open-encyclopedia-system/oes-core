@@ -21,8 +21,8 @@ if (!class_exists('Export')) :
         private array $data = [];
 
 
-        //Overwrite
-        function initialize_parameters(array $args = []): void
+        //** @inheritdoc */
+        protected function initialize_parameters(array $args = []): void
         {
             $this->form_action = admin_url('admin-post.php');
             $this->postbox['name'] = 'Export';
@@ -30,8 +30,8 @@ if (!class_exists('Export')) :
         }
 
 
-        //Implement parent
-        function html(): void
+        //** @inheritdoc */
+        protected function html(): void
         {
             /* get all post types */
             $choices = [];
@@ -119,7 +119,7 @@ if (!class_exists('Export')) :
         }
 
 
-        //Overwrite
+        //** @inheritdoc */
         function admin_post_tool_action(): void
         {
             /* get post type -----------------------------------------------------------------------------------------*/
@@ -224,10 +224,10 @@ if (!class_exists('Export')) :
          * @param bool $reduced_info Only use reduced post info.
          */
         function get_selected_data(
-            array  $postTypes,
-            bool   $exclude_content = false,
-            bool   $clear_names = false,
-            bool   $reduced_info = false)
+            array $postTypes,
+            bool  $exclude_content = false,
+            bool  $clear_names = false,
+            bool  $reduced_info = false)
         {
             /* bail early if $postType has wrong type */
             if (!is_array($postTypes) || !$postTypes)
@@ -285,7 +285,7 @@ if (!class_exists('Export')) :
                             foreach ($metadata as $key => $field) {
 
                                 /* skip _fields */
-                                if (!oes_starts_with($key, '_')) {
+                                if (!str_starts_with($key, '_')) {
 
                                     /* get clear name for relation fields */
                                     if ($clear_names) {
@@ -374,7 +374,7 @@ if (!class_exists('Export')) :
                                 foreach ($metadata as $key => $field) {
 
                                     /* skip _fields */
-                                    if (!oes_starts_with($key, '_')) {
+                                    if (!str_starts_with($key, '_')) {
 
                                         /* check if database value */
                                         /* check if database value */
@@ -407,7 +407,7 @@ if (!class_exists('Export')) :
                         $this->data['all'] = array_merge($this->data['all'], $postTypeData);
                     else $this->data['all'] = $postTypeData;
                 } /* check if post taxonomy relation */
-                elseif (oes_starts_with($postType, 'pt_') && taxonomy_exists(substr($postType, 3))) {
+                elseif (str_starts_with($postType, 'pt_') && taxonomy_exists(substr($postType, 3))) {
 
                     /* get all relations from database */
                     global $wpdb;
@@ -533,7 +533,7 @@ if (!class_exists('Export')) :
             ];
 
             /* for post - taxonomy relations */
-            elseif (oes_starts_with($postType, 'pt_') && taxonomy_exists(substr($postType, 3))) {
+            elseif (str_starts_with($postType, 'pt_') && taxonomy_exists(substr($postType, 3))) {
                 $includeACFFields = false;
                 $fieldData = [
                     'operation',

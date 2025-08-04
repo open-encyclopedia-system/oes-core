@@ -49,12 +49,25 @@ if (!class_exists('Rest_API')) {
         /**
          * Rest_API constructor.
          *
+         * @param array $args Additional parameters.
          * @param string $url The url to the api.
          */
-        function __construct(string $url = '')
+        function __construct(string $url = '', array $args = [])
         {
             if (!empty($url)) $this->url = $url;
             $this->set_credentials();
+            $this->set_additional_parameters($args);
+        }
+
+
+        /**
+         * Set additional parameters.
+         *
+         * @param array $args Additional parameters.
+         * @return void
+         */
+        function set_additional_parameters(array $args = []): void
+        {
         }
 
 
@@ -114,6 +127,8 @@ if (!class_exists('Rest_API')) {
                     }
                 }
             }
+
+            //@oesDevelopment log error with oes_write_log
         }
 
 
@@ -200,7 +215,7 @@ if (!class_exists('Rest_API')) {
 
                 /* loop through data and prepare for display */
                 $transformedDataEntry = [];
-                $apiInterface = $this->identifier . '_Inteface';
+                $apiInterface = $this->identifier . '_Interface';
                 $propertyLabel = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
                 foreach ($entry as $propertyKey => $property) {
 

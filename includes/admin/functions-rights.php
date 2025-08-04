@@ -319,7 +319,7 @@ function user_roles(): void
      *
      * @param array $userRoles The user roles.
      */
-    $userRoles = apply_filters('oes/data_model_paths', $userRoles);
+    $userRoles = apply_filters('oes/user_roles', $userRoles);
 
     /* loop through roles and add if necessary */
     foreach ($userRoles as $roleKey => $role)

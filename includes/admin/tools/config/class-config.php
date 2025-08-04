@@ -1,10 +1,15 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Tools')) oes_include('admin/tools/tool.class.php');
+if (!class_exists('Tools')) oes_include('admin/tools/class-tool.php');
 
 if (!class_exists('Config')) :
 
@@ -19,12 +24,6 @@ if (!class_exists('Config')) :
         /** @var string The title before the config table. */
         public string $title = '';
 
-        /** @var string The title for the config table. */
-        public string $table_title = '';
-
-        /** @var array The configurations to be displayed. */
-        public array $table_data = [];
-
         /** @var array The option configurations. */
         public array $options = [
             'name' => '',
@@ -37,49 +36,60 @@ if (!class_exists('Config')) :
         /** @var bool Add a hidden input to trigger config update even on empty. */
         public bool $empty_input = false;
 
+        /** @var Form_Table The html form table displaying options. */
+        protected Form_Table $table;
 
-        //Overwrite parent
+        /** @var array Legacy for table options @oesLegacy. */
+        public array $table_data = [];
+
+        /** @inheritdoc */
         function initialize_parameters($args = []): void
         {
             $this->form_action = admin_url('admin-post.php');
         }
 
-
-        ///Overwrite parent
+        /** @inheritdoc */
         function html(): void
         {
-            /* get data to be displayed */
-            $html = '';
-            $dataHTML = $this->data_html();
-            if (!empty($dataHTML) || $this->empty_allowed) {
+            $this->prepare_table();
 
-                /* Information */
-                $informationHTML = $this->information_html();
-                if (!empty($informationHTML)) $html .= $informationHTML;
+            $dataHTML = $this->table->data_html();
+            if (empty($dataHTML) && !$this->empty_allowed) {
+                echo $this->empty();
+                return;
+            }
 
-                /* Data */
-                $html .= '<div>' . $dataHTML . '</div>';
+            $html = $this->information_html();
+            $html .= '<div>' . $dataHTML . '</div>';
+            $html .= $this->additional_html();
 
-                $html .= $this->additional_html();
-
-                /* Buttons */
-                if (!\OES\Rights\user_is_read_only())
-                    $html .= '<div class="' . (empty($dataHTML) ? 'oes-display-none' : '') . '">' .
-                        $this->submit_html() . '</div>';
-            } else $html = $this->empty();
+            if (!\OES\Rights\user_is_read_only()) {
+                $html .= '<div class="' . (empty($dataHTML) ? 'oes-display-none' : '') . '">' .
+                    $this->submit_html() . '</div>';
+            }
 
             echo $html;
         }
 
+        /**
+         * Prepare table for form.
+         */
+        function prepare_table()
+        {
+            $this->table = new Form_Table();
+            $this->set_hidden_inputs();
+            $this->set_table_data_for_display();
+        }
 
         /**
          * Prepare hidden inputs for form.
          */
         function set_hidden_inputs()
         {
-            if($this->empty_input) $this->hidden_inputs = ['oes_hidden' => true];
+            if ($this->empty_input) {
+                $this->hidden_inputs = ['oes_hidden' => true];
+            }
         }
-
 
         /**
          * Prepare table data for html representation.
@@ -87,7 +97,6 @@ if (!class_exists('Config')) :
         function set_table_data_for_display()
         {
         }
-
 
         /**
          * Prepare text to be displayed before tool.
@@ -99,7 +108,6 @@ if (!class_exists('Config')) :
             return '';
         }
 
-
         /**
          * Prepare text to be displayed if tool is empty.
          *
@@ -109,7 +117,6 @@ if (!class_exists('Config')) :
         {
             return __('No configuration options found for your project.', 'oes');
         }
-
 
         /**
          * Prepare text to be displayed after tool.
@@ -121,7 +128,6 @@ if (!class_exists('Config')) :
             return '';
         }
 
-
         /**
          * Prepare text to be displayed after tool.
          *
@@ -132,207 +138,159 @@ if (!class_exists('Config')) :
             return get_submit_button();
         }
 
-
-        /**
-         * Get html representation of table data.
-         *
-         * @return string Return html representation for data table.
-         */
-        function data_html(): string
+        /** @inheritdoc */
+        protected function admin_post_tool_action(): void
         {
-            /* prepare data */
-            $this->set_hidden_inputs();
-            $this->set_table_data_for_display();
+            $postData = $_POST;
 
-            /* get inner tables */
-            $innerTable = '';
-            foreach ($this->table_data ?? [] as $singleTable)
-                if (!empty($singleTable)) {
-                    if (isset($singleTable['standalone']) && $singleTable['standalone'] && !empty($innerTable))
-                        $innerTable .= '</table>' .
-                            '<table class="oes-config-table oes-option-table oes-toggle-checkbox ' .
-                            'oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">';
-                    $innerTable .= $this->data_html_table($singleTable);
-                }
-
-            /* wrap tables if not empty*/
-            $html = '';
-            if (!empty($innerTable))
-                $html = '<table class="oes-config-table oes-option-table oes-toggle-checkbox oes-replace-select2-inside ' .
-                    'striped wp-list-table widefat fixed table-view-list" id="oes-config-table">' .
-                    $innerTable . '</table>';
-
-            return $html;
-        }
-
-
-        /**
-         * Get html representation for single table data.
-         *
-         * @return string Return html representation for a single data table.
-         */
-        function data_html_table(array $data): string
-        {
-
-            $rowHtml = '';
-            foreach ($data['rows'] ?? [] as $row) {
-
-                /* prepare cells */
-                $cellsHtml = '';
-                foreach ($row['cells'] ?? [] as $cell) {
-
-                    $cellType = $cell['type'] ?? 'td';
-
-                    $additionalCell = '';
-                    if (isset($cell['colspan'])) $additionalCell .= ' colspan="' . $cell['colspan'] . '"';
-                    if (isset($cell['class'])) $additionalCell .= ' class="' . $cell['class'] . '"';
-
-                    $cellsHtml .= '<' . $cellType . $additionalCell . '>' .
-                        ($cell['value'] ?? 'Value missing') . '</' . $cellType . '>';
-                }
-
-                /* prepare new table if nested table */
-                if (isset($row['type']) && $row['type'] === 'target')
-                    foreach ($row['nested_tables'] ?? [] as $nestedTable)
-                        $cellsHtml .= $this->data_html_table($nestedTable);
-
-                /* prepare row */
-                if (!empty($cellsHtml)) {
-                    $additionalRow = '';
-                    if (isset($row['class'])) $additionalRow .= ' class="' . $row['class'] . '"';
-
-                    switch ($row['type'] ?? 'default') {
-
-                        case 'trigger':
-                            $rowHtml .= '<tr class="oes-expandable-header oes-capabilities-header-row">' .
-                                '<td class="oes-expandable-row-20">' .
-                                '<a href="javascript:void(0)" class="oes-plus oes-dashicons" ' .
-                                'onClick="oesConfigTableToggleRow(this)"></a></td>' .
-                                $cellsHtml .
-                                '</tr>';
-                            break;
-
-                        case 'target':
-                            $rowHtml .= '<tr class="oes-expandable-row" style="display:none"><td></td><td>' .
-                                '<table class="oes-option-table oes-toggle-checkbox striped wp-list-table widefat fixed table-view-list">' .
-                                '<tbody>' .
-                                $cellsHtml .
-                                '</tbody></table></td></tr>';
-                            break;
-
-                        default:
-                            $rowHtml .= '<tr' . $additionalRow . '>' . $cellsHtml . '</tr>';
-                            break;
-                    }
-
-                }
+            if ($this->has_config_post_data($postData)) {
+                $this->update_config_posts();
             }
 
+            if (!empty($this->options['name'] ?? '')) {
+                $this->update_options();
+            }
 
-            /* prepare table part */
-            $additional = '';
-            if (isset($data['class'])) $additional .= ' class="' . $data['class'] . '"';
-
-            $type = $data['type'] ?? 'tbody';
-            return '<' . $type . $additional . '>' . $rowHtml . '</' . $type . '>';
-        }
-
-
-        //Implement parent
-        function admin_post_tool_action(): void
-        {
-            if (isset($_POST['post_types']) ||
-                isset($_POST['taxonomies']) ||
-                isset($_POST['fields']) ||
-                isset($_POST['oes_config']) ||
-                isset($_POST['media']) ||
-                isset($_POST['oes_hidden'])) $this->update_config_posts();
-            if (!empty($this->options['name'] ?? '')) $this->update_options();
-            foreach ($_POST['oes_option'] ?? [] as $option => $value)
+            foreach ($postData['oes_option'] ?? [] as $option => $value) {
                 $this->update_single_option($option, $value);
+            }
         }
-
 
         /**
-         * Update config posts.
+         * Check if the incoming POST data contains any config-related keys.
+         *
+         * @param array $post
+         * @return bool
+         */
+        protected function has_config_post_data(array $post): bool
+        {
+            $keys = ['post_types', 'taxonomies', 'fields', 'oes_config', 'media', 'oes_hidden'];
+            foreach ($keys as $key) {
+                if (!empty($post[$key])) return true;
+            }
+            return false;
+        }
+
+        /**
+         * Update configuration posts from submitted data.
          *
          * @return void
          */
-        function update_config_posts(): void
+        protected function update_config_posts(): void
         {
-            /* modify data */
+            global $oes;
             $data = $this->get_post_data();
 
-            /* get global form params */
-            $oes = OES();
-
-            /* update post types and taxonomies on change */
-            foreach (['post_types', 'taxonomies'] as $component)
-                if (isset($data[$component]) && !empty($data[$component]) && !empty($oes->$component))
-                    foreach ($oes->$component as $key => $objectData)
-                        if (isset($data[$component][$key])) {
-
-                            $value = $data[$component][$key];
-                            foreach ($value as $valueComponentKey => $valueComponent)
-                                foreach ($valueComponent as $paramKey => $param) {
-
-                                    /* update versioning post */
-                                    if ($paramKey == 'parent' || $paramKey == 'version') {
-                                        $versioningOesObjectID = \OES\Model\get_oes_object_option($param, $component);
-                                        $args['oes_args'][$paramKey == 'parent' ? 'version' : 'parent'] = $key;
-                                        $success = oes_config_update_post_object($versioningOesObjectID, $args);
-                                        if ($success != 'success')
-                                            $this->tool_messages['schema_update']['error'][] = $success;
-
-                                        /* update old post */
-                                        if (isset($objectData[$paramKey]) &&
-                                            !empty($objectData[$paramKey]) &&
-                                            $objectData[$paramKey] != $param) {
-                                            $oldObjectID = \OES\Model\get_oes_object_option(
-                                                $objectData[$paramKey],
-                                                $component);
-                                            $args['oes_args'][$paramKey == 'parent' ? 'version' : 'parent'] = '';
-                                            $success = oes_config_update_post_object($oldObjectID, $args);
-                                            if ($success != 'success')
-                                                $this->tool_messages['schema_update']['error'][] = $success;
-                                        }
-
-                                    } elseif (isset($param['pattern']))
-                                        $value[$valueComponentKey][$paramKey]['pattern'] = json_decode(
-                                            str_replace('\\', '', $param['pattern']) ?: '{}',
-                                            true);
-                                }
-
-                            $oesObjectID = \OES\Model\get_oes_object_option($key, $component);
-                            $success = oes_config_update_post_object($oesObjectID, oes_stripslashes_array($value));
-                            if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
-                        }
-
-            /* update fields on change */
-            if (isset($data['fields']) && !empty($data['fields']) && !empty($oes->post_types))
-                foreach ($oes->post_types as $postTypeKey => $postType)
-                    foreach ($oes->post_types[$postTypeKey]['acf_ids'] ?? [] as $acfPostID)
-                        if (isset($data['fields'][$postTypeKey])) {
-                            $success = oes_config_update_field_group_object(
-                                $acfPostID,
-                                oes_stripslashes_array($data['fields'][$postTypeKey])
-                            );
-                            if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
-                        }
-
-            /* update media on change */
-            if (isset($data['media']) && !empty($data['media'])) {
-                $success = oes_config_update_media_object(oes_stripslashes_array($data['media']));
-                if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
+            foreach (['post_types', 'taxonomies'] as $type) {
+                if (!empty($data[$type]) && !empty($oes->$type)) {
+                    $this->update_component_posts($type, $data[$type], $oes->$type);
+                }
             }
 
-            /* update general configs on change */
-            if (isset($data['oes_config']) && !empty($data['oes_config'])) {
-                $success = oes_config_update_general_object(oes_stripslashes_array($data['oes_config']));
-                if ($success != 'success') $this->tool_messages['schema_update']['error'][] = $success;
+            if (!empty($data['fields']) && !empty($oes->post_types)) {
+                $this->update_fields($data['fields'], $oes->post_types);
+            }
+
+            if (!empty($data['media'])) {
+                $this->collect_result(oes_config_update_media_object(oes_stripslashes_array($data['media'])));
+            }
+
+            if (!empty($data['oes_config'])) {
+                $this->collect_result(oes_config_update_general_object(oes_stripslashes_array($data['oes_config'])));
             }
         }
 
+        /**
+         * Update post objects for a given component (post_types or taxonomies).
+         *
+         * @param string $component
+         * @param array $submitted
+         * @param array $existing
+         * @return void
+         */
+        protected function update_component_posts(string $component, array $submitted, array $existing): void
+        {
+            foreach ($existing as $key => $objectData) {
+                if (!isset($submitted[$key])) continue;
+
+                $value = $submitted[$key];
+                $this->handle_versioning_links($component, $key, $value, $objectData);
+
+                $oesObjectID = \OES\Model\get_oes_object_option($key, $component);
+                $this->collect_result(oes_config_update_post_object($oesObjectID, oes_stripslashes_array($value)));
+            }
+        }
+
+        /**
+         * Handle parent/version reference changes between submitted and existing data.
+         *
+         * @param string $component
+         * @param string $key
+         * @param array $submitted
+         * @param array $existing
+         * @return void
+         */
+        protected function handle_versioning_links(string $component, string $key, array &$submitted, array $existing): void
+        {
+            foreach ($submitted as $valueKey => &$params) {
+                foreach ($params as $paramKey => &$param) {
+
+                    if ($paramKey === 'parent' || $paramKey === 'version') {
+                        $linkKey = $paramKey === 'parent' ? 'version' : 'parent';
+
+                        $targetID = \OES\Model\get_oes_object_option($param, $component);
+                        $args = ['oes_args' => [$linkKey => $key]];
+                        $this->collect_result(oes_config_update_post_object($targetID, $args));
+
+                        // Reset old version/parent link if changed
+                        $oldValue = $existing[$paramKey] ?? '';
+                        if (!empty($oldValue) && $oldValue !== $param) {
+                            $oldID = \OES\Model\get_oes_object_option($oldValue, $component);
+                            $args = ['oes_args' => [$linkKey => '']];
+                            $this->collect_result(oes_config_update_post_object($oldID, $args));
+                        }
+                    }
+
+                    // Decode pattern if applicable
+                    if (isset($param['pattern'])) {
+                        $param['pattern'] = json_decode(str_replace('\\', '', $param['pattern']) ?: '{}', true);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Update fields if present in data.
+         *
+         * @param array $fields
+         * @param array $postTypes
+         * @return void
+         */
+        protected function update_fields(array $fields, array $postTypes): void
+        {
+            foreach ($postTypes as $key => $type) {
+                foreach ($type['acf_ids'] ?? [] as $acfID) {
+                    if (isset($fields[$key])) {
+                        $this->collect_result(
+                            oes_config_update_field_group_object($acfID, oes_stripslashes_array($fields[$key]))
+                        );
+                    }
+                }
+            }
+        }
+
+        /**
+         * Add result to tool messages if it's not successful.
+         *
+         * @param mixed $result
+         * @return void
+         */
+        protected function collect_result($result): void
+        {
+            if ($result !== 'success') {
+                $this->tool_messages['schema_update']['error'][] = $result;
+            }
+        }
 
         /**
          * Get post data.
@@ -341,9 +299,9 @@ if (!class_exists('Config')) :
          */
         function get_post_data(): array
         {
-            return $this->get_modified_post_data($_POST);
+            $data = $_POST;
+            return $this->get_modified_post_data($data);
         }
-
 
         /**
          * Modify post data.
@@ -355,7 +313,6 @@ if (!class_exists('Config')) :
             return $data;
         }
 
-
         /**
          * Update options.
          *
@@ -364,17 +321,29 @@ if (!class_exists('Config')) :
         function update_options(): void
         {
             $optionName = $this->get_option_name();
-            if ($optionName) {
-                $option = $this->options['name'] ?? '';
-                $value = isset($_POST[$option]) ?
-                    (($this->options['encoded'] ?? false) ? json_encode($_POST[$option]) : $_POST[$option]) :
-                    '';
 
-                if (!oes_option_exists($optionName)) add_option($optionName, $value);
-                else update_option($optionName, $value);
+            if (!$optionName) {
+                return;
+            }
+
+            $option = $this->options['name'] ?? '';
+
+            $value = '';
+            if(isset($_POST[$option])){
+                if($this->options['encoded'] ?? false){
+                    $value = json_encode($_POST[$option]);
+                }
+                else {
+                    $value = $_POST[$option];
+                }
+            }
+
+            if (!oes_option_exists($optionName)) {
+                add_option($optionName, $value);
+            } else {
+                update_option($optionName, $value);
             }
         }
-
 
         /**
          * Update a single option.
@@ -385,10 +354,12 @@ if (!class_exists('Config')) :
          */
         function update_single_option(string $option, $value): void
         {
-            if (!oes_option_exists($option)) add_option($option, $value);
-            else update_option($option, $value);
+            if (!oes_option_exists($option)) {
+                add_option($option, $value);
+            } else {
+                update_option($option, $value);
+            }
         }
-
 
         /**
          * Get option name.
@@ -398,6 +369,112 @@ if (!class_exists('Config')) :
         function get_option_name()
         {
             return $this->options['name'] ?? false;
+        }
+
+        /**
+         * Add a single-cell row to the table.
+         *
+         * @param string $value The content of the cell.
+         * @param array $args Optional attributes like 'colspan'.
+         * @return void
+         */
+        protected function add_cell(string $value, array $args = []): void
+        {
+            $this->table->add_single_cell($value, $args);
+        }
+
+        /**
+         * Add a row to the table using a unified parameter structure.
+         *
+         * @param array $parameters {
+         *     @type string $title         Row title/label.
+         *     @type string $key           Field key name.
+         *     @type mixed  $value         Field value (optional).
+         *     @type string $type          Input type (default 'text').
+         *     @type array  $args          Input attributes.
+         *     @type bool   $is_label      Whether to use multilingual label row.
+         *     @type string $location      Used only if is_label is true.
+         * }
+         * @param array $data Additional metadata like subtitle or colspan.
+         * @param array $secondInput Optional second input (used for dual-input rows).
+         * @return void
+         */
+        protected function add_table_row(array $parameters, array $data = [], array $secondInput = []): void
+        {
+            $title = $parameters['title'] ?? null;
+            $key = $parameters['key'] ?? null;
+
+            if (!$title || !$key) {
+                return; // Required keys missing
+            }
+
+            $value = $parameters['value'] ?? '';
+            $type = $parameters['type'] ?? 'text';
+            $args = $parameters['args'] ?? [];
+
+            if (!empty($parameters['is_label'])) {
+                $this->table->add_language_label_row(
+                    $title,
+                    $key,
+                    is_array($value) ? $value : [],
+                    $parameters['location'] ?? '',
+                    $parameters['label_key'] ?? '',
+                    $parameters['option_prefix'] ?? ''
+                );
+            } else {
+                $this->table->add_simple_row(
+                    $title,
+                    $key,
+                    $value,
+                    $type,
+                    $args,
+                    $data,
+                    $secondInput
+                );
+            }
+        }
+
+        /**
+         * Add a header row to the table.
+         *
+         * @param string $header The text for the header row.
+         * @param string $type One of: 'default', 'inner', 'standalone', 'trigger', 'language_label'.
+         * @param array $args Optional header options (e.g., 'colspan', 'additional' content).
+         * @return void
+         */
+        protected function add_table_header(string $header = '', string $type = 'default', array $args = []): void
+        {
+            switch ($type) {
+                case 'inner':
+                    $this->table->add_inner_header_row($header, $args);
+                    break;
+
+                case 'trigger':
+                    $this->table->add_trigger_header($header, $args['standalone'] ?? false, $args);
+                    break;
+
+                case 'standalone':
+                    $this->table->add_standalone_header($header, $args);
+                    break;
+
+                case 'language_label':
+                    $this->table->add_language_label_header($args['trigger'] ?? true);
+                    break;
+
+                case 'default':
+                default:
+                    $this->table->add_simple_header($header, $args);
+                    break;
+            }
+        }
+
+        /**
+         * End the nested table.
+         * @return void
+         */
+        protected function end_nested_table(): void
+        {
+            $this->table->close_nested_rows();
         }
     }
 endif;

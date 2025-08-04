@@ -1,0 +1,8 @@
+@media print {
+  .oes-print-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+}
+
+/*# sourceMappingURL=style.css.map */

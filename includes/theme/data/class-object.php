@@ -50,6 +50,12 @@ if (!class_exists('OES_Object')) {
         /** @var bool identifying object as front page */
         public bool $is_frontpage = false;
 
+        /** @var array $archive_data The data which is displayed in the archive. */
+        public array $archive_data = [];
+
+        /** @var string|bool $additional_archive_data Additional data to be displayed in the archive. */
+        public $additional_archive_data = false;
+
 
         /**
          * OES_Object constructor.
@@ -110,6 +116,15 @@ if (!class_exists('OES_Object')) {
         {
             global $oes_language;
             return empty($oes_language) ? 'language0' : $oes_language;
+        }
+
+
+        /**
+         * Get archive data for this object. Archive data should have the syntax ['label', 'value'].
+         */
+        public function get_archive_data(): array
+        {
+            return $this->archive_data;
         }
 
 
@@ -586,7 +601,8 @@ if (!class_exists('OES_Object')) {
                             get_permalink($connectedPost->ID),
                             oes_get_display_title_archive($connectedPost->ID)
                         ),
-                        'data' => $this->get_index_connection_post_data($connectedPost->ID)
+                        'data' => $this->get_index_connection_post_data($connectedPost->ID),
+                        'key'=> $key
                     ];
 
                     /* check for versioning and add data */

@@ -103,7 +103,7 @@ function register_oes_objects(bool $factoryMode = false): void
             register_local_field_group($post->ID, 'media', $factoryMode);
 
         } /* taxonomy */
-        elseif (oes_starts_with($post->post_name, 'taxonomy')) {
+        elseif (str_starts_with($post->post_name, 'taxonomy')) {
 
             $taxonomyKey = $post->post_title;
             $argsAll = json_decode($post->post_content, true) ?? [];
@@ -123,7 +123,7 @@ function register_oes_objects(bool $factoryMode = false): void
             }
 
         } /* post type */
-        elseif (oes_starts_with($post->post_name, 'post_type')) {
+        elseif (str_starts_with($post->post_name, 'post_type')) {
 
             $postTypeKey = $post->post_title;
             $registerArgs = json_decode($post->post_content, true);
@@ -269,22 +269,22 @@ function export_model_to_json(): bool
     foreach (get_oes_objects(false, ['order' => 'ASC', 'orderby' => 'title']) as $post) {
 
         /* skip if language dependent field group */
-        if (oes_starts_with($post->post_name, 'group_') && oes_ends_with($post->post_name, '_language')) continue;
+        if (str_starts_with($post->post_name, 'group_') && str_ends_with($post->post_name, '_language')) continue;
         elseif ($post->post_name === 'oes_config')
             $exportData['oes_config'] = json_decode($post->post_content, true);
         elseif ($post->post_name === 'media')
             $exportData['media'] = json_decode($post->post_excerpt, true);
         elseif ($post->post_name === 'group_media')
             $exportData['media']['acf_add_local_field_group'] = json_decode($post->post_content, true);
-        elseif (oes_starts_with($post->post_name, 'post_type_')) {
+        elseif (str_starts_with($post->post_name, 'post_type_')) {
             $exportData[$post->post_title]['register_args'] = json_decode($post->post_content, true);
             $exportData[$post->post_title]['oes_args'] = json_decode($post->post_excerpt, true);
-        } elseif (oes_starts_with($post->post_name, 'taxonomy_t_')) {
+        } elseif (str_starts_with($post->post_name, 'taxonomy_t_')) {
             $taxonomyKey = $post->post_title;
             $exportData[$taxonomyKey]['taxonomy'] = $taxonomyKey;
             $exportData[$taxonomyKey]['register_args'] = json_decode($post->post_content, true);
             $exportData[$taxonomyKey]['oes_args'] = json_decode($post->post_excerpt, true);
-        } elseif (oes_starts_with($post->post_name, 'group_')) {
+        } elseif (str_starts_with($post->post_name, 'group_')) {
             $fieldGroup = json_decode($post->post_content, true);
             if (isset($fieldGroup['location'][0][0]['value'])) {
                 $postTypes = $fieldGroup['location'][0][0]['value'];
@@ -481,11 +481,11 @@ function register_local_field_group($postID, string $objectKey, bool $factoryMod
 {
     /* loop through child posts */
     $oes = OES();
-    $isTaxonomy = oes_starts_with($objectKey, 't_');
+    $isTaxonomy = str_starts_with($objectKey, 't_');
     foreach (get_children(['post_parent' => $postID, 'post_type' => 'oes_object']) as $childPost)
         if ($acfGroup = json_decode($childPost->post_content, true) ?? []) {
 
-            if (!$factoryMode || oes_ends_with($childPost->post_name, 'language'))
+            if (!$factoryMode || str_ends_with($childPost->post_name, 'language'))
                 if (!acf_add_local_field_group($acfGroup))
                     oes_write_log(
                         sprintf(__('Error while adding acf local field group for %s.', 'oes'),
@@ -517,7 +517,7 @@ function validate_general_config(array $args): array
     $languages = [];
     if (isset($args['languages']))
         foreach ($args['languages'] as $languageKey => $language)
-            $languages[(oes_starts_with($languageKey, 'language') ?
+            $languages[(str_starts_with($languageKey, 'language') ?
                 '' :
                 'language') . $languageKey] = $language;
     $args['languages'] = $languages;
@@ -633,7 +633,7 @@ function validate_post_type_oes_args(array $oesArgs = []): array
             $oesArgs['label_translation_' . $languageKey] = $data['label_translation_' . $languageKey] ?? '';
 
     /* validate schema parameters, make sure they are of type array */
-    foreach (['metadata', 'authors', 'creators', 'literature', 'terms', 'external', 'lod', 'publications'] as $param)
+    foreach (['metadata', 'authors', 'creators', 'literature', 'terms', 'external', 'publications'] as $param)
         if (isset($oesArgs[$param]) && is_bool($oesArgs[$param])) $oesArgs[$param] = [];
 
     return $oesArgs;
@@ -1062,7 +1062,7 @@ function insert_taxonomy_as_an_oes_object(array $data = []): bool
     if (!$taxonomyKey) return oes_write_log(__('Taxonomy key not found.', 'oes'));
 
     /* taxonomy must start with 't_' for OES processing. */
-    if (!oes_starts_with($taxonomyKey, 't_')) {
+    if (!str_starts_with($taxonomyKey, 't_')) {
         $taxonomyKey = 't_' . $taxonomyKey;
         oes_write_log(sprintf(
             __('The taxonomy key must start with t_ for OES processing. Change taxonomy to: %s', 'oes'),
@@ -1280,7 +1280,7 @@ function get_editorial_tab(): array
         ],
         [
             'name' => 'field_oes_comment',
-            'label' => 'Comment',
+            'label' => 'Remarks',
             'instructions' => '',
             'type' => 'textarea',
             'key' => 'field_oes_comment'
@@ -1389,11 +1389,11 @@ function get_versioning_tab_version(string $versionPostType = '', array $parentP
 function get_schema_types(): array
 {
     $schemaTypes = [
-        'other' => __('-', 'oes'),
         'single-article' => __('Content', 'oes'),
         'single-contributor' => __('Contributor', 'oes'),
         'single-index' => __('Index Object', 'oes'),
-        'single-internal' => __('Internal Object', 'oes')
+        'single-internal' => __('Internal Object', 'oes'),
+        'other' => __('-', 'oes'),
     ];
 
 
@@ -1557,6 +1557,7 @@ function set_default_options(): void
         'oes_admin-hide_version_tab' => false,
         'oes_features' => json_encode([
             'dashboard' => true,
+            'comments' => true,
             'task' => false,
             'manual' => false,
             'factory' => true,

@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -16,7 +21,7 @@ if (!class_exists('Subpage')) :
     class Subpage extends Page
     {
 
-        // Overwrite parent
+        /** @inheritdoc */
         function set_page_parameters(array $args = []): void
         {
             $this->page_parameters = array_merge([
@@ -30,8 +35,7 @@ if (!class_exists('Subpage')) :
             ], $args);
         }
 
-
-        // Overwrite parent
+        /** @inheritdoc */
         function add_page() {
             return add_submenu_page(
                 $this->page_parameters['parent_slug'],

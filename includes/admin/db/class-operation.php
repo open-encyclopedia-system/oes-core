@@ -821,7 +821,7 @@ if (!class_exists('Operation')) :
                                 __('There has been an error trying to update the database after execution.', 'oes');
                         }
                     }
-            } elseif (oes_starts_with($this->operation_temp, 'new_term_')) {
+            } elseif (str_starts_with($this->operation_temp, 'new_term_')) {
 
                 global $wpdb;
                 $table = $wpdb->prefix . 'oes_operations';

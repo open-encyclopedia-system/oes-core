@@ -1,112 +1,105 @@
 import {__} from '@wordpress/i18n';
 import {TextControl, SelectControl} from '@wordpress/components';
 
-
 /**
- * Get the language text controls.
+ * Get language text controls.
  */
-export function getLanguageControls(values, setAttributes) {
+export function getLanguageControls(values = {}, setAttributes, attributeKey = 'labels') {
+    if (typeof oesLanguageArray === 'undefined') oesLanguageArray = {};
 
-    if(values === undefined) values = {};
-    if (oesLanguageArray === undefined) oesLanguageArray = {};
-    let textControls = [];
-    for (const [valueKey, value] of Object.entries(oesLanguageArray)) {
-        textControls.push(<TextControl
-            label={value.label}
-            value={(values[valueKey] !== undefined) ? values[valueKey] : ''}
-            help={__("Add label for this language", "oes") + ' (' + valueKey + ').'}
-            onChange={(val) => {
-                let newLabels = { ...values};
-                newLabels[valueKey] = val;
-                setAttributes({
-                    labels: newLabels
-                })
-            }}
-        />);
+    const textControls = [];
+    for (const [langCode, langInfo] of Object.entries(oesLanguageArray)) {
+        textControls.push(
+            <TextControl
+                key={langCode}
+                label={langInfo.label}
+                value={values[langCode] ?? ''}
+                help={__('Add label for this language', 'oes') + ' (' + langCode + ')'}
+                onChange={(val) => {
+                    const newValues = {...values, [langCode]: val};
+                    setAttributes({[attributeKey]: newValues});
+                }}
+            />
+        );
     }
+
     return textControls;
 }
 
-
 /**
- * Get the language select.
+ * Get language select control.
  */
 export function getLanguageSelect(currentValue, setAttributes, help) {
+    if (!oesLanguageArray || Object.keys(oesLanguageArray).length < 1) return '';
 
-    if (oesLanguageArray == null || oesLanguageArray.length < 1) return '';
+    /* prepare default options for 'all' and 'displayed option'*/
+    const options = [
+        {value: 'all', label: __('All languages', 'oes')},
+        {value: 'current', label: __('Currently displayed language', 'oes')},
+    ];
 
-    let options = [];
-
-    /* add all option */
-    options.push({value:'all', label: __('All languages', 'oes')});
-
-    /* add currently displayed option */
-    options.push({value:'current', label: __('Currently displayed language', 'oes')});
-
-    /* add opposite language option for two languages */
+    /* add options for opposite language if two language*/
     const oesLanguageArraySize = Object.keys(oesLanguageArray).length;
-    if (oesLanguageArraySize < 1) return '';
-    if(oesLanguageArraySize === 2)
-        options.push({value:'opposite', label: __('Opposite to currently displayed language', 'oes')});
-
-    /* add language options */
-    for (const [valueKey, value] of Object.entries(oesLanguageArray)) {
-        options.push({value: valueKey, label: value.label})
+    if (oesLanguageArraySize === 2) {
+        options.push({value: 'opposite', label: __('Opposite to currently displayed language', 'oes')});
     }
 
-    let languageSelect = [];
-    languageSelect.push(<SelectControl
-        label={__('Language', 'oes')}
-        options={options}
-        value={(options[currentValue] !== undefined) ? 'all' : currentValue}
-        help={help}
-        onChange={(val) => {
-            setAttributes({
-                language: String(val)
-            })
-        }}
-    />);
-    return languageSelect;
-}
+    /* add option if more than two languages */
+    for (const [valueKey, value] of Object.entries(oesLanguageArray)) {
+        options.push({value: valueKey, label: value.label});
+    }
 
+    return [
+        <SelectControl
+            label={__('Language', 'oes')}
+            options={options}
+            value={options[currentValue] !== undefined ? 'all' : currentValue}
+            help={help}
+            onChange={(val) => {
+                setAttributes({language: String(val)});
+            }}
+        />
+    ];
+}
 
 /**
  * Get post type options.
  */
-export function getPostTypeOptions(){
-
-    /* prepare post type options */
-    let postTypeOptions = [];
+export function getPostTypeOptions() {
+    const postTypeOptions = [];
     const postTypes = wp.data.select('core').getPostTypes({per_page: -1});
 
     if (postTypes) {
         postTypeOptions.push({value: 0, label: '-'});
         postTypes.forEach((postType) => {
-            if (postType.viewable) postTypeOptions.push({value: postType.slug, label: postType.name})
-        })
+            if (postType.viewable) {
+                postTypeOptions.push({value: postType.slug, label: postType.name});
+            }
+        });
     } else {
-        postTypeOptions.push({value: 0, label: __('Loading...', 'oes')})
+        postTypeOptions.push({value: 0, label: __('Loading...', 'oes')});
     }
+
     postTypeOptions.sort((a, b) => a.label.localeCompare(b.label));
 
     return postTypeOptions;
 }
 
-
 /**
  * Get display value from array.
  */
 export function getDisplayValueFromArray(valueArray, defaultString) {
-    let displayValue = [];
     if (valueArray == null) return defaultString;
 
-    /* last: default */
+    const displayValue = [];
     let defaultValue = '';
+
     for (const key in valueArray) {
-        if (key === 'default') defaultValue = '[' + valueArray[key] + ']';
+        if (key === 'default') defaultValue = `[${valueArray[key]}]`;
         else displayValue.push(valueArray[key]);
     }
+
     if (defaultValue.length > 0) displayValue.push(defaultValue);
-    if (displayValue.length < 1) return defaultString;
-    return displayValue.join(' / ');
+
+    return displayValue.length > 0 ? displayValue.join(' / ') : defaultString;
 }

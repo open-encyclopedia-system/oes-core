@@ -35,14 +35,8 @@ if (!class_exists('OES_Post')) {
         /** @var array $fields The post fields. */
         public array $fields = [];
 
-        /** @var array $archive_data The data which is displayed in the archive. */
-        public array $archive_data = [];
 
-        /** @var string|bool $additional_archive_data Additional data to be displayed in the archive. */
-        public $additional_archive_data = false;
-
-
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(): void
         {
             global $oes, $oes_language;
@@ -88,7 +82,7 @@ if (!class_exists('OES_Post')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_language(): string
         {
             global $oes, $oes_language;
@@ -99,7 +93,7 @@ if (!class_exists('OES_Post')) {
             /* check if language is defined by schema */
             $schemaLanguage = $oes->post_types[$this->post_type]['language'] ?? '';
             if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
-                if (oes_starts_with($schemaLanguage, 'parent__'))
+                if (str_starts_with($schemaLanguage, 'parent__'))
                     $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($this->object_ID)) ?? 'language0';
                 else $language = oes_get_field($schemaLanguage, $this->object_ID) ?? 'language0';
             } else $language = oes_get_field('field_oes_post_language', $this->object_ID) ?? 'language0';
@@ -122,7 +116,7 @@ if (!class_exists('OES_Post')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_object_id(int $objectID): void
         {
             $this->object_ID = (false === get_post_status($objectID)) ? get_the_ID() : $objectID;
@@ -322,7 +316,7 @@ if (!class_exists('OES_Post')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_html_main_classic(array $args = []): array
         {
             /* prepare title */
@@ -512,7 +506,7 @@ if (!class_exists('OES_Post')) {
         }
 
 
-        // Overwrite parent
+        /** @inheritdoc */
         public function get_html_sub_header(array $args = []): string
         {
             return '<div class="oes-sub-subheader-container">' .
@@ -569,7 +563,7 @@ if (!class_exists('OES_Post')) {
             $authorsArray = [];
             if (is_string($args)) $authorsArray[] = $this->fields[$args]['value-display'] ?? '';
             foreach ($args['authors'] ?? [] as $authorFieldKey) {
-                if (oes_starts_with($authorFieldKey, 'parent__')) {
+                if (str_starts_with($authorFieldKey, 'parent__')) {
                     $fieldValue = oes_get_field_display_value(
                         substr($authorFieldKey, 8),
                         $this->parent_ID,
@@ -614,6 +608,64 @@ if (!class_exists('OES_Post')) {
             string $editDateFieldKey = '',
             array  $args = []): string
         {
+
+            /* prepare information for display */
+            $furtherInformation = $this->collect_version_info($publicationDateFieldKey, $editDateFieldKey, $args);
+
+            if (empty($furtherInformation)) return '';
+
+            /* return version information */
+            switch ($args['style'] ?? 'default') {
+
+                case 'is-style-table':
+                    $versionInfoContent = '<table>';
+                    foreach ($furtherInformation as $info)
+                        $versionInfoContent .= '<tr>' .
+                            '<th>' . $info['label'] . '</th>' .
+                            '<td>' . $info['value-display'] . '</td>' .
+                            '</tr>';
+                    $versionInfoContent .= '</table>';
+                    break;
+
+                case 'is-style-oes-list':
+                    $versionInfoContent = '<ul class="oes-vertical-list">';
+                    foreach ($furtherInformation as $info)
+                        $versionInfoContent .= '<li>' . $info['label'] . ' ' . $info['value-display'] . '</li>';
+                    $versionInfoContent .= '</ul>';
+                    break;
+
+                case 'is-style-oes-default':
+                default:
+                    $versionInfoContent = '<ul class="oes-horizontal-list">';
+                    foreach ($furtherInformation as $info)
+                        $versionInfoContent .= '<li>' . $info['label'] . ' ' . $info['value-display'] . '</li>';
+                    $versionInfoContent .= '</ul>';
+                    break;
+
+            }
+
+            return '<div class="oes-version-info">' . $versionInfoContent . '</div>';
+        }
+
+
+        /**
+         * Prepare version info (e.g. for cover info).
+         *
+         * @param string $publicationDateFieldKey The publication field key.
+         * @param string $editDateFieldKey The edit date field key.
+         * @param array $args Additional information. Valid arguments are:
+         *  'version-field' :   Field key for version field.
+         *  'date-locale'   :   Date locale for date display via IntlDateFormatter. Default is 'en_BE'.
+         *  'date-type'     :   Date type for date display. Default is 1.
+         *  'time-type'     :   Time type for date display. Default is -1.
+         *  'style'         :   List style.
+         * @return array
+         */
+        function collect_version_info(
+            string $publicationDateFieldKey = '',
+            string $editDateFieldKey = '',
+            array  $args = []): array {
+
             global $oes, $oes_language;
             $dateLocale = $args['date-locale'] ?? ($oes->languages[$oes_language]['locale'] ?? 'en_BE');
             $versionFieldKey = $args['version-field'] ?? 'field_oes_post_version';
@@ -622,7 +674,7 @@ if (!class_exists('OES_Post')) {
 
 
             /* prepare information for display */
-            $furtherInformation = [];
+            $info = [];
 
             /* prepare version list */
             if (!isset($args['skip-version']) && $this->check_if_field_not_empty($versionFieldKey)) {
@@ -688,7 +740,7 @@ if (!class_exists('OES_Post')) {
 
 
                 /* add information for second line */
-                $furtherInformation[$versionFieldKey] = [
+                $info[$versionFieldKey] = [
                     'label' => $label,
                     'value-display' => ''
                 ];
@@ -704,7 +756,7 @@ if (!class_exists('OES_Post')) {
                         '' :
                         oes_convert_date_to_formatted_string($dateValue, $dateLocale, $dateType, $timeType);
 
-                $furtherInformation[$publicationDateFieldKey] = [
+                $info[$publicationDateFieldKey] = [
                     'label' => $this->get_field_label($publicationDateFieldKey),
                     'value-display' => $publishedDate
                 ];
@@ -719,45 +771,13 @@ if (!class_exists('OES_Post')) {
                         oes_convert_date_to_formatted_string($dateValue, $dateLocale, $dateType, $timeType);
 
                 if ($editedDate && $editedDate !== $publishedDate)
-                    $furtherInformation[$editDateFieldKey] = [
+                    $info[$editDateFieldKey] = [
                         'label' => $this->get_field_label($editDateFieldKey),
                         'value-display' => $editedDate
                     ];
             }
 
-            if (empty($furtherInformation)) return '';
-
-            /* return version information */
-            switch ($args['style'] ?? 'default') {
-
-                case 'is-style-table':
-                    $versionInfoContent = '<table>';
-                    foreach ($furtherInformation as $info)
-                        $versionInfoContent .= '<tr>' .
-                            '<th>' . $info['label'] . '</th>' .
-                            '<td>' . $info['value-display'] . '</td>' .
-                            '</tr>';
-                    $versionInfoContent .= '</table>';
-                    break;
-
-                case 'is-style-oes-list':
-                    $versionInfoContent = '<ul class="oes-vertical-list">';
-                    foreach ($furtherInformation as $info)
-                        $versionInfoContent .= '<li>' . $info['label'] . ' ' . $info['value-display'] . '</li>';
-                    $versionInfoContent .= '</ul>';
-                    break;
-
-                case 'is-style-oes-default':
-                default:
-                    $versionInfoContent = '<ul class="oes-horizontal-list">';
-                    foreach ($furtherInformation as $info)
-                        $versionInfoContent .= '<li>' . $info['label'] . ' ' . $info['value-display'] . '</li>';
-                    $versionInfoContent .= '</ul>';
-                    break;
-
-            }
-
-            return '<div class="oes-version-info">' . $versionInfoContent . '</ul></div>';
+            return $info;
         }
 
 
@@ -1137,7 +1157,7 @@ if (!class_exists('OES_Post')) {
                 foreach ($collectData as $field)
                     $tableDataString .= sprintf('<tr><th>%s</th><td>%s</td></tr>',
                         $field['label'] ?? 'Label missing',
-                        $field['value-display'] ?? 'Value Display missing'
+                        $field['value-display'] ?? ($field['value'] ?? 'Value Display missing')
                     );
 
             /* return table representation*/
@@ -1194,7 +1214,7 @@ if (!class_exists('OES_Post')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_index_connected_posts(string $consideredPostType, string $postRelationship = ''): array
         {
             /* prepare data */
@@ -1243,7 +1263,7 @@ if (!class_exists('OES_Post')) {
         {
 
             global $oes, $oes_language;
-            if (oes_starts_with($fieldKey, 'taxonomy__')) {
+            if (str_starts_with($fieldKey, 'taxonomy__')) {
 
                 /* add to table data */
                 $taxonomyKey = substr($fieldKey, 10);
@@ -1264,7 +1284,7 @@ if (!class_exists('OES_Post')) {
                     return $this->modify_metadata_value($pseudoField, $loop);
                 }
 
-            } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent__')) {
+            } elseif ($this->parent_ID && str_starts_with($fieldKey, 'parent__')) {
 
                 /* add to table data */
                 $parentField = substr($fieldKey, 8);
@@ -1298,7 +1318,7 @@ if (!class_exists('OES_Post')) {
                     return $this->modify_metadata_value($pseudoField, $loop);
                 }
 
-            } elseif ($this->parent_ID && oes_starts_with($fieldKey, 'parent_taxonomy__')) {
+            } elseif ($this->parent_ID && str_starts_with($fieldKey, 'parent_taxonomy__')) {
 
                 /* add to table data */
                 $taxonomyKey = substr($fieldKey, 17);

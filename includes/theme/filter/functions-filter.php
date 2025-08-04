@@ -12,97 +12,15 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function oes_filter_html($args): string
 {
-    /* loop through filter list */
-    global $oes_archive_data;
-    $listItems = [];
-    foreach ($oes_archive_data['archive']['filter_array']['list'] ?? [] as $filterKey => $container)
-        if (!empty($container['items']) &&
-            ($filterKey !== 'objects' || sizeof($container['items']) > 1)) {
-
-
-            /**
-             * Filters the single items of the filter html list.
-             *
-             * @param array $filterItems The list items.
-             * @param string $filterKey The filter key.
-             */
-            $filterItems = apply_filters('oes/filter_html_single_items_array', $container['items'], $filterKey);
-
-
-
-            /**
-             * Filters the sorting of filter items.
-             *
-             * @param array $filterItems The list items.
-             * @param string $filterKey The filter key.
-             */
-            if (has_filter('oes/filter_html_single_items_array_sorting'))
-                $filterListItems = apply_filters('oes/filter_html_single_items_array_sorting', $filterItems, $filterKey);
-            else $filterListItems = oes_prepare_filter_items($filterItems, $filterKey);
-            
-
-            $filterList = '<ul class="oes-filter-list oes-vertical-list' .
-                ((($args['type'] ?? 'default') === 'accordion') ? ' collapse' : '') . '" id="oes-filter-component-' .
-                $filterKey . '">' . implode('', $filterListItems) . '</ul>';
-
-            switch ($args['type'] ?? 'default') {
-
-                case 'accordion':
-                    $listItems[$filterKey] =
-                        sprintf('<li id="%s"><a href="#oes-filter-component-%s" data-toggle="collapse" ' .
-                            'aria-expanded="false" class="oes-filter-component oes-toggle-down-after">%s</a>%s</li>',
-                            'trigger_' . $filterKey,
-                            $filterKey,
-                            $container['label'] ?? 'Label missing',
-                            $filterList
-                        );
-                    break;
-
-                case 'classic':
-                    $listItems[$filterKey] =
-                        sprintf('<li id="%s"><span class="oes-filter-component">%s</span>%s</li>',
-                            'trigger_' . $filterKey,
-                        $container['label'] ?? 'Label missing',
-                        $filterList
-                    );
-                    break;
-
-                case 'default':
-                default:
-                    $listItems[$filterKey] = '<li>' . oes_get_details_block(
-                            '<span class="oes-filter-component">' .
-                            ($container['label'] ?? 'Label missing') .
-                            '</span>',
-                            $filterList,
-                            'trigger_' . $filterKey
-                        ) . '</li>';
-                    break;
-            }
-        }
-
-
-    /**
-     * Filters the items of the filter html list.
-     *
-     * @param array $listItems The list items.
-     */
-    $listItems = apply_filters('oes/filter_html_items_array', $listItems);
-
-
-    /* add filter javascript variable */
-    global $oes_archive_data;
-    ?>
-    <script type="text/javascript">
-        let oes_filter = <?php echo json_encode($oes_archive_data['archive']['filter_array']['json'] ?? []);?>;
-    </script><?php
-
-    return '<ul class="oes-filter-list-container oes-vertical-list">' . implode('', $listItems) . '</ul>';
+    $class = oes_get_project_class_name('OES_Filter_Renderer');
+    $renderer = new $class();
+    return $renderer->render($args);
 }
 
 
 /**
  * Sort the filter items.
- * 
+ *
  * @param array $filterItems The filter items.
  * @param string $filterKey The filter key.
  * @param string $option The sorting option. Options are frequency, sorting_title. Default is the item label.
@@ -117,9 +35,9 @@ function oes_prepare_filter_items(array $filterItems, string $filterKey, string 
         switch ($option) {
 
             case 'frequency':
-                global $oes_filter, $oes_archive_data;
+                global $oes_filter, $oes_archive_count;
                 $sortingTitle = (isset($oes_filter['json'][$filterKey][$itemKey]) ?
-                        ((10000 + $oes_archive_data['archive']['count']) -
+                        ((10000 + $oes_archive_count) -
                             sizeof($oes_filter['json'][$filterKey][$itemKey])) :
                         0) . oes_replace_umlaute($itemLabel) . $itemKey;
                 break;
@@ -153,11 +71,11 @@ function oes_prepare_filter_items(array $filterItems, string $filterKey, string 
  */
 function oes_alphabet_filter_html($args): string
 {
-    global $oes_archive_data;
-    if ($oes_archive_data['archive']['filter']['alphabet'] ?? false)
+    global $oes_archive;
+    if ($oes_archive['filter']['alphabet'] ?? false)
         return '<ul class="' . ($args['style'] ?? 'is-style-oes-default') . ' oes-alphabet-list oes-horizontal-list">' .
             '<li>' .
-            implode('</li><li>', oes_archive_get_alphabet_filter($oes_archive_data['archive']['characters'])) .
+            implode('</li><li>', oes_archive_get_alphabet_filter($oes_archive['characters'])) .
             '</li>' .
             '</ul>';
 
@@ -199,62 +117,99 @@ function oes_post_type_filter_html(): string
 
 
 /**
- * Get the HTML representation of index filter by shortcode.
+ * Get the HTML representation of the index filter, typically used via a shortcode.
  *
+ * This function generates a list of filter links for index pages defined in the `$oes` global,
+ * including optional links to post types or taxonomies. It returns a structured HTML list
+ * of anchor tags representing different archive filters.
  *
- * @return string Return the html string representing the filter.
+ * @param array $args {
+ *     Optional. Arguments to customize the filter output.
+ *
+ * @type bool $include_all Whether to include the "All" button at the top of the list. Default true.
+ * @type string $className CSS class to apply to the `<ul>` element. Default 'oes-vertical-list'.
+ * }
+ *
+ * @return string HTML string representing the filter list. Empty if no valid index configuration exists.
  */
-function oes_index_filter_html(): string
+function oes_index_filter_html(array $args = []): string
 {
-    /* loop through index elements */
     global $oes, $oes_language, $oes_is_index;
+
     $listItems = [];
-    if ($oes_is_index &&
-        $oes->theme_index_pages[$oes_is_index]['slug'] !== 'hidden' &&
-        !empty($oes->theme_index_pages[$oes_is_index]['objects'] ?? [])) {
 
-        /* add navigation item to get to index page */
-        $listItems[] = oes_get_html_anchor(
-            oes_get_label('archive__filter__all_button', 'All'),
-            home_url(($oes->theme_index_pages[$oes_is_index]['slug'] ?? 'index') . '/'),
-            false,
-            'oes-index-archive-filter-all oes-index-filter-anchor');
+    // Check that index is defined and not hidden
+    if (
+        $oes_is_index &&
+        ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '') !== 'hidden' &&
+        !empty($oes->theme_index_pages[$oes_is_index]['objects'] ?? [])
+    ) {
+        // Add "All" button if enabled
+        if ($args['include_all'] ?? true) {
+            $listItems[] = oes_get_html_anchor(
+                oes_get_label('archive__filter__all_button', 'All'),
+                home_url(($oes->theme_index_pages[$oes_is_index]['slug'] ?? 'index') . '/'),
+                false,
+                'oes-index-archive-filter-all oes-index-filter-anchor'
+            );
+        }
 
-        /* get links to index elements */
+        // Loop over configured objects (post types or taxonomies)
         foreach ($oes->theme_index_pages[$oes_is_index]['objects'] as $object) {
-
-            /* get name and link from post type or taxonomy */
             $link = $name = false;
+
+            // Post type link and label
             if ($postTypeObject = get_post_type_object($object)) {
-                $name = ($oes->post_types[$object]['label_translations_plural'][$oes_language] ??
-                    ($oes->post_types[$object]['theme_labels']['archive__header'][$oes_language] ??
-                        ($oes->post_types[$object]['label'] ?: $postTypeObject->label)));
-                $link = home_url((get_post_type_object($object)->rewrite['slug'] ?? $object) . '/');
+                $name = $oes->post_types[$object]['label_translations_plural'][$oes_language]
+                    ?? $oes->post_types[$object]['theme_labels']['archive__header'][$oes_language]
+                    ?? $oes->post_types[$object]['label']
+                    ?? $postTypeObject->label;
+
+                if (empty($name)) {
+                    $name = $postTypeObject->label;
+                }
+                $link = home_url(($postTypeObject->rewrite['slug'] ?? $object) . '/');
+
+                // Taxonomy link and label
             } elseif ($taxonomyObject = get_taxonomy($object)) {
-                $name = ($oes->taxonomies[$object]['label_translations_plural'][$oes_language] ??
-                    ($oes->taxonomies[$object]['label_translations'][$oes_language] ?:
-                        ($oes->taxonomies[$object]['label'] ?: $taxonomyObject->label)));
-                $link = home_url((get_taxonomy($object)->rewrite['slug'] ?? $object) . '/');
+                $name = $oes->taxonomies[$object]['label_translations_plural'][$oes_language]
+                    ?? $oes->taxonomies[$object]['label_translations'][$oes_language]
+                    ?? $oes->taxonomies[$object]['label']
+                    ?? $taxonomyObject->label;
+
+                if (empty($name)) {
+                    $name = $taxonomyObject->label;
+                }
+                $link = home_url(($taxonomyObject->rewrite['slug'] ?? $object) . '/');
             }
 
-            /* add navigation item */
-            if ($name && $link) $listItems[] = oes_get_html_anchor(
-                $name,
-                $link,
-                false,
-                'oes-index-filter-anchor');
+            // Add item if both label and URL are found
+            if ($name && $link) {
+                $listItems[] = oes_get_html_anchor(
+                    $name,
+                    $link,
+                    false,
+                    'oes-index-filter-anchor'
+                );
+            }
         }
     }
 
+    // Build final list markup
+    $class = $args['className'] ?? 'oes-vertical-list';
+    if (str_starts_with($class, 'is-style-')) {
+        $class = substr($class, 9);
+    }
+
     $list = '<div class="oes-index-archive-filter-wrapper">' .
-        '<ul class="oes-vertical-list"><li>' . implode('</li><li>', $listItems) . '</li></ul>' .
+        '<ul class="' . esc_attr($class) . '"><li>' . implode('</li><li>', $listItems) . '</li></ul>' .
         '</div>';
 
 
     /**
-     * Filters the filter string
+     * Filters the generated HTML string for the index archive filter.
      *
-     * @param string $list The filtered filter string.
+     * @param string $list The complete HTML output.
      */
     return apply_filters('oes/index_filter_html', $list);
 }
@@ -270,9 +225,9 @@ function oes_index_filter_html(): string
 function oes_active_filter_html($args): string
 {
     /* loop through filter */
-    global $oes_archive_data;
+    global $oes_filter;
     $listItems = [];
-    foreach ($oes_archive_data['archive']['filter_array']['list'] ?? [] as $singleFilter => $ignore)
+    foreach ($oes_filter['list'] ?? [] as $singleFilter => $ignore)
         $listItems[] = '<ul class="' . ($args['style'] ?? 'is-style-oes-default') .
             ' oes-active-filter-' . $singleFilter . ' oes-active-filter oes-field-value-list oes-horizontal-list">' .
             '</ul>';
@@ -338,11 +293,14 @@ function oes_archive_count_html($args = []): string
 function oes_search_term_filter_html($args): string
 {
     global $oes_search;
-    return empty($oes_search['search_term'] ?? '') ?
-        '' :
-        ('<ul class="oes-search-term-filter oes-active-filter"><li>' .
-            '<a class="oes-active-filter-item" href="' .
-            get_post_type_archive_link($args['post_type'] ?? 'pages') .
-            '"><span>' . $oes_search['search_term'] . '</span></a>' .
-            '</li></ul>');
+
+    if (empty($oes_search['search_term'] ?? '')) {
+        return '';
+    }
+
+    return '<ul class="oes-search-term-filter oes-active-filter"><li>' .
+        '<a class="oes-active-filter-item" href="' .
+        get_post_type_archive_link($args['post_type'] ?? 'pages') .
+        '"><span>' . $oes_search['search_term'] . '</span></a>' .
+        '</li></ul>';
 }

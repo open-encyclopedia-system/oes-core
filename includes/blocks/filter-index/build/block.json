@@ -33,5 +33,23 @@
     "alignText": true,
     "fullHeight": true
   },
-  "editorScript": "file:./index.js"
+  "attributes": {
+    "include_all": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "styles": [
+    {
+      "name": "oes-vertical-list",
+      "label": "Vertical",
+      "isDefault": true
+    },
+    {
+      "name": "oes-horizontal-list",
+      "label": "Horizontal"
+    }
+  ],
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
 }

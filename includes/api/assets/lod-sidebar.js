@@ -1,6 +1,6 @@
 (function (wp) {
     const registerPlugin = wp.plugins.registerPlugin,
-        PluginSidebar = wp.editPost.PluginSidebar,
+        PluginSidebar = wp.editor.PluginSidebar,
         el = wp.element.createElement,
         TextControl = wp.components.TextControl,
         SelectControl = wp.components.SelectControl,

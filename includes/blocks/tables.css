@@ -43,14 +43,14 @@ table.is-style-oes-default tr th {
   font-weight: normal;
   width: 30%;
 }
-.wp-block-table.is-style-oes-default ul.oes-field-value-list li:after,
-table.is-style-oes-default ul.oes-field-value-list li:after {
-  content: "∙";
+.wp-block-table.is-style-oes-default ul.oes-field-value-list li::after,
+table.is-style-oes-default ul.oes-field-value-list li::after {
+  content: "•";
   padding: 0 5px;
   color: var(--wp--preset--color--background);
 }
-.wp-block-table.is-style-oes-default ul.oes-field-value-list li:last-child:after,
-table.is-style-oes-default ul.oes-field-value-list li:last-child:after {
+.wp-block-table.is-style-oes-default ul.oes-field-value-list li:last-child::after,
+table.is-style-oes-default ul.oes-field-value-list li:last-child::after {
   content: none;
 }
 

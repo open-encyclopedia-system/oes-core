@@ -37,7 +37,7 @@ if (!class_exists('LOC_API')) {
         public string $url = 'https://id.loc.gov/';
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_request_url(string $url, array $args): string
         {
             $this->searchTerm = $args['search_term'] ?? '';
@@ -49,7 +49,7 @@ if (!class_exists('LOC_API')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_data_from_response($response): array
         {
             $data = [];
@@ -86,8 +86,8 @@ if (!class_exists('LOC_API')) {
         }
 
 
-        //Overwrite parent
-        function transform_data_entry($entry): array
+        /** @inheritdoc */
+        function transform_data_entry(mixed $entry): array
         {
             $link = $entry['link']['value'] ?? false;
             $name = $entry['name']['value'] ?? false;

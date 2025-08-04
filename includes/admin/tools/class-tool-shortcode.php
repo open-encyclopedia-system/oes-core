@@ -15,132 +15,148 @@ if (!class_exists('Shortcode')) :
      */
     class Shortcode extends \OES\Admin\Tools\Config
     {
-
-        /** @var string The option prefix. */
+        /** @var string Option prefix used for shortcode options. */
         public string $option_prefix = '';
 
-        /** @var string The selected option name. */
+        /** @var string Prefix used for shortcode names. */
+        public string $shortcode_prefix = '';
+
+        /** @var array Parameters available for the shortcode. */
+        public array $shortcode_parameters = [];
+
+        /** @var string Currently selected option name. */
         public string $selected_option = '';
 
-        /** @var bool|int The selected option number (if nested value). */
+        /** @var int|bool Selected option index or false if none selected. */
         public $selected_nr = 0;
 
-        /** @var array Additional submit options. */
+        /** @var array Additional submit buttons to display in the form. Format: [key => label] */
         public array $additional_submits = [];
 
 
-        //Overwrite parent
-        function initialize_parameters($args = []): void
+        /** @inheritdoc */
+        public function initialize_parameters($args = []): void
         {
-
             add_action('admin_enqueue_scripts', [$this, 'add_page_scripts']);
 
             $this->form_action = admin_url('admin-post.php');
-            $this->selected_option = $_GET['selected'] ?? '';
-            $this->selected_nr = isset($_GET['nr']) ? ((int)$_GET['nr'] ?? 0) : false;
+            $this->selected_option = sanitize_text_field($_GET['selected'] ?? '');
+            $this->selected_nr = isset($_GET['nr']) ? (int) $_GET['nr'] : false;
         }
 
 
-        //Overwrite parent
-        function information_html(): string
+        /** @inheritdoc */
+        public function information_html(): string
         {
-            if (empty($this->selected_option)) return '';
+            if (empty($this->selected_option)) {
+                return '';
+            }
 
             return '<div class="oes-shortcode-container">' .
-                \OES\Shortcode\get_shortcode_from_option($this->selected_option,
-                    OES_MAP_SHORTCODE_PREFIX,
-                    OES_MAP_SHORTCODE_PARAMETER,
-                    $this->selected_nr) .
+                \OES\Shortcode\get_shortcode_from_option(
+                    $this->selected_option,
+                    $this->shortcode_prefix,
+                    $this->shortcode_parameters,
+                    $this->selected_nr
+                ) .
                 '</div>';
         }
 
 
-        //Overwrite parent
-        function submit_html(): string
+        /** @inheritdoc */
+        public function submit_html(): string
         {
-            return '<div class=" oes-shortcode-buttons"><p>' .
-                '<input type="hidden" name="oes_shortcode_nr" value="' . $this->selected_nr . '">' .
-                $this->additional_submits() .
-                ($this->selected_option ?
-                    '<input type="submit" name="shortcode_delete" id="shortcode_delete" class="button oes-highlighted" ' .
-                    'value="Delete Shortcode" onclick="return confirm(\'You are about to delete a shortcode. ' .
-                    'Do you want to proceed?\');">' :
-                    '') .
-                '<input type="submit" name="submit" id="submit" class="button button-primary button-large" value="Save Shortcode">' .
-                '</p></div>';
+            $html = '<div class="oes-shortcode-buttons"><p>';
+
+            $html .= '<input type="hidden" name="oes_shortcode_nr" value="' . esc_attr($this->selected_nr) . '">';
+            $html .= $this->additional_submits();
+
+            if ($this->selected_option) {
+                $html .= '<input type="submit" name="shortcode_delete" id="shortcode_delete" class="button oes-highlighted" ' .
+                    'value="Delete Shortcode" onclick="return confirm(\'You are about to delete a shortcode. Do you want to proceed?\');">';
+            }
+
+            $html .= '<input type="submit" name="submit" id="submit" class="button button-primary button-large" value="Save Shortcode">';
+            $html .= '</p></div>';
+
+            return $html;
         }
 
 
-        //Overwrite parent
-        function admin_post_tool_action(): void
+        /** @inheritdoc */
+        public function admin_post_tool_action(): void
         {
+            $post = $_POST;
+            $shortcode_data = $post['oes_shortcode'] ?? [];
+            $shortcode_nr = $post['oes_shortcode_nr'] ?? null;
+            $archiveFlag = $shortcode_data['replace_archive'] ?? false;
 
-            /* prepare option name */
-            $archiveFlag = $_POST['oes_shortcode']['replace_archive'] ?? false;
-            $isArchiveOption = (!empty($archiveFlag) && $archiveFlag !== 'none');
-            $option = 'oes_shortcode-map' . ($isArchiveOption ? '-' . $archiveFlag : '');
+            $isArchive = (!empty($archiveFlag) && $archiveFlag !== 'none');
+            $option = 'oes_shortcode-' . $this->shortcode_prefix . ($isArchive ? '-' . $archiveFlag : '');
 
-
-            /* delete option */
-            if (isset($_POST['shortcode_delete']))
-                \OES\Shortcode\delete_shortcode($option, $_POST['oes_shortcode_nr'] ?? false);
-
-            /* create or update option */
-            else {
-
-                /* prepare new value */
-                $newValue = $_POST['oes_shortcode'] ?? [];
-
-                /* add new category */
-                if (isset($_POST['shortcode_add']))
-                    foreach ($_POST['shortcode_add'] as $nestedValue => $ignore)
-                        $newValue[$nestedValue][] = $newValue[$nestedValue][sizeof($newValue[$nestedValue] ?? [])] ?? [];
-
-                if ($isArchiveOption) $value = $newValue;
-                elseif (isset($_POST['oes_shortcode_nr']) && isset($value[$_POST['oes_shortcode_nr']])) {
-                    $value = \OES\Shortcode\get_shortcode_option($option);
-                    $value[(int)$_POST['oes_shortcode_nr'] ?? 0] = $newValue;
-                } else $value[] = $newValue;
-                if (!is_array($value)) $value = [];
-
-                \OES\Shortcode\store_shortcode($option, $value);
+            if (isset($post['shortcode_delete'])) {
+                \OES\Shortcode\delete_shortcode($option, $shortcode_nr ?: false);
+                return;
             }
+
+            if (isset($post['shortcode_add'])) {
+                foreach ($post['shortcode_add'] as $nested => $_) {
+                    $shortcode_data[$nested][] = $shortcode_data[$nested][count($shortcode_data[$nested] ?? [])] ?? [];
+                }
+            }
+
+            if ($isArchive) {
+                $value = $shortcode_data;
+            } elseif ($shortcode_nr !== null && is_numeric($shortcode_nr)) {
+                $value = \OES\Shortcode\get_shortcode_option($option);
+                $value[(int)$shortcode_nr] = $shortcode_data;
+            } else {
+                $value[] = $shortcode_data;
+            }
+
+            \OES\Shortcode\store_shortcode($option, is_array($value) ? $value : []);
         }
 
 
         /**
-         * Enqueue script for an admin page.
+         * Enqueues required scripts/styles on the admin page.
+         *
+         * Intended for hooking into 'admin_enqueue_scripts'.
          *
          * @return void
          */
-        function add_page_scripts(): void
+        public function add_page_scripts(): void
         {
         }
 
 
         /**
-         * Add additional submit options to form.
+         * Generates HTML for additional submit buttons.
          *
-         * @return string Return additional submits.
+         * These buttons allow dynamic actions such as adding nested shortcode parameters.
+         *
+         * @return string HTML for additional submit buttons.
          */
-        function additional_submits(): string
+        public function additional_submits(): string
         {
-            $submits = '';
-            foreach($this->additional_submits as $key => $label)
-                $submits .= '<input type="submit" name="shortcode_add[' . $key . ']" id="shortcode_add-' . $key .
-                    '" class="button" value="' . $label . '">';
-            return $submits;
+            $html = '';
+            foreach ($this->additional_submits as $key => $label) {
+                $html .= '<input type="submit" name="shortcode_add[' . esc_attr($key) . ']" id="shortcode_add-' . esc_attr($key) .
+                    '" class="button" value="' . esc_attr($label) . '">';
+            }
+            return $html;
         }
 
 
         /**
-         * Get the value of the current selected option.
+         * Returns the currently selected shortcode option's value.
          *
-         * @return array|mixed Return the current selected option value.
+         * @return mixed The stored shortcode data for the selected option and index.
          */
-        function get_current_selected_option_value()
+        public function get_current_selected_option_value(): mixed
         {
             return \OES\Shortcode\get_shortcode_option($this->selected_option, $this->selected_nr);
         }
     }
+
 endif;

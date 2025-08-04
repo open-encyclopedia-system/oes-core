@@ -126,8 +126,9 @@ function oes_get_display_title($object = false, array $args = [], string $option
             /* modify option if language dependent */
             if (!empty($language) &&
                 $language !== 'language0' &&
-                $oes->taxonomies[$object->taxonomy]['field_options'][$titleOption . '_language1'])
+                isset($oes->taxonomies[$object->taxonomy]['field_options'][$titleOption . '_language1'])) {
                 $titleOption = $titleOption . '_language1';
+            }
 
             $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
         }
@@ -177,7 +178,8 @@ function oes_get_display_title($object = false, array $args = [], string $option
  */
 function oes_get_display_title_sorting($object = false, array $args = []): string
 {
-    return oes_replace_umlaute(oes_get_display_title($object, $args, 'title_sorting_display'));
+    $title = oes_get_display_title($object, $args, 'title_sorting_display');
+    return ($args['replace_umlaute'] ?? false) ? oes_replace_umlaute($title) : $title;
 }
 
 
@@ -260,10 +262,14 @@ function oes_display_post_array_as_list($inputArray, $id = false, array $args = 
     /* prepare items */
     foreach ($sortedArray as $item) {
 
-        /* check if term id */
+        /* check if term or post id */
         if (is_string($item) || is_int($item)) {
             $checkIfTerm = get_term($item);
-            if ($checkIfTerm) $item = get_term($item);
+            if ($checkIfTerm) $item = $checkIfTerm;
+            else {
+                $checkIfPost = get_post($item);
+                if($checkIfPost) $item = $checkIfPost;
+            }
         }
 
         /* term */
@@ -769,12 +775,15 @@ function oes_get_page_ID_from_GUID(string $guid): ?string
  * Get post language key.
  *
  * @param string|int $postID The post ID.
+ * @param string|null $postType The post type.
  * @return string Returns the language key.
  */
-function oes_get_post_language($postID): string
+function oes_get_post_language($postID, $postType = null): string
 {
     $oes = OES();
-    $postType = get_post_type($postID);
+    if(!$postType) {
+        $postType = get_post_type($postID);
+    }
 
     /* return early if only one language or empty post type */
     if (sizeof($oes->languages) < 2 || empty($postType)) return 'language0';
@@ -782,7 +791,7 @@ function oes_get_post_language($postID): string
     /* check if language is defined by schema */
     $schemaLanguage = $oes->post_types[$postType]['language'] ?? '';
     if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
-        if (oes_starts_with($schemaLanguage, 'parent__'))
+        if (str_starts_with($schemaLanguage, 'parent__'))
             $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($postID)) ?? 'language0';
         else $language = oes_get_field($schemaLanguage, $postID) ?? 'language0';
     } else $language = oes_get_field('field_oes_post_language', $postID) ?? 'language0';

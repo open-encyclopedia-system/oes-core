@@ -6,6 +6,15 @@ function oesConfigTableToggleRow(el){
 }
 
 function oesConfigTableDeleteRow(el){
-    const row = jQuery(el).closest('.oes-expandable-row');
-    row.parent().remove();
+
+    const tr2 = el.closest('.oes-expandable-row');
+    const tr1 = tr2.previousElementSibling;
+
+    if (tr2) {
+        tr2.remove();
+    }
+
+    if (tr1 && tr1.classList.contains('oes-expandable-header')) {
+        tr1.remove();
+    }
 }

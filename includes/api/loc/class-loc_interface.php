@@ -24,7 +24,7 @@ if (!class_exists('LOC_Interface')) {
         const SEARCH_PARAMETERS = [];
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function render_shortcode(array $args, string $content = ""): string
         {
             /* get loc object */

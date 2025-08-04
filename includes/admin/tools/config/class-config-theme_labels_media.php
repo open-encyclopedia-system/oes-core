@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -16,18 +21,14 @@ if (!class_exists('Theme_Labels_Media')) :
     class Theme_Labels_Media extends Theme_Labels
     {
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function set_table_data_for_display()
         {
+            global $oes;
 
-            /* get global OES instance */
-            $oes = OES();
             $languages = array_keys($oes->languages);
             $this->set_language_row();
 
-            /* get acf group image fields */
-            $mediaRows = [];
             foreach ($oes->media_groups['image'] ?? [] as $fieldKey => $field) {
 
                 $label = $field['label'] ?? ([
@@ -37,52 +38,35 @@ if (!class_exists('Theme_Labels_Media')) :
                             'description' => 'Description',
                             'date' => 'Publication Date'
                         ][$fieldKey] ?? $fieldKey);
-                $cells = [[
-                    'type' => 'th',
-                    'value' => '<strong>' . $label . '</strong>' .
-                        '<code class="oes-object-identifier">' . $fieldKey . '</code>'
-                ]];
 
-                foreach ($languages as $language)
-                    $cells[] = [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('text',
-                            'media[image][' . $fieldKey . '][' . $language . ']',
-                            'media-image-' . $fieldKey . '-' . $language,
-                            $field[$language] ?? ''
-                        )
-                    ];
-
-                $mediaRows[] = [
-                    'cells' => $cells
-                ];
+                $this->add_table_row(
+                    [
+                        'title' => $label,
+                        'key' => 'media[image][' . $fieldKey . ']',
+                        'value' => $field ?? [],
+                        'is_label' => true,
+                        'label_key' => $fieldKey
+                    ]
+                );
             }
 
-            /* add acf fields */
             foreach ($oes->media_groups['fields'] ?? [] as $fieldKey => $mediaField) {
 
-                $cells = [[
-                    'type' => 'th',
-                    'value' => '<strong>' . ($mediaField['label'] ?? '') . '</strong>' .
-                        '<code class="oes-object-identifier">' . $fieldKey . '</code>'
-                ]];
+                $values = [];
+                foreach($languages as $languageKey => $ignore){
+                    $values[$languageKey] = $mediaField['label_translation_' . $languageKey] ?? '';
+                }
 
-                foreach ($languages as $language)
-                    $cells[] = [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('text',
-                            'media[acf_add_local_field_group][fields][' . $fieldKey . '][' . $language . ']',
-                            'media-acf_add_local_field_group-fields-' . $fieldKey . '-' . $language,
-                            $mediaField['label_translation_' . $language] ?? ''
-                        )
-                    ];
-
-                $mediaRows[] = [
-                    'cells' => $cells
-                ];
+                $this->add_table_row(
+                    [
+                        'title' => ($mediaField['label'] ?? ''),
+                        'key' => 'media[acf_add_local_field_group][fields][' . $fieldKey . ']',
+                        'value' => $values,
+                        'is_label' => true,
+                        'label_key' => $fieldKey
+                    ]
+                );
             }
-
-            $this->table_data[]['rows'] = array_merge($this->language_row, $mediaRows);
         }
     }
 

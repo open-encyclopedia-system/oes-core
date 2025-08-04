@@ -1,0 +1,25 @@
+{
+	"apiVersion": 2,
+	"name": "oes/panel-core",
+	"title": "OES Panel",
+	"description": "A collapsible panel block with a title and toggle.",
+	"category": "layout",
+	"icon": "layout",
+	"supports": {
+		"anchor": true,
+		"align": true,
+		"customClassName": true
+	},
+	"attributes": {
+		"panel_title": {
+			"type": "string",
+			"default": ""
+		},
+		"panel_expanded": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css"
+}

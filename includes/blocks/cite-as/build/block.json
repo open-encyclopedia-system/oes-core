@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/cite-as",
+  "version": "0.1.0",
+  "title": "Cite As Button",
+  "category": "widgets",
+  "description": "Displays a 'Cite As' button that opens a popup modal for copying the citation. Works only on elements that have a citation defined in the OES schema.",
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true,
+      "gradients": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "attributes": {
+    "icon": {
+      "type": "boolean",
+      "default": true
+    },
+    "html": {
+      "type": "boolean",
+      "default": false
+    },
+    "labels_trigger": {
+      "type": "object"
+    },
+    "labels_copy": {
+      "type": "object"
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php"
+}

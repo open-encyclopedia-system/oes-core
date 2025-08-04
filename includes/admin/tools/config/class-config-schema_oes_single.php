@@ -12,349 +12,261 @@ if (!class_exists('Schema_OES_Single')) :
     /**
      * Class Schema_OES_Single
      *
-     * Implement the config tool for admin configurations.
+     * Implements the config tool for admin configurations.
      */
     class Schema_OES_Single extends Schema
     {
 
-
-        //Overwrite parent
-        function set_table_data_for_display(): void
+        /** @inheritdoc */
+        public function set_table_data_for_display(): void
         {
-            if ($this->component == 'post_types') $this->set_post_type();
-            elseif ($this->component == 'taxonomies') $this->set_taxonomies();
+            match ($this->component) {
+                'post_types' => $this->set_post_type(),
+                'taxonomies' => $this->set_taxonomy(),
+                default => null,
+            };
         }
 
-
         /**
-         * Set post type options.
-         * 
+         * Set options for post type.
          * @return void
          */
-        function set_post_type(): void
+        protected function set_post_type(): void
         {
-            $postTypeData = OES()->post_types[$this->object] ?? [];
+            global $oes;
+            $postTypeData = $oes->post_types[$this->object] ?? [];
+            $keyPrefix = "post_types[{$this->object}][oes_args]";
 
-            /* get options */
             $selects = oes_get_object_select_options($this->object);
             $titleOptions = $selects['title'] ?? [];
             $options = $selects['all'] ?? [];
             $fieldOptions = array_merge($selects['fields'] ?? [], $selects['parent'] ?? []);
 
-            /* title options */
-            $rows[] = [
-                'cells' => [
-                    [
-                        'type' => 'th',
-                        'value' => '<strong>' . __('Title for single display', 'oes') . '</strong>' .
-                            '<div>' . __('The field to be displayed as title on the single page', 'oes') . '</div>'
-                    ],
-                    [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('select',
-                            'post_types[' . $this->object . '][oes_args][display_titles][title_display]',
-                            'post_types-' . $this->object . '-oes_args-display_titles-title_display',
-                            $postTypeData['display_titles']['title_display'] ?? 'wp-title',
-                            ['options' => $titleOptions])
-                    ]
-                ]
-            ];
-            
-            /* metadata options */
-            $rows[] = [
-                'cells' => [
-                    [
-                        'type' => 'th',
-                        'value' => '<strong>' . __('Metadata', 'oes') . '</strong>'
-                    ],
-                    [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('select',
-                            'post_types[' . $this->object . '][oes_args][metadata]',
-                            'post_types-' . $this->object . '-oes_args-metadata',
-                            $postTypeData['metadata'] ?? [],
-                            [
-                                'options' => $options,
-                                'multiple' => true,
-                                'class' => 'oes-replace-select2',
-                                'reorder' => true,
-                                'hidden' => true
-                            ])
-                    ]
-                ]
-            ];
+            $this->render_select_row(
+                __('Title for single display', 'oes'),
+                $keyPrefix . '[display_titles][title_display]',
+                $postTypeData['display_titles']['title_display'] ?? 'wp-title',
+                $titleOptions);
 
-            /* prepare and loop through schema options */
-            if ($this->oes_type == 'single-article')
-                $schemaOptions = [
-                    'authors' => [
-                        'label' => __('Authors', 'oes'),
-                        'multiple' => true
-                    ],
-                    'creators' => [
-                        'label' => __('Creators', 'oes'),
-                        'multiple' => true
-                    ],
-                    'subtitle' => [
-                        'label' => __('Subtitle', 'oes'),
-                        'pattern' => true
-                    ],
-                    'citation' => [
-                        'label' => __('Citation', 'oes'),
-                        'pattern' => true
-                    ],
-                    'excerpt' => [
-                        'label' => __('Excerpt', 'oes')
-                    ],
-                    'featured_image' => [
-                        'label' => __('Featured Image', 'oes')
-                    ],
-                    'licence' => [
-                        'label' => __('Licence', 'oes'),
-                        'options' => $options
-                    ],
-                    'pub_date' => [
-                        'label' => __('Publication Date', 'oes')
-                    ],
-                    'edit_date' => [
-                        'label' => __('Edit Date', 'oes')
-                    ],
-                    'language' => [
-                        'label' => __('Language', 'oes')
-                    ],
-                    'version_field' => [
-                        'label' => __('Version', 'oes')
-                    ],
-                    'literature' => [
-                        'label' => __('Literature', 'oes'),
-                        'multiple' => true
-                    ],
-                    'terms' => [
-                        'label' => __('Terms', 'oes'),
-                        'multiple' => true,
-                        'options' => array_merge($selects['taxonomies'] ?? [],
-                            $selects['parent-taxonomies'] ?? [])
-                    ],
-                    'external' => [
-                        'label' => __('Fields with external links', 'oes'),
-                        'multiple' => true
-                    ],
-                    'lod' => [
-                        'label' => __('LoD Fields', 'oes'),
-                        'multiple' => true
-                    ]
-                ];
-            elseif ($this->oes_type == 'single-contributor')
-                $schemaOptions = [
-                    'vita' => [
-                        'label' => __('Vita', 'oes')
-                    ],
-                    'publications' => [
-                        'label' => __('Publications', 'oes'),
-                        'multiple' => true
-                    ],
-                    'language' => [
-                        'label' => __('Language', 'oes')
-                    ],
-                    'external' => [
-                        'label' => __('Fields with external links', 'oes'),
-                        'multiple' => true
-                    ]
-                ];
-            else $schemaOptions = [
-                'language' => [
-                    'label' => __('Language', 'oes')
-                ],
-                'external' => [
-                    'label' => __('Fields with external links', 'oes'),
-                    'multiple' => true
-                ]
-            ];
+            $this->render_select_row(
+                __('Metadata', 'oes'),
+                $keyPrefix . '[metadata]',
+                $postTypeData['metadata'] ?? [],
+                $options,
+                true);
 
-
-            /**
-             * Filters the schema options.
-             *
-             * @param array $schemaOptions The OES schema options.
-             */
-            $schemaOptions = apply_filters('oes/schema_options_single',
-                $schemaOptions,
-                $this->oes_type,
-                $this->object,
-                $this->component);
-
-
-            foreach ($schemaOptions as $paramKey => $param) {
-
-                /* reset args */
-                $args = [];
-
-                /* prepare value and select configuration for multiple select options */
-                if ($param['multiple'] ?? false) {
-                    $args = [
-                        'multiple' => true,
-                        'class' => 'oes-replace-select2',
-                        'reorder' => true,
-                        'hidden' => true
-                    ];
-                    $value = is_array($postTypeData[$paramKey]) ? $postTypeData[$paramKey] : [];
-                } else $value = is_bool($postTypeData[$paramKey]) ?
-                    '' :
-                    ($postTypeData[$paramKey] ?? '');
-
-                /* prepare select options */
-                $args['options'] = $param['options'] ??
-                    ((isset($param['multiple']) && $param['multiple']) ?
-                        $fieldOptions :
-                        array_merge(['none' => '-'], $fieldOptions));
-
-                /* option name */
-                if(isset($param['option_name'])){
-                    $optionName = 'oes_option[' . $param['option_name'] . ']';
-                    $value = get_option($param['option_name']);
-                }else {
-                    $optionName = 'post_types[' . $this->object . '][oes_args][' . $paramKey . ']';
-                }
-                $optionID = str_replace(['[', ']'], ['', '-'], $optionName);
-
-                /* prepare row with or without pattern */
-                if (isset($param['pattern'])) {
-
-                    /* decode value */
-                    $jsonValue = is_array($value) ? $value : [];
-
-                    $triggerText = '';
-                    if (is_array($jsonValue['pattern'] ?? false))
-                        foreach ($jsonValue['pattern'] as $part) {
-                            $triggerText .= $part['prefix'] . $part['string_value'];
-                            if ($part['field_key'] != 'none')
-                                $triggerText .= '[' . ($options[$part['field_key']] ?? $part['field_key']) . ']';
-                            $triggerText .= $part['suffix'];
-                        }
-                    if (empty($triggerText)) $triggerText = __('Use Pattern instead', 'oes');
-
-                    $patternID = '_post_types-' . $this->object . '-oes_args-' . $paramKey;
-                    $patternButton = '<div class="oes-config-subline">' .
-                        '<a href="javascript:void(0);" id="' . $patternID .
-                        '" onclick="oesPattern.InitPanel(\'' . $patternID . '\')">' . $triggerText . '</a>' .
-                        '</div>';
-
-                    $rows[] = [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong id="post_types-' . $this->object .
-                                    '-oes_args-' . $paramKey . '_label">' . $param['label'] . '</strong>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('select',
-                                        'post_types[' . $this->object . '][oes_args][' . $paramKey . '][field]',
-                                        'post_types-' . $this->object . '-oes_args-' . $paramKey . '-field',
-                                        $jsonValue['field'] ?? 'none',
-                                        $args) .
-                                    oes_html_get_form_element('text',
-                                        'post_types[' . $this->object . '][oes_args][' . $paramKey . '][pattern]',
-                                        'post_types-' . $this->object . '-oes_args-' . $paramKey . '-pattern',
-                                        (isset($jsonValue['pattern']) ?
-                                            (str_replace('"', '&quot;', json_encode($jsonValue['pattern']))) :
-                                            ''),
-                                        array_merge(['class' => 'oes-display-none'], $args)) .
-                                    $patternButton
-                            ]
-                        ]
-                    ];
-                } else
-                    $rows[] = [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong>' . $param['label'] . '</strong>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('select',
-                                    $optionName,
-                                    $optionID,
-                                    $value,
-                                    $args)
-                            ]
-                        ]
-                    ];
+            foreach ($this->get_schema_config() as $paramKey => $param) {
+                $this->render_schema_param($paramKey, $param, $postTypeData, $keyPrefix, $selects, $fieldOptions, $options);
             }
-
-            /* add data */
-            $this->table_data[] = ['rows' => $rows];
         }
 
-
         /**
-         * Set taxonomy options.
-         * 
+         * Set options for taxonomy.
          * @return void
          */
-        function set_taxonomies(): void
+        protected function set_taxonomy(): void
         {
-            $oes = OES();
+            global $oes;
             $taxonomyData = $oes->taxonomies[$this->object];
+            $keyPrefix = "taxonomies[{$this->object}][oes_args]";
 
-            /* get options */
             $selects = oes_get_object_select_options($this->object, false, ['title' => true]);
             $titleOptions = $selects['title'] ?? [];
 
-            /* prepare redirect option */
             $redirectOptions = ['none' => '-'];
-            foreach ($oes->post_types as $postTypeKey => $postTypeData)
-                $redirectOptions[$postTypeKey] = $postTypeData['label'] ?? $postTypeKey;
-            $rows[] = [
-                'cells' => [
-                    [
-                        'type' => 'th',
-                        'value' => '<strong>' . __('Redirect', 'oes') . '</strong>' .
-                            '<div>' . __('Redirect the term to an archive page', 'oes') . '</div>'
-                    ],
-                    [
-                        'class' => 'oes-table-transposed',
-                        'value' => oes_html_get_form_element('select',
-                            'taxonomies[' . $this->object . '][oes_args][redirect]',
-                            'taxonomies-' . $this->object . '-oes_args-redirect',
-                            (isset($taxonomyData['redirect']) && is_string($taxonomyData['redirect']) ?
-                                $taxonomyData['redirect'] :
-                                'none'),
-                            ['options' => $redirectOptions])
-                    ]
-                ]
-            ];
+            foreach ($oes->post_types as $key => $data) {
+                $redirectOptions[$key] = $data['label'] ?? $key;
+            }
 
-            /* prepare title option */
-            if (!empty($titleOptions))
-                $rows[] = [
-                    'cells' => [
-                        [
-                            'type' => 'th',
-                            'value' => '<strong>' . __('Title for single display', 'oes') . '</strong>' .
-                                '<div>' . __('The field to be displayed as title on the single page', 'oes') . '</div>'
-                        ],
-                        [
-                            'class' => 'oes-table-transposed',
-                            'value' => oes_html_get_form_element('select',
-                                'taxonomies[' . $this->object . '][oes_args][display_titles][title_display]',
-                                'taxonomies-' . $this->object . '-oes_args-display_titles-title_display',
-                                $taxonomyData['display_titles']['title_display'] ?? 'wp-title',
-                                ['options' => $titleOptions])
-                        ]
-                    ]
+            $this->render_select_row(
+                __('Redirect', 'oes'),
+                $keyPrefix . '[redirect]',
+                $taxonomyData['redirect'] ?? 'none',
+                $redirectOptions);
+
+            if (!empty($titleOptions)) {
+                $this->render_select_row(
+                    __('Title for single display', 'oes'),
+                    $keyPrefix . '[display_titles][title_display]',
+                    $taxonomyData['display_titles']['title_display'] ?? 'wp-title',
+                    $titleOptions);
+            }
+        }
+
+        /**
+         * Render a select row.
+         * @param string $title
+         * @param string $key
+         * @param mixed $value
+         * @param array $options
+         * @param bool $multiple
+         * @return void
+         */
+        protected function render_select_row(string $title, string $key, mixed $value, array $options, bool $multiple = false): void
+        {
+            $args = ['options' => $options];
+            if ($multiple) {
+                $args += [
+                    'multiple' => true,
+                    'class' => 'oes-replace-select2',
+                    'reorder' => true,
+                    'hidden' => true,
                 ];
+            }
 
+            $this->add_table_row([
+                'title' => $title,
+                'key' => $key,
+                'value' => $value,
+                'type' => 'select',
+                'args' => $args
+            ]);
+        }
 
-            /* add data */
-            $this->table_data[] = [
-                'rows' => $rows
-            ];
+        /**
+         * Render a schema row.
+         * @param string $paramKey
+         * @param array $param
+         * @param array $data
+         * @param string $keyPrefix
+         * @param array $selects
+         * @param array $fieldOptions
+         * @param array $allOptions
+         * @return void
+         */
+        protected function render_schema_param(string $paramKey, array $param, array $data, string $keyPrefix, array $selects, array $fieldOptions, array $allOptions): void
+        {
+            $isMultiple = $param['multiple'] ?? false;
+            $hasPattern = $param['pattern'] ?? false;
+
+            $value = $isMultiple ? ($data[$paramKey] ?? []) : ($data[$paramKey] ?? '');
+
+            $inputOptions = match ($param['options'] ?? null) {
+                'options' => $allOptions,
+                'taxonomies' => array_merge($selects['taxonomies'] ?? [], $selects['parent-taxonomies'] ?? []),
+                default => $isMultiple ? $fieldOptions : array_merge(['none' => '-'], $fieldOptions),
+            };
+
+            $args = ['options' => $inputOptions];
+            if ($isMultiple) {
+                $args += [
+                    'multiple' => true,
+                    'class' => 'oes-replace-select2',
+                    'reorder' => true,
+                    'hidden' => true,
+                ];
+            }
+
+            $optionName = isset($param['option_name'])
+                ? "oes_option[{$param['option_name']}]"
+                : ($keyPrefix . '[' . $paramKey . ']');
+
+            if (isset($param['option_name'])) {
+                $value = get_option($param['option_name']);
+            }
+
+            if ($hasPattern) {
+                $jsonValue = is_array($value) ? $value : [];
+                $triggerText = $this->get_pattern_text($jsonValue['pattern'] ?? [], $allOptions);
+                $patternID = str_replace(['[', ']'], '-', "$keyPrefix-$paramKey");
+                $patternButton = $this->get_pattern_button($patternID, $triggerText);
+                $patternValue = isset($jsonValue['pattern']) ? esc_attr(json_encode($jsonValue['pattern'])) : '';
+
+                $this->add_table_row(
+                    [
+                        'title' => $param['label'] ?? $optionName,
+                        'key' => $keyPrefix . '[' . $paramKey . '][field]',
+                        'value' => $jsonValue['field'] ?? 'none',
+                        'type' => 'select',
+                        'args' => $args,
+                    ],
+                    ['additional' => $patternButton],
+                    [
+                        'title' => ($param['label'] ?? $optionName) . ' (Pattern)',
+                        'key' => $keyPrefix . '[' . $paramKey . '][pattern]',
+                        'value' => $patternValue,
+                        'type' => 'text',
+                        'args' => ['class' => 'oes-display-none']
+                    ]
+                );
+            } else {
+                $this->render_select_row($param['label'] ?? $optionName, $optionName, $value, $inputOptions, $isMultiple);
+            }
+        }
+
+        /**
+         * Get pattern text.
+         * @param array $patternParts
+         * @param array $options
+         * @return string
+         */
+        protected function get_pattern_text(array $patternParts, array $options): string
+        {
+            $text = '';
+            foreach ($patternParts as $part) {
+                $text .= $part['prefix'] . ($part['string_value'] ?? '');
+                if (($part['field_key'] ?? '') !== 'none') {
+                    $text .= '[' . ($options[$part['field_key']] ?? $part['field_key']) . ']';
+                }
+                $text .= $part['suffix'] ?? '';
+            }
+            return $text ?: __('Use Pattern instead', 'oes');
+        }
+
+        /**
+         * Get pattern button.
+         * @param string $id
+         * @param string $text
+         * @return string
+         */
+        protected function get_pattern_button(string $id, string $text): string
+        {
+            return sprintf(
+                '<div class="oes-config-subline"><a href="javascript:void(0);" id="%s" onclick="oesPattern.InitPanel(\'%s\')">%s</a></div>',
+                esc_attr($id),
+                esc_attr($id),
+                esc_html($text)
+            );
+        }
+
+        /**
+         * Get schema depending on oes schema type.
+         * @return array
+         */
+        protected function get_schema_config(): array
+        {
+            return apply_filters('oes/schema_options_single', match ($this->oes_type) {
+                'single-article' => [
+                    'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
+                    'creators' => ['label' => __('Creators', 'oes'), 'multiple' => true],
+                    'subtitle' => ['label' => __('Subtitle', 'oes'), 'pattern' => true],
+                    'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
+                    'excerpt' => ['label' => __('Excerpt', 'oes')],
+                    'featured_image' => ['label' => __('Featured Image', 'oes')],
+                    'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
+                    'pub_date' => ['label' => __('Publication Date', 'oes')],
+                    'edit_date' => ['label' => __('Edit Date', 'oes')],
+                    'language' => ['label' => __('Language', 'oes')],
+                    'version_field' => ['label' => __('Version', 'oes')],
+                    'literature' => ['label' => __('Literature', 'oes'), 'multiple' => true],
+                    'terms' => ['label' => __('Terms', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
+                    'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
+                    'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true]
+                ],
+                'single-contributor' => [
+                    'vita' => ['label' => __('Vita', 'oes')],
+                    'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
+                    'language' => ['label' => __('Language', 'oes')],
+                    'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true]
+                ],
+                default => [
+                    'language' => ['label' => __('Language', 'oes')],
+                    'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true]
+                ]
+            }, $this->oes_type, $this->object, $this->component);
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\Schema_OES_Single', 'schema-oes_single');
 
 endif;

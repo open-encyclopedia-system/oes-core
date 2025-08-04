@@ -1,272 +1,368 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Admin\add_oes_notice_after_refresh;
-use function OES\Admin\display_admin_note;
+use function OES\Admin\get_admin_note_html;
 
 if (!class_exists('Tool')) :
 
     /**
      * Class Tool
      *
-     * A class to register and display tools.
+     * Base class for building admin tools in WordPress.
+     * Provides a framework for form handling, postboxes, notices, and AJAX support.
      */
     class Tool
     {
-
-        /** @var string The tool name. */
+        /**
+         * Tool name (slug/identifier).
+         *
+         * @var string
+         */
         public string $name = '';
 
-        /** @var string The request action for a form on the page. */
+        /**
+         * Action name used in form submission.
+         *
+         * @var string
+         */
         public string $action = '';
 
-        /** @var bool Boolean indicating if tool has added action after form submit */
+        /**
+         * Whether to add an admin_post hook automatically.
+         *
+         * @var bool
+         */
         public bool $add_action = true;
 
-        /** @var string Action name for the form. */
+        /**
+         * AJAX action name (optional).
+         *
+         * @var string
+         */
+        protected string $ajax_action = '';
+
+        /**
+         * Form action URL.
+         *
+         * @var string
+         */
         public string $form_action = '';
 
-        /** @var string Further form parameters. */
+        /**
+         * Additional HTML parameters for the form element.
+         *
+         * @var string
+         */
         public string $form_parameters = '';
 
-        /** @var array Tool messages */
+        /**
+         * Admin notice messages (to be displayed after redirect).
+         *
+         * Each message should be an array with keys: type, text, dismissible.
+         *
+         * @var array
+         */
         public array $tool_messages = [];
 
-        /** @var array Postbox parameters */
+        /**
+         * Postbox configuration parameters.
+         *
+         * @var array
+         */
         public array $postbox = [
-            'name' => '',
-            'screen' => 'oes-tools',
-            'context' => 'normal',
-            'priority' => 'high'
+            'name'     => '',
+            'screen'   => 'oes-tools',
+            'context'  => 'normal',
+            'priority' => 'high',
         ];
 
-        /** @var bool Flag indicating if redirect after tool action is required. */
+        /**
+         * Whether to redirect back after form submission.
+         *
+         * @var bool
+         */
         public bool $redirect = true;
 
-        /** @var array Store admin notices to be displayed during steps. */
+        /**
+         * Admin notices to be shown immediately (not after refresh).
+         *
+         * @var array
+         */
         public array $admin_notices = [];
 
-        /** @var array Hidden inputs for form. */
+        /**
+         * Hidden form inputs.
+         *
+         * @var array
+         */
         public array $hidden_inputs = [];
-
 
         /**
          * Tool constructor.
          *
-         * @param string $name The tool name.
-         * @param array $args Additional parameters.
+         * @param string $name Tool name (identifier).
+         * @param array  $args Optional parameters to configure the tool.
          */
-        function __construct(string $name, array $args = [])
+        public function __construct(string $name, array $args = [])
         {
-
-            /* Set tool name */
             $this->name = $name;
 
-            /* Set and validate further parameters */
             $this->initialize_parameters($args);
+            $this->additional_parameters($args);
             $this->validate_parameters();
-
-            /* Add action behaviour */
-            if ($this->add_action) add_action("admin_post_$this->action", [$this, 'admin_post']);
-
-            /* Call admin notices */
-            add_action('admin_notices', [$this, 'display_messages'], 10);
-
-            /* Initialize postboxes */
-            if ($this->postbox['name']) $this->initialize_postbox();
+            $this->register_hooks();
         }
 
-
         /**
-         * Initialize class parameters
+         * Registers WordPress hooks (actions) for the tool.
          *
-         * @param array $args Additional parameters.
          * @return void
          */
-        function initialize_parameters(array $args = []): void
+        protected function register_hooks(): void
+        {
+            if (!empty($this->ajax_action)) {
+                add_action('wp_ajax_' . $this->ajax_action, [$this, 'handle_ajax']);
+            } elseif ($this->add_action) {
+                add_action("admin_post_{$this->action}", [$this, 'admin_post']);
+            }
+
+            add_action('admin_notices', [$this, 'display_messages'], 10);
+            add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
+
+            if (!empty($this->postbox['name'])) {
+                $this->initialize_postbox();
+            }
+        }
+
+        /**
+         * Initialize base parameters (intended to be overridden).
+         *
+         * @param array $args Tool parameters.
+         * @return void
+         */
+        protected function initialize_parameters(array $args = []): void
         {
         }
 
-
         /**
-         * Validate class parameters
+         * Initialize additional parameters (optional).
+         *
+         * @param array $args Additional tool parameters.
          * @return void
          */
-        function validate_parameters(): void
+        protected function additional_parameters(array $args = []): void
         {
-            if (!$this->name) $this->add_action = false;
-            if (!$this->action) $this->action = $this->name;
         }
 
-
         /**
-         * Initialize postbox
+         * Validates and sets fallback parameters.
+         *
          * @return void
          */
-        function initialize_postbox(): void
+        protected function validate_parameters(): void
         {
-            add_meta_box('oes-tool-' . $this->name,
-                empty($this->postbox['name']) ? 'Postbox name missing' : $this->postbox['name'],
-                [$this, 'display'],
+            if (empty($this->name)) {
+                $this->add_action = false;
+            }
+
+            if (empty($this->action)) {
+                $this->action = $this->name;
+            }
+
+            if (empty($this->form_action)) {
+                $this->form_action = esc_url(admin_url('admin-post.php'));
+            }
+        }
+
+        /**
+         * Registers a postbox for this tool in the admin screen.
+         *
+         * @return void
+         */
+        protected function initialize_postbox(): void
+        {
+            add_meta_box(
+                'oes-tool-' . $this->name,
+                esc_html($this->postbox['name'] ?: 'Postbox name missing'),
+                [$this, 'render_form'],
                 $this->postbox['screen'],
                 $this->postbox['context'],
                 $this->postbox['priority']
             );
         }
 
-
         /**
-         * Display the tool interface as a form.
+         * Renders the full tool form inside the postbox.
+         *
          * @return void
          */
-        function display(): void
+        public function display(): void
         {
-
-            /* redirect form to current page */
             $redirect = urlencode($_SERVER['REQUEST_URI']);
-
-            /*
-            Create form
-               - add action input to link to specific tool,
-               - create nonce for security,
-               - redirect to current page,
-               - call form parameters from specific tool.
-            */
             ?>
-            <form action="<?php echo $this->form_action; ?>" id="<?php echo $this->name ?>"
-                  method="POST"<?php echo $this->form_parameters; ?>>
-                <input type="hidden" name="action" value="<?php echo $this->action; ?>">
-                <?php wp_nonce_field($this->action, $this->name . '_nonce', FALSE); ?>
-                <input type="hidden" name="_wp_http_referer" value="<?php echo $redirect; ?>">
+            <form action="<?php echo esc_url($this->form_action); ?>"
+                  id="<?php echo esc_attr($this->name); ?>"
+                  method="POST" <?php echo $this->form_parameters; ?>>
+                <input type="hidden" name="action" value="<?php echo esc_attr($this->action); ?>">
+                <?php wp_nonce_field($this->action, $this->name . '_nonce', false); ?>
+                <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr($redirect); ?>">
                 <?php
                 $this->html();
-                $this->hidden_inputs_html();
+                $this->render_hidden_inputs();
                 ?>
             </form>
             <?php
         }
 
-
         /**
-         * Display the tool messages as admin notice.
-         */
-        function display_admin_notices()
-        {
-            if (!empty($this->admin_notices))
-                foreach ($this->admin_notices as $notice)
-                    display_admin_note($notice);
-        }
-
-
-        /**
-         * Display the tool messages as admin notice.
+         * Displays admin messages stored in the tool.
+         *
          * @return void
          */
-        function display_messages(): void
+        public function display_messages(): void
         {
+            foreach ($this->tool_messages as $message) {
+                $type = $message['type'] ?? 'info';
+                $text = $message['text'] ?? '';
+                $dismissible = $message['dismissible'] ?? true;
 
-            /* get the messages */
-            if ($this->tool_messages) {
-
-                foreach ($this->tool_messages as $message) {
-
-                    /* validate message parameters  */
-
-                    /* type in array */
-                    if (!in_array($message['type'], ['info', 'warning', 'error', 'success'])) $message['type'] = 'info';
-
-                    /* text string ends with punctuation */
-                    if (!oes_ends_with($message['text'], '.') && !oes_ends_with($message['text'], '>'))
-                        $message['text'] .= '.';
-
-                    /* validate dismissible parameter */
-                    if (!is_bool($message['dismissible'])) $message['dismissible'] = true;
-
-                    add_oes_notice_after_refresh($message['text'],
-                        $message['type'],
-                        $message['dismissible']
-                    );
+                if (!in_array($type, ['info', 'warning', 'error', 'success'], true)) {
+                    $type = 'info';
                 }
+
+                if (!str_ends_with($text, '.') && !str_ends_with($text, '>')) {
+                    $text .= '.';
+                }
+
+                add_oes_notice_after_refresh($text, $type, $dismissible);
             }
         }
 
+        /**
+         * Display the tool messages as admin notice.
+         */
+        function display_admin_notices(): void
+        {
+            foreach ($this->admin_notices as $notice) {
+                get_admin_note_html($notice);
+            }
+        }
 
         /**
-         * Runs when admin post request for the given action.
+         * Handles form submission for admin_post_[action].
+         *
+         * @return void
          */
-        function admin_post()
+        public function admin_post(): void
         {
+            if (
+                empty($_POST[$this->name . '_nonce']) ||
+                !wp_verify_nonce($_POST[$this->name . '_nonce'], $this->action)
+            ) {
+                wp_die(__('Security check failed.', 'oes'));
+            }
 
-            /* validate nonce */
-            if (!wp_verify_nonce($_POST[$this->name . '_nonce'], $this->action))
-                die('Invalid nonce.' . var_export($_POST, true));
-
-            /* get tool action */
             $this->validate_form_input_size();
             $this->admin_post_tool_action();
 
-            /* check if form has redirection */
-            if (!isset ($_POST['_wp_http_referer'])) die('Missing target.');
+            if (empty($_POST['_wp_http_referer'])) {
+                wp_die(__('Missing referer.', 'oes'));
+            }
 
-            /* Redirect after saving. */
-            if ($this->redirect) wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+            if ($this->redirect) {
+                wp_safe_redirect(urldecode($_POST['_wp_http_referer']));
+            }
 
             exit;
         }
 
-
         /**
-         * Validate input size.
+         * Validates that the number of submitted form fields does not exceed PHP's max_input_vars.
          *
          * @return void
-         * @oesDevelopment Prevent exceeding of maximum input vars.
          */
-        function validate_form_input_size(): void
+        protected function validate_form_input_size(): void
         {
-            /* check if max input vars has been exceeded */
-            if (ini_get('max_input_vars') < $formCount = count($_POST, COUNT_RECURSIVE))
+            $max_input_vars = (int) ini_get('max_input_vars');
+            $form_count = count($_POST, COUNT_RECURSIVE);
+
+            if ($form_count > $max_input_vars) {
                 add_oes_notice_after_refresh(
-                    sprintf(__('The amount of variables in this form (%s) exceeds your server configuration for ' .
-                        'max_input_vars (%$s) You might not be able to administer the data model via this ' .
-                        'configuration panel.', 'oes'),
-                        $formCount,
-                        ini_get('max_input_vars')
+                    sprintf(
+                        __('The number of submitted form variables (%1$s) exceeds your server limit (%2$s). This may cause incomplete data saving.', 'oes'),
+                        $form_count,
+                        $max_input_vars
                     ),
-                    'error');
-        }
-
-
-        /**
-         * Tool specific action.
-         * @return void
-         */
-        function admin_post_tool_action(): void
-        {
-        }
-
-
-        /**
-         * Add hidden inputs.
-         * @return void
-         */
-        function hidden_inputs_html(): void
-        {
-            foreach ($this->hidden_inputs as $name => $value)
-                printf('<input type="hidden" name="%s" value="%s">',
-                    $name,
-                    $value
+                    'error'
                 );
+            }
         }
 
         /**
-         * Display the tools parameters for form.
+         * Outputs hidden input fields as HTML.
+         *
          * @return void
          */
-        function html(): void
+        protected function render_hidden_inputs(): void
+        {
+            foreach ($this->hidden_inputs as $name => $value) {
+                printf(
+                    '<input type="hidden" name="%s" value="%s">',
+                    esc_attr($name),
+                    esc_attr($value)
+                );
+            }
+        }
+
+        /**
+         * Outputs the custom form fields (main content).
+         * Override in child classes.
+         *
+         * @return void
+         */
+        protected function html(): void
+        {
+        }
+
+        /**
+         * Enqueues admin scripts.
+         * Override in child classes to add specific assets.
+         *
+         * @param string $hook Current admin page hook suffix.
+         * @return void
+         */
+        public function enqueue_scripts(string $hook): void
+        {
+        }
+
+        /**
+         * Executes the tool’s specific logic after form submit.
+         * Override in child classes.
+         *
+         * @return void
+         */
+        protected function admin_post_tool_action(): void
+        {
+        }
+
+        /**
+         * Handles AJAX requests.
+         * Override in child classes.
+         *
+         * @return void
+         */
+        public function handle_ajax(): void
         {
         }
     }
+
 endif;

@@ -21,10 +21,10 @@ function oes_config_get_clean_option_value($newValue, $oldValue)
 
 /**
  * Update a OES config post.
- * 
+ *
  * @param string|int $postID The OES config post ID.
  * @param array $updateValues The new values.
- * 
+ *
  * @return string Return 'success' if post has been updated or no difference to existing values are found.
  */
 function oes_config_update_post_object($postID, array $updateValues = []): string
@@ -61,7 +61,7 @@ function oes_config_update_post_object($postID, array $updateValues = []): strin
 
                     if (!isset($argsAll[$argsKey][$subComponentKey]) ||
                         $newValues != $argsAll[$argsKey][$subComponentKey]) {
-                        if(!isset($updateObject[$argsKey])) $updateObject[$argsKey] = true;
+                        if (!isset($updateObject[$argsKey])) $updateObject[$argsKey] = true;
                         $argsAll[$argsKey][$subComponentKey] = $newValues;
                     }
                 }
@@ -70,9 +70,9 @@ function oes_config_update_post_object($postID, array $updateValues = []): strin
         if (!empty($updateObject)) {
 
             $args['ID'] = $post->ID;
-            if(isset($updateObject['oes_args'])) 
+            if (isset($updateObject['oes_args']))
                 $args['post_excerpt'] = json_encode($argsAll['oes_args'], JSON_UNESCAPED_UNICODE);
-            if(isset($updateObject['register_args'])) 
+            if (isset($updateObject['register_args']))
                 $args['post_content'] = json_encode($argsAll['register_args'], JSON_UNESCAPED_UNICODE);
 
             $result = wp_update_post($args);
@@ -96,7 +96,8 @@ function oes_config_update_post_object($postID, array $updateValues = []): strin
  *
  * @return string Return 'success' if post has been updated or no difference to existing values are found.
  */
-function oes_config_update_field_group_object($postID, array $updateValues = []): string {
+function oes_config_update_field_group_object($postID, array $updateValues = []): string
+{
 
     if ($post = get_post($postID)) {
 
@@ -148,7 +149,8 @@ function oes_config_update_field_group_object($postID, array $updateValues = [])
  *
  * @return string Return 'success' if post has been updated or no difference to existing values are found.
  */
-function oes_config_update_general_object(array $updateValues = []): string {
+function oes_config_update_general_object(array $updateValues = []): string
+{
 
     global $oes;
     if ($oes->config_post && $post = get_post($oes->config_post)) {
@@ -200,7 +202,8 @@ function oes_config_update_general_object(array $updateValues = []): string {
  *
  * @return string Return 'success' if post has been updated or no difference to existing values are found.
  */
-function oes_config_update_media_object(array $updateValues = []): string {
+function oes_config_update_media_object(array $updateValues = []): string
+{
 
     global $oes;
     if (isset($oes->media_groups['post_ID']) && $post = get_post($oes->media_groups['post_ID'])) {
@@ -214,7 +217,7 @@ function oes_config_update_media_object(array $updateValues = []): string {
                 $componentContainer != $argsAll[$componentKey]) {
 
                 $newValues = (oes_config_get_clean_option_value($componentContainer,
-                        $argsAll[$componentKey] ?? ''));
+                    $argsAll[$componentKey] ?? ''));
 
                 if (!isset($argsAll[$componentKey]) || $newValues != $argsAll[$componentKey]) {
                     $updateObject = true;
@@ -238,4 +241,68 @@ function oes_config_update_media_object(array $updateValues = []): string {
     }
 
     return 'success';
+}
+
+
+/**
+ * Generates a structured array of schema-related admin links for OES components (post types and taxonomies).
+ *
+ * The returned array is grouped by schema type, and each group contains:
+ * - a human-readable label
+ * - a sorted list of schema object links (e.g., to post types or taxonomies).
+ *
+ * Each link entry includes:
+ * - 'key'   => The object key (e.g., post type or taxonomy name)
+ * - 'link'  => The HTML anchor tag to the admin schema settings page
+ * - 'label' => The object label (human-readable name)
+ *
+ * @return array
+ */
+function oes_config_get_schema_links(): array
+{
+    global $oes;
+    $schemaLinks = [];
+
+    // Load schema type labels
+    $schemaTypes = \OES\Model\get_schema_types();
+    foreach ($schemaTypes as $schemaType => $schemaLabel) {
+        $schemaLinks[$schemaType]['label'] = $schemaLabel;
+    }
+
+    // Loop through both post types and taxonomies
+    foreach (['post_types', 'taxonomies'] as $component) {
+        foreach ($oes->$component as $objectKey => $objectData) {
+            $type = $objectData['type'] ?? 'index';
+            $objectLabel = $objectData['label'] ?? $objectKey;
+
+            $url = 'admin.php?page=oes_settings_schema&tab=schema&type=oes' .
+                '&component=' . $component .
+                '&object=' . $objectKey;
+
+            $uniqueKey = $objectLabel . $objectKey;
+
+            $schemaLinks[$type]['data'][$uniqueKey] = [
+                'key' => $objectKey,
+                'label' => $objectLabel,
+                'component' => $component,
+                'url' => $url
+            ];
+        }
+    }
+
+    // Sort each schema type group alphabetically by label
+    $sanitizedSchemaLinks = [];
+    foreach ($schemaLinks as $schemaType => $schemaData) {
+        if (!empty($schemaData['data'])) {
+            $schemaDataSorted = $schemaData['data'];
+            ksort($schemaDataSorted);
+
+            $sanitizedSchemaLinks[$schemaType] = [
+                'label' => $schemaData['label'] ?? $schemaType,
+                'data' => $schemaDataSorted,
+            ];
+        }
+    }
+
+    return $sanitizedSchemaLinks;
 }

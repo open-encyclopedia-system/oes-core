@@ -1,5 +1,4 @@
 table {
-
   width: 100%;
 
   th {
@@ -9,7 +8,6 @@ table {
 
 .wp-block-table.is-style-oes-default,
 table.is-style-oes-default {
-
   font-size: var(--wp--preset--font-size--small);
   border: none;
 
@@ -25,7 +23,7 @@ table.is-style-oes-default {
     border-right: none;
     border-bottom: none;
     border-top: 1px solid var(--wp--preset--color--background);
-    padding: .5rem .5rem .5rem 0;
+    padding: 0.5rem 0.5rem 0.5rem 0;
     vertical-align: top;
     position: relative;
   }
@@ -42,14 +40,13 @@ table.is-style-oes-default {
   }
 
   ul.oes-field-value-list {
-
-    li:after {
-      content: '\2219';
+    li::after {
+      content: '•';
       padding: 0 5px;
       color: var(--wp--preset--color--background);
     }
 
-    li:last-child:after {
+    li:last-child::after {
       content: none;
     }
   }
@@ -57,11 +54,9 @@ table.is-style-oes-default {
 
 .wp-block-table.is-style-oes-simple,
 table.is-style-oes-simple {
-
   width: 100%;
   margin: 4px 0;
   line-height: normal;
-
 
   tr,
   tr:last-child {
@@ -72,7 +67,7 @@ table.is-style-oes-simple {
   tr th,
   tr td {
     vertical-align: top;
-    font-size: .9rem;
+    font-size: 0.9rem;
     padding: 2px 2px 2px 0;
     text-align: left;
     position: relative;
@@ -88,7 +83,6 @@ table.is-style-oes-simple {
 
 .wp-block-table.is-style-oes-list,
 table.is-style-oes-list {
-
   border: none;
 
   tr,

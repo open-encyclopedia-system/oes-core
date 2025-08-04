@@ -1,8 +1,11 @@
 <?php
 
 /**
+ * @file
+ * @todoReview Review and test for 2.4.x
  * @oesDevelopment evaluate messaging through notice.
-*/
+ */
+
 namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly

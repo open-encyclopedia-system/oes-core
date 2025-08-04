@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -15,51 +20,124 @@ if (!class_exists('Container')) :
      */
     class Container extends Page
     {
-
-        //Overwrite
+        /** @inheritdoc */
         protected bool $is_core_page = true;
+
+        /** @var string The container key. */
+        protected string $key = '';
 
         /** @var string The page menu title. */
         protected string $menu_title = '';
 
-        /** @var array The subpage keys. */
-        protected array $subpages = [];
-
         /** @var array The subpage information. */
         protected array $subpage_data = [];
 
-        /** @var array Parameters for an info page.*/
+        /** @var array Parameters for an info page. */
         public array $info_page = [];
 
-        /** @var string The main slug for the container page.*/
+        /** @var string The main slug for the container page. */
         public string $main_slug = '';
 
-        /** @var array The default parameters for the post query. */
-        protected array $get_posts_defaults = [
-            'number_of_posts' => 10,
-            'numberposts' => 10,
-            'post_status' => ['publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit', 'trash'],
-            'orderby' => 'post_modified'
-        ];
+        /** @inheritdoc */
+        protected function prepare_actions(): void
+        {
+            $this->prepare_info_page();
+            $this->prepare_subpages();
 
-        /** @var array The default parameters for the term query. */
-        protected array $get_terms_defaults = [
-            'hide_empty' => false,
-            'number' => 10
-        ];
+            parent::prepare_actions();
+            add_filter('parent_file', [$this, 'modify_parent_file']);
+            add_filter('submenu_file', [$this, 'modify_submenu_file']);
+        }
 
+        /** @inheritdoc */
+        protected function get_page_parameters_defaults(): array
+        {
+            return [
+                'menu_title' => '[' . $this->key . ']',
+                'capability' => 'edit_posts',
+                'function' => [$this, 'html'],
+                'position' => 20,
+                'menu_slug' => 'container_' . $this->key,
+                'generated' => true,
+                'hide' => false
+            ];
+        }
 
-        //Overwrite
+        /** @inheritdoc */
         function set_additional_parameters(): void
         {
+            $this->main_slug = 'container_' . $this->key;
 
-            /* set slug */
-            $this->main_slug = $this->page_parameters['menu_slug'];
+            if (empty($this->page_parameters['subpages'] ?? '')) {
+                $this->page_parameters['subpages'] = $this->get_elements();
+            }
+            if (empty($this->info_page['elements'] ?? '')) {
+                $this->info_page['elements'] = $this->get_elements();
+            }
+        }
 
-            /* create info page */
-            if (!empty($this->info_page) &&
+        /**
+         * Add subpages for container in admin menu.
+         * @return array
+         */
+        protected function get_elements(): array
+        {
+            global $oes;
+
+            // Check if key is post type
+            $postType = $oes->post_types[$this->key] ?? false;
+            if (!$postType) {
+                return [];
+            }
+
+            return $this->get_default_elements($postType['parent'] ?? '');
+        }
+
+        /**
+         * Get default elements.
+         *
+         * @param string $parent
+         * @param bool $elements_only
+         * @return array
+         */
+        protected function get_default_elements(string $parent = '', bool $elements_only = false): array
+        {
+            $elements = [];
+
+            if (!empty($parent)) {
+                $elements[] = $parent;
+            }
+
+            $elements[] = $this->key;
+
+            if ($elements_only) {
+                return $elements;
+            }
+
+            $postTypeTaxonomies = get_post_type_object($this->key)->taxonomies ?? [];
+            foreach ($postTypeTaxonomies as $taxonomy) {
+                $elements[] = $taxonomy;
+            }
+
+            $parentPostTypeTaxonomies = get_post_type_object($parent)->taxonomies ?? [];
+            foreach ($parentPostTypeTaxonomies as $taxonomy) {
+                $elements[] = $taxonomy;
+            }
+            return array_unique($elements);
+        }
+
+        /**
+         * Prepares an info subpage if the `info_page` config is valid and visible.
+         *
+         * @return void
+         */
+        public function prepare_info_page(): void
+        {
+            if (
+                !empty($this->info_page) &&
                 !empty($this->info_page['elements']) &&
-                (($this->info_page['elements'] ?? '') != 'hidden')) {
+                $this->info_page['elements'] !== 'hidden'
+            ) {
                 new Subpage([
                     'subpage' => true,
                     'page_parameters' => [
@@ -70,38 +148,58 @@ if (!class_exists('Container')) :
                         'menu_slug' => $this->page_parameters['menu_slug'],
                         'function' => $this->page_parameters['function'],
                         'position' => 1
-                    ]]);
+                    ]
+                ]);
             }
+        }
 
-            /* create subpages */
+        /**
+         * Dynamically prepares subpages based on post types, taxonomies, or custom definitions.
+         *
+         * @return void
+         */
+        public function prepare_subpages(): void
+        {
             $position = 1;
-            foreach ($this->subpages as $page) {
 
-                /* prepare subpage data */
+            foreach ($this->page_parameters['subpages'] ?? [] as $page) {
+
+                // Determine if it's a post type
                 if ($postType = get_post_type_object($page)) {
                     $objectName = $page;
                     $label = $postType->label;
                     $href = 'edit.php?post_type=' . $page;
                     $pageSlug = 'edit.php?post_type=' . $objectName;
                     $capabilities = 'edit_posts';
+
+                    // Or a taxonomy
                 } elseif ($taxonomy = get_taxonomy($page)) {
+
+                    $countForPostType = '';
+                    foreach($taxonomy->object_type as $singlePostType){
+                        if(in_array($singlePostType, $this->page_parameters['subpages'])){
+                            $countForPostType = '&post_type=' . $singlePostType;
+                            break;
+                        }
+                    }
+
                     $objectName = $page;
                     $label = $taxonomy->label;
                     $href = 'edit-tags.php?taxonomy=' . $page;
-                    $pageSlug = 'edit-tags.php?taxonomy=' . $objectName;
+                    $pageSlug = 'edit-tags.php?taxonomy=' . $objectName . $countForPostType;
                     $capabilities = 'edit_tags';
+
+                    // Or a custom-defined item
                 } else {
                     $objectName = false;
-                    $label = $page['label'] ?? $page;
+                    $label = is_array($page) && isset($page['label']) ? $page['label'] : (string)$page;
                     $href = 'admin.php?page=' . $this->main_slug;
                     $pageSlug = $this->main_slug . '_container';
                     $capabilities = 'edit_posts';
                 }
 
-                /* check if element replaces info page */
-                if (!$this->info_page['elements'] && $position === 1) {
-
-                    /* redirect first sub-menu. @oesDevelopment Is there a better way to do this? */
+                // Redirect first submenu if no info_page['elements'] exists
+                if (empty($this->info_page['elements']) && $position === 1) {
                     add_action('admin_init', function () use ($pageSlug) {
                         global $plugin_page;
                         if ($plugin_page === $pageSlug) {
@@ -111,21 +209,8 @@ if (!class_exists('Container')) :
                     });
                 }
 
-                /* check if post type exists multiple times on page (depending on field) */
-                $columns = [];
-                if (isset($page['field']) && $fieldObject = oes_get_field_object($page['field']))
-                    if ($fieldObject['type'] == 'select' && !empty($fieldObject['choices'])) {
-
-                        /* check for filter */
-                        if (isset($page['valid_values'])) {
-                            foreach ($page['valid_values'] as $value)
-                                if (isset($fieldObject['choices'][$value]))
-                                    $columns[$value] = $fieldObject['choices'][$value];
-                        } else $columns = $fieldObject['choices'];
-                    }
-
-                /* create sub pages */
-                $args = [
+                // Create the subpage
+                new Subpage([
                     'subpage' => true,
                     'page_parameters' => [
                         'parent_slug' => $this->page_parameters['menu_slug'],
@@ -133,56 +218,32 @@ if (!class_exists('Container')) :
                         'menu_title' => $label,
                         'capability' => $capabilities,
                         'menu_slug' => $pageSlug,
-                        'function' => '',
+                        'function' => '', // Assumes this is handled externally
                         'position' => ++$position
-                    ]];
-                new Subpage($args);
+                    ]
+                ]);
 
-                /* add info for tab display */
+                // Store subpage display metadata
                 $this->subpage_data[$page] = [
                     'label' => $label,
                     'href' => $href,
-                    'display_summary' => in_array($page,
-                        is_array($this->info_page['elements']) ?
-                        $this->info_page['elements'] :
-                        []),
-                    'columns' => $columns,
-                    'field' => $page['field'] ?? false
+                    'display_summary' => in_array(
+                        $page,
+                        is_array($this->info_page['elements'] ?? []) ? $this->info_page['elements'] : [],
+                        true
+                    )
                 ];
 
-                /* hook tabs to display of subpages */
-                if ($objectName) add_filter('views_edit-' . $objectName, [$this, 'view_for_container_elements'], 10, 1);
+                // Hook view filters if it's a known post type or taxonomy
+                if ($objectName) {
+                    add_filter("views_edit-$objectName", [$this, 'view_for_container_elements'], 10, 1);
+                }
             }
-
-            add_filter('parent_file', [$this, 'modify_parent_file']);
         }
 
-
-        //Overwrite
+        /** @inheritdoc */
         function html(): void
         {
-
-            /**
-             * Filters the custom arguments.
-             *
-             * @param array $args Additional arguments.
-             * @param string $slug The page slug.
-             */
-            $args = apply_filters('oes/menu_container_custom_html', [], $this->main_slug);
-
-
-            /**
-             * Filters the page content for admin view.
-             *
-             * @param array $pageContent The page content.
-             * @param string $slug The page slug.
-             * @param Container $this The container class.
-             */
-            $pageContent = apply_filters('oes/page_container_content',
-                $this->prepare_info_page($args),
-                $this->main_slug,
-                $this);
-
             ?>
             <div class="oes-page-wrap wrap">
             <!-- dummy for admin notices -->
@@ -190,298 +251,286 @@ if (!class_exists('Container')) :
             <h1 class="wp-heading-inline"><?php echo $this->page_parameters['menu_title']; ?></h1>
             <hr class="wp-header-end"><?php
             echo $this->html_tabs();
-            echo $pageContent;
+            $this->display_page_content();
             ?>
             </div><?php
         }
 
-
         /**
-         * Prepare the info page content.
-         *
-         * @param array $additionalArgs Additional arguments.
-         * @return string Return the html representation of the info page.
+         * Display the page content.
+         * @return void
          */
-        function prepare_info_page(array $additionalArgs = []): string
+        protected function display_page_content(): void
         {
-
-            /* prepare page content for info page */
-            $pageContent = '<table class="oes-menu-container wp-list-table widefat fixed striped table-view-list">';
-
-            /* prepare data */
-            if (!empty($this->subpage_data)) {
-
-                $tableDataHeader = '';
-                $tableData = '';
-
-
-                /**
-                 * Filters the subpages
-                 *
-                 * @param array $subPages The subpages.
-                 * @param string $slug The page slug.
-                 */
-                $subPages = apply_filters('oes/menu_container_subpages', $this->subpage_data, $this->main_slug);
-
-
-                /* loop through post types */
-                foreach ($subPages as $pageKey => $page)
-                    if (isset($page['display_summary']) && $page['display_summary']) {
-
-                        /* check if modified post type */
-                        if (oes_starts_with($pageKey, 'modified_')) $pageKey = substr($pageKey, 9);
-
-                        /* check if post type or taxonomy */
-                        $postType = false;
-                        $taxonomy = false;
-                        if (get_post_type_object($pageKey)) $postType = get_post_type_object($pageKey);
-                        elseif (is_string($page) && get_post_type_object($page))
-                            $postType = get_post_type_object($page);
-                        elseif (get_taxonomy($pageKey)) $taxonomy = get_taxonomy($pageKey);
-                        elseif (is_string($page) && get_taxonomy($page)) $taxonomy = get_taxonomy($page);
-
-                        /* get post type object */
-                        if ($postType) {
-
-                            /* get all posts of this post type and prepare data */
-                            $postArray = [];
-                            $parseArgs = array_merge($this->get_posts_defaults, $additionalArgs['wp_parse_args'] ?? []);
-                            $args = wp_parse_args(['post_type' => $postType->name], $parseArgs);
-                            if ($posts = get_posts($args))
-                                foreach ($posts as $post) {
-
-                                    /* store information */
-                                    $key = preg_replace('/[^a-z0-9_]/',
-                                        '',
-                                        strtolower($post->post_title));
-                                    $postArray[$key] = [
-                                        'id' => $post->ID,
-                                        'text' => $post->post_title,
-                                        'after-text' => get_post_status_object($post->post_status)->label
-                                    ];
-                                }
-
-                            /* check if multiple columns */
-                            $columns = empty($page['columns']) ? ['ignore' => true] : $page['columns'];
-                            foreach ($columns as $selectValue => $selectLabel) {
-
-                                /* prepare edit button */
-                                $button = '';
-                                if (!(OES()->post_types[$pageKey]['parent'] ?? false))
-                                    $button = oes_get_html_anchor($postType->labels->add_new,
-                                        'post-new.php?post_type=' . $postType->name,
-                                        false,
-                                        'oes-container-page-title-action page-title-action'
-                                    );
-
-
-                                /**
-                                 * Filters the page content for admin view.
-                                 *
-                                 * @param array $pageContent The page content.
-                                 * @param string $slug The page slug.
-                                 * @param string $selectValue The select value (if applicable).
-                                 */
-                                $tableDataHeaderString = apply_filters('oes/menu_container_posts_header',
-                                    ('<h3>' . $postType->label .
-                                        ($selectValue === 'ignore' ?
-                                            '' :
-                                            ' (' . $selectLabel . ')') . '</h3>' . $button),
-                                    $pageKey,
-                                    $selectValue);
-
-                                $tableDataHeader .= '<th>' . $tableDataHeaderString . '</th>';
-
-                                /* loop through posts */
-                                if ($postArray) {
-
-
-                                    /**
-                                     * Filters the posts for admin view.
-                                     *
-                                     * @param array $postArray The array containing the posts.
-                                     * @param string $postType The post type.
-                                     * @param string $selectValue The select value (if applicable).
-                                     * @param array $additionalArgs Additional arguments.
-                                     */
-                                    $postArray = apply_filters('oes/menu_container_posts',
-                                            $postArray, $postType, $selectValue, $additionalArgs);
-
-                                    /* display posts */
-                                    $postInfo = '<ul>';
-                                    foreach ($postArray as $postItem) {
-
-                                        /* check if post meets filter */
-                                        if ($selectValue !== 'ignore' && isset($page['field']) &&
-                                            $post = get_post($postItem['id'])) {
-                                            $fieldValue = oes_get_field_display_value(
-                                                    $page['field'],
-                                                    $post->ID,
-                                                    ['value-is-link' => false]
-                                            );
-                                            if ($fieldValue != $selectLabel) continue;
-                                        }
-
-                                        $postInfo .= sprintf(
-                                            '<li><a href="%s">%s</a>' .
-                                            '<span class="oes-container-after-item">%s</span></li>',
-                                            get_edit_post_link($postItem['id']),
-                                            $postItem['text'],
-                                            $postItem['after-text']);
-                                    }
-
-                                    /* further link */
-                                    $moreString = oes_get_html_anchor(__('more...', 'oes'),
-                                        admin_url('edit.php?post_type=' . $postType->name) .
-                                        ((isset($page['field']) && $page['field']) ?
-                                            '&' . $page['field'] . '=' . $selectValue : false)
-                                    );
-
-                                    $postInfo .= '<li class="oes-container-more-string">' . $moreString . '</li>';
-                                    $postInfo .= '</ul>';
-
-                                    $tableData .= '<td>' . $postInfo . '</td>';
-                                } else $tableData .= '<td><span>' .
-                                    __('No posts found.', 'oes') . '</span></td>';
-                            }
-                        } elseif ($taxonomy) {
-
-                            /* set label as header */
-                            $button = oes_get_html_anchor($taxonomy->labels->add_new_item,
-                                'edit-tags.php?taxonomy=' . $taxonomy->name,
-                                false,
-                                'oes-container-page-title-action page-title-action'
-                            );
-                            $tableDataHeader .= '<th><h3>' . $taxonomy->label . '</h3>' . $button . '</th>';
-
-                            /* get all terms of this taxonomy */
-                            $args = wp_parse_args(['taxonomy' => $taxonomy->name], $this->get_terms_defaults);
-                            if ($terms = get_terms($args)) {
-
-                                /* prepare data (to sort) */
-                                $termArray = [];
-                                foreach ($terms as $term) {
-
-                                    /* store information */
-                                    $key = preg_replace('/[^a-z0-9_]/', '', strtolower($term->name));
-                                    $termArray[$key] = [
-                                        'id' => $term->term_id,
-                                        'text' => $term->name,
-                                        'after-text' => ''
-                                    ];
-                                }
-
-
-                                /**
-                                 * Filters the terms for admin view.
-                                 *
-                                 * @param array $termArray The array containing the terms.
-                                 * @param string $postType The post type.
-                                 * @param string $pageKey The page key.
-                                 */
-                                $termArray = apply_filters('oes/menu_container_terms',
-                                        $termArray,
-                                        $postType,
-                                        $pageKey);
-
-
-                                /* display posts */
-                                $postInfo = '<ul>';
-                                foreach ($termArray as $termItem)
-                                    $postInfo .= sprintf(
-                                        '<li><a href="%s">%s</a>' .
-                                        '<span class="oes-container-after-item">%s</span></li>',
-                                        get_edit_term_link($termItem['id']),
-                                        $termItem['text'],
-                                        $termItem['after-text']);
-
-
-                                /**
-                                 * Filters the "read more" string.
-                                 *
-                                 * @param array $moreString The "read more" string.
-                                 * @param string $taxonomy The taxonomy name.
-                                 * @param string $pageKey The page key.
-                                 */
-                                $moreString = apply_filters('oes/menu_container_terms_more_string',
-                                    oes_get_html_anchor(__('more...', 'oes'),
-                                        admin_url('edit-tags.php?taxonomy=' . $taxonomy->name)
-                                    ),
-                                    $taxonomy,
-                                    $pageKey);
-
-                                $postInfo .= '<li class="oes-container-more-string">' . $moreString . '</li>';
-                                $postInfo .= '</ul>';
-
-                                $tableData .= '<td>' . $postInfo . '</td>';
-                            } else $tableData .= '<td><span>' .
-                                __('No terms found', 'oes') . '</span></td>';
-                        }
-                    }
-
-                $pageContent .= '<tr>' . $tableDataHeader . '</tr><tr>' . $tableData . '</tr></table>';
-            }
-
-            return $pageContent;
+            echo $this->info_page_html();
         }
 
+        /**
+         * Generate the HTML representation of the info page, including summaries of posts and taxonomies.
+         *
+         * @param array $additionalArgs Optional arguments passed to WP_Query or get_terms().
+         * @return string HTML table displaying content summaries.
+         */
+        public function info_page_html(array $additionalArgs = []): string
+        {
+            if (empty($this->subpage_data)) {
+                return '';
+            }
+
+            $headerHTML = '';
+            $bodyHTML = '';
+
+            foreach ($this->subpage_data as $pageKey => $page) {
+                if (empty($page['display_summary'])) {
+                    continue;
+                }
+
+                $cleanKey = str_starts_with($pageKey, 'modified_') ? substr($pageKey, 9) : $pageKey;
+
+                $postType = get_post_type_object($cleanKey);
+                $taxonomy = get_taxonomy($cleanKey);
+
+                if ($postType) {
+                    [$header, $body] = $this->render_post_type_summary($postType, $additionalArgs);
+                } elseif ($taxonomy) {
+                    [$header, $body] = $this->render_taxonomy_summary($taxonomy);
+                } else {
+                    continue;
+                }
+
+                $headerHTML .= "<th>$header</th>";
+                $bodyHTML .= "<td>$body</td>";
+            }
+
+            return '<table class="oes-menu-container wp-list-table widefat fixed striped table-view-list">' .
+                '<tr>' . $headerHTML . '</tr>' .
+                '<tr>' . $bodyHTML . '</tr>' .
+                '</table>';
+        }
 
         /**
-         * Display the container tabs (is called in subpages)
+         * Render the header and post list for a given post type.
+         *
+         * @param \WP_Post_Type $postType
+         * @param array $page Subpage config.
+         * @param array $additionalArgs
+         * @return array [headerHtml, bodyHtml]
          */
-        function html_tabs(): string
+        protected function render_post_type_summary($postType, array $additionalArgs = []): array
         {
-            /* get current tab */
-            $activeTab = false;
-            if (isset($_GET['post_type'])) $activeTab = $_GET['post_type'];
-            elseif (isset($_GET['taxonomy'])) $activeTab = $_GET['taxonomy'];
+            global $oes;
+
+            $headerParts = [];
+            $bodyParts = [];
+
+            $defaults = [
+                'post_type' => $postType->name,
+                'number_of_posts' => 10,
+                'numberposts' => 10,
+                'post_status' => ['publish', 'pending', 'draft', 'auto-draft', 'future', 'private', 'inherit', 'trash'],
+                'orderby' => 'post_modified'
+            ];
+            $args = array_merge($defaults, $additionalArgs['wp_parse_args'] ?? []);
+
+            $queriedPosts = get_posts($args);
+            $posts = $this->modify_posts($queriedPosts, $postType->name, $additionalArgs);
+
+            $button = '';
+            if (empty($oes->post_types[$postType->name]['parent'])) {
+                $button = oes_get_html_anchor(
+                    esc_html($postType->labels->add_new),
+                    esc_url('post-new.php?post_type=' . $postType->name),
+                    false,
+                    'oes-container-page-title-action page-title-action'
+                );
+            }
+
+            $title = esc_html($postType->label);
+            $headerParts[] = '<h3>' . $title . '</h3>' . $button;
+
+            if (!empty($posts)) {
+                $postList = '<ul>';
+                foreach ($posts as $post) {
+
+                    $postList .= sprintf(
+                        '<li><a href="%s">%s</a><span class="oes-container-after-item">%s</span></li>',
+                        esc_url(get_edit_post_link($post->ID)),
+                        esc_html($post->post_title),
+                        esc_html(get_post_status_object($post->post_status)->label)
+                    );
+                }
+
+                $moreUrl = admin_url('edit.php?post_type=' . $postType->name);
+
+                $postList .= '<li class="oes-container-more-string">'
+                    . oes_get_html_anchor(__('more...', 'oes'), esc_url($moreUrl))
+                    . '</li></ul>';
+
+                $bodyParts[] = $postList;
+            } else {
+                $bodyParts[] = '<span>' . esc_html__('No posts found.', 'oes') . '</span>';
+            }
+
+            return [implode('', $headerParts), implode('', $bodyParts)];
+        }
+
+        /**
+         * Override to modify posts.
+         */
+        protected function modify_posts(array $posts, string $postType, array $args): array
+        {
+            return $posts;
+        }
+
+        /**
+         * Render the header and term list for a given taxonomy.
+         *
+         * @param \WP_Taxonomy $taxonomy
+         * @return array [headerHtml, bodyHtml]
+         */
+        protected function render_taxonomy_summary($taxonomy): array
+        {
+            $button = oes_get_html_anchor(
+                esc_html($taxonomy->labels->add_new_item),
+                esc_url('edit-tags.php?taxonomy=' . $taxonomy->name),
+                false,
+                'oes-container-page-title-action page-title-action'
+            );
+
+            $header = '<h3>' . esc_html($taxonomy->label) . '</h3>' . $button;
+
+            $args = [
+                'taxonomy' => $taxonomy->name,
+                'hide_empty' => false,
+                'number' => 10
+            ];
+
+            $queriedTerms = get_terms($args);
+            $terms = $this->modify_terms($queriedTerms, $taxonomy->name);
+
+            if (empty($terms) || is_wp_error($terms)) {
+                $body = '<span>' . esc_html__('No terms found', 'oes') . '</span>';
+                return [$header, $body];
+            }
+
+            $termList = '<ul>';
+            foreach ($terms as $term) {
+                $termList .= sprintf(
+                    '<li><a href="%s">%s</a><span class="oes-container-after-item"></span></li>',
+                    esc_url(get_edit_term_link($term->term_id)),
+                    esc_html($term->name)
+                );
+            }
+
+            $termList .= '<li class="oes-container-more-string">'
+                . oes_get_html_anchor(__('more...', 'oes'), esc_url('edit-tags.php?taxonomy=' . $taxonomy->name))
+                . '</li></ul>';
+
+            return [$header, $termList];
+        }
+
+        /**
+         * Override to modify terms.
+         */
+        protected function modify_terms(array $terms, string $taxonomy): array
+        {
+            return $terms;
+        }
+
+        /**
+         * Generates the HTML tab navigation for the current container page.
+         * Used in subpages to display the associated post type/taxonomy tabs.
+         *
+         * @return string HTML markup for the tab navigation.
+         */
+        public function html_tabs(): string
+        {
+            $activeTab = $_GET['taxonomy'] ?? $_GET['post_type'] ?? false;
 
             $tabString = '<h2 class="nav-tab-wrapper">';
 
-            /* add info tab */
-            if (!empty($this->info_page['elements']) && $this->info_page['elements'] != 'hidden')
-                $tabString .= oes_get_html_anchor(
-                    $this->info_page['label'] ?? 'Title missing',
-                    'admin.php?page=' . $this->page_parameters['menu_slug'],
-                    false,
-                    ($activeTab ? '' : 'nav-tab-active ') . 'nav-tab'
-                );
+            // Info tab
+            if (!empty($this->info_page['elements']) && $this->info_page['elements'] !== 'hidden') {
+                $label = esc_html($this->info_page['label'] ?? 'Title missing');
+                $url = esc_url('admin.php?page=' . $this->page_parameters['menu_slug']);
+                $classes = ($activeTab ? '' : 'nav-tab-active ') . 'nav-tab';
 
-            foreach ($this->subpage_data as $key => $page)
-                $tabString .= oes_get_html_anchor(
-                    $page['label'] ?? $key,
-                    $page['href'] ?? '#',
-                    false,
-                    ($activeTab == $key ? 'nav-tab-active ' : '') . 'nav-tab'
-                );
+                $tabString .= oes_get_html_anchor($label, $url, false, $classes);
+            }
+
+            // Subpage tabs
+            foreach ($this->subpage_data as $key => $page) {
+                $label = esc_html($page['label'] ?? $key);
+                $url = esc_url($page['href'] ?? '#');
+                $classes = ($activeTab === $key ? 'nav-tab-active ' : '') . 'nav-tab';
+
+                $tabString .= oes_get_html_anchor($label, $url, false, $classes);
+            }
+
             $tabString .= '</h2>';
 
             return $tabString;
         }
 
-
         /**
-         * Filter Call: Modify admin view for post type that are inside the container.
+         * Adds tab navigation to the edit screen of a container post type or taxonomy.
+         * Hooked via the `views_edit-{post_type}` filter.
+         *
+         * @param array $views The list of view links above the table.
+         * @return array The same $views array, unchanged.
          */
-        function view_for_container_elements($array)
+        public function view_for_container_elements(array $views): array
         {
             echo $this->html_tabs();
-            return $array;
+            return $views;
         }
 
+        /**
+         * Alters the parent menu highlight in the admin for subpages (post types or taxonomies).
+         * Hooked via the `parent_file` filter.
+         *
+         * @param string $parent_file The current parent file.
+         * @return string Modified parent file for correct menu highlighting.
+         */
+        public function modify_parent_file(string $parent_file): string
+        {
+            global $current_screen;
+
+            // Only adjust on relevant admin screens
+            if (!in_array($current_screen->base, ['post', 'edit', 'edit-tags'], true)) {
+                return $parent_file;
+            }
+
+            $key = $current_screen->taxonomy ?? $current_screen->post_type ?? null;
+            if (!$key || !isset($this->subpage_data[$key])) {
+                return $parent_file;
+            }
+
+            return $this->page_parameters['menu_slug'];
+        }
 
         /**
-         * Filter Call: Modify parent file for post types and taxonomies in admin menu.
+         * Alters the submenu highlight in the admin for subpages (post types or taxonomies).
+         * Hooked via the `submenu_file` filter.
+         *
+         * @param mixed $submenu_file The current submenu file.
+         * @return mixed Modified parent file for correct menu highlighting.
          */
-        function modify_parent_file($parent_file)
+        public function modify_submenu_file($submenu_file)
         {
-            /* get current screen */
             global $current_screen;
-            if (in_array($current_screen->base, ['post', 'edit', 'edit-tags'])
-                && (isset($this->subpage_data[$current_screen->post_type]) ||
-                    isset($this->subpage_data[$current_screen->taxonomy])))
-                $parent_file = $this->page_parameters['menu_slug'];
-            return $parent_file;
+
+            // Only adjust on relevant admin screens
+            if (!in_array($current_screen->base, ['post', 'edit', 'edit-tags'], true)) {
+                return $submenu_file;
+            }
+
+            $keyTaxonomy = $current_screen->taxonomy ?? null;
+            $keyPostType = $current_screen->post_type ?? null;
+            if($keyTaxonomy && $keyPostType){
+                return 'edit-tags.php?taxonomy=' . $keyTaxonomy . '&post_type=' . $keyPostType;
+            }
+            return $submenu_file;
         }
     }
 endif;

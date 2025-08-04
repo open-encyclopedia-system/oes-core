@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -19,8 +24,7 @@ if (!class_exists('Schema_LOD')) :
         /** @var string The api key. */
         public string $api_key = 'lod';
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function empty(): string
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
@@ -29,62 +33,52 @@ if (!class_exists('Schema_LOD')) :
                 '</p></div>';
         }
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function set_table_data_for_display()
         {
-            $oes = OES();
+            global $oes;
 
-            if (isset($oes->apis[$this->api_key]))
-                if (!empty($oes->apis[$this->api_key]->config_options['properties']['options'])) {
+            if (!isset($oes->apis[$this->api_key])) {
+                return;
+            }
 
-                    $postType = $oes->post_types[$this->object] ?? [];
-                    $rows = [];
-                    if ($postType['lod'] ?? false) {
+            if (empty($oes->apis[$this->api_key]->config_options['properties']['options'] ?? [])) {
+                return;
+            }
 
-                        /* prepare data */
-                        $option = $oes->apis[$this->api_key]->config_options['properties'];
+            $postTypeData = $oes->post_types[$this->object] ?? [];
 
-                        /* prepare table body */
-                        foreach ($postType['field_options'] as $fieldKey => $field) {
+            if (!isset($postTypeData['lod'])) {
+                return;
+            }
 
-                            /* skip field types */
-                            $type = (oes_get_field_object($fieldKey) &&
-                                isset(oes_get_field_object($fieldKey)['type'])) ?
-                                oes_get_field_object($fieldKey)['type'] :
-                                'tab';
-                            if (in_array($type, ['tab', 'message', 'relationship', 'post', 'image', 'date_picker']))
-                                continue;
+            $option = $oes->apis[$this->api_key]->config_options['properties'];
 
-                            $copyOption = $this->api_key . '_properties';
-                            $rows[] = [
-                                'cells' => [
-                                    [
-                                        'type' => 'th',
-                                        'value' => '<strong>' . ($field['label'] ?? 'Label missing') .
-                                            '</strong><div><code>' . $fieldKey . '</code>' . '</div>'
-                                    ],
-                                    [
-                                        'class' => 'oes-table-transposed',
-                                        'value' => oes_html_get_form_element($option['type'],
-                                            'fields[' . $this->object . '][' . $fieldKey . '][' . $copyOption . ']',
-                                            'fields-' . $this->object . '-' . $fieldKey . '_' . $copyOption,
-                                            $field[$copyOption] ?? [],
-                                            [
-                                                'options' => $option['options'],
-                                                'multiple' => $option['multiple'] ?? true,
-                                                'class' => 'oes-replace-select2',
-                                                'hidden' => ($option['type'] === 'select')
-                                            ]
-                                        )
-                                    ]
-                                ]
-                            ];
-                        }
-                    }
+            foreach ($postTypeData['field_options'] as $fieldKey => $field) {
 
-                    if (!empty($rows)) $this->table_data[] = ['rows' => $rows];
+                $type = oes_get_field_object($fieldKey)['type'] ?? 'tab';
+                if (in_array($type, ['tab', 'message', 'relationship', 'post', 'image', 'date_picker'])) {
+                    continue;
                 }
+
+                $this->add_table_row(
+                    [
+                        'title' => $field['label'] ?? $fieldKey,
+                        'key' => 'fields[' . $this->object . '][' . $fieldKey . '][' . $this->api_key . '_properties]',
+                        'value' => $field[$this->api_key . '_properties'] ?? [],
+                        'type' => 'select',
+                        'args' => [
+                            'options' => $option['options'],
+                            'multiple' => $option['multiple'] ?? true,
+                            'class' => 'oes-replace-select2',
+                            'hidden' => ($option['type'] === 'select')
+                        ]
+                    ],
+                    [
+                        'subtitle' => $fieldKey
+                    ]
+                );
+            }
         }
     }
 endif;

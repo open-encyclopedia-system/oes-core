@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
 
 /**
  * Get the HTML representation of an OES panel.
@@ -23,14 +27,10 @@ function oes_get_panel_html(string $content = '', array $args = []): string {
      */
     $args = apply_filters('oes/get_panel_html_args', $args);
 
-    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Panel';
-    $panel = class_exists($projectClass) ?
-        new $projectClass($args) :
-        new OES_Panel($args);
-    return $panel->get_html($content);
+    $class = oes_get_project_class_name('OES_Panel');
+    $panel = new $class($args);
+    return $panel->html($content);
 }
-
-
 
 /**
  * Get the HTML representation of an OES image panel.
@@ -49,8 +49,7 @@ function oes_get_panel_html(string $content = '', array $args = []): string {
  */
 function oes_get_image_panel_html($image, array $args = []): string
 {
-    /* validate image */
-    $args['figure_ID'] = $image['ID'] ?? $image;
+    $args['figure_ID'] = $image['ID'] ?? ($image['id'] ?? $image);
 
 
     /**
@@ -60,14 +59,10 @@ function oes_get_image_panel_html($image, array $args = []): string
      */
     $args = apply_filters('oes/get_image_panel_html_args', $args);
 
-
-    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Image_Panel';
-    $panel = class_exists($projectClass) ?
-        new $projectClass($args) :
-        new OES_Image_Panel($args);
-    return $panel->get_html();
+    $class = oes_get_project_class_name('OES_Image_Panel');
+    $panel = new $class($args);
+    return $panel->html();
 }
-
 
 /**
  * Get the HTML representation of an OES gallery panel.
@@ -83,7 +78,6 @@ function oes_get_image_panel_html($image, array $args = []): string
 function oes_get_gallery_panel_html(array $figures, array $args = []): string
 {
 
-    /* validate figures */
     $args['figures'] = $figures;
 
 
@@ -94,10 +88,7 @@ function oes_get_gallery_panel_html(array $figures, array $args = []): string
      */
     $args = apply_filters('oes/get_gallery_panel_html_args', $args);
 
-
-    $projectClass = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT) . '_Gallery_Panel';
-    $panel = class_exists($projectClass) ?
-        new $projectClass($args) :
-        new OES_Gallery_Panel($args);
-    return $panel->get_html();
+    $class = oes_get_project_class_name('OES_Gallery_Panel');
+    $panel = new $class($args);
+    return $panel->html();
 }

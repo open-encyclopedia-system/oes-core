@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/print-page-break",
+  "version": "0.1.0",
+  "title": "Print Page-break",
+  "category": "widgets",
+  "description": "Add a page break when using the browser print.",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
+}

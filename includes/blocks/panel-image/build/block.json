@@ -1,0 +1,33 @@
+{
+  "apiVersion": 2,
+  "name": "oes/image-panel-core",
+  "title": "OES Image Panel",
+  "description": "An expandable image panel block.",
+  "category": "media",
+  "icon": "format-image",
+  "supports": {
+    "anchor": true,
+    "align": true,
+    "customClassName": true
+  },
+  "attributes": {
+    "figure": {
+      "type": "object",
+      "default": null
+    },
+    "figure_title": {
+      "type": "string",
+      "default": ""
+    },
+    "figure_number": {
+      "type": "boolean",
+      "default": false
+    },
+    "figure_expanded": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css"
+}

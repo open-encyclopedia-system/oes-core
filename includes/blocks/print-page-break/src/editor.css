@@ -1,0 +1,6 @@
+.oes-print-page-break:after {
+  content: "--- PAGE BREAK ---";
+  color: #337ab7;
+}
+
+/*# sourceMappingURL=editor.css.map */

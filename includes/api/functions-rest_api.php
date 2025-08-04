@@ -78,23 +78,29 @@ function sidebar_enqueue(): void
  */
 function initialize(): void
 {
-    /* add st*/
-    /* apis */
-    oes_include('api/class-api_interface.php');
-    oes_include('api/gnd/class-gnd_interface.php');
-    oes_include('api/geonames/class-geonames_interface.php');
-    oes_include('api/loc/class-loc_interface.php');
+    //@oesDevelopment: include only if required
+
+    include_once __DIR__ . '/class-api_interface.php';
+    include_once __DIR__ . '/gnd/class-gnd_interface.php';
+    include_once __DIR__ . '/geonames/class-geonames_interface.php';
+    include_once __DIR__ . '/loc/class-loc_interface.php';
 
     /* configs and schema */
-    oes_include('api/class-lod.php');
-    oes_include('api/class-schema_lod.php');
+    include_once __DIR__ . '/class-lod.php';
+    include_once __DIR__ . '/class-schema_lod.php';
 
     $oes = OES();
     if (!empty($oes->apis))
         foreach ($oes->apis as $apiKey => $apiData) {
-            oes_include('api/' . $apiKey . '/class-' . $apiKey . '.php');
-            oes_include('api/' . $apiKey . '/class-schema_' . $apiKey . '.php');
-            oes_include('api/' . $apiKey . '/functions-' . $apiKey . '.php');
+            $pathPrefix = __DIR__ . '/' . $apiKey . '/';
+            $pathSuffix = $apiKey . '.php';
+
+            foreach(['class-', 'class-schema_', 'functions-'] as $path){
+                $wholePath = $pathPrefix . $path . $pathSuffix;
+                if(file_exists($wholePath)){
+                    include_once $wholePath;
+                }
+            }
         }
 
     add_action('add_meta_boxes', '\OES\API\lod_add_meta_box');

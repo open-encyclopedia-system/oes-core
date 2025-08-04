@@ -154,7 +154,7 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
         if ($fieldKey) {
 
             $consideredID = $postID;
-            if (oes_starts_with($fieldKey, 'parent__')) {
+            if (str_starts_with($fieldKey, 'parent__')) {
                 $fieldKey = substr($fieldKey, 8);
                 $consideredID = get_parent_id($postID);
             }
@@ -186,7 +186,7 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
                 if (isset($part['fallback']))
                     if ($fallbackFieldKey = $part['fallback']) {
 
-                        if (oes_starts_with($fallbackFieldKey, 'parent__')) {
+                        if (str_starts_with($fallbackFieldKey, 'parent__')) {
                             $fallbackFieldKey = substr($fieldKey, 7);
                             $consideredID = get_parent_id($consideredID);
                         }

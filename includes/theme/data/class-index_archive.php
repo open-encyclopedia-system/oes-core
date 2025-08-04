@@ -26,7 +26,7 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
         public bool $childless = true;
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(array $args = []): void
         {
             global $oes, $oes_is_index;
@@ -53,7 +53,7 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_filter(array $args): array
         {
             /* prepare filter (add alphabet filter) */

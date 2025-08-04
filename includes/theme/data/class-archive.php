@@ -48,6 +48,9 @@ if (!class_exists('OES_Archive')) {
         /** @var bool $display_content Display the content of posts as part of the archive (e.g. for glossary) */
         public bool $display_content = false;
 
+        /** @var array $query_parameters Additional parameters for WP_Query */
+        public array $query_parameters = [];
+
 
         /**
          * OES_Archive constructor.
@@ -69,6 +72,7 @@ if (!class_exists('OES_Archive')) {
 
             $this->set_parameters($args);
             $this->set_additional_parameters($args);
+            $this->set_query_parameters($args);
             $this->set_label();
             $this->filter = $this->prepare_filter($args);
             $this->loop();
@@ -83,6 +87,18 @@ if (!class_exists('OES_Archive')) {
          */
         public function set_parameters(array $args = []): void
         {
+        }
+
+
+        /**
+         * Set query parameters
+         *
+         * @param array $args Parameters for WP_Query.
+         * @return void
+         */
+        public function set_query_parameters(array $args = []): void
+        {
+            $this->query_parameters = $args['query_parameters'] ?? [];
         }
 
 
@@ -205,7 +221,7 @@ if (!class_exists('OES_Archive')) {
 
                 /* check for language and return early if it does not match criteria */
                 if($this->filtered_language !== 'all' && !empty($this->filtered_language)) {
-                    $postLanguage = oes_get_post_language($parentID ?? $post->ID);
+                    $postLanguage = oes_get_post_language($parentID ?: $post->ID);
                     if ($postLanguage &&
                         $postLanguage !== 'all' &&
                         $this->filtered_language !== $postLanguage) return;
@@ -352,11 +368,16 @@ if (!class_exists('OES_Archive')) {
 
                                 case 'radio':
                                 case 'select':
-                                    if (!isset($this->filter_array['json'][$filter][$field]) ||
-                                        !in_array($postID, $this->filter_array['json'][$filter][$field])) {
-                                        $this->filter_array['list'][$filter]['items'][$field] =
-                                            oes_get_field_object($filter)['choices'][$field] ?? $field;
-                                        $this->filter_array['json'][$filter][$field][] = $postID;
+                                    if(is_string($field)) $field = [$field];
+                                    if(is_array($field)) {
+                                        foreach ($field as $singleField) {
+                                            if (!isset($this->filter_array['json'][$filter][$singleField]) ||
+                                                !in_array($postID, $this->filter_array['json'][$filter][$singleField])) {
+                                                $this->filter_array['list'][$filter]['items'][$singleField] =
+                                                    oes_get_field_object($filter)['choices'][$singleField] ?? $singleField;
+                                                $this->filter_array['json'][$filter][$singleField][] = $postID;
+                                            }
+                                        }
                                     }
                                     break;
 
@@ -365,10 +386,14 @@ if (!class_exists('OES_Archive')) {
                                     if (!isset($this->filter_array['json'][$filter][$field]) ||
                                         !in_array($postID, $this->filter_array['json'][$filter][$field])) {
 
-                                        /* make sure the key is javascript compatible */
-                                        $cleanKey = hash('md5', $field);
-                                        $this->filter_array['list'][$filter]['items'][$cleanKey] = $field;
-                                        $this->filter_array['json'][$filter][$cleanKey][] = $postID;
+                                        $multipleValues = explode(';', $field);
+                                        foreach($multipleValues ?? [] as $singleValue) {
+
+                                            /* make sure the key is javascript compatible */
+                                            $cleanKey = hash('md5', $singleValue);
+                                            $this->filter_array['list'][$filter]['items'][$cleanKey] = $singleValue;
+                                            $this->filter_array['json'][$filter][$cleanKey][] = $postID;
+                                        }
                                     }
                             }
                         }
@@ -489,17 +514,33 @@ if (!class_exists('OES_Archive')) {
 
                         } elseif ($object['termID'] ?? false) {
                             $title = $object['titleForDisplay'] ?: $object['title'];
+
+                            if($archiveData){
+                                $termID = $object['termID'];
+                                $termWP = get_term($termID);
+                                $taxonomy = $termWP ? $termWP->taxonomy : false;
+                                $term = $taxonomy && class_exists($taxonomy) ?
+                                    new $taxonomy($termID) :
+                                    new OES_Term($termID);
+                                $tableData = $term->get_archive_data();
+                            }
                         }
 
                         /* add information to table */
                         if (!$hidePost && $versionExists) {
+
+                            $postLanguage = oes_get_post_language($postID);
+                            if(empty($postLanguage)){
+                                $postLanguage = 'all';
+                            }
 
                             $prepareRowData = [
                                 'id' => $postID,
                                 'title' => $title,
                                 'permalink' => $permalink,
                                 'data' => $tableData,
-                                'additional' => $additionalInformation
+                                'additional' => $additionalInformation,
+                                'language' => $postLanguage
                             ];
 
                             /* check if content should be added */

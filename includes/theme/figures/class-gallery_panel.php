@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('OES_Gallery_Panel')) {
@@ -13,38 +18,37 @@ if (!class_exists('OES_Gallery_Panel')) {
     {
 
         /** @var bool $add_number Add the figure numbers to panel caption. */
-        public bool $add_number = true;
+        protected bool $add_number = true;
 
         /** @var string $number_prefix The prefix for the figure numbers in caption. */
-        public string $number_prefix = '';
+        protected string $number_prefix = '';
 
         /** @var array $numbers An array containing all image number for this gallery. */
-        public array $numbers = [];
+        protected array $numbers = [];
 
         /** @var array $figures The figures of this gallery. */
-        public array $figures = [];
+        protected array $figures = [];
 
         /** @var array $prepared_data An array of prepared data containing the figures and figure information. */
-        public array $prepared_data = [];
+        protected array $prepared_data = [];
 
         /** @var bool $add_modal Add the figure modal (as overlay popup). Default is true. */
-        public bool $add_modal = true;
+        protected bool $add_modal = true;
 
         /** @var bool $add_slider Add slider to gallery (in panel and in overlay popup). Default is true. */
-        public bool $add_slider = true;
+        protected bool $add_slider = true;
 
         /** @var string $figcaptionHTML The collected captions as string. */
-        public string $figcaptionHTML = '';
+        protected string $figcaptionHTML = '';
 
         /** @var string $carouselHTML The carousel HTML representation. */
-        public string $carouselHTML = '';
+        protected string $carouselHTML = '';
 
         /** @var string $tableHTML The collected table data (for modal). */
-        public string $tableHTML = '';
+        protected string $tableHTML = '';
 
-
-        //Overwrite parent
-        function validate_parameters(): void
+        /** @inheritdoc */
+        protected function validate_parameters(): void
         {
             $this->type = 'gallery';
             $this->calculate_anchor_id();
@@ -52,18 +56,20 @@ if (!class_exists('OES_Gallery_Panel')) {
             $this->prepare_data();
         }
 
-
-        //Overwrite parent
-        function validate_caption(): void
+        /** @inheritdoc */
+        protected function validate_caption(): void
         {
-            if ($this->caption === 'none') $this->caption = '';
+            if ($this->caption === 'none') {
+                $this->caption = '';
+            }
         }
 
-
-        //Overwrite parent
-        function get_html_content(string $content = ''): string
+        /** @inheritdoc */
+        protected function get_html_content(string $content = ''): string
         {
-            if (sizeof($this->prepared_data) < 1) return '';
+            if (sizeof($this->prepared_data) < 1) {
+                return '';
+            }
             return oes_get_modal_gallery($this->prepared_data, [
                 'image_html' => $this->get_image_html(),
                 'modal_html' => $this->get_image_modal_html(),
@@ -73,55 +79,76 @@ if (!class_exists('OES_Gallery_Panel')) {
             ]);
         }
 
-
-        //Overwrite parent
-        function get_html_caption_prefix(): string
+        /** @inheritdoc */
+        protected function get_html_caption_prefix(): string
         {
-            if (!$this->add_number) return '';
+            if (!$this->add_number) {
+                return '';
+            }
 
-            /* prepare number string */
             $numberString = '';
             if (!empty($this->numbers)) {
                 sort($this->numbers);
                 $numberString = $this->numbers[0];
-                if (sizeof($this->numbers) > 1) $numberString .= '-' . end($this->numbers);
+
+                if (count($this->numbers) > 1) {
+                    $numberString .= '-' . end($this->numbers);
+                }
             }
 
             return '<span class="oes-panel-caption-text"><label>' .
-                $this->number_prefix . $numberString . '</label></span>';
+                esc_html($this->number_prefix . $numberString) .
+                '</label></span>';
         }
-
 
         /**
          * Prepare data by validating figures and gathering additional information for each figure.
          *
          * @return void
          */
-        function prepare_data(): void
+        protected function prepare_data(): void
         {
             $first = true;
-            foreach ($this->figures as $singleFigure) {
-                if (!is_array($singleFigure)) $singleFigure = acf_get_attachment($singleFigure);
-                if (is_array($singleFigure) && isset($singleFigure['ID'])) {
-                    $modalData = \OES\Figures\oes_get_modal_image_data($singleFigure);
-                    $this->prepared_data[] = [
-                        'imageID' => $singleFigure['ID'],
-                        'image' => $singleFigure,
-                        'number' => $this->get_single_figure_number($singleFigure),
-                        'modal' => $modalData,
-                        'subtitle' => ''
-                    ];
-                    $this->figcaptionHTML .= $this->get_image_figcaption_html($singleFigure, $modalData, $first);
-                    $this->carouselHTML .= $this->get_image_gallery_carousel_item_html($singleFigure, $first);
-                    if ($this->add_modal)
-                        $this->tableHTML .= $this->get_panel_image_modal_table_html($modalData,
-                            $singleFigure['ID'],
-                            $first);
-                    $first = false;
+
+            foreach ($this->figures as $figure) {
+                // Resolve figure to ACF attachment array if necessary
+                if (is_numeric($figure)) {
+                    $figure = acf_get_attachment($figure);
+                } elseif (is_array($figure)) {
+                    $figureID = $figure['ID'] ?? $figure['id'] ?? null;
+                    if ($figureID) {
+                        $figure = acf_get_attachment($figureID);
+                    }
                 }
+
+                // Skip invalid or unresolved figures
+                if (!is_array($figure) || empty($figure['ID'])) {
+                    continue;
+                }
+
+                $modalData = \OES\Figures\oes_get_modal_image_data($figure);
+                $this->prepared_data[] = [
+                    'imageID' => $figure['ID'],
+                    'image' => $figure,
+                    'number' => $this->get_single_figure_number($figure),
+                    'modal' => $modalData,
+                    'subtitle' => ''
+                ];
+
+                $this->figcaptionHTML .= $this->get_image_figcaption_html($figure, $modalData, $first);
+                $this->carouselHTML .= $this->get_image_gallery_carousel_item_html($figure, $first);
+
+                if ($this->add_modal) {
+                    $this->tableHTML .= $this->get_panel_image_modal_table_html(
+                        $modalData,
+                        $figure['ID'],
+                        $first
+                    );
+                }
+
+                $first = false;
             }
         }
-
 
         /**
          * Get the next figure number and store in global variable.
@@ -129,7 +156,7 @@ if (!class_exists('OES_Gallery_Panel')) {
          * @param array $figure
          * @return int
          */
-        function get_single_figure_number(array $figure): int
+        protected function get_single_figure_number(array $figure): int
         {
             global $oesListOfFigures, $post;
 
@@ -153,13 +180,12 @@ if (!class_exists('OES_Gallery_Panel')) {
             return $number;
         }
 
-
         /**
          * Get the image for panel as HTML string.
          *
          * @return string Return the image of panel as HTML string.
          */
-        function get_image_html(): string
+        protected function get_image_html(): string
         {
             return oes_get_panel_image_HTML($this->figures[0],
                 $this->add_modal,
@@ -167,24 +193,22 @@ if (!class_exists('OES_Gallery_Panel')) {
                 ['slider' => $this->get_gallery_panel_slider_html()]);
         }
 
-
         /**
          * Get the gallery panel slider as HTML representation.
          *
          * @return string Return the gallery panel slider as HTML representation.
          */
-        function get_gallery_panel_slider_html(): string
+        protected function get_gallery_panel_slider_html(): string
         {
             return oes_get_gallery_panel_slider_HTML();
         }
-
 
         /**
          * Get the image modal as HTML string.
          *
          * @return string Return the image modal as HTML string.
          */
-        function get_image_modal_html(): string
+        protected function get_image_modal_html(): string
         {
             if (!isset($this->figures[0])) return '';
             return $this->add_modal ?
@@ -194,7 +218,6 @@ if (!class_exists('OES_Gallery_Panel')) {
                     ['slider' => $this->get_gallery_panel_slider_html()]) : '';
         }
 
-
         /**
          * Get the image figcaption as HTML string.
          *
@@ -203,11 +226,10 @@ if (!class_exists('OES_Gallery_Panel')) {
          * @param bool $active Indicating if active figcaption. Default is true.
          * @return string Return the image figcaption as HTML string.
          */
-        function get_image_figcaption_html(array $figure, array $imageModalData = [], bool $active = true): string
+        protected function get_image_figcaption_html(array $figure, array $imageModalData = [], bool $active = true): string
         {
             return oes_get_panel_image_figcaption_HTML($figure, $imageModalData, $active);
         }
-
 
         /**
          * Get the image carousel item as HTML string.
@@ -216,11 +238,10 @@ if (!class_exists('OES_Gallery_Panel')) {
          * @param bool $active Indicating if active figcaption. Default is true.
          * @return string Return the image carousel item as HTML string.
          */
-        function get_image_gallery_carousel_item_html(array $figure, bool $active = true): string
+        protected function get_image_gallery_carousel_item_html(array $figure, bool $active = true): string
         {
             return oes_get_panel_gallery_carousel_item_HTML($figure, $active);
         }
-
 
         /**
          * Get the image modal table as HTML string.
@@ -230,7 +251,7 @@ if (!class_exists('OES_Gallery_Panel')) {
          * @param bool $active Indicating if active figcaption. Default is true.
          * @return string Return the image modal table as HTML string.
          */
-        function get_panel_image_modal_table_html(array $figure, string $imageID, bool $active = true): string
+        protected function get_panel_image_modal_table_html(array $figure, string $imageID, bool $active = true): string
         {
             return oes_get_panel_image_modal_table_HTML($figure, $imageID, $active);
         }

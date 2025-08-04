@@ -13,8 +13,12 @@ function oesOpenImageModal(modals) {
             const img = this.firstElementChild,
                 modal = this.parentElement.nextElementSibling,
                 close = modal.firstElementChild,
-                modalContainer = jQuery(modal).find('.oes-modal-image-container').get(0),
+                modalContainer = jQuery(modal).find('.oes-modal-image-container').get(0);
+
+            let modalImg;
+            if(modalContainer){
                 modalImg = modalContainer.firstElementChild
+            }
 
             if (img && modalImg) {
                 modal.style.display = "block";
@@ -58,13 +62,28 @@ function oesGallerySwapImage(image){
 
     /* switch images for panel and modal */
     let panelImage = jQuery(figure).find('#oes-panel-image-center').get(0);
-    panelImage.srcset = image.srcset;
-    panelImage.src = image.src;
-    panelImage.alt = image.alt;
+
+    if (panelImage !== undefined) {
+        panelImage.srcset = image.srcset;
+        panelImage.src = image.src;
+        panelImage.alt = image.alt;
+        panelImage.dataset.id = image.dataset.id;
+
+        //check if parent is link, if so, update url
+        const panelParent = panelImage.parentElement,
+        imageParent = image.parentElement;
+        if (imageParent && panelParent && panelParent.tagName === 'A') {
+            panelParent.href = imageParent.href;
+        }
+    }
+
     let modalImage = jQuery(figure).find('#oes-modal-image-center').get(0);
-    modalImage.srcset = image.srcset;
-    modalImage.src = image.src;
-    modalImage.alt = image.alt;
+
+    if (modalImage !== undefined) {
+        modalImage.srcset = image.srcset;
+        modalImage.src = image.src;
+        modalImage.alt = image.alt;
+    }
 
     /* set table data active */
     jQuery(figure).find('.oes-modal-content-text').removeClass('active');

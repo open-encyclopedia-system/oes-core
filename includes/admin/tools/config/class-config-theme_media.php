@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -15,23 +20,11 @@ if (!class_exists('Theme_Media')) :
      */
     class Theme_Media extends Config
     {
-
-        //Overwrite parent
-        function information_html(): string
-        {
-            return '<div class="oes-tool-information-wrapper"><p>' .
-                __('The OES feature <b>Media</b> allows you to define the display behaviour of images in the ' .
-                    'frontend. This applies only to media displayed in OES blocks (e.g. "Featured Image").', 'oes') .
-                '</p></div>';
-        }
-
-
-        //Overwrite parent
+        /** @inheritdoc */
         function set_table_data_for_display()
         {
-            $oes = OES();
+            global $oes;
 
-            /* prepare image fields options */
             $fields = array_merge([
                 'title' => ['key' => 'title', 'label' => 'Title'],
                 'alt' => ['key' => 'alt', 'label' => 'Alternative Text'],
@@ -46,89 +39,53 @@ if (!class_exists('Theme_Media')) :
                 $fieldOptions[$fieldKey] = $field['label'] ?? $key;
             }
 
-
-            $this->table_data = [[
-                'rows' => [
-                    [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong>' . __('Title field', 'oes') . '</strong>' .
-                                    '<div>' . __('The field that is used as title', 'oes') . '</div>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('select',
-                                    'media[title]',
-                                    'media-title',
-                                    $oes->media_groups['title'] ?? 'title',
-                                    ['options' => $fieldOptions]
-                                )
-                            ]
-                        ]
-                    ],
-                    [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong>' . __('Credit Label', 'oes') . '</strong>' .
-                                    '<div>' . __('The credit label is displayed beneath the image ' .
-                                        '(split language dependent label by semicolon, e.g. ' .
-                                        '"Credit;Attribution")', 'oes') . '</div>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('text',
-                                    'media[credit_text]',
-                                    'media-credit_text',
-                                    $oes->media_groups['credit_text'] ?? ''
-                                )
-                            ]
-                        ]
-                    ],
-                    [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong>' . __('Credit field', 'oes') . '</strong>' .
-                                    '<div>' . __('The credit field and is displayed after the credit label', 'oes') .
-                                    '</div>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('select',
-                                    'media[credit_label]',
-                                    'media-credit_label',
-                                    $oes->media_groups['credit_label'] ?? 'none',
-                                    ['options' => array_merge(['none' => '-'], $fieldOptions)])
-                            ]
-                        ]
-                    ],
-                    [
-                        'cells' => [
-                            [
-                                'type' => 'th',
-                                'value' => '<strong>' . __('Show in Panel', 'oes') .
-                                    '</strong><div>' . __('Fields that are shown in panel', 'oes') . '</div>'
-                            ],
-                            [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('select',
-                                    'media[show_in_panel]',
-                                    'media-show_in_panel',
-                                    $oes->media_groups['show_in_panel'] ?? [],
-                                    [
-                                        'options' => $fieldOptions,
-                                        'multiple' => true,
-                                        'class' => 'oes-replace-select2',
-                                        'reorder' => true,
-                                        'hidden' => true
-                                    ])
-                            ]
-                        ]
+            $this->add_table_row(
+                [
+                    'title' => __('Title Field', 'oes'),
+                    'key' => 'media[title]',
+                    'value' => $oes->media_groups['title'] ?? 'title',
+                    'type' => 'select',
+                    'args' => [
+                        'options' => $fieldOptions
                     ]
                 ]
-            ]];
+            );
+
+            $this->add_table_row(
+                [
+                    'title' => __('Credit Label', 'oes'),
+                    'key' => 'media[credit_text]',
+                    'value' => $oes->media_groups['credit_text'] ?? ''
+                ]
+            );
+
+            $this->add_table_row(
+                [
+                    'title' => __('Credit Field', 'oes'),
+                    'key' => 'media[credit_label]',
+                    'value' => $oes->media_groups['credit_label'] ?? 'none',
+                    'type' => 'select',
+                    'args' => [
+                        'options' => array_merge(['none' => '-'], $fieldOptions)
+                    ]
+                ]
+            );
+
+            $this->add_table_row(
+                [
+                    'title' => __('Show in Panel', 'oes'),
+                    'key' => 'media[show_in_panel]',
+                    'value' => $oes->media_groups['show_in_panel'] ?? [],
+                    'type' => 'select',
+                    'args' => [
+                        'options' => $fieldOptions,
+                        'multiple' => true,
+                        'class' => 'oes-replace-select2',
+                        'reorder' => true,
+                        'hidden' => true
+                    ]
+                ]
+            );
         }
     }
 

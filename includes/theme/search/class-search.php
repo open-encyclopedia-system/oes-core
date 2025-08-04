@@ -17,6 +17,9 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         /** @var string $search_term The search term. */
         public string $search_term = '';
 
+        /** @var string $search_term The original search term (differs e.g. if search is accents insensitive). */
+        public string $search_term_original = '';
+
         /** @var array $considered_post_types The considered post types. */
         public array $considered_post_types = [];
 
@@ -26,71 +29,74 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         /** @var array $order_of_post_types The order in which the post types are displayed */
         public array $order_of_post_types = [];
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(array $args = []): void
         {
             global $s;
             $this->search_term = $s;
+            $this->search_term_original = get_query_var('oes_search_original');
             $this->order_of_post_types = (isset($args['order_of_post_types']) && is_array($args['order_of_post_types'])) ?
                 $args['order_of_post_types'] :
                 ((is_array(OES()->search['order'] ?? false) && OES()->search['order']) ? OES()->search['order'] : []);
         }
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_label(): void
         {
             $this->label = oes_get_label('search__result__label', 'Search');
             $this->page_title = $this->label . ($this->search_term ? (': ' . $this->search_term) : '');
         }
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         public function loop(): void
         {
-            if (!$this->loop_execute) {
+            if ($this->loop_execute) return;
 
-                /* check for specific post types */
-                global $oes;
-                $this->considered_post_types = $oes->search['redirect_archive'] ?? [];
+            /* check for specific post types */
+            global $oes;
+            $this->considered_post_types = $oes->search['redirect_archive'] ?? [];
 
-                $this->loop_results();
-                $this->loop_execute = true;
-            }
+            $this->loop_results();
+            $this->loop_execute = true;
         }
 
-
-        // Overwrite parent
+        /** @inheritdoc */
         public function loop_results(): void
         {
-            if (have_posts())
-                while (have_posts()) {
-                    the_post();
-                    $loopedPost = get_post(get_the_ID());
+            if (!have_posts()) {
+                return;
+            }
 
-                    /* skip if not published or not considered post type */
-                    if ('publish' == $loopedPost->post_status &&
-                        (empty($this->considered_post_types) ||
-                            in_array($loopedPost->post_type, $this->considered_post_types))) {
+            while (have_posts()) {
+                the_post();
+                $loopedPost = get_post(get_the_ID());
 
-                        /* check if results are filtered by language */
-                        if ($this->filtered_language === 'all') $this->prepared_ids[] = $loopedPost->ID;
-                        else {
+                /* skip if not published or not considered post type */
+                if ('publish' == $loopedPost->post_status &&
+                    (empty($this->considered_post_types) ||
+                        in_array($loopedPost->post_type, $this->considered_post_types))) {
 
-                            /* get post language */
-                            $postLanguage = oes_get_post_language($loopedPost->ID) ?? false;
-                            if (!$postLanguage && $parentID = get_parent_id($loopedPost->ID))
-                                $postLanguage = oes_get_post_language($parentID) ?? false;
+                    /* check if results are filtered by language */
+                    if ($this->filtered_language === 'all') {
+                        $this->prepared_ids[] = $loopedPost->ID;
+                        $this->count++;
+                    }
+                    else {
 
-                            if (($postLanguage && $postLanguage === $this->filtered_language) ||
-                                empty($postLanguage))
-                                $this->prepared_ids[] = $loopedPost->ID;
+                        /* get post language */
+                        $postLanguage = oes_get_post_language($loopedPost->ID) ?? false;
+                        if (!$postLanguage && $parentID = get_parent_id($loopedPost->ID))
+                            $postLanguage = oes_get_post_language($parentID) ?? false;
+
+                        if (($postLanguage && $postLanguage === $this->filtered_language) ||
+                            empty($postLanguage)) {
+                            $this->prepared_ids[] = $loopedPost->ID;
+                            $this->count++;
                         }
                     }
                 }
+            }
         }
-
 
         //Overwrite
         public function get_data_as_table(bool $archiveData = true, array $args = []): array
@@ -126,7 +132,6 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
 
             return $tableArray;
         }
-
 
         /**
          * Get data for a specific language.
@@ -212,7 +217,6 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
             ksort($tableArray);
             return $tableArray;
         }
-
 
         /**
          * Get search results.

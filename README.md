@@ -1,7 +1,7 @@
 # Open Encyclopedia System
-Tags: publishing, encyclopedia
-Requires at least: 6.5
-Tested up to: 6.6
+Tags: publishing, encyclopedia, digital humanities, open access, academic, linked data
+Requires at least: 6.5.0
+Tested up to: 6.8.2
 Requires PHP: 8.1 or later
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -21,28 +21,32 @@ information about the project and existing OES applications please visit our
 
 ## Features
 * Publish citable articles
-* Set up version control for published articles
-* Edit and administer relations between entities
-* Use linked open data APIs to GND
-* Manage user, posts, entities, access rights and role models
-* Use the OES configuration interface to change the display of the published articles
+* Manage version control for articles
+* Define and edit relationships between entities
+* Integrate Linked Open Data (LOD) APIs
+* Manage users, posts, entities, access rights, and roles
+* Customize article display via the configuration interface
 
 ## Links
 * [Website](https://www.open-encyclopedia-system.org/)
 
 ## Dependencies
-An OES application consists of a OES Core plugin, an additional OES project plugin which implements the OES features
-for the application and an optional OES theme.
+An OES installation typically includes:
 
-OES depends on the WordPress plugin ACF:
-Advanced Custom Fields, version 6.3.4, URL: https://www.advancedcustomfields.com/.
+* **OES Core plugin** – foundational functionality
+* **OES Project plugin** – application-specific features
+* **OES Theme** *(optional)* – for custom front-end display
+
+**Required Plugin:**
+
+* [Advanced Custom Fields (ACF)](https://www.advancedcustomfields.com/) – version 6.3.4 or later
 
 ## Installation
-1. Download the OES plugin from gitHub and add it to your WordPress plugin directory.
-2. Download and activate the dependencies.
-3. Activate the OES plugin.
-4. Create your OES project plugin or download, activate and initialize the OES Demo plugin (follow the installation instructions in the OES Demo plugin).
-5. (Optional) Download and activate an OES theme.
+1. Download the OES Core plugin from GitHub and add it to your WordPress plugin directory.
+2. Install and activate required dependencies (e.g., ACF).
+3. Activate the OES Core plugin.
+4. Install a project-specific OES plugin or use the OES Demo plugin (see its documentation).
+5. *(Optional)* Install and activate an OES-compatible theme.
 
 ## Support
 This repository is not suitable for support.
@@ -50,9 +54,13 @@ Support is currently provided via our email help desk info@open-encyclopedia-sys
 the OES plugin and its usage. For further information about online encyclopaedias and possible customization please
 visit our website.
 
-## Documentation (Coming Soon)
-We are working on a detailed user manual and a technical function reference. Support is currently provided via our
-email help desk info@open-encyclopedia-system.org. We answer questions related to the OES plugin and its usage.
+## Documentation
+A user and technical manual for the Open Encyclopedia System is available online at:  
+[https://manual.open-encyclopedia-system.org/](https://manual.open-encyclopedia-system.org/)
+
+The manual is actively being expanded and updated.  
+If you have questions or need help with specific features, feel free to contact our help desk:  
+[info@open-encyclopedia-system.org](mailto:info@open-encyclopedia-system.org)
 
 ## Demo Version
 You can experience the frontend and editorial layer of an exemplary application. This application includes a basic
@@ -62,8 +70,13 @@ online encyclopedia and a WordPress theme. Download the OES Demo plugin and the 
 ## Contributing
 If you want to contribute to OES please contact the help desk info@open-encyclopedia-system.org.
 
+## Credits
+Developed by the Digitale Infrastrukturen, Freie Universität Berlin FUB IT, with support from the German Research 
+Foundation (DFG).
+
 ## Licencing
-Copyright (C) 2024 Freie Universität Berlin, Center für Digitale Systeme an der Universitätsbibliothek
+Copyright (C) 2025 
+Freie Universität Berlin, FUB IT, Digitale Infrastrukturen
 This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public
 License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later
 version.
@@ -71,6 +84,43 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 # Changelog
+
+## Unreleased
+- Improve performance of search indexing
+
+---
+
+## 2.4.0
+### Removed
+- Filters:
+  - `oes/page_version_container` (use `[Container_KEY]_Class` instead)
+  - `oes/menu_container_custom_html`
+  - `oes/page_container_content` (use `display_page_content` instead)
+  - `oes/menu_container_subpages`
+  - `oes/menu_container_posts_header`
+  - `oes/menu_container_posts` (use `modify_posts` container instead)
+  - `oes/menu_container_terms`
+  - `oes/menu_container_terms_more_string`
+  - `oes/theme_logos`
+- Functions:
+  - \OES\Schema\get_post_type_params, use OES()->post_types[$postType][$param] instead
+
+### Moved to OES Legacy
+- `oes_body_class`
+- `oes_prepare_attachment`
+- `oes_prepare_single`
+- `oes_prepare_tax`
+- `oes_prepare_search`
+- `oes_prepare_taxonomies`
+- `oes_prepare_data_other`
+- `oes_prepare_index`
+
+### Removed from filters
+- `oes/theme_archive_list_before` (use global `$oes_archive` instead)
+- `oes/theme_archive_list_after`
+
+### New
+- Introduced `OES_Archive_Loop` class in `oes_get_archive_loop_html`
 
 ## 2.3.5
 * improve - add default language when converting date to language specific format

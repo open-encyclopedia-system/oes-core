@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -16,44 +21,34 @@ if (!class_exists('Theme_Labels_General')) :
     class Theme_Labels_General extends Theme_Labels
     {
 
-        //Overwrite parent
+        /** @inheritdoc */
         function set_table_data_for_display()
         {
+            global $oes;
 
-            /* get global OES instance */
-            $oes = OES();
-            $languages = array_keys($oes->languages);
+            if (empty($oes->theme_labels)) {
+                return;
+            }
+
             $this->set_language_row();
 
+            $storeForSorting = $oes->theme_labels;
+            ksort($storeForSorting);
+            foreach ($storeForSorting as $key => $label) {
+                if (!$oes->block_theme || (!isset($label['classic']) || !$label['classic'])) {
 
-            $rows = [];
-            if (!empty($oes->theme_labels)) {
-                $storeForSorting = $oes->theme_labels;
-                ksort($storeForSorting);
-                foreach ($storeForSorting as $key => $label)
-                    if (!$oes->block_theme || (!isset($label['classic']) || !$label['classic'])) {
-
-                        $cells = [[
-                            'type' => 'th',
-                            'value' => '<div><strong>' . $label['name'] . '</strong></div><div><em>' .
-                                __('Location: ', 'oes') . '</em>' . ($label['location'] ?? '') .
-                                '</div>' .
-                                '<div><code class="oes-object-identifier-br">' . $key . '</code></div>'
-                        ]];
-
-                        foreach ($languages as $language)
-                            $cells[] = [
-                                'class' => 'oes-table-transposed',
-                                'value' => oes_html_get_form_element('text',
-                                    'oes_config[theme_labels][' . $key . '][' . $language . ']',
-                                    'oes_config-theme_labels-' . $key . '-' . $language,
-                                    $label[$language] ?? '')
-                            ];
-
-                        $rows[]['cells'] = $cells;
-                    }
+                    $this->add_table_row(
+                        [
+                            'title' => $label['name'],
+                            'key' => 'oes_config[theme_labels][' . $key . ']',
+                            'value' => $label ?? [],
+                            'is_label' => true,
+                            'location' => ($label['location'] ?? ''),
+                            'label_key' => $key
+                        ]
+                    );
+                }
             }
-            $this->table_data[]['rows'] = array_merge($this->language_row, $rows);
         }
     }
 

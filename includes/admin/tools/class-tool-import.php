@@ -18,6 +18,7 @@ if (!class_exists('Import')) :
     class Import extends Tool
     {
 
+
         /** @var array Store new terms. */
         public array $new_terms = [];
 
@@ -32,7 +33,7 @@ if (!class_exists('Import')) :
             'meta_input'];
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function display(): void
         {
 

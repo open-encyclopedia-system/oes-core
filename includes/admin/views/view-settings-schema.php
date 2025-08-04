@@ -1,81 +1,135 @@
 <?php
-if(($_GET['type'] ?? false) === 'oes_single'):?>
-    <div class="oes-factory-notice notice notice-warning">
-        <p><?php
-            printf(__('If you want to use double quotes use the unicode notation &#8220; (%s) or &#8222; (%s).', 'oes'),
-                htmlspecialchars('&#8220;'),
-                htmlspecialchars('&#8222;')) ?></p>
-    </div>
-<?php
-endif;
-?><div class="oes-page-header-wrapper">
+global $oes;
+
+$object = $_GET['object'] ?? false;
+$type = $_GET['type'] ?? false;
+$component = $_GET['component'] ?? false;
+$oesType = $oes->$component[$object]['type'] ?? 'other';
+
+// Show notice for specific type
+?>
+<div class="oes-page-header-wrapper">
     <div class="oes-page-header">
-        <h1><?php echo __('Schema', 'oes'); ?></h1>
-    </div>
-    <nav class="oes-tabs-wrapper hide-if-no-js tab-count-8" aria-label="Secondary menu"><?php
+        <?php
 
-        $oes = OES();
-        $type = isset($_GET['type']) && isset($oes->admin_tools['schema-' . $_GET['type']]) && $_GET['type'];
-        $tab = $_GET['tab'] ?? false;
+        // Get schema links
+        $schemaLinks = oes_config_get_schema_links();
 
-        printf('<a href="%s" class="oes-tab %s">%s</a>',
-            admin_url('admin.php?page=oes_settings_schema'),
-            ($tab ? '' : 'active'),
-            __('Status', 'oes')
-        );
+        // Prepare dropdown options
+        $optionsHTML = '<option value="admin.php?page=oes_settings_schema">' . esc_html__('Overview', 'oes') . '</option>';
+        foreach ($schemaLinks ?? [] as $schemaLinksType) {
+            foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
+                $key      = $objectData['key'] ?? $objectDataKey;
+                $label    = $objectData['label'] ?? $objectDataKey;
+                $url      = $objectData['url'] ?? '';
+                $selected = ($key === $object) ? 'selected' : '';
 
-        printf('<a href="%s" class="oes-tab %s">%s</a>',
-            admin_url('admin.php?page=oes_settings_schema&tab=info'),
-            (($tab == 'info') ? 'active' : ''),
-            __('Info', 'oes')
-        );
+                $optionsHTML .= sprintf(
+                    '<option value="%s" %s>%s</option>',
+                    esc_url($url),
+                    esc_attr($selected),
+                    esc_html($label)
+                );
+            }
+        }
+
+        // Build header HTML
+        $headerHTML  = esc_html__('Schema', 'oes') . ' ';
+        $headerHTML .= '<select id="schema-links" onchange="oesGoToAdminPage(this)">' . $optionsHTML . '</select>';
+        if ($object) {
+            $headerHTML .= '<code class="oes-object-identifier">' . esc_html($object) . '</code>';
+        }
         ?>
-    </nav>
-</div>
-<div class="oes-page-body"><?php
+        <h1><?php echo $headerHTML; ?></h1>
+    </div>
 
-    if ($tab == 'info'):
-    echo '<p>' .
-        __('The OES schema defines the data schema and its representation of text objects, their properties ' .
-            'and relationships ' .
-            'between objects. The defined schema option for an object are used for the frontend representation.',
-            'oes') .
-        '</p>';
-        echo '<h2>' . __('Types', 'oes') . '</h2>';
-        echo '<p>' .
-            __('The OES schema is divided into different object types: <b>Content</b> are post objects with ' .
-                'scientific texts ' .
-                'whose text bodies are enriched and classified by metadata. <b>Contributors</b> are post object types ' .
-                'that represent the authorship of articles. <b>Index</b> elements are post objects that form the ' .
-                'index of the collected articles. Other post objects that are only used for the searchability ' .
-                'or structuring of other objects are referred to as <b>internal</b> elements.', 'oes') .
-            '</p>';
-        echo '<h3>' . __('Single', 'oes') . '</h3>';
-        echo '<div class="oes-tool-information-wrapper"><p>' .
-            __('A single post object can be displayed as a single page.', 'oes') .
-            '</p><p>' .
-            __('You can choose the field that will be displayed as title of a post object with the OES feature ' .
-                '<b>Titles</b> (The field to be displayed as title on the single page).', 'oes') . '<br>' .
-            __('The single view of a post object includes a table of metadata. You can define which post data ' .
-                'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes') .
-            '</p></div>';
-        echo '<h3>' . __('Archive', 'oes') . '</h3>';
-        echo '<div class="oes-tool-information-wrapper"><p>' .
-            __('All post objects of an object type can be displayed as an archive on a single page.', 'oes') .
-            '</p><p>' .
-            __('You can choose the field that will be displayed as title of a post object with the OES feature ' .
-                '<b>Titles</b>. You can also choose which field will be used for sorting the list of post objects ' .
-                'alphabetically.', 'oes') . '<br>' .
-            __('The post type parameter <b>Has Archive</b> enables the archive view inside the frontend layer.',
-                'oes') . '<br>' .
-            __('When the OES feature <b>Display archive as list</b> is enabled the archive will not be displayed ' .
-                'as list of posts linking to the single view but instead as list of all posts including the post ' .
-                'content without the single view option.', 'oes') . '<br>' .
-            __('You can define data to be included on the archive page in a ' .
-                'dropdown table in the OES feature <b>Archive</b>. The OES feature <b>Archive Filter</b> ' .
-                'enables considered facet filters for the archive page.', 'oes') .
-            '</p></div>';
-    elseif ($type): \OES\Admin\Tools\display('schema-' . $_GET['type']);
-    else: oes_get_view('view-settings-schema-status');
-    endif; ?>
+    <?php if ($object): ?>
+        <nav class="oes-tabs-wrapper hide-if-no-js tab-count-8" aria-label="Secondary menu">
+            <?php
+
+            // Define default tabs
+            $tabs = [
+                'oes'         => __('General', 'oes'),
+                'oes_single'  => __('Single', 'oes'),
+                'oes_archive' => __('Archive', 'oes'),
+            ];
+
+            // Add LoD tabs if present @oesDevelopment call this from API classes?
+            if ($oes->post_types[$object]['lod'] ?? false) {
+                foreach ($oes->apis as $apiKey => $api) {
+                    if (!empty($api->config_options['properties']['options'])) {
+                        $tabs[$apiKey] = $api->label;
+                    }
+                }
+            }
+
+            /**
+             * Filters the tabs for the OES schema.
+             *
+             * @param array  $tabs      The tabs for the OES schema.
+             * @param string $object    The current object.
+             * @param string $component The current component.
+             * @param string $oesType   The type of the OES item.
+             */
+            $tabs = apply_filters('oes/schema_tabs', $tabs, $object, $component, $oesType);
+
+            foreach ($tabs as $tabType => $label) {
+                $link = admin_url('admin.php?page=oes_settings_schema&tab=schema' .
+                    '&type=' . urlencode($tabType) .
+                    '&component=' . urlencode($component) .
+                    '&object=' . urlencode($object));
+
+                $class = ($type === $tabType) ? 'active' : '';
+
+                printf(
+                    '<a href="%s" class="oes-tab %s">%s</a>',
+                    esc_url($link),
+                    esc_attr($class),
+                    esc_html($label)
+                );
+            }
+            ?>
+        </nav>
+    <?php endif; ?>
+</div>
+
+<div class="oes-page-body">
+    <?php
+
+    if ($type):
+        \OES\Admin\Tools\display('schema-' . $type);
+    else: ?>
+        <table class="oes-config-table oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">
+            <?php
+            foreach ($schemaLinks ?? [] as $type => $schemaLinksType) {
+                $dataHTML = '';
+
+                foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
+                    $label = $objectData['label'] ?? $objectDataKey;
+                    $url   = admin_url($objectData['url'] ?? '');
+                    $key   = $objectData['key'] ?? '';
+
+                    $link = oes_get_html_anchor(
+                        '<strong>' . esc_html($label) . '</strong>',
+                        esc_url($url)
+                    );
+
+                    $dataHTML .= '<tr>
+                        <th><strong>' . $link . '</strong> <code class="oes-object-identifier">' . esc_html($key) . '</code></th>
+                    </tr>';
+                }
+
+                if (!empty($dataHTML)) {
+                    $label = $schemaLinksType['label'] ?? $type;
+                    echo '<thead>
+                        <tr class="oes-config-table-separator">
+                            <th><strong>' . esc_html($type === 'other' ? '[Default]' : $label) . '</strong></th>
+                        </tr>
+                    </thead>
+                    <tbody>' . $dataHTML . '</tbody>';
+                }
+            }
+            ?>
+        </table>
+    <?php endif; ?>
 </div>

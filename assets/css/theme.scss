@@ -16,3 +16,23 @@
     align-items: center;
     justify-content: center;
 }
+
+.oes-info-box {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #1d2327;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 12px;
+    z-index: 9999;
+
+    img {
+        width: auto;
+        height: 20px;
+        padding-right: 5px;
+        vertical-align: middle;
+    }
+}

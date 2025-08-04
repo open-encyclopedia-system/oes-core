@@ -5,13 +5,12 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
  * Returns true if given string starts with needle.
+ * This is replaced by str_starts_with by php8.0.
  *
  * @param string $string The input string.
  * @param string $needle The needle.
  * @param int $offset The offset. Default is 0.
  * @return bool Returns true if the input string does start with needle.
- *
- * @oesDevelopment Can be replaced with str_starts_with on php8.0.
  */
 function oes_starts_with(string $string, string $needle, int $offset = 0): bool
 {
@@ -22,6 +21,7 @@ function oes_starts_with(string $string, string $needle, int $offset = 0): bool
 
 /**
  * Returns true if given string ends with needle.
+ * This is replaced by str_ends_with by php8.0.
  *
  * @param string $string A string containing the input string.
  * @param string $needle A string containing the needle.
@@ -287,6 +287,7 @@ function oes_accordion(
 
 
 /**
+ * @legacy replaced by class-search_results.php
  * Scan string for search term and return string with highlighted search term for html display.
  *
  * @param string $needle A string containing the search term.
@@ -363,7 +364,7 @@ function oes_get_highlighted_search(string $needle, string $content, array $args
                     }
 
                     /* check search result after filtering */
-                    $filteredContent = apply_filters('the_content', $highlightedParagraph);
+                    $filteredContent = $highlightedParagraph;
                     if (!empty($filteredContent) && $occurrences > 0)
                         $returnArrayString[] = [
                             'paragraph' => $filteredContent,

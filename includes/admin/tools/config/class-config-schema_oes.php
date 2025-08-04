@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -17,12 +22,12 @@ if (!class_exists('Schema_OES')) :
     class Schema_OES extends Schema
     {
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function set_table_data_for_display(): void
         {
-            /* get global OES instance */
-            $objects = OES()->{$this->component};
+            global $oes;
+
+            $objects = $oes->{$this->component};
             $objectData = $objects[$this->object] ?? [];
 
             $configs['type'] = [
@@ -34,17 +39,19 @@ if (!class_exists('Schema_OES')) :
 
             if ($this->component == 'post_types') {
 
-                /* parent / child option */
+                // collect parent / child options
                 $versionLabel = '';
                 $versionKey = false;
                 if ($objectData['type'] == 'single-article') {
                     $versionKey = 'parent';
                     $versionLabel = __('Versioning, Parent Object', 'oes');
                 }
+
                 if (isset($objectData['version']) && !empty($objectData['version'])) {
                     $versionKey = 'version';
                     $versionLabel = __('Versioning, Version Object', 'oes');
                 }
+
                 if ($versionKey) {
                     $objectsSelect['none'] = '-';
                     foreach ($objects as $postTypeKey => $postTypeData)
@@ -67,7 +74,6 @@ if (!class_exists('Schema_OES')) :
                 ];
             }
 
-
             /**
              * Filters the general config options for the OES schema.
              *
@@ -82,42 +88,33 @@ if (!class_exists('Schema_OES')) :
                     $this->oes_type,
                     $this->component);
 
-
-            $rows = [];
             foreach ($configs as $optionKey => $option) {
 
                 $optionKey = isset($option['option_key']) ?
                     'oes_option[' . $option['option_key'] . ']' :
                     $this->component . '[' . $this->object . '][oes_args][' . $optionKey . ']';
-                $optionID = str_replace(['[', ']'], ['-', ''], $optionKey);
 
-                $rows[] = [
-                    'cells' => [
-                        [
-                            'type' => 'th',
-                            'value' => '<strong>' . ($option['label'] ?? $optionKey) . '</strong>' .
-                                '<div>' . ($option['info'] ?? '') . '</div>'
-
-                        ],
-                        [
-                            'class' => 'oes-table-transposed',
-                            'value' => oes_html_get_form_element($option['type'] ?? 'select',
-                                $optionKey,
-                                $optionID,
-                                $option['value'] ?? '',
-                                $option['options'])
-                        ]
+                $this->add_table_row(
+                    [
+                        'title' => ($option['label'] ?? $optionKey),
+                        'key' => $optionKey,
+                        'value' => $option['value'] ?? '',
+                        'type' => $option['type'] ?? 'select',
+                        'args' => $option['options'] ?? []
+                    ],
+                    [
+                        'subtitle' => ($option['info'] ?? '')
                     ]
-                ];
+                );
             }
-            $this->table_data[] = ['rows' => $rows];
         }
 
-
-        //Implement parent
+        /** @inheritdoc */
         function admin_post_tool_action(): void
         {
-            if ($_POST[$this->component] ?? false) parent::admin_post_tool_action();
+            if ($_POST[$this->component] ?? false) {
+                parent::admin_post_tool_action();
+            }
             foreach ($_POST['oes_option'] ?? [] as $option => $value) {
                 if ($value === 'hidden') $value = false;
                 elseif ($value === 'on') $value = true;

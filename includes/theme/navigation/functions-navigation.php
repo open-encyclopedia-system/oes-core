@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Navigation;
 
 
@@ -11,25 +16,38 @@ namespace OES\Navigation;
  */
 function redirect_page(array $templates): array
 {
-    global $oes_post, $oes_archive_data, $oes_is_index, $oes_is_index_page;
-    if ($oes_post->is_frontpage ?? false)
+    global $oes_post, $oes_archive_data, $oes_is_index, $oes_is_index_page, $oes_language;
+
+    if (!empty($oes_post->is_frontpage)) {
         array_unshift($templates, 'front-page.php');
-    elseif ($oes_post &&
-        in_array($oes_post->schema_type, ['single-article', 'single-contributor', 'single-index']))
-        array_splice( $templates, 2, 0, [$oes_post->schema_type]);
-    elseif ($oes_is_index_page)
+    }
+    elseif (!empty($oes_post) && in_array($oes_post->schema_type, [
+            'single-article',
+            'single-contributor',
+            'single-index'
+        ], true)) {
+        array_splice($templates, 2, 0, [$oes_post->schema_type]);
+    }
+    elseif (!empty($oes_is_index_page)) {
         array_unshift($templates, 'archive-index');
-    elseif ($oes_archive_data && !is_archive() && !is_search()) {
-        $template = 'archive' . ($oes_is_index ? '-index' : '');
-        if (sizeof($templates) > 0 && $templates[0] !== '404.php')
-            array_splice($templates, 1, 0, [$template]);
-        else array_unshift($templates, $template);
+    }
+    elseif (!empty($oes_is_index) && is_archive()) {
+        array_splice($templates, 1, 0, ['archive-index']);
+    }
+    elseif (!empty($oes_archive_data) && !is_archive() && !is_search()) {
+        $archive_template = 'archive' . ($oes_is_index ? '-index' : '');
+
+        if (!empty($templates) && $templates[0] !== '404.php') {
+            array_splice($templates, 1, 0, [$archive_template]);
+        } else {
+            array_unshift($templates, $archive_template);
+        }
     }
 
-    /* add language dependent template */
-    global $oes_language;
-    if($oes_language !== 'language0' && sizeof($templates) > 0)
-        array_unshift($templates, str_replace('.php', '-' . $oes_language . '.php', $templates[0]));
+    if (!empty($oes_language) && $oes_language !== 'language0' && !empty($templates)) {
+        $localized_template = str_replace('.php', '-' . $oes_language . '.php', $templates[0]);
+        array_unshift($templates, $localized_template);
+    }
 
     return $templates;
 }

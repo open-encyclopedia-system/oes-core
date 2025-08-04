@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -16,19 +21,14 @@ if (!class_exists('Theme_Labels')) :
     class Theme_Labels extends Config
     {
 
-        /** @var array Prepare the language row */
-        public array $language_row = [];
-
         /** @var bool Add expand button on top. */
         public bool $expand_button = false;
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function information_html(): string
         {
             return $this->expand_button ? get_expand_button() : '';
         }
-
 
         /**
          * Set language row as table header.
@@ -36,20 +36,7 @@ if (!class_exists('Theme_Labels')) :
          */
         function set_language_row(): void
         {
-            $cells = [[
-                'type' => 'th',
-                'value' => '<strong>' . __('Label', 'oes') . '</strong>'
-            ]];
-            foreach (OES()->languages as $language) {
-                $cells[] = [
-                    'type' => 'th',
-                    'class' => 'oes-table-transposed',
-                    'value' => '<strong>' . $language['label'] . '</strong>'
-                ];
-            }
-            $this->language_row = [[
-                'cells' => $cells
-            ]];
+            $this->add_table_header('', 'language_label', ['trigger' => false]);
         }
 
     }

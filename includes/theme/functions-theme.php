@@ -185,6 +185,10 @@ function oes_theme_label_html(array $args): string
 /**
  * Get the HTML representation of a language label.
  *
+ * How to escape html entities:
+ * <span class="example">
+ * &lt;span class=&quot;
+ *
  * @param string|array $args Shortcode attributes.
  *
  * @return string Return the html string representing the language label.
@@ -193,7 +197,7 @@ function oes_language_label_html($args): string
 {
     global $oes_language;
     if (is_string($args)) $args = [];
-    return $args[$oes_language] ?? ($args['default'] ?? '');
+    return html_entity_decode($args[$oes_language] ?? ($args['default'] ?? ''));
 }
 
 
@@ -325,7 +329,30 @@ function oes_field_html(array $args): string
             $currentVersion = \OES\Versioning\get_current_version_id($oes_post->object_ID);
             if($currentVersion) $value = oes_get_field_display_value($args['field'], $currentVersion);
         }
-        else $value = ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
+        else {
+            if($args['relation'] ?? false) {
+
+                $rawValue = oes_get_field($args['field'], $oes_post->object_ID);
+                $fieldObject = oes_get_field_object($args['field'], $oes_post->object_ID);
+
+                /* modify value for return format 'id' */
+                $replaceValue = [];
+                if (isset($fieldObject['return_format']) &&
+                    $fieldObject['return_format'] === 'id' &&
+                    is_array($rawValue)) {
+                    foreach ($rawValue as $singleValue) {
+                        $replaceValue[] = ($args['relation'] == 'version') ?
+                            get_post(\OES\Versioning\get_current_version_id($singleValue)):
+                            get_post(\OES\Versioning\get_parent_id($singleValue));
+                    }
+                }
+
+                if(isset($args['list-class'])) $args['class'] = $args['list-class'];
+                $value = oes_display_post_array_as_list($replaceValue, $args['list-id'] ?? false, $args);
+            }
+            else
+                $value = ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
+        }
     }
     if (empty($value)) return '';
 
@@ -423,6 +450,36 @@ function oes_print_button_html(array $args = []): string
         ('<p>' . $printButton . '</p>') :
         $printButton;
 }
+
+
+/**
+ * Calls a method on the global $oes_post object and returns its output as a string.
+ *
+ * @param array $args {
+ *     @type string $method The name of the method to call on the $oes_post object. Required.
+ *     @type mixed  $args   Optional argument(s) to pass to the method. Can be any type accepted by the method.
+ * }
+ * @return string The result of the method call as a string. Returns an empty string on failure or if method is not provided.
+ */
+function oes_post_method_html(array $args = []): string
+{
+    $method = $args['method'] ?? false;
+
+    if (!$method) {
+        return '';
+    }
+
+    global $oes_post;
+
+    if (!$oes_post || !method_exists($oes_post, $method)) {
+        return '';
+    }
+
+    return isset($args['args'])
+        ? $oes_post->$method($args['args'])
+        : $oes_post->$method();
+}
+
 
 /**
  * Redirect a theme page.

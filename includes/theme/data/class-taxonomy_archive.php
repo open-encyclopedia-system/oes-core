@@ -26,7 +26,7 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
         public bool $only_first_level = false;
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(array $args = []): void
         {
             /* Set taxonomy */
@@ -41,7 +41,7 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_filter(array $args): array
         {
             $taxonomy = $args['taxonomy-for-filter'] ?? $this->taxonomy;
@@ -56,7 +56,7 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_object_label(): string
         {
             global $oes, $oes_language;
@@ -67,7 +67,7 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function loop_objects(): void
         {
 

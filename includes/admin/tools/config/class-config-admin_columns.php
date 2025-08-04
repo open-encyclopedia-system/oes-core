@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -16,144 +21,97 @@ if (!class_exists('Admin_Columns')) :
     class Admin_Columns extends Config
     {
 
-        //Overwrite parent
-        function information_html(): string
+        /** @inheritdoc */
+        public function set_table_data_for_display(): void
         {
-            return '<div class="oes-tool-information-wrapper"><p>' .
-                __('You can add or remove columns for the list views of post objects in the admin area with the OES ' .
-                    'feature <b>Admin Columns</b> and display information that helps you to administrate and ' .
-                    'organizing your post objects.', 'oes') .
-                '</p></div>';
+            global $oes;
+
+            // Post types
+            $this->add_table_header(__('Post Types', 'oes'));
+            foreach ($oes->post_types as $postTypeKey => $postTypeData) {
+                $options = $this->build_column_options($postTypeData['field_options'] ?? [], [
+                    'cb'            => 'Checkbox',
+                    'title'         => 'Title',
+                    'date'          => 'Date',
+                    'date_modified' => 'Modified Date',
+                    'parent'        => 'Parent',
+                ]);
+
+                foreach (get_post_type_object($postTypeKey)->taxonomies ?? [] as $taxonomyKey) {
+                    if (isset($oes->taxonomies[$taxonomyKey]['label'])) {
+                        $options['taxonomy-' . $taxonomyKey] = $oes->taxonomies[$taxonomyKey]['label'];
+                    }
+                }
+
+                $this->add_admin_column_row('post_types', $postTypeKey, $postTypeData['label'] ?? $postTypeKey, $postTypeData['admin_columns'] ?? [], $options);
+            }
+
+            // Taxonomies
+            $this->add_table_header(__('Taxonomies', 'oes'));
+            foreach ($oes->taxonomies ?? [] as $taxonomyKey => $taxonomyData) {
+                $options = $this->build_column_options($taxonomyData['field_options'] ?? [], [
+                    'cb'          => 'Checkbox',
+                    'name'        => 'Name',
+                    'slug'        => 'Slug',
+                    'description' => 'Description',
+                    'posts'       => 'Count',
+                    'id'          => 'ID',
+                ]);
+
+                $this->add_admin_column_row('taxonomies', $taxonomyKey, $taxonomyData['label'] ?? $taxonomyKey, $taxonomyData['admin_columns'] ?? [], $options);
+            }
         }
 
-
-        //Overwrite parent
-        function set_table_data_for_display()
+        /**
+         * Build a list of admin column options.
+         *
+         * @param array $fieldOptions ACF-style field options.
+         * @param array $defaults Default core columns.
+         * @return array Merged options.
+         */
+        protected function build_column_options(array $fieldOptions, array $defaults): array
         {
+            $options = $defaults;
 
-            /* get global OES instance */
-            $oes = OES();
-
-            $postTypeRows = [];
-            foreach ($oes->post_types as $postTypeKey => $postTypeData) {
-
-                /* prepare options */
-                $options = ['cb' => 'Checkbox', 'title' => 'Title', 'date' => 'Date',
-                    'date_modified' => 'Modified Date', 'parent' => 'Parent'];
-                if (isset($postTypeData['field_options']) && !empty($postTypeData['field_options']))
-                    foreach ($postTypeData['field_options'] as $fieldKey => $field)
-                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message']))
-                            $options[$fieldKey] = __('Field: ', 'oes') . $field['label'];
-
-                /* check for taxonomies */
-                foreach (get_post_type_object($postTypeKey)->taxonomies ?? [] as $taxonomyKey)
-                    $options['taxonomy-' . $taxonomyKey] = $oes->taxonomies[$taxonomyKey]['label'];
-
-                $postTypeRows[] = [
-                    'cells' => [
-                        [
-                            'type' => 'th',
-                            'value' => '<strong>' . ($postTypeData['label'] ?? $postTypeKey) . '</strong>' .
-                                '<code class="oes-object-identifier">' . $postTypeKey . '</code>'
-                        ],
-                        [
-                            'colspan' => '2',
-                            'class' => 'oes-table-transposed',
-                            'value' => oes_html_get_form_element('select',
-                                'post_types[' . $postTypeKey . '][oes_args][admin_columns]',
-                                'post_types-' . $postTypeKey . '-oes_args-admin_columns',
-                                $postTypeData['admin_columns'] ?? [],
-                                [
-                                    'options' => $options,
-                                    'multiple' => true,
-                                    'class' => 'oes-replace-select2',
-                                    'reorder' => true,
-                                    'hidden' => true
-                                ])
-                        ]
-                    ]
-                ];
+            foreach ($fieldOptions as $fieldKey => $field) {
+                if (!in_array($field['type'] ?? '', ['tab', 'message'], true)) {
+                    $options[$fieldKey] = __('Field: ', 'oes') . ($field['label'] ?? $fieldKey);
+                }
             }
 
-            if(!empty($postTypeRows)){
-                $this->table_data[] = [
-                    'type' => 'thead',
-                    'rows' => [
-                        [
-                            'class' => 'oes-config-table-separator',
-                            'cells' => [
-                                [
-                                    'type' => 'th',
-                                    'colspan' => 3,
-                                    'value' => '<strong>' . __('Post Types', 'oes') . '</strong>'
-                                ]
-                            ]
-                        ]
-                    ]
-                ];
-                $this->table_data[] = [
-                    'rows' => $postTypeRows
-                ];
-            }
+            return $options;
+        }
 
-
-            $taxonomyRows = [];
-            foreach ($oes->taxonomies as $taxonomyKey => $taxonomyData) {
-
-                /* prepare options */
-                $options = ['cb' => 'Checkbox', 'name' => 'Name', 'slug' => 'Slug',
-                    'description' => 'Description', 'posts' => 'Count', 'id' => 'ID'];
-                if (isset($taxonomyData['field_options']) && !empty($taxonomyData['field_options']))
-                    foreach ($taxonomyData['field_options'] as $fieldKey => $field)
-                        if (isset($field['type']) && !in_array($field['type'], ['tab', 'message']))
-                            $options[$fieldKey] = __('Field: ', 'oes') . $field['label'];
-
-                $taxonomyRows[] = [
-                    'cells' => [
-                        [
-                            'type' => 'th',
-                            'value' => '<strong>' . ($taxonomyData['label'] ?? $taxonomyKey) . '</strong>' .
-                                '<code class="oes-object-identifier">' . $taxonomyKey . '</code>'
-                        ],
-                        [
-                            'colspan' => '2',
-                            'class' => 'oes-table-transposed',
-                            'value' => oes_html_get_form_element('select',
-                                'taxonomies[' . $taxonomyKey . '][oes_args][admin_columns]',
-                                'taxonomies-' . $taxonomyKey . '-oes_args-admin_columns',
-                                $taxonomyData['admin_columns'] ?? [],
-                                [
-                                    'options' => $options,
-                                    'multiple' => true,
-                                    'class' => 'oes-replace-select2',
-                                    'reorder' => true,
-                                    'hidden' => true
-                                ])
-                        ]
-                    ]
-                ];
-            }
-
-            if(!empty($taxonomyRows)) {
-                $this->table_data[] = [
-                    'type' => 'thead',
-                    'rows' => [
-                        [
-                            'class' => 'oes-config-table-separator',
-                            'cells' => [
-                                [
-                                    'type' => 'th',
-                                    'colspan' => 3,
-                                    'value' => '<strong>' . __('Taxonomies', 'oes') . '</strong>'
-                                ]
-                            ]
-                        ]
-                    ]
-                ];
-                $this->table_data[] = [
-                    'rows' => $taxonomyRows
-                ];
-            }
+        /**
+         * Add a table row for admin column configuration.
+         *
+         * @param string $type Either 'post_types' or 'taxonomies'.
+         * @param string $key The post type or taxonomy key.
+         * @param string $label The row label.
+         * @param array $value Current saved column configuration.
+         * @param array $options Available column options.
+         * @return void
+         */
+        protected function add_admin_column_row(string $type, string $key, string $label, array $value, array $options): void
+        {
+            $this->add_table_row(
+                [
+                    'title' => $label,
+                    'key'   => "{$type}[{$key}][oes_args][admin_columns]",
+                    'value' => $value,
+                    'type'  => 'select',
+                    'args'  => [
+                        'options'  => $options,
+                        'multiple' => true,
+                        'class'    => 'oes-replace-select2',
+                        'reorder'  => true,
+                        'hidden'   => true,
+                    ],
+                ],
+                [
+                    'subtitle' => '<code>' . $key . '</code>',
+                ]
+            );
         }
     }
 

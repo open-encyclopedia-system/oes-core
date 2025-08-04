@@ -28,7 +28,7 @@ if (!class_exists('GND_API')) {
         public array $types = [];
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_request_url(string $url, array $args): string
         {
             $this->searchTerm = $args['search_term'] ?? '';
@@ -55,7 +55,7 @@ if (!class_exists('GND_API')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function transform_data($args = [])
         {
 
@@ -231,7 +231,7 @@ if (!class_exists('GND_API')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function get_data_for_display_modify_table_data($entry)
         {
 
@@ -447,8 +447,8 @@ if (!class_exists('GND_API')) {
         }
 
 
-        //Overwrite parent
-        function get_data_for_display_prepare_html(string $title, string $table, $entry): string
+        /** @inheritdoc */
+        function get_data_for_display_prepare_html(string $title, string $table, mixed $entry): string
         {
             /**
              * Filter the content for the display of a GND entry.
@@ -465,7 +465,7 @@ if (!class_exists('GND_API')) {
             else {
                 $additionalInfo = '';
                 if (isset($entry['entry']['biographicalOrHistoricalInformation']))
-                    $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
+                    $additionalInfo .= '<div class="oes-gnd-box-biographical-info"><h4 class="oes-content-table-header">' .
                         ($this->language === 'german' ?
                             'Biografische oder historische Angaben' :
                             'Biographical or historical Information') .
@@ -474,22 +474,23 @@ if (!class_exists('GND_API')) {
                         '</div>';
 
                 if (isset($entry['entry']['definition']))
-                    $additionalInfo .= '<div><h4 class="oes-content-table-header">' . __('Definition', 'oes') . '</h4>' .
+                    $additionalInfo .= '<div class="oes-gnd-box-definition"><h4 class="oes-content-table-header">' . __('Definition', 'oes') . '</h4>' .
                         '<div>' . $entry['entry']['definition']['value'] . '</div>' .
                         '</div>';
 
                 if (isset($entry['entry']['id']))
-                    $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
+                    $additionalInfo .= '<div class="oes-gnd-box-link"><h4 class="oes-content-table-header">' .
                         __('GND Link', 'oes') . '</h4>' .
                         '<div>' . $entry['entry']['id']['value'] . '</div>' .
                         '</div>';
 
-                if (isset($entry['entry']['sameAs']))
+                /* as of 2025, "same as links" are disabled, because they can be accessed via the GDN link and seem to be messy in the GND database */
+                /*if (isset($entry['entry']['sameAs']))
                     $additionalInfo .= '<div><h4 class="oes-content-table-header">' .
                         ($this->language === 'german' ? 'Weitere Links' : 'Further Links') .
                         '</h4>' .
                         '<div>' . $entry['entry']['sameAs']['value'] . '</div>' .
-                        '</div>';
+                        '</div>';*/
 
                 return '<div class="oes-lod-box-title">' .
                     '<h3 class="oes-content-table-header">' . $title . '</h3>' .

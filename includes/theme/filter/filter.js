@@ -34,6 +34,9 @@
      */
     oesFilter.applyAll = function () {
         if (typeof oes_filter !== 'undefined') {
+
+            document.dispatchEvent(new CustomEvent('oes-filter-processing-started'));
+
             showWrappers();
             applyFacetFilter();
             applyRangeFilter();
@@ -42,6 +45,8 @@
             updateFacetFilterCount();
             updateFilterCount();
             updateLocalStorage();
+
+            document.dispatchEvent(new CustomEvent('oes-filter-processed'));
         }
     }
 

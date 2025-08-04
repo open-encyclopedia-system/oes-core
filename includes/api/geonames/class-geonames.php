@@ -1,10 +1,15 @@
 <?php
 
+/**
+ * @file
+ * @reviewed 2.4.0
+ */
+
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('admin/api/class-config-lod.php');
+if (!class_exists('LOD')) oes_include('api/class-lod.php');
 
 if (!class_exists('Geonames')) :
 
@@ -15,12 +20,13 @@ if (!class_exists('Geonames')) :
      */
     class Geonames extends LOD
     {
-
+        /** @inheritdoc */
         public string $api_key = 'geonames';
+
+        /** @inheritdoc */
         public bool $credentials_password = false;
 
-
-        //Overwrite parent
+        /** @inheritdoc */
         function information_html(): string
         {
             return '<div class="oes-tool-information-wrapper">' .

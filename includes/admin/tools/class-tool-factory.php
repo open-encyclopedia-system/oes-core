@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * @todoReview Review for 2.4.x
+ */
+
 namespace OES\Admin\Tools;
 
 use function OES\Admin\get_admin_user_only_message;
@@ -23,7 +28,7 @@ if (!class_exists('Factory')) :
         private bool $factory_mode = false;
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function initialize_parameters(array $args = []): void
         {
             $this->form_action = admin_url('admin-post.php');
@@ -31,7 +36,7 @@ if (!class_exists('Factory')) :
         }
 
 
-        ///Overwrite parent
+        //** @inheritdoc */
         function html(): void
         {
             $adminOnly = get_admin_user_only_message();
@@ -103,7 +108,7 @@ if (!class_exists('Factory')) :
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         function admin_post_tool_action(): void
         {
             if (isset($_POST['import_factory'])) import_model_from_factory();

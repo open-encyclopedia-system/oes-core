@@ -63,6 +63,10 @@ CSS Styling for admin layer.
   padding: 5px;
 }
 
+.oes-p-10px {
+  padding: 10px;
+}
+
 .oes-pb-0-5 {
   padding-top: 0.5rem;
 }
@@ -101,6 +105,10 @@ CSS Styling for admin layer.
 
 .oes-pt-0-1 {
   padding: 0 1rem;
+}
+
+.oes-mt-1 {
+  margin-top: 1rem;
 }
 
 /* Admin link */
@@ -259,6 +267,10 @@ a.oes-admin-link:after {
   font-size: 13px;
 }
 
+.oes-form-second-input {
+  padding: 0.5rem 0;
+}
+
 /* ---------------------------------------------------------------------------------------------------------------------
 -- MENU PAGE : TOOLS --------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
@@ -380,7 +392,7 @@ span.oes-column-post a.oes-admin-link:after {
 .oes-versioning-post-list tr:nth-child(even) {
   background-color: #f2f2f2;
 }
-.oes-versioning-post-list tbody tr:hover {
+.oes-versioning-post-list tr:hover {
   background-color: #ddd;
 }
 .oes-versioning-post-list tr.oes-current-post {
@@ -407,6 +419,100 @@ span.oes-column-post a.oes-admin-link:after {
 
 .oes-versioning-translation-info:hover {
   opacity: 100%;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- ADMIN TOGGLE PANEL --------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-admin-toggle-panel {
+  position: fixed;
+  top: 32px;
+  right: -400px;
+  width: 400px;
+  height: calc(100% - 32px);
+  background: #fff;
+  border-left: 1px solid #ccd0d4;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 998;
+  transition: right 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.oes-admin-toggle-panel.open {
+  right: 0;
+}
+
+.oes-admin-toggle-header {
+  background: #f1f1f1;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.oes-admin-toggle-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.oes-admin-toggle-content {
+  padding: 15px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.oes-admin-toggle-toggle {
+  position: fixed;
+  top: 100px;
+  right: 0;
+  background: #fff;
+  color: #646970;
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #c3c4c7;
+  border-radius: 5px 0 0 5px;
+  z-index: 999;
+  transition: opacity 0.2s ease;
+}
+
+.oes-admin-toggle-toggle:hover {
+  color: #111111;
+}
+
+.oes-admin-toggle-panel.open + .oes-admin-toggle-toggle {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------
+-- MENU PAGE : MANUAL --------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------*/
+.oes-manual-page {
+  padding-right: 60px;
+}
+.oes-manual-page ul.subsubsub {
+  float: none;
+}
+.oes-manual-page .oes-manual-sort ul.subsubsub {
+  margin-top: 0;
+}
+
+.oes-manual-toc-item .oes-manual-toc-item-active {
+  color: var(--wp--preset--color--primary, #007cba);
+  border-left: 4px solid currentColor;
+  padding-left: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+  margin: 5px 0;
+}
+.oes-manual-toc-item .oes-manual-toc-item-active ul {
+  padding: 5px 0;
+}
+.oes-manual-toc-item span.active {
+  font-weight: bold;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------
@@ -574,16 +680,19 @@ table.oes-config-table thead:not(:first-of-type) th,
 table.oes-config-table thead:not(:first-of-type) td {
   border-top: 1px solid #c3c4c7;
 }
+table.oes-config-table th {
+  font-weight: bold;
+}
+table.oes-config-table th .oes-config-table-additional {
+  font-weight: normal;
+}
 table.oes-config-table .oes-dashicons {
   font-size: 1.5rem;
 }
-
-tr.oes-config-table-separator {
-  background-color: #268fbb !important;
-}
-tr.oes-config-table-separator td,
-tr.oes-config-table-separator th {
-  color: white !important;
+table.oes-config-table tr.oes-config-table-separator td,
+table.oes-config-table tr.oes-config-table-separator th {
+  color: white;
+  background-color: #268fbb;
 }
 
 tr.oes-config-table-hide {
@@ -611,9 +720,9 @@ tr.oes-expandable-header .oes-tooltip.oes-description .oes-tooltip-text {
 }
 
 tr.oes-expandable-header.active {
-  background-color: #268fbb;
   border-left: 1px solid #268fbb;
   border-right: 1px solid #268fbb;
+  background-color: #268fbb;
 }
 tr.oes-expandable-header.active td,
 tr.oes-expandable-header.active th,
@@ -622,6 +731,7 @@ tr.oes-expandable-header.active code,
 tr.oes-expandable-header.active strong,
 tr.oes-expandable-header.active span {
   color: white;
+  background-color: #268fbb;
 }
 
 /* Options table */
@@ -650,25 +760,25 @@ table.oes-option-table input[type=text] {
 }
 
 /* Transposed table */
-table.oes-config-table tbody th,
-table.oes-option-table tbody th {
+table.oes-config-table th,
+table.oes-option-table th {
   vertical-align: top;
   border-right: 1px solid #e1e1e1;
   border-bottom: 1px solid #e1e1e1;
   border-top: 1px solid #e1e1e1;
   background: #f6f7f7;
 }
-table.oes-config-table tbody td.oes-table-transposed,
-table.oes-option-table tbody td.oes-table-transposed {
+table.oes-config-table td.oes-table-transposed,
+table.oes-option-table td.oes-table-transposed {
   background-color: white;
   border-bottom: 1px solid #e1e1e1;
 }
 
-table.oes-config-table tbody .oes-option-table-subtitle {
+table.oes-config-table .oes-option-table-subtitle {
   background-color: #50575e;
   color: white;
 }
-table.oes-config-table tbody input[type=text] {
+table.oes-config-table input[type=text] {
   width: 100%;
 }
 

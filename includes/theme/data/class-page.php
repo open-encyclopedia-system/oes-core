@@ -12,17 +12,17 @@ if (!class_exists('OES_Page')) {
     class OES_Page extends OES_Object
     {
 
-        //Overwrite parent
+        /** @inheritdoc */
         public bool $has_theme_subtitle = true;
 
-        //Overwrite parent
+        /** @inheritdoc */
         public $post_type = 'page';
 
         /** @var array $translations The translations */
         public array $translations = [];
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function set_parameters(): void
         {
             $this->language = $this->get_language();
@@ -34,7 +34,7 @@ if (!class_exists('OES_Page')) {
             else {
                 $frontPageID = get_option('page_on_front');
                 foreach ($this->translations as $translation)
-                    if ($translation['id'] === (int)$frontPageID) $this->is_frontpage = true;
+                    if ((int)$translation['id'] === (int)$frontPageID) $this->is_frontpage = true;
             }
 
             /* set theme labels */
@@ -42,7 +42,7 @@ if (!class_exists('OES_Page')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function get_language(): string
         {
             global $oes, $oes_language;
@@ -53,7 +53,7 @@ if (!class_exists('OES_Page')) {
             /* check if language is defined by schema */
             $schemaLanguage = $oes->post_types[$this->post_type]['language'] ?? '';
             if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
-                if (oes_starts_with($schemaLanguage, 'parent__'))
+                if (str_starts_with($schemaLanguage, 'parent__'))
                     $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($this->object_ID)) ?? 'language0';
                 else $language = oes_get_field($schemaLanguage, $this->object_ID) ?? 'language0';
             } else $language = oes_get_field('field_oes_post_language', $this->object_ID) ?? 'language0';
@@ -80,7 +80,7 @@ if (!class_exists('OES_Page')) {
         }
 
 
-        //Overwrite parent
+        /** @inheritdoc */
         public function prepare_html_main_classic(array $args = []): array
         {
             /* prepare title */

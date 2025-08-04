@@ -4,21 +4,95 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
 /**
- * Main function to get acf field values.
+ * Get an ACF field value from a post or term, resolving parent references if needed.
  *
- * @param string $fieldName The field name or key
- * @param mixed $postID The post_id of which the value is saved against
- * @param bool $formatValue Whether to apply formatting logic. Defaults to true.
+ * Supports both WP_Post and WP_Term objects (or their IDs) and handles
+ * ACF-style 'parent__field_name' for parent reference resolution.
  *
- * @return mixed Return field value.
+ * @param string $fieldName The ACF field name or key, optionally prefixed with 'parent__'.
+ * @param WP_Post|WP_Term|int $object The post or term object or ID the field is associated with.
+ * @param bool $formatValue Whether to apply ACF formatting. Defaults to true.
+ *
+ * @return mixed The ACF field value, or null if not found.
  */
-function oes_get_field(string $fieldName, $postID = false, bool $formatValue = true)
+function oes_get_field(string $fieldName, $object = false, bool $formatValue = true)
 {
-    if (oes_starts_with($fieldName, 'parent__')) {
-        $fieldName = substr($fieldName, 8);
-        $postID = oes_get_parent_id($postID);
+    if (!$object) return null;
+
+    [$resolvedID, $resolvedField, $isPost] = oes_resolve_field_context($object, $fieldName);
+    if (empty($resolvedID) || empty($resolvedField)) {
+        return null;
     }
-    return get_field($fieldName, $postID, $formatValue);
+
+    // For terms, we need to format the ID with taxonomy
+    if (!$isPost) {
+        $object = get_term($resolvedID);
+        if ($object instanceof WP_Term) {
+            $taxonomy = $object->taxonomy;
+            $resolvedID = "{$taxonomy}_{$resolvedID}";
+        }
+    }
+
+    return get_field($resolvedField, $resolvedID, $formatValue);
+}
+
+
+/**
+ * Retrieve a field value from a post or taxonomy term, with fallbacks and formatting.
+ *
+ *
+ * @param int|string $objectID Post ID or Term ID
+ * @param string $fieldKey The ACF field key or special identifier (e.g. 'display-title')
+ * @param array $args Additional arguments
+ *
+ * @return mixed The resolved value or empty string on failure.
+ */
+function oes_get_object_display_value($objectID, string $fieldKey, array $args = [])
+{
+    // Resolve object type (post vs term), and field key (handles parent__, etc.)
+    [$resolvedObjectID, $resolvedFieldKey, $isPost] = oes_resolve_field_context($objectID, $fieldKey);
+
+    // Handle Post object
+    if ($isPost) {
+        if ($resolvedFieldKey === 'display-title') {
+            return oes_get_display_title($resolvedObjectID);
+        } elseif ($resolvedFieldKey === 'wp-title') {
+            return get_the_title($resolvedObjectID);
+        } elseif (str_starts_with($resolvedFieldKey, 'taxonomy__') || str_starts_with($resolvedFieldKey, 'parent_taxonomy__')) {
+
+            // Prepare data
+            $isParent = str_starts_with($fieldKey, 'parent_');
+            if ($isParent) {
+                $resolvedObjectID = \OES\Versioning\get_parent_id($resolvedObjectID);
+                $resolvedTaxonomy = substr($fieldKey, 17);
+            } else {
+                $resolvedTaxonomy = substr($fieldKey, 10);
+            }
+
+            // Take first term
+            $terms = get_the_terms($resolvedObjectID, $resolvedTaxonomy);
+            if (!empty($terms)) {
+                return oes_get_display_title($terms[0]);
+            }
+            return '';
+        } else {
+            return oes_get_field_display_value($resolvedFieldKey, $resolvedObjectID, $args);
+        }
+    }
+
+    // Handle Term object
+    $term = get_term($resolvedObjectID);
+    if ($term && !is_wp_error($term)) {
+        if ($resolvedFieldKey === 'display-title') {
+            return oes_get_display_title($term);
+        } elseif ($resolvedFieldKey === 'wp-title') {
+            return $term->name;
+        } else {
+            return oes_get_field_display_value($resolvedFieldKey, 'term_' . $resolvedObjectID, $args);
+        }
+    }
+
+    return '';
 }
 
 
@@ -57,28 +131,29 @@ function oes_get_field_objects($postID = false): array
  */
 function oes_get_select_field_value(string $fieldName, $postID = false)
 {
-    /* get acf field value and label */
     $valueArray = oes_get_field_object($fieldName, $postID);
+    $fieldValue = oes_get_field($fieldName, $postID);
 
-    /* check if multiple value */
-    if (isset($valueArray['multiple']) && $valueArray['multiple']) {
+    // Multiple select
+    if (!empty($valueArray['multiple'])) {
         $returnValue = [];
 
-        /* loop through values */
-        foreach (oes_get_field($fieldName, $postID) as $singleValue) {
-            $returnValue[$singleValue] = $valueArray['choices'][$singleValue];
+        if (is_array($fieldValue)) {
+            foreach ($fieldValue as $singleValue) {
+                $returnValue[$singleValue] = $valueArray['choices'][$singleValue] ?? $singleValue;
+                $returnValue[$singleValue] = oes_get_translated_string($returnValue[$singleValue]);
+            }
         }
-    } /* single value */
-    else {
-        $returnValue =
-            (oes_get_field($fieldName, $postID) &&
-                is_string(oes_get_field($fieldName, $postID)) &&
-                isset($valueArray['choices'][oes_get_field($fieldName, $postID)])) ?
-                $valueArray['choices'][oes_get_field($fieldName, $postID)] :
-                '';
+
+        return $returnValue;
     }
 
-    return $returnValue;
+    // Single select
+    if (is_string($fieldValue) && isset($valueArray['choices'][$fieldValue])) {
+        return oes_get_translated_string($valueArray['choices'][$fieldValue]);
+    }
+
+    return '';
 }
 
 
@@ -218,6 +293,7 @@ function oes_get_field_display_value(string $fieldName, $postID, array $args = [
                 case 'file' :
                 case 'google_map' :
                 case 'image' :
+                case 'tab':
                     return ''; //@oesDevelopment
 
                 case 'repeater' :
@@ -513,4 +589,95 @@ function oes_get_object_select_options(
         $parentTaxonomyOptions);
 
     return $selects;
+}
+
+
+/**
+ * Resolves an ACF field key and its associated post or term ID, handling parent references.
+ *
+ * This utility supports ACF-style `parent__field_name` references, which indicate that
+ * the field should be retrieved from a parent post. It supports resolving for both posts and terms.
+ *
+ * @param WP_Post|WP_Term|int $object A WP_Post object, WP_Term object, or their respective IDs.
+ * @param string $fieldKey The ACF field key, possibly prefixed with 'parent__'.
+ * @param bool $isPost Whether the object refers to a post (true) or a term (false).
+ *                                       This is ignored if $object is an instance of WP_Post or WP_Term.
+ *
+ * @return array{0:int, 1:string, 2:bool} [resolved ID (post/term), resolved field key, isPost boolean].
+ *                                        Returns an empty array if resolution fails.
+ */
+function oes_resolve_field_context($object, string $fieldKey, bool $isPost = true): array
+{
+    $objectID = 0;
+
+    // Determine object ID and type if not passed as integer
+    if (!is_int($object) && !is_string($object)) {
+        if ($object instanceof WP_Post) {
+            $isPost = true;
+            $objectID = $object->ID;
+        } elseif ($object instanceof WP_Term) {
+            $isPost = false;
+            $objectID = $object->term_id;
+        }
+    } else {
+        $objectID = $object;
+    }
+
+    if (!$objectID) {
+        return [];
+    }
+
+    // Handle 'parent__' field reference
+    if (str_starts_with($fieldKey, 'parent__')) {
+        $objectID = \OES\Versioning\get_parent_id($objectID);
+        $fieldKey = substr($fieldKey, 8);
+    }
+
+    return [$objectID, $fieldKey, $isPost];
+}
+
+
+/**
+ * Resolves a taxonomy key and its associated post ID, handling parent references.
+ *
+ * This utility supports sting `parent_taxonomy__taxonomy_name` references, which indicate that
+ * the field should be retrieved from a parent post.
+ *
+ * @param WP_Post|int $object A WP_Post object or their respective IDs.
+ * @param string $taxonomyKey The taxonomy key, possibly prefixed with 'parent_taxonomy__' or 'taxonomy__'.
+ *
+ * @return array{0:int, 1:string} [resolved post ID, resolved taxonomy key].
+ *                                        Returns an empty array if resolution fails.
+ */
+function oes_resolve_taxonomy_context($object, string $taxonomyKey): array
+{
+    $objectID = 0;
+
+    // Determine object ID and type if not passed as integer
+    if (!is_int($object) && !is_string($object)) {
+        if ($object instanceof WP_Post) {
+            $objectID = $object->ID;
+        }
+    } else {
+        $objectID = $object;
+    }
+
+    if (!$objectID) {
+        return [];
+    }
+
+    // Handle 'parent_' reference
+    if (str_starts_with($taxonomyKey, 'parent_taxonomy__')) {
+        $objectID = \OES\Versioning\get_parent_id($objectID);
+        $taxonomyKey = substr($taxonomyKey, 7);
+    }
+
+    // Handle 'taxonomy__' reference
+    if(str_starts_with($taxonomyKey, 'taxonomy__')){
+        $taxonomyKey = substr($taxonomyKey, 10);
+    }
+
+    if(!taxonomy_exists($taxonomyKey)) $taxonomyKey = 'invalid';
+
+    return [$objectID, $taxonomyKey];
 }
