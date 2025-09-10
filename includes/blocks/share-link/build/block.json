@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/share-link",
+  "version": "0.1.0",
+  "title": "Share Link via Clipboard",
+  "category": "widgets",
+  "description": "Displays a 'Share Link' button that opens a popup to copy the current URL, including any applied filters.",
+  "keywords": [
+    "share",
+    "link",
+    "results"
+  ],
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true,
+      "gradients": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "attributes": {
+    "labels_trigger": {
+      "type": "object"
+    },
+    "labels_copy": {
+      "type": "object"
+    }
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php"
+}

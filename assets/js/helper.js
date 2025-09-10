@@ -1,0 +1,59 @@
+function oesJsonFilterToQuery(jsonString) {
+    try {
+        const filters = JSON.parse(jsonString);
+        const params = new URLSearchParams();
+
+        filters.forEach(filter => {
+            if (filter.type && Array.isArray(filter.ids) && filter.ids.length) {
+                const key = filter.type.startsWith('oes_') ? 'oesf_' + filter.type : filter.type;
+                params.set(key, filter.ids.join(','));
+            }
+        });
+
+        return params;
+    } catch (e) {
+        console.error("Invalid JSON filter:", e);
+        return new URLSearchParams();
+    }
+}
+
+function oesGetRedirectLink(additional = "") {
+
+    const currentUrl = new URL(window.location.href);
+    const cleanUrl = currentUrl.origin + currentUrl.pathname;
+    const params = new URLSearchParams();
+    const selectedFilter = localStorage.getItem('oesSelectedFilter');
+
+    if (selectedFilter) {
+        oesJsonFilterToQuery(selectedFilter).forEach((value, key) => {
+            params.set(key, value);
+        });
+    }
+
+    const searchTerm = currentUrl.searchParams.get("s");
+    if (searchTerm) {
+        params.set("s", searchTerm);
+    }
+
+    const view = currentUrl.searchParams.get("view");
+    if (view) {
+        params.set("view", view);
+    }
+
+    // Build
+    const queryString = params.toString();
+    return cleanUrl + additional + (queryString ? "?" + queryString : "");
+}
+
+function oesAdjustLocalPath(permalink) {
+    // Detect local environment
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+    if (!isLocal) return permalink;
+
+    const url = new URL(permalink, location.origin);
+    if (!url.pathname.startsWith('/oes')) {
+        url.pathname = '/oes' + url.pathname;
+    }
+    return url.toString();
+}
