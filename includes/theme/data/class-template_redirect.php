@@ -141,7 +141,7 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function set_archive_data(): void
         {
-            oes_set_archive_data();
+            $this->call_set_archive_data();
         }
 
         /**
@@ -211,7 +211,7 @@ if (!class_exists('OES_Template_Redirect')):
                     $archiveClass = 'OES_Index_Archive';
                 }
 
-                oes_set_archive_data($archiveClass);
+                $this->call_set_archive_data($archiveClass);
 
                 do_action('oes/redirect_template', 'prepare_index');
             }
@@ -253,7 +253,7 @@ if (!class_exists('OES_Template_Redirect')):
                         $archiveClass = 'OES_Taxonomy_Archive';
                     }
 
-                    oes_set_archive_data($archiveClass, ['taxonomy' => $taxonomyKey]);
+                    $this->call_set_archive_data($archiveClass, ['taxonomy' => $taxonomyKey]);
 
                     do_action('oes/redirect_template', 'prepare_taxonomies');
                 }
@@ -278,6 +278,19 @@ if (!class_exists('OES_Template_Redirect')):
                 $this->current_url = oes_get_current_url(false);
             }
             return $this->current_url;
+        }
+
+        /**
+         * Set archive parameters and data for post types and taxonomies.
+         *
+         * @param string $class The archive class.
+         * @param array $args Additional parameters.
+         *
+         * @return void
+         */
+        protected function call_set_archive_data(string $class = '', array $args = []): void
+        {
+            oes_set_archive_data($class, $args);
         }
 
         /**

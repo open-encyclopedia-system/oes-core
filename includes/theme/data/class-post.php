@@ -91,12 +91,7 @@ if (!class_exists('OES_Post')) {
             if (sizeof($oes->languages) < 2 || empty($this->post_type)) return 'language0';
 
             /* check if language is defined by schema */
-            $schemaLanguage = $oes->post_types[$this->post_type]['language'] ?? '';
-            if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
-                if (str_starts_with($schemaLanguage, 'parent__'))
-                    $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($this->object_ID)) ?? 'language0';
-                else $language = oes_get_field($schemaLanguage, $this->object_ID) ?? 'language0';
-            } else $language = oes_get_field('field_oes_post_language', $this->object_ID) ?? 'language0';
+            $language = oes_get_post_language($this->object_ID, $this->post_type);
 
             /* if called in admin set global language */
             if (empty($language) && empty($oes_language)) $language = 'language0';
@@ -165,7 +160,18 @@ if (!class_exists('OES_Post')) {
          */
         public function set_fields()
         {
-            $fields = OES()->post_types[$this->post_type]['field_options'] ?? [];
+            global $oes;
+
+            $fields = [];
+            if(!$this->skip_single_processing){
+                $fields = $oes->post_types[$this->post_type]['field_options'] ?? [];
+            }
+            else {
+                foreach ($oes->post_types[$this->post_type]['archive'] ?? [] as $fieldKey){
+                    $fields[$fieldKey] = $oes->post_types[$this->post_type]['field_options'][$fieldKey] ?? [];
+                }
+            }
+
             foreach ($fields as $fieldKey => $field) $this->set_single_field($fieldKey, $field);
         }
 

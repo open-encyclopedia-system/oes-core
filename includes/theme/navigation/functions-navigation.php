@@ -27,6 +27,10 @@ function redirect_page(array $templates): array
             'single-index'
         ], true)) {
         array_splice($templates, 2, 0, [$oes_post->schema_type]);
+
+        if (!empty($oes_language) && $oes_language !== 'language0' && !empty($templates)) {
+            array_splice($templates, 2, 0, [$oes_post->schema_type . '_' . $oes_language]);
+        }
     }
     elseif (!empty($oes_is_index_page)) {
         array_unshift($templates, 'archive-index');

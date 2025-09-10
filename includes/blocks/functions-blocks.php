@@ -66,6 +66,7 @@ function register(): void
         'print-page-break',
         'search-panel',
         'search-terms',
+        'share-link',
         'table-of-contents',
         'terms',
         'translation',

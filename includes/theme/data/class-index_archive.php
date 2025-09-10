@@ -34,6 +34,7 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
             /* set index key and objects */
             $this->index_key = $oes_is_index;
             $objects = $oes->theme_index_pages[$this->index_key]['objects'] ?? [];
+            $this->is_index = $this->index_key;
 
 
             /**

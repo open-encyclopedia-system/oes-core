@@ -791,10 +791,15 @@ function oes_get_post_language($postID, $postType = null): string
     /* check if language is defined by schema */
     $schemaLanguage = $oes->post_types[$postType]['language'] ?? '';
     if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
-        if (str_starts_with($schemaLanguage, 'parent__'))
+        if (str_starts_with($schemaLanguage, 'parent__')) {
             $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($postID)) ?? 'language0';
-        else $language = oes_get_field($schemaLanguage, $postID) ?? 'language0';
-    } else $language = oes_get_field('field_oes_post_language', $postID) ?? 'language0';
+        }
+        else {
+            $language = oes_get_field($schemaLanguage, $postID) ?? 'language0';
+        }
+    } else {
+        $language = get_post_meta($postID, 'field_oes_post_language', true);
+    }
     return empty($language) ? 'all' : $language;
 }
 

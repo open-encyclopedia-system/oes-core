@@ -78,8 +78,11 @@ if (!class_exists('OES_Filter_Renderer')) {
 
             // Filter the entire list
             $listItems = apply_filters('oes/filter_html_items_array', $listItems);
-
             $script = $this->prepare_script();
+
+            if(empty($listItems)){
+                return $script; // return for alphabet filter
+            }
 
             return $script . '<ul class="oes-filter-list-container oes-vertical-list">' . implode('', $listItems) . '</ul>';
         }
@@ -244,9 +247,9 @@ if (!class_exists('OES_Filter_Renderer')) {
          */
         protected function prepare_script(): string
         {
-            $script = '<script type="text/javascript">';
+            $script = '<div><script type="text/javascript">';
             $script .= 'let oes_filter = ' . json_encode($this->filter['json'] ?? []) . ';';
-            $script .= '</script>';
+            $script .= '</script></div>';
             return $script;
         }
     }

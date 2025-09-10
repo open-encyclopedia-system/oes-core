@@ -773,6 +773,12 @@ table.oes-config-table {
     }
   }
 
+  td.check-column {
+    input {
+      margin: 0 0 0 8px;
+    }
+  }
+
   .oes-dashicons {
     font-size: 1.5rem;
   }

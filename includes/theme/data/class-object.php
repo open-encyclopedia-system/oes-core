@@ -56,6 +56,9 @@ if (!class_exists('OES_Object')) {
         /** @var string|bool $additional_archive_data Additional data to be displayed in the archive. */
         public $additional_archive_data = false;
 
+        /** @var bool Skip the single processing */
+        public bool $skip_single_processing = false;
+
 
         /**
          * OES_Object constructor.
@@ -68,6 +71,7 @@ if (!class_exists('OES_Object')) {
         {
             $this->block_theme = OES()->block_theme;
             $this->set_object_id($objectID);
+            $this->set_skip_parameter($args['skip'] ?? false);
             $this->set_parameters();
             $this->set_additional_parameters($args);
             $this->after_construct();
@@ -83,6 +87,18 @@ if (!class_exists('OES_Object')) {
         public function set_object_id(int $objectID): void
         {
             $this->object_ID = $objectID;
+        }
+
+
+        /**
+         * Set skip parameter
+         *
+         * @param bool $skip Skip boolean.
+         * @return void
+         */
+        public function set_skip_parameter(bool $skip): void
+        {
+            $this->skip_single_processing = $skip;
         }
 
 
@@ -691,7 +707,7 @@ if (!class_exists('OES_Object')) {
                 $postType = get_post_type($postID);
                 $oesPost = class_exists($postType) ?
                     new $postType($postID) :
-                    new OES_Post($postID);
+                    new OES_Post($postID, '', ['skip' => true]);
                 return $oesPost->get_archive_data();
             } else return [];
         }

@@ -89,7 +89,7 @@ function add_page_scripts(string $hook): void
     $file = '/includes/admin/pages/js/';
     wp_register_script(
         'oes-admin_page',
-        plugins_url(OES_BASENAME . $file . 'page.min.js'),
+        plugins_url(OES_BASENAME . $file . 'page' . oes_minify() . '.js'),
         ['jquery'],
         false,
         true);
@@ -100,7 +100,7 @@ function add_page_scripts(string $hook): void
     );
     wp_enqueue_script('oes-admin_page');
 
-    $file .= str_replace('-', '_', $hook) . '.min.js';
+    $file .= str_replace('-', '_', $hook) . oes_minify() . '.js';
     if (file_exists(oes_get_path($file, OES_CORE_PLUGIN))) {
         wp_register_script(
             'oes-admin_' . $hook,
@@ -146,50 +146,20 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['040_writing'] = [
+    $adminMenuPages['050_project'] = [
         'subpage' => true,
         'page_parameters' => [
-            'page_title' => 'Writing',
-            'menu_title' => 'Writing',
-            'menu_slug' => 'oes_settings_writing',
-            'position' => 20,
+            'page_title' => 'Project',
+            'menu_title' => 'Project',
+            'menu_slug' => 'oes_general_project',
+            'position' => 90,
             'parent_slug' => 'oes_settings'
         ],
-        'tabs' => [
-            'admin-columns' => 'Columns',
-            'admin-container' => 'Container'
-        ],
+        'tool' => 'project',
         'is_core_page' => true
     ];
 
-    //prepare reading tabs
-    $readingTabs = [
-        'theme-languages' => __('Languages', 'oes'),
-        'theme-index-pages' => __('Index', 'oes'),
-        'theme-search' => __('Search', 'oes'),
-        'theme-date' => __('Date Format', 'oes'),
-        'theme-media' => __('Media', 'oes')
-    ];
-
-    if(!$oes->block_theme){
-        $readingTabs['theme-colors'] = __('Colors', 'oes');
-        $readingTabs['theme-logos'] = __('Logos', 'oes');
-    }
-
-    $adminMenuPages['050_reading'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Reading',
-            'menu_title' => 'Reading',
-            'menu_slug' => 'oes_settings_reading',
-            'position' => 30,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => $readingTabs,
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['051_schema'] = [
+    $adminMenuPages['050_schema'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Schema',
@@ -202,7 +172,77 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['052_labels'] = [
+    $visibilityTabs = [
+        'admin-columns' => 'Columns',
+        'admin-container' => 'Container'
+    ];
+
+    if (function_exists('\OES\Rights\user_is_oes_admin') &&
+        \OES\Rights\user_is_oes_admin()) {
+
+        $visibilityTabs['admin-features'] = 'Features';
+        $visibilityTabs['admin'] = 'Admin';
+    }
+
+    $adminMenuPages['050_visibility'] = [
+        'subpage' => true,
+        'page_parameters' => [
+            'page_title' => 'Visibility',
+            'menu_title' => 'Visibility',
+            'menu_slug' => 'oes_visibility',
+            'parent_slug' => 'oes_settings',
+            'position' => 80
+        ],
+        'tabs' => $visibilityTabs,
+        'is_core_page' => true
+    ];
+
+    $lodTabs = [];
+    foreach ($oes->apis ?? [] as $apiKey => $apiData) {
+        $lodTabs[$apiKey] = $apiData->label;
+    }
+
+    $adminMenuPages['050_lod'] = [
+        'subpage' => true,
+        'page_parameters' => [
+            'page_title' => 'Linked Open Data',
+            'menu_title' => 'Linked Open Data',
+            'menu_slug' => 'oes_settings_lod',
+            'position' => 60,
+            'parent_slug' => 'oes_settings'
+        ],
+        'tabs' => $lodTabs,
+        'is_core_page' => true
+    ];
+
+    $readingTabs = [
+        'theme-date' => 'Date Format',
+        'theme-index-pages' => 'Index',
+        'theme-languages' => 'Languages',
+        'theme-media' => 'Media',
+        'theme-search' => 'Search'
+    ];
+
+    if (!$oes->block_theme) {
+        $readingTabs['theme-colors'] = 'Colors';
+        $readingTabs['theme-logos'] = 'Logos';
+        ksort($readingTabs);
+    }
+
+    $adminMenuPages['050_reading'] = [
+        'subpage' => true,
+        'page_parameters' => [
+            'page_title' => 'Reading & Display',
+            'menu_title' => 'Reading & Display',
+            'menu_slug' => 'oes_settings_reading',
+            'position' => 30,
+            'parent_slug' => 'oes_settings'
+        ],
+        'tabs' => $readingTabs,
+        'is_core_page' => true
+    ];
+
+    $adminMenuPages['050_labels'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Labels',
@@ -216,38 +256,6 @@ function initialize_admin_menu_pages(): void
             'theme-labels-media' => 'Media',
             'theme-labels-objects' => 'Objects'
         ],
-        'is_core_page' => true
-    ];
-
-    // prepare lod tabs
-    $lodTabs = [];
-    foreach($oes->apis ?? [] as $apiKey => $apiData) {
-        $lodTabs[$apiKey] = $apiData->label;
-    }
-
-    $adminMenuPages['070_lod'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Linked Open Data',
-            'menu_title' => 'Linked Open Data',
-            'menu_slug' => 'oes_settings_lod',
-            'position' => 60,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => $lodTabs,
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['090_project'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Project',
-            'menu_title' => 'Project',
-            'menu_slug' => 'oes_settings_project',
-            'position' => 90,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tool' => 'project',
         'is_core_page' => true
     ];
 
@@ -273,7 +281,7 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['225_tools_data_model'] = [
+    $adminMenuPages['230_tools_data_model'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Data Model',
@@ -286,7 +294,7 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['227_tools_cache'] = [
+    $adminMenuPages['230_tools_cache'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Cache',
@@ -312,7 +320,7 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['240_tools_export'] = [
+    $adminMenuPages['230_tools_export'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Export',
@@ -325,7 +333,7 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['250_tools_operations'] = [
+    $adminMenuPages['230_tools_operations'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Operations',
@@ -338,7 +346,7 @@ function initialize_admin_menu_pages(): void
         'is_core_page' => true
     ];
 
-    $adminMenuPages['260_tools_batch'] = [
+    $adminMenuPages['230_tools_batch'] = [
         'subpage' => true,
         'page_parameters' => [
             'page_title' => 'Batch',
@@ -348,25 +356,6 @@ function initialize_admin_menu_pages(): void
             'position' => 80
         ],
         'tool' => 'batch',
-        'is_core_page' => true
-    ];
-
-
-
-    if (function_exists('\OES\Rights\user_is_oes_admin') &&
-        \OES\Rights\user_is_oes_admin()) $adminMenuPages['100_admin'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Admin',
-            'menu_title' => 'Admin',
-            'menu_slug' => 'oes_admin',
-            'position' => 99,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => [
-            'admin-features' => 'Features',
-            'admin' => 'Visibility',
-        ],
         'is_core_page' => true
     ];
 
@@ -382,8 +371,7 @@ function initialize_admin_menu_pages(): void
     foreach ($adminMenuPages as $adminMenuPage) {
         if (isset($adminMenuPage['subpage']) || isset($adminMenuPage['sub_page'])) {
             new Subpage($adminMenuPage);
-        }
-        else {
+        } else {
             new Page($adminMenuPage);
         }
     }

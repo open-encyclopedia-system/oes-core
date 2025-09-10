@@ -1,562 +1,500 @@
-(function (oesFilter, $, undefined) {
+(function (oesFilter, $) {
 
-    let current_filter_post_ids = [];
-    let selected_filter = [];
+    let currentFilterPostIDs = [];
+    let selectedFilter = [];
+    let filteredIDs = new Set();
 
+    /** Set the OES filter variable if not defined. */
+    function setFilterVariable() {
+        if (typeof oes_filter == 'undefined') oes_filter = [];
+    }
 
-    /**
-     * Check for existing filter in URL when loading archive page.
-     */
-    oesFilter.filterFromURL = function () {
-        if (typeof oes_filter !== 'undefined') {
-            const urlSearchParams = new URLSearchParams(window.location.search),
-                params = Object.fromEntries(urlSearchParams.entries());
-            let filtered = false;
-            for (const k in params) {
-                const values = params[k].split(',');
-                for (let i = 0; i < values.length; i++) {
-                    let filterName = k;
-                    if (k.substring(0, 5) === 'oesf_') filterName = k.substring(5);
-                    if (oes_filter.hasOwnProperty(filterName)) {
-                        oesFilter.apply(values[i], filterName);
-                        filtered = true;
+    function getAllIds() {
+        const ids = new Set();
+
+        $(".oes-post-filter-wrapper").each(function () {
+            this.className.split(/\s+/).forEach(cls => {
+                if (cls.startsWith("oes-post-filter-")) {
+                    const id = parseInt(cls.replace("oes-post-filter-", ""), 10);
+                    if (!isNaN(id)) ids.add(id);
+                }
+            });
+        });
+
+        return ids;
+    }
+
+    function getFacetFilteredIds() {
+        const types = Object.keys(currentFilterPostIDs);
+        if (!types.length) return null;
+
+        let ids = new Set(currentFilterPostIDs[types[0]]);
+        for (let i = 1; i < types.length; i++) {
+            ids = intersectSets(ids, new Set(currentFilterPostIDs[types[i]]));
+        }
+        return ids;
+    }
+
+    function getRangeFilteredIds() {
+        const sliders = document.querySelectorAll('.oes-range-slider');
+        if (!sliders.length) return null;
+
+        let ids = new Set();
+        sliders.forEach(slider => {
+            const [min, max] = slider.value.split(';').map(Number);
+            const startMap = oes_filter[slider.dataset.start] || {};
+            const stopMap  = oes_filter[slider.dataset.end]   || {};
+
+            for (const [val, arr] of Object.entries(startMap)) {
+                const n = parseFloat(val);
+                if (n >= min && n <= max) arr.forEach(id => ids.add(id));
+            }
+            for (const [val, arr] of Object.entries(stopMap)) {
+                const n = parseFloat(val);
+                if (n >= min && n <= max) arr.forEach(id => ids.add(id));
+            }
+        });
+        return ids.size ? ids : null;
+    }
+
+    function getAlphabetFilteredIds() {
+        const active = document.querySelector(".oes-filter-abc.active");
+        if (!active || active.dataset.filter === "all") return null;
+
+        return new Set(
+            $(".oes-archive-wrapper[data-alphabet='" + active.dataset.filter + "'] .oes-post-filter-wrapper")
+                .map(function () {
+                    return parseInt(this.dataset.post);
+                })
+                .get()
+        );
+    }
+
+    function getPostTypeFilteredIds() {
+        const active = document.querySelector(".oes-filter-post-type.active");
+        if (!active || active.dataset.filter === "all") return null;
+
+        return new Set(
+            $(".oes-post-type-filter-" + active.dataset.filter + " .oes-post-filter-wrapper")
+                .map(function () {
+                    return parseInt(this.dataset.post);
+                })
+                .get()
+        );
+    }
+
+    function updateVisibility(visibleIds) {
+        const $wrappers = $(".oes-archive-wrapper");
+        const $posts = $(".oes-post-filter-wrapper");
+
+        $wrappers.show();
+
+        $posts.each(function () {
+            const classes = this.className.split(/\s+/);
+            let isVisible = false;
+
+            for (const cls of classes) {
+                if (cls.startsWith("oes-post-filter-")) {
+                    const id = parseInt(cls.replace("oes-post-filter-", ""), 10);
+                    if (!isNaN(id) && visibleIds.has(id)) {
+                        isVisible = true;
+                        break;
                     }
                 }
             }
 
-            if (!filtered) init();
-        }
+            $(this).toggle(isVisible);
+        });
+
+        $wrappers.each(function () {
+            const $wrapper = $(this);
+            const hasVisiblePosts = $wrapper.find(".oes-post-filter-wrapper:visible").length > 0;
+            $wrapper.toggle(hasVisiblePosts);
+
+            const alphabetFilter = $('.oes-filter-abc[data-filter="' + this.dataset.alphabet + '"]');
+            if (!hasVisiblePosts) {
+                alphabetFilter.addClass("inactive");
+            } else {
+                alphabetFilter.removeClass("inactive");
+            }
+        });
     }
 
+    function intersectSets(a, b) {
+        if (!a && !b) return new Set();
+        if (!a) return b;
+        if (!b) return a;
 
-    /**
-     * Apply the filter to archive list.
-     */
+        const res = new Set();
+        a.forEach(x => { if (b.has(x)) res.add(x); });
+        return res;
+    }
+
+    function updateFilterCount() {
+
+        const allWrappers = $('.oes-archive-wrapper');
+
+        let amount = 0;
+        if (allWrappers.length > 0) {
+            amount = $(".oes-post-filter-wrapper:visible").length;
+        }
+        else if(filteredIDs instanceof Set) {
+            amount = filteredIDs.size;
+        }
+
+        $(".oes-archive-count-number").text(amount);
+        $(".oes-archive-container-no-entries").toggle(amount === 0);
+        $(".oes-archive-count-label-singular").toggle(amount === 1);
+        $(".oes-archive-count-label-plural").toggle(amount !== 1);
+    }
+
+    function updateFacetFilterCount() {
+        setFilterVariable();
+
+        const $facetFilters = $('.oes-archive-filter');
+        const allWrappers = $('.oes-archive-wrapper');
+        const activeTypes = Object.keys(oes_filter).filter(
+            type => $('#trigger_' + type).hasClass('active')
+        );
+
+        let visibleIds = new Set();
+        const safeFilteredIds = filteredIDs instanceof Set ? filteredIDs : new Set();
+
+        if (allWrappers.length > 0) {
+            safeFilteredIds.forEach(id => {
+                if ($(".oes-post-filter-" + id + ":visible").length > 0) {
+                    visibleIds.add(id);
+                }
+            });
+        } else {
+            visibleIds = safeFilteredIds;
+        }
+
+        // Update each filter
+        $facetFilters.each(function () {
+            const $filter = $(this);
+            const $countElem = $filter.children('.oes-filter-item-count');
+            const type = $filter.data('type');
+            const filter = $filter.data('filter');
+
+            // Active filter → mark as (-)
+            if ($filter.hasClass('active')) {
+                if ($countElem.length) $countElem.text('(-)');
+                return;
+            }
+
+            // Type already selected → show (+)
+            if (activeTypes.includes(type)) {
+                if ($countElem.length) $countElem.text('(+)');
+                $filter.parent().removeClass('inactive').show();
+                return;
+            }
+
+            // IDs for this filter
+            const thisIds = (oes_filter[type] && Array.isArray(oes_filter[type][filter]))
+                ? oes_filter[type][filter]
+                : [];
+
+            // Intersection with *currently visible* items
+            const newCount = thisIds.reduce(
+                (count, id) => count + (visibleIds.has(id) ? 1 : 0),
+                0
+            );
+
+            // Update count + inactive state
+            if ($countElem.length) $countElem.text(`(${newCount})`);
+            $filter.parent().toggleClass('inactive', newCount === 0);
+        });
+    }
+
+    function updateLocalStorage(visibleIds) {
+
+        localStorage.setItem('oesSearchResultsURL', window.location.href);
+        localStorage.setItem('oesDisplayedIds', JSON.stringify([...visibleIds]));
+
+        let selectedFilterStore = [];
+        let i = 0;
+        for (const [type, ids] of Object.entries(selectedFilter)) {
+            selectedFilterStore[i] = {};
+            selectedFilterStore[i]['type'] = type;
+            selectedFilterStore[i]['ids'] = ids;
+            i++;
+        }
+
+        localStorage.setItem('oesSelectedFilter', JSON.stringify(selectedFilterStore));
+    }
+
+    /** Initialize filter. */
+    oesFilter.init = function () {
+
+        if (typeof oes_filter === 'undefined') return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlParams.entries());
+        const resetFilters = params.oesf_reset === 'true';
+        const storedFilters = localStorage.getItem("oesSelectedFilter");
+        let parsedFilters = null;
+
+        // Prioritize stored filter over url filter
+        if (!resetFilters && storedFilters && storedFilters !== "[]") {
+            try {
+                parsedFilters = JSON.parse(storedFilters);
+            } catch (e) {
+                console.warn("Failed to parse saved filters from localStorage", e);
+                parsedFilters = null;
+            }
+        }
+        else {
+            parsedFilters = [];
+
+            Object.entries(params).forEach(([key, value]) => {
+                const filterName = key.startsWith('oesf_') ? key.slice(5) : key;
+
+                if (oes_filter.hasOwnProperty(filterName)) {
+                    const ids = value.includes(',') ? value.split(',') : [value];
+                    parsedFilters.push({
+                        type: filterName,
+                        ids: ids
+                    });
+                }
+            });
+        }
+
+        if (Array.isArray(parsedFilters) && parsedFilters.length > 0) {
+            parsedFilters.forEach(f => {
+                const type = f.type;
+                const ids = Array.isArray(f.ids) ? f.ids : [];
+                if (oes_filter.hasOwnProperty(type)) {
+                    ids.forEach(id => oesFilter.apply(id, type));
+                }
+            });
+        } else {
+            oesFilter.applyAll();
+        }
+    };
+
+    /** Apply the filters to archive list. */
     oesFilter.applyAll = function () {
-        if (typeof oes_filter !== 'undefined') {
+        if (typeof oes_filter == 'undefined') return;
 
-            document.dispatchEvent(new CustomEvent('oes-filter-processing-started'));
+        document.dispatchEvent(new CustomEvent('oes-filter-processing-started'));
 
-            showWrappers();
-            applyFacetFilter();
-            applyRangeFilter();
-            applyAlphabetFilter();
-            updateWrapperVisibility();
-            updateFacetFilterCount();
-            updateFilterCount();
-            updateLocalStorage();
+        const facetIds    = getFacetFilteredIds();
+        const rangeIds    = getRangeFilteredIds();
+        const alphabetIds = getAlphabetFilteredIds();
+        const typeIds     = getPostTypeFilteredIds();
 
-            document.dispatchEvent(new CustomEvent('oes-filter-processed'));
+        filteredIDs = null;
+        if (facetIds instanceof Set) filteredIDs = facetIds;
+        if (rangeIds instanceof Set) filteredIDs = intersectSets(filteredIDs, rangeIds);
+        if (alphabetIds instanceof Set) filteredIDs = intersectSets(filteredIDs, alphabetIds);
+        if (typeIds instanceof Set) filteredIDs = intersectSets(filteredIDs, typeIds);
+
+        // Restrict to actual IDs in the DOM if existing
+        const wrappersExist = document.querySelector('.oes-post-filter-wrapper');
+
+        if (wrappersExist) {
+            if (!filteredIDs) {
+                filteredIDs = getAllIds();
+            } else {
+                filteredIDs = intersectSets(filteredIDs, getAllIds());
+            }
         }
-    }
 
+        const visibleIds = filteredIDs;
 
-    /**
-     * Toggle filter
-     */
-    oesFilter.apply = function (filter, type) {
-        if ($(".oes-archive-filter-" + type + "-" + filter).hasClass("active")) oesFilter.remove(filter, type);
-        else oesFilter.add(filter, type)
+        updateVisibility(visibleIds);
+        updateFacetFilterCount(visibleIds);
+        updateFilterCount();
+        updateLocalStorage(visibleIds);
+
+        document.dispatchEvent(new CustomEvent('oes-filter-processed', {
+            detail: { currentFilterPostIDs, filteredIDs}
+        }));
+    };
+
+    /** Toggle a filter */
+    oesFilter.apply = function (filter, type, $el) {
+        const $filterEl = $el || $(`.oes-archive-filter[data-type="${type}"][data-filter="${filter}"]`);
+        $filterEl.hasClass("active")
+            ? oesFilter.remove(filter, type)
+            : oesFilter.add(filter, type, $filterEl);
 
         oesFilter.applyAll();
-    }
+    };
 
+    /** Toggle child filter */
+    oesFilter.setState = function (filter, type, active) {
+        const $filterEl = $(`.oes-archive-filter[data-type="${type}"][data-filter="${filter}"]`);
+        if (active && !$filterEl.hasClass("active")) {
+            oesFilter.add(filter, type, $filterEl);
+        } else if (!active && $filterEl.hasClass("active")) {
+            oesFilter.remove(filter, type);
+        }
+        oesFilter.applyAll();
+    };
 
-    /**
-     * Add a facet filter
-     */
-    oesFilter.add = function (filter, type) {
+    /** Add a facet filter */
+    oesFilter.add = function (filter, type, $el) {
 
-        /* add filter to active list */
-        const filter_item = $(".oes-archive-filter-" + type + "-" + filter);
-        $(".oes-active-filter-" + type).append('<li><a class="oes-active-filter-item oes-active-filter-item-' + filter +
-            '" href="javascript:void(0)" data-filter="' + filter + '"' +
-            ' onClick=oesFilter.removeActiveFilter(\'' + filter + '\',\'' + type + '\')><span>' +
-            filter_item[0].childNodes[0].childNodes[0].data + '</span></a></li>');
-
-        /* prepare matching array (perform "OR" operation) */
-        if (!current_filter_post_ids[type]) {
-            current_filter_post_ids[type] = oes_filter[type][filter];
-        } else {
-            current_filter_post_ids[type] = current_filter_post_ids[type].concat(oes_filter[type][filter]);
+        const filterItem = $el || $(`.oes-archive-filter[data-type="${type}"][data-filter="${filter}"]`);
+        if (!filterItem.length) {
+            return;
         }
 
-        /* mark item */
-        filter_item.toggleClass("active");
+        const filterText = filterItem.find('span').not('.oes-filter-item-count').first().text().trim();
 
-        /* mark in list */
+        const activeFilterHTML = `
+        <li>
+            <a class="oes-active-filter-item" href="#" data-filter="${filter}" data-type="${type}">
+                <span>${filterText}</span>
+            </a>
+        </li>`;
+        $(".oes-active-filter-" + type).append(activeFilterHTML);
+
+        const ids = oes_filter[type] && oes_filter[type][filter]
+            ? (Array.isArray(oes_filter[type][filter])
+                ? oes_filter[type][filter]
+                : [oes_filter[type][filter]])
+            : [];
+
+        if (!currentFilterPostIDs[type]) {
+            currentFilterPostIDs[type] = [...ids];
+        } else {
+            currentFilterPostIDs[type] = currentFilterPostIDs[type].concat(ids);
+        }
+
+        filterItem.addClass("active");
+
         const list = $("#oes-filter-component-" + type).parent();
-        if (!list.hasClass("active")) list.toggleClass("active");
+        list.addClass("active");
 
-        /* store selected filter */
-        if (type in selected_filter) {
-            if (!selected_filter[type].includes(filter)) selected_filter[type].push(filter);
-        } else selected_filter[type] = [filter];
+        if (selectedFilter[type]) {
+            if (!selectedFilter[type].includes(filter)) {
+                selectedFilter[type].push(filter);
+            }
+        } else {
+            selectedFilter[type] = [filter];
+        }
     }
 
-
-    /**
-     * Remove an active facet filter
-     */
-    oesFilter.removeActiveFilter = function (filter, type){
+    /** Remove an active facet filter */
+    oesFilter.removeActiveFilter = function (filter, type) {
         oesFilter.remove(filter, type);
         oesFilter.applyAll();
     }
 
-
-    /**
-     * Remove a facet filter
-     */
+    /** Remove a facet filter */
     oesFilter.remove = function (filter, type) {
 
-        /* remove active filter item */
-        $(".oes-active-filter-item-" + filter).parent().remove();
+        $(`.oes-active-filter-item[data-filter="${filter}"]`).parent().remove();
+        $(`.oes-archive-filter[data-type="${type}"][data-filter="${filter}"]`).removeClass("active");
 
-        /* mark in filter item */
-        $(".oes-archive-filter-" + type + "-" + filter).toggleClass("active");
+        // deactivate list if no active filters left for this type
+        if (!$(`#oes-filter-component-${type} .oes-archive-filter.active`).length) {
+            $(`#oes-filter-component-${type}`).parent().removeClass("active");
+        }
 
-        /* mark in list if last filter */
-        if (!$("#oes-filter-component-" + type + ' .oes-archive-filter.active').length)
-            $("#oes-filter-component-" + type).parent().toggleClass("active");
+        const activeFilters = $(`.oes-archive-filter[data-type="${type}"].active`);
+        if (activeFilters.length) {
+            let updatedPostIds = [];
+            activeFilters.each(function () {
+                const filterId = this.dataset.filter;
+                updatedPostIds = updatedPostIds.concat(oes_filter[type][filterId]);
+            });
+            currentFilterPostIDs[type] = updatedPostIds;
+        } else {
+            delete currentFilterPostIDs[type];
+        }
 
-        /* check if this is the last filter */
+        if (selectedFilter[type]) {
+            const index = selectedFilter[type].indexOf(filter);
+            if (index > -1) {
+                selectedFilter[type].splice(index, 1);
+                if (!selectedFilter[type].length) {
+                    delete selectedFilter[type];
+                }
+            }
+        }
+
+        // if no filters at all, reset currentFilterPostIDs completely
         if ($('.oes-archive-filter.active').length === 0) {
-            current_filter_post_ids = [];
-        } else {
-
-            /* remove data from current post_ids */
-            if (current_filter_post_ids.hasOwnProperty(type)) {
-
-                /* redo current post ids for this type :( (no easier way...? @oesDevelopment ) */
-                let update_post_ids = [];
-                const active_filter = $('.oes-archive-filter[data-type="' + type + '"].active');
-
-                for (let filter_item of active_filter) {
-                    let update_post_ids_temp = update_post_ids,
-                        filter_id = filter_item.dataset.filter;
-                    update_post_ids = update_post_ids_temp.concat(oes_filter[type][filter_id]);
-                }
-
-                if (update_post_ids.length !== 0) {
-                    current_filter_post_ids[type] = update_post_ids;
-                } else {
-                    delete current_filter_post_ids[type];
-                }
-            }
+            currentFilterPostIDs = [];
         }
+    };
 
-        /* store selected filter */
-        if (type in selected_filter) {
-            if (selected_filter[type].includes(filter)) {
-                if (selected_filter[type].length < 2) {
-                    delete selected_filter[type];
-                } else {
-                    const index = selected_filter[type].indexOf(filter);
-                    if (index > -1) {
-                        let temp_selected_filter = selected_filter[type];
-                        temp_selected_filter.splice(index, 1);
-                        selected_filter[type] = temp_selected_filter;
-                    }
-                }
-            }
-        }
-    }
-
-
-    /**
-     * apply an alphabet filter
-     */
+    /** Apply an alphabet filter */
     oesFilter.applyAlphabet = function (el) {
+        const alphabetFilters = document.querySelectorAll(".oes-filter-abc");
+        alphabetFilters.forEach(f => {
+            f.classList.remove("active");
+            f.parentElement.classList.remove("active");
+        });
 
-        /* only apply if not disabled (should not be possible but better safe...) */
-        if (!el.classList.contains('inactive')) {
-
-            /* update active filter */
-            const alphabet_filter = $(".oes-filter-abc"),
-                alphabet_filter_parent = alphabet_filter.parent();
-            alphabet_filter.removeClass("active");
-            alphabet_filter_parent.removeClass("active");
-            el.classList.toggle("active");
-            $(el).parent().toggleClass("active");
-        }
-
+        el.classList.add("active");
+        el.parentElement.classList.add("active");
         oesFilter.applyAll();
-    }
+    };
 
-
-    /**
-     * apply post type filter (e.g. used in search)
-     */
+    /** Apply post type filter (e.g. used in search) */
     oesFilter.applyPostTypes = function (filter) {
+        const countEl = document.querySelector(".oes-archive-count-number");
+        const results = document.querySelectorAll(".oes-post-type-filter");
 
-        const count = $(".oes-archive-count-number"),
-            results = $(".oes-post-type-filter");
-        let amount;
-
-        if (filter === 'all') {
-            results.show();
-            amount = results.length;
+        if (filter === "all") {
+            results.forEach(r => r.style.display = "");
         } else {
+            results.forEach(r => r.style.display = "none");
 
-            /* hide all except filtered container */
-            results.hide();
+            // Close open accordions
+            document.querySelectorAll(".oes-search-data-row.show")
+                .forEach(row => row.classList.remove("show"));
+            document.querySelectorAll(".oes-archive-plus")
+                .forEach(btn => btn.setAttribute("aria-expanded", "false"));
 
-            /* hide open accordions */
-            $(".oes-search-data-row.show").toggleClass("show");
-            $(".oes-archive-plus").attr("aria-expanded", "false");
-
-            /* show filtered */
-            $(".oes-post-type-filter-" + filter).show();
-            amount = $(".oes-post-type-filter:visible").length;
+            const filtered = document.querySelectorAll(".oes-post-type-filter-" + filter);
+            filtered.forEach(r => r.style.display = "");
         }
 
-        /* update count */
-        if (count[0]) updateFilterCount(count[0], amount);
+        if (countEl) updateFilterCount();
 
-        /* update active filter */
-        $(".oes-filter-post-type").removeClass("active");
-        $(".oes-filter-post-type-" + filter).addClass("active");
-    }
+        document.querySelectorAll(".oes-filter-post-type")
+            .forEach(f => f.classList.remove("active"));
+        const activeFilter = document.querySelector(".oes-filter-post-type-" + filter);
+        if (activeFilter) activeFilter.classList.add("active");
+    };
 
-
-    /**
-     * Update the count.
-     */
-    oesFilter.updateCount = function(){
+    /** Update the count. */
+    oesFilter.updateCount = function () {
         updateFilterCount();
     }
 
+    $(".oes-filter-list-container").on("click", ".oes-archive-filter", function (e) {
+        e.preventDefault();
 
-    /**
-     * Set the OES filter variable if not defined.
-     */
-    function setFilterVariable() {
-        if(typeof oes_filter == 'undefined') oes_filter = [];
-    }
+        const $el = $(this);
+        const type = $el.data("type");
+        const filter = $el.data("filter");
+        oesFilter.apply(filter, type, $el);
+        const isActive = $el.hasClass("active");
 
+        const filters = ($el.data("additional") || "")
+            .toString()
+            .split(",")
+            .map(f => f.trim())
+            .filter(Boolean);
+        filters.forEach(filterId => {
+            oesFilter.setState(filterId, type, isActive);
+        });
+    });
 
-    /**
-     * Initialize filter.
-     */
-    function init() {
+    $(".oes-active-filter-list").on("click", ".oes-active-filter-item", function (e) {
+        e.preventDefault();
+        const $el = $(this);
+        const filter = $el.data("filter");
+        const type   = $el.data("type");
 
-        /* set filter variable */
-        setFilterVariable();
-
-        /* get cookie */
-        const selected_value_store = localStorage.getItem("oesSelectedFilter");
-        if (selected_value_store.length > 0) {
-            const parsed_value = JSON.parse(selected_value_store);
-            if (parsed_value != null && parsed_value.length > 0) {
-                for (let i = 0; i < parsed_value.length; i++) {
-                    let filterName = parsed_value[i]['type'];
-                    if (oes_filter.hasOwnProperty(filterName)) {
-                        for (let j = 0; j < parsed_value[i]['ids'].length; j++) {
-                            oesFilter.apply(parsed_value[i]['ids'][j], filterName);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    /**
-     * show all wrapper (alphabet container)
-     */
-    function showWrappers() {
-        $(".oes-archive-wrapper").show();
-    }
-
-
-    /* apply filter to result list */
-    function applyFacetFilter() {
-
-        const items = $(".oes-post-filter-wrapper");
-
-        /* show all if no filter active */
-        if (Object.keys(current_filter_post_ids).length === 0) {
-            items.show();
-            $(".oes-filter-item-count").show();
-            $(".oes-archive-wrapper").show();
-            $(".oes-active-filter-container").hide();
-        } else {
-
-            /* get results (perform "AND" operation) */
-            let post_ids = [];
-            if (Object.keys(current_filter_post_ids).length === 1) {
-                post_ids = current_filter_post_ids[Object.keys(current_filter_post_ids)[0]];
-            } else if (Object.keys(current_filter_post_ids).length !== 0) {
-
-                /* get first element */
-                let first_key = Object.keys(current_filter_post_ids)[0],
-                    post_ids_temp = current_filter_post_ids[first_key];
-
-                /* skip first element and get intersection */
-                for (let type in current_filter_post_ids) {
-                    if (type !== first_key) {
-                        post_ids_temp = post_ids_temp.filter(value => current_filter_post_ids[type].includes(value));
-                    }
-                }
-                post_ids = post_ids_temp;
-            }
-
-            /* add active filter */
-            $(".oes-active-filter-container").show();
-
-            /* hide all items */
-            items.hide();
-
-            /* display filtered results */
-            for (let k = 0; k < post_ids.length; k++) {
-                $(".oes-post-filter-" + post_ids[k]).show();
-            }
-        }
-    }
-
-
-    /* @oesDevelopment Improve - very slow, only recommended if not many filter */
-    function updateFacetFilterCount() {
-
-        /* set filter variable */
-        setFilterVariable();
-
-        /* loop through facet filter */
-        const facet_filter = $('.oes-archive-filter'),
-            visible_wrapper = $('.oes-archive-wrapper:visible');
-
-        let active_types = [];
-        for (let filter_key in oes_filter) {
-            if ($('#trigger_' + filter_key + '.active').length > 0) {
-                active_types.push(filter_key);
-            }
-        }
-
-        /* check if entries exist */
-        for (let k = 0; k < facet_filter.length; k++) {
-
-            /* check if active filter */
-            if ($(facet_filter[k]).hasClass('active')) {
-                /* update count */
-                const facet_filter_count = $(facet_filter[k]).children('.oes-filter-item-count');
-                if (facet_filter_count.length > 0) facet_filter_count[0].innerHTML = '(-)';
-            } else {
-
-                /* get all connected post ids */
-                const type = facet_filter[k].dataset.type,
-                    filter = facet_filter[k].dataset.filter;
-
-                /* check if type already selected */
-                if (active_types.includes(type)) {
-
-                    /* show and update count */
-                    const facet_filter_count = $(facet_filter[k]).children('.oes-filter-item-count');
-                    if (facet_filter_count.length > 0) facet_filter_count[0].innerHTML = '(+)';
-                    $(facet_filter[k]).parent().removeClass('inactive');
-                    $(facet_filter[k]).parent().show();
-
-                } else {
-
-                    /* prepare current post ids */
-                    let collect_current_ids = [];
-                    for (let n = 0; n < visible_wrapper.length; n++) {
-
-                        /* show item to count visible children and hide if empty */
-                        let visible_items;
-                        let ignore_alphabet = false;
-                        if ($(visible_wrapper[n]).hasClass('oes-ignore-alphabet-filter')) {
-                            visible_items = $(visible_wrapper[n]);
-                            ignore_alphabet = true;
-                        } else {
-                            visible_items = $(visible_wrapper[n])
-                                .children('.oes-alphabet-container')
-                                .children('.oes-post-filter-wrapper:visible');
-                            if ($('.oes-alphabet-container').length < 1) {
-                                visible_items = $(visible_wrapper[n])
-                                    .children('.oes-post-filter-wrapper:visible');
-                            }
-                        }
-
-                        for (let p = 0; p < visible_items.length; p++) {
-                            const class_name = visible_items[p].className;
-                            if (ignore_alphabet) {
-                                collect_current_ids.push(parseInt(visible_items[p].dataset.oesId));
-                            } else {
-                                collect_current_ids.push(parseInt(class_name.substring(class_name.lastIndexOf('-') + 1)));
-                            }
-                        }
-                    }
-
-                    /* get connected post ids */
-                    const this_ids = oes_filter[type][filter],
-                        intersection_id = this_ids.filter(value => collect_current_ids.includes(value)),
-                        new_count = intersection_id.length;
-
-                    /* update count */
-                    const facet_filter_count = $(facet_filter[k]).children('.oes-filter-item-count');
-                    if (facet_filter_count.length > 0) facet_filter_count[0].innerHTML = '(' + new_count + ')';
-
-                    /* hide if empty @oesDevelopment only makes sense if not more selectable */
-                    if (new_count === 0) $(facet_filter[k]).parent().addClass('inactive');
-                    else $(facet_filter[k]).parent().removeClass('inactive');
-                }
-            }
-        }
-    }
-
-
-    /**
-     * Apply range filter
-     */
-    function applyRangeFilter() {
-
-        /* get all sliders */
-        const range_slider = $('.oes-range-slider');
-        for (let m = 0; m < range_slider.length; m++) {
-
-            const id = range_slider[m].id,
-                valueString = range_slider[m].value,
-                valueArray = valueString.split(';'),
-                items = $(".oes-post-filter-wrapper:visible");
-            let timestamp1 = false,
-                timestamp2 = false;
-
-            if (valueArray[0]) timestamp1 = parseFloat(valueArray[0])
-            if (valueArray[1]) timestamp2 = parseFloat(valueArray[1])
-
-            if (Number(timestamp1) && Number(timestamp2)) {
-                for (let k = 0; k < items.length; k++) {
-                    const start = parseFloat(items[k].getAttribute('data-' + id)),
-                        end = parseFloat(items[k].getAttribute('data-' + id + '-end'));
-
-                    /* hide if no data is set or criteria is met */
-                    if (isNaN(start) && isNaN(end)) {
-                        $(items[k]).hide();
-                    } else if (isNaN(end) && (start < Math.min(timestamp1, timestamp2) ||
-                        start > Math.max(timestamp1, timestamp2))) {
-                        $(items[k]).hide();
-                    } else if (end < Math.min(timestamp1, timestamp2) || start > Math.max(timestamp1, timestamp2)) {
-                        $(items[k]).hide();
-                    }
-                }
-            }
-        }
-    }
-
-
-    /**
-     * apply the alphabet filter
-     */
-    function applyAlphabetFilter() {
-
-        /* only apply if alphabet filter is active */
-        if ($('.oes-alphabet-container').length > 0) {
-
-            const active_alphabet_filter = $('.oes-filter-abc.active'),
-                items = $(".oes-archive-wrapper");
-
-            /* disable all alphabet filter with empty body */
-            for (let k = 0; k < items.length; k++) {
-                if ($(items[k]).children('.oes-alphabet-container').children(':visible').length < 1) {
-                    $('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').addClass("inactive");
-                } else {
-                    $('.oes-filter-abc[data-filter="' + items[k].dataset.alphabet + '"]').removeClass("inactive");
-                }
-            }
-
-            /* hide all alphabet container except the selected container */
-            let filter = 'all';
-            if (active_alphabet_filter.length > 0)
-                filter = active_alphabet_filter[0].dataset.filter;
-            if (filter !== 'all') {
-                items.hide();
-                $(".oes-alphabet-filter-" + filter).show();
-            }
-        }
-    }
-
-
-    /**
-     *  Hide empty alphabet wrapper (if character is displayed before alphabet block)
-     */
-    function updateWrapperVisibility() {
-        const items = $(".oes-archive-wrapper:not(.oes-ignore-alphabet-filter)");
-        for (let k = 0; k < items.length; k++) {
-
-            /* show item to count visible children and hide if empty, check for alphabet wrapper
-            (if alphabet filter exist) */
-            if ($(items[k]).children(':visible').length < 1 ||
-                ($(".oes-alphabet-container").length > 0 &&
-                    $(items[k]).children(".oes-alphabet-container").children(':visible').length < 1)
-            ) {
-                $(items[k]).hide();
-            }
-        }
-    }
-
-
-    /**
-     * Update filter count
-     */
-    function updateFilterCount() {
-
-        /* update count */
-        const amount = $(".oes-post-filter-wrapper:visible").length,
-            count_element = $(".oes-archive-count-number");
-
-        for (let i = 0; i < count_element.length; i++) count_element[i].innerText = amount;
-
-        /* update label */
-        if (amount === 0) $(".oes-archive-container-no-entries").show();
-        else $(".oes-archive-container-no-entries").hide();
-
-        if (amount === 1) {
-            $(".oes-archive-count-label-singular").show();
-            $(".oes-archive-count-label-plural").hide();
-        } else {
-            $(".oes-archive-count-label-singular").hide();
-            $(".oes-archive-count-label-plural").show();
-        }
-    }
-
-
-    /**
-     * Update local storage variable
-     */
-    function updateLocalStorage() {
-
-        let unique_post_ids = [];
-        for (let i in current_filter_post_ids) {
-            unique_post_ids = unique_post_ids.concat(current_filter_post_ids[i]);
-        }
-        localStorage.setItem('oesResultIDs', JSON.stringify(unique_post_ids));
-
-        /* prepare back link */
-        localStorage.setItem('oesSearchResultsURL', window.location.href);
-
-        /* prepare selection filter */
-        let selected_filter_store = [];
-        let i = 0;
-        for (const [type, ids] of Object.entries(selected_filter)) {
-            selected_filter_store[i] = {};
-            selected_filter_store[i]['type'] = type;
-            selected_filter_store[i]['ids'] = ids;
-            i++;
-        }
-
-        let collect_displayed_ids = [];
-        let visible_posts = $('.oes-post-filter-wrapper:visible');
-        for (let n = 0; n < visible_posts.length; n++) {
-            const class_name = visible_posts[n].className;
-            if (class_name.includes("oes-ignore-alphabet-filter")) {
-                collect_displayed_ids.push(parseInt(visible_posts[n].dataset.oesId));
-            } else {
-                collect_displayed_ids.push(parseInt(class_name.substring(class_name.lastIndexOf('-') + 1)));
-            }
-        }
-
-        localStorage.setItem('oesSelectedFilter', JSON.stringify(selected_filter_store));
-        localStorage.setItem("oesDisplayedIds", JSON.stringify(collect_displayed_ids));
-    }
+        oesFilter.removeActiveFilter(filter, type);
+    });
 
 }(window.oesFilter || (window.oesFilter = {}), jQuery))

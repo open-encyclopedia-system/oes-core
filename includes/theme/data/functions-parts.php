@@ -370,16 +370,19 @@ function oes_get_terms(int $postID, array $taxonomies = []): array
         if (taxonomy_exists($taxonomy)) {
 
             $terms = get_the_terms($postID, $taxonomy);
+            $termsPerTaxonomy = [];
             foreach ($terms ?: [] as $term) {
 
                 /* check for term name in other languages */
                 $termName = oes_get_display_title(get_term($term->term_id));
 
-                $termArray[$taxonomy][] = oes_get_html_anchor(
+                $termsPerTaxonomy[strip_tags($termName) . $term->term_id] = oes_get_html_anchor(
                     '<span>' . (empty($termName) ? $term->name : $termName) . '</span>',
                     get_term_link($term->term_id)
                 );
             }
+            ksort($termsPerTaxonomy);
+            $termArray[$taxonomy] = $termsPerTaxonomy;
         }
     return $termArray;
 }

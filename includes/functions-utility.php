@@ -2,6 +2,14 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
+/**
+ * Check if in live mode, then minify javascript files
+ * @return string
+ */
+function oes_minify(): string {
+    return OES_LIVEMODE ? '.min' : '';
+}
+
 
 /**
  * Includes a file relative to the plugin path.

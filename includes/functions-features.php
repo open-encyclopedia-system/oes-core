@@ -68,8 +68,8 @@ function tools(): void
  */
 function admin_messages(): void
 {
+    include_once __DIR__ . '/admin/functions-notices.php';
     if (is_admin()) {
-        include_once __DIR__ . '/admin/functions-notices.php';
         add_action('admin_notices', 'OES\Admin\display_oes_notices_after_refresh', 12);
     }
 }
@@ -82,7 +82,6 @@ function admin_messages(): void
  */
 function admin_functions(): void
 {
-
     include_once __DIR__ . '/admin/functions-admin.php';
     include_once __DIR__ . '/admin/functions-acf.php';
     if (is_admin()) {
@@ -102,8 +101,8 @@ function admin_functions(): void
  */
 function dashboard(bool $enabled = true): void
 {
+    include_once __DIR__ . '/admin/functions-dashboard.php';
     if (is_admin() && $enabled) {
-        include_once __DIR__ . '/admin/functions-dashboard.php';
         add_action('wp_dashboard_setup', '\OES\Dashboard\modify');
     }
 }
@@ -118,13 +117,13 @@ function dashboard(bool $enabled = true): void
  */
 function admin_pages(): void
 {
+    include_once __DIR__ . '/admin/pages/class-page.php';
+    include_once __DIR__ . '/admin/pages/class-subpage.php';
+    include_once __DIR__ . '/admin/pages/class-container.php';
+    include_once __DIR__ . '/admin/pages/class-module_page.php';
+    include_once __DIR__ . '/admin/pages/functions-pages.php';
+    include_once __DIR__ . '/admin/functions-help_tabs.php';
     if (is_admin()) {
-        include_once __DIR__ . '/admin/pages/class-page.php';
-        include_once __DIR__ . '/admin/pages/class-subpage.php';
-        include_once __DIR__ . '/admin/pages/class-container.php';
-        include_once __DIR__ . '/admin/pages/class-module_page.php';
-        include_once __DIR__ . '/admin/pages/functions-pages.php';
-        include_once __DIR__ . '/admin/functions-help_tabs.php';
         add_action('admin_enqueue_scripts', 'OES\Admin\add_page_scripts');
         add_action('oes/data_model_registered', 'OES\Admin\initialize_admin_menu_pages');
         add_action('oes/data_model_registered', '\OES\Admin\initialize_container_pages');
@@ -163,8 +162,8 @@ function assets(): void
  */
 function columns(): void
 {
+    include_once __DIR__ . '/admin/functions-columns.php';
     if (is_admin()) {
-        include_once __DIR__ . '/admin/functions-columns.php';
         add_action('restrict_manage_posts', '\OES\Admin\columns_filter_dropdown', 10, 2);
         add_action('pre_get_posts', '\OES\Admin\columns_pre_get_posts');
     }
@@ -211,8 +210,8 @@ function data_model(): void
  */
 function data_model_factory(): void
 {
+    include_once __DIR__ . '/admin/functions-factory.php';
     if (is_admin()) {
-        include_once __DIR__ . '/admin/functions-factory.php';
         if (get_option('oes_admin-factory_mode')) {
             add_action('admin_notices', '\OES\Factory\display_factory_notice');
             add_filter('acf/post_type/registration_args', '\OES\Factory\set_global_parameters', 10, 2);
@@ -288,7 +287,7 @@ function popup(): void
 
     oes_add_style('oes-popup', '/includes/popup/assets/popup.css');
     oes_add_script('oes-popup', '/includes/popup/assets/popup.js');
-    oes_add_script_admin('oes-admin-popup', '/assets/js/admin-popup.min.js', ['jquery']);
+    oes_add_script_admin('oes-admin-popup', '/assets/js/admin-popup' . oes_minify() . '.js', ['jquery']);
     oes_add_script_admin('oes-popup-admin', '/includes/popup/assets/popup-admin.js', ['wp-rich-text', 'wp-element', 'wp-editor']);
     add_filter('the_content', '\OES\Popup\render_for_frontend');
 }
@@ -321,6 +320,7 @@ function notes(): void
 function blocks(): void
 {
     oes_add_style('oes-blocks', '/includes/blocks/blocks.css', [], null, 'all', true);
+    oes_add_script('oes-helper', '/assets/js/helper' . oes_minify() . '.js');
     include_once __DIR__ . '/blocks/functions-blocks.php';
     add_filter('block_categories_all', '\OES\Block\register_categories');
     add_action('enqueue_block_assets', '\OES\Block\assets', 1);
@@ -333,7 +333,7 @@ function blocks(): void
  * taxonomies by adding OES data, such as metadata for posts, version information, dropdown data in list
  * displays, etc.
  *
- * @oesDevelopment Is thie needed for caching or could this be only called in frontend?
+ * @oesDevelopment Is this needed for caching or could this be only called in frontend?
  * @return void
  */
 function theme_classes(): void
@@ -341,9 +341,6 @@ function theme_classes(): void
     include_once __DIR__ . '/theme/functions-theme.php';
     include_once __DIR__ . '/theme/data/functions-data.php';
     include_once __DIR__ . '/theme/data/functions-parts.php';
-    add_filter('init', 'oes_set_language_cookie', 999);
-    add_filter('the_content', 'oes_the_content', 12, 1);
-    add_filter('render_block_core/heading', 'oes_render_block_core_heading', 10, 2);
     include_once __DIR__ . '/theme/data/class-object.php';
     include_once __DIR__ . '/theme/data/class-post.php';
     include_once __DIR__ . '/theme/data/class-page.php';
@@ -355,9 +352,12 @@ function theme_classes(): void
     include_once __DIR__ . '/theme/data/class-post_archive.php';
     include_once __DIR__ . '/theme/data/class-taxonomy_archive.php';
     include_once __DIR__ . '/theme/data/class-index_archive.php';
-
     include_once __DIR__ . '/theme/data/class-template_redirect.php';
+
     add_action('template_redirect', 'oes_prepare_data');
+    add_filter('init', 'oes_set_language_cookie', 999);
+    add_filter('the_content', 'oes_the_content', 12, 1);
+    add_filter('render_block_core/heading', 'oes_render_block_core_heading', 10, 2);
 }
 
 /**
@@ -370,13 +370,19 @@ function theme_classes(): void
  */
 function cache(bool $enabled = true): void
 {
+    include_once __DIR__ . '/admin/functions-caching.php';
     if ($enabled) {
-        include_once __DIR__ . '/admin/functions-caching.php';
 
-        if (is_admin()) {
-            add_action('save_post', '\OES\Caching\clear_archive_cache');
-            add_action('deleted_post', '\OES\Caching\clear_archive_cache');
-            add_action('trashed_post', '\OES\Caching\clear_archive_cache');
+        global $oes_caching_enabled;
+        $oes_caching_enabled = true;
+
+        if(is_admin()) {
+            add_action('save_post', '\OES\Caching\clear_archive_cache_post');
+            add_action('before_delete_post', '\OES\Caching\clear_archive_cache_post');
+            add_action('trashed_post', '\OES\Caching\clear_archive_cache_post');
+            add_action('created_term', '\OES\Caching\clear_archive_cache_term', 10, 3);
+            add_action('edited_term', '\OES\Caching\clear_archive_cache_term', 10, 3);
+            add_action('delete_term', '\OES\Caching\clear_archive_cache_term', 10, 4);
         }
     }
 }
@@ -392,14 +398,14 @@ function cache(bool $enabled = true): void
  */
 function figures(bool $enabled = true): void
 {
+    include_once __DIR__ . '/theme/figures/functions-figures.php';
+    include_once __DIR__ . '/theme/figures/functions-panel.php';
+    include_once __DIR__ . '/theme/figures/class-panel.php';
+    include_once __DIR__ . '/theme/figures/class-gallery_panel.php';
+    include_once __DIR__ . '/theme/figures/class-image_panel.php';
     if ($enabled) {
-        include_once __DIR__ . '/theme/figures/functions-figures.php';
-        include_once __DIR__ . '/theme/figures/functions-panel.php';
-        include_once __DIR__ . '/theme/figures/class-panel.php';
-        include_once __DIR__ . '/theme/figures/class-gallery_panel.php';
-        include_once __DIR__ . '/theme/figures/class-image_panel.php';
         oes_add_style('oes-panel', '/includes/theme/figures/panel.css');
-        oes_add_script('oes-figures', '/includes/theme/figures/figures.min.js', ['jquery']);
+        oes_add_script('oes-figures', '/includes/theme/figures/figures' . oes_minify() . '.js', ['jquery']);
     }
 }
 
@@ -415,7 +421,7 @@ function filter(): void
 {
     include_once __DIR__ . '/theme/filter/functions-filter.php';
     include_once __DIR__ . '/theme/filter/class-filter_renderer.php';
-    oes_add_script('oes-filter', '/includes/theme/filter/filter.min.js');
+    oes_add_script('oes-filter', '/includes/theme/filter/filter' . oes_minify() . '.js');
 }
 
 /**
@@ -445,6 +451,7 @@ function language_switch(bool $blockTheme = true): void
 {
     include_once __DIR__ . '/theme/navigation/class-language_switch.php';
     include_once __DIR__ . '/theme/navigation/functions-navigation.php';
+    include_once __DIR__ . '/theme/navigation/functions-classic_menu.php';
 
     foreach ([
                  '404_template_hierarchy',
@@ -457,7 +464,6 @@ function language_switch(bool $blockTheme = true): void
     }
 
     if ($blockTheme) {
-        include_once __DIR__ . '/theme/navigation/functions-classic_menu.php';
         add_action('admin_head-customize.php', '\OES\Navigation\admin_head_nav_menus');
         add_action('admin_head-nav-menus.php', '\OES\Navigation\admin_head_nav_menus');
         add_action('init', '\OES\Navigation\init');
@@ -475,11 +481,7 @@ function language_switch(bool $blockTheme = true): void
  */
 function search(): void
 {
-    if (!is_admin()) {
-        include_once __DIR__ . '/theme/search/class-search.php';
-    }
-
-    //needed for ajax call
+    include_once __DIR__ . '/theme/search/class-search.php';
     include_once __DIR__ . '/theme/search/functions-search.php';
     include_once __DIR__ . '/theme/search/class-search_results.php';
     include_once __DIR__ . '/theme/search/class-search_query.php';
@@ -496,9 +498,10 @@ function search(): void
  */
 function lod_api(bool $enabled = true): void
 {
+
+    include_once __DIR__ . '/api/functions-rest_api.php';
+    include_once __DIR__ . '/api/class-rest_api.php';
     if ($enabled) {
-        include_once __DIR__ . '/api/functions-rest_api.php';
-        include_once __DIR__ . '/api/class-rest_api.php';
         add_action('wp_enqueue_scripts', '\OES\API\scripts');
         add_action('oes/initialized', '\OES\API\initialize');
         add_action('wp_ajax_oes_lod_search_query', '\OES\API\lod_search_query');
@@ -523,8 +526,8 @@ function lod_api(bool $enabled = true): void
  */
 function remarks(bool $enabled = true): void
 {
+    include_once __DIR__ . '/admin/remarks/functions-remarks.php';
     if (is_admin() && $enabled) {
-        include_once __DIR__ . '/admin/remarks/functions-remarks.php';
         add_action('admin_menu', '\OES\Remarks\create_page');
         add_filter('set-screen-option', '\OES\Remarks\set_screen_option', 10, 3);
     }
@@ -540,13 +543,16 @@ function remarks(bool $enabled = true): void
  */
 function manual(bool $enabled = true): void
 {
-    if (is_admin() && $enabled) {
-        include_once __DIR__ . '/admin/functions-manual.php';
-        add_action('init', '\OES\Manual\register');
-        add_filter('parent_file', '\OES\Manual\modify_parent_file');
-        add_action('admin_enqueue_scripts', '\OES\Manual\include_style');
-        add_action('admin_head', '\OES\Manual\include_stylesheet');
-        add_action('admin_footer', '\OES\Manual\toc_panel');
+    include_once __DIR__ . '/admin/functions-manual.php';
+    if ($enabled) {
+        add_action('init', '\OES\Manual\register', 8);
+
+        if (is_admin()) {
+            add_filter('parent_file', '\OES\Manual\modify_parent_file');
+            add_action('admin_enqueue_scripts', '\OES\Manual\include_style');
+            add_action('admin_head', '\OES\Manual\include_stylesheet');
+            add_action('admin_footer', '\OES\Manual\toc_panel');
+        }
     }
 }
 
@@ -560,8 +566,8 @@ function manual(bool $enabled = true): void
  */
 function tasks(bool $enabled = true): void
 {
+    include_once __DIR__ . '/admin/functions-tasks.php';
     if (is_admin() && $enabled) {
-        include_once __DIR__ . '/admin/functions-tasks.php';
         add_action('init', '\OES\Tasks\init');
         add_action('manage_oes_task_posts_custom_column', '\OES\Tasks\posts_custom_column', 10, 2);
         add_filter('get_sample_permalink_html', '\OES\Tasks\hide_permalink', 10, 2);

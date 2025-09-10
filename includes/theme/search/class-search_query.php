@@ -50,9 +50,14 @@ if (!class_exists('OES_Search_Query')) {
          */
         public function register_hooks(): void
         {
-            add_filter('posts_join', [$this, 'extend_join']);
-            add_filter('posts_where', [$this, 'extend_where']);
-            add_filter('posts_distinct', [$this, 'make_distinct']);
+            add_action('pre_get_posts', function (\WP_Query $query) {
+                if (!is_admin() && $query->is_main_query() && $query->is_search()) {
+                    add_filter('posts_join', [$this, 'extend_join']);
+                    add_filter('posts_distinct', [$this, 'make_distinct']);
+                    add_filter('posts_search', [$this, 'posts_search'], 10, 2);
+
+                }
+            });
         }
 
         /**
@@ -75,59 +80,6 @@ if (!class_exists('OES_Search_Query')) {
         }
 
         /**
-         * Extends WHERE clause to search in content and postmeta, optionally accent-insensitive.
-         *
-         * @param string $where
-         * @return string
-         */
-        public function extend_where(string $where): string
-        {
-            if ($this->should_return_early()) return $where;
-
-            global $wpdb, $oes;
-
-            $original = get_query_var('s');
-            if (empty($original)) return $where;
-
-            $likeOriginal = '%' . $wpdb->esc_like($original) . '%';
-
-            // Collect postmeta keys to search
-            $metaConditions = '';
-            $metaKeys = [];
-
-            if (!empty($oes->search['postmeta_fields'])) {
-                foreach ($oes->search['postmeta_fields'] as $fields) {
-                    if (is_array($fields)) {
-                        foreach ($fields as $field) {
-                            if (!in_array($field, ['title', 'content'], true)) {
-                                $metaKeys[] = "'" . esc_sql($field) . "'";
-                            }
-                        }
-                    }
-                }
-
-                if (!empty($metaKeys)) {
-                    $metaKeyList = implode(',', $metaKeys);
-                    $metaConditions = " OR (
-                {$wpdb->postmeta}.meta_value LIKE '{$likeOriginal}'
-                AND {$wpdb->postmeta}.meta_key NOT LIKE '^_%' ESCAPE '^'
-                AND {$wpdb->postmeta}.meta_key IN ({$metaKeyList})
-            )";
-                }
-            }
-
-            // Replace the default post_title LIKE condition
-            $pattern = "/\(\s*{$wpdb->posts}\.post_title\s+LIKE\s*('.*?')\s*\)/";
-            $replacement = "(
-        ({$wpdb->posts}.post_title LIKE '{$likeOriginal}') OR
-        ({$wpdb->posts}.post_content LIKE '{$likeOriginal}')
-        {$metaConditions}
-    )";
-
-            return preg_replace($pattern, $replacement, $where);
-        }
-
-        /**
          * Ensures distinct results when joining postmeta.
          *
          * @param string $distinct
@@ -136,6 +88,96 @@ if (!class_exists('OES_Search_Query')) {
         public function make_distinct(string $distinct): string
         {
             return $this->should_return_early() ? $distinct : 'DISTINCT';
+        }
+
+        /**
+         * Filters the SQL WHERE clause of the main WordPress search query to support:
+         * 1. Apostrophe normalization – converts various apostrophe-like characters
+         *    (e.g., `´`, `‘`, `’`, `‛`) into wildcards to improve search matching.
+         * 2. Optional meta field searching – allows searching in additional postmeta
+         *    fields defined in $oes->search['postmeta_fields'].
+         *
+         * The method modifies the search to match partial terms using SQL LIKE,
+         * automatically adding wildcards (%) if the search term contains apostrophes.
+         *
+         * @param string   $search The current SQL WHERE clause for the search.
+         * @param WP_Query $query  The WP_Query instance for the current query.
+         *
+         * @return string The modified SQL WHERE clause with apostrophe-aware and
+         *                meta field search applied.
+         *
+         * @global wpdb   $wpdb Global WordPress database object.
+         * @global object  $oes  Global object containing search settings and meta fields.
+         */
+        public function posts_search(string $search, WP_Query $query): string
+        {
+            if ($this->should_return_early() || !$query->is_main_query()) {
+                return $search;
+            }
+
+            global $wpdb, $oes;
+
+            $original = (string)$query->get('s');
+            if ($original === '') {
+                return $search;
+            }
+
+            $apostrophes = oes_get_apostrophe_variants(true);
+
+            // detect whether the user typed any of those characters
+            $charClass = preg_quote(implode('', $apostrophes), '/');
+            $hasApostroph = (bool)preg_match("/[{$charClass}]/u", $original);
+
+            if ($hasApostroph) {
+                $pattern = str_replace($apostrophes, '%', $original);
+                $pattern = preg_replace('/%+/u', '%', $pattern);
+                if ($pattern === '' || $pattern === '%') {
+                    $like = '%';
+                } else {
+                    if ($pattern[0] !== '%') $pattern = '%' . $pattern;
+                    if (substr($pattern, -1) !== '%') $pattern .= '%';
+                    $like = $pattern;
+                }
+            } else {
+                $like = '%' . $wpdb->esc_like($original) . '%';
+            }
+
+            $metaKeys = [];
+            if (!empty($oes->search['postmeta_fields'])) {
+                foreach ($oes->search['postmeta_fields'] as $fields) {
+                    foreach ((array)$fields as $field) {
+                        if (!in_array($field, ['title', 'content', 'excerpt'], true)) {
+                            $metaKeys[] = "'" . esc_sql($field) . "'";
+                        }
+                    }
+                }
+            }
+
+            $metaSql = '';
+            if ($metaKeys) {
+                $metaKeyList = implode(',', $metaKeys);
+                $metaSql = " OR (
+            {$wpdb->postmeta}.meta_value LIKE %s
+            AND {$wpdb->postmeta}.meta_key NOT LIKE '^_%' ESCAPE '^'
+            AND {$wpdb->postmeta}.meta_key IN ({$metaKeyList})
+        )";
+            }
+
+            $sql = "
+        AND (
+            ({$wpdb->posts}.post_title LIKE %s)
+            OR ({$wpdb->posts}.post_excerpt LIKE %s)
+            OR ({$wpdb->posts}.post_content LIKE %s)
+            {$metaSql}
+        )
+    ";
+
+            $params = [$like, $like, $like];
+            if ($metaKeys) {
+                $params[] = $like;
+            }
+
+            return $wpdb->prepare($sql, ...$params);
         }
 
         /**

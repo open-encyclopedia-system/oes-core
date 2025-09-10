@@ -114,11 +114,13 @@ function display_overview(): void
                     __('all', 'oes'))
             ];
             foreach ($components as $singleComponent):
-                $componentsList[] = sprintf('<a href="%s" class="%s">%s</a>',
-                    admin_url('admin.php?page=admin_manual') . '&term=' . $singleComponent->term_id .
-                    $sortedString . $searchString,
-                    ($selectedComponent == $singleComponent->term_id ? 'current' : ''),
-                    $singleComponent->name);
+                if ($singleComponent instanceof \WP_Term):
+                    $componentsList[] = sprintf('<a href="%s" class="%s">%s</a>',
+                        admin_url('admin.php?page=admin_manual') . '&term=' . $singleComponent->term_id .
+                        $sortedString . $searchString,
+                        ($selectedComponent == $singleComponent->term_id ? 'current' : ''),
+                        $singleComponent->name);
+                endif;
             endforeach;
             if (!empty($componentsList))
                 echo '<ul class="subsubsub"><li>Filter </li><li>' . implode(' |</li><li> ', $componentsList) .
@@ -502,19 +504,19 @@ function dashboard_html(): void
     ?>
     <ul><?php
 
-        $toc = '';
-        $allEntries = get_posts([
-            'post_type' => 'oes_manual_entry',
-            'post_parent' => 0,
-            'numberposts' => -1,
-            'orderby' => 'title',
-            'order' => 'ASC'
-        ]);
-        foreach ($allEntries as $entry) $toc .= '<li class="oes-manual-toc-item">' .
-            '<a href="' . admin_url('admin.php?page=admin_manual') . '&post_id=' . $entry->ID . '">' .
-            $entry->post_title . '</a></li>';
+    $toc = '';
+    $allEntries = get_posts([
+        'post_type' => 'oes_manual_entry',
+        'post_parent' => 0,
+        'numberposts' => -1,
+        'orderby' => 'title',
+        'order' => 'ASC'
+    ]);
+    foreach ($allEntries as $entry) $toc .= '<li class="oes-manual-toc-item">' .
+        '<a href="' . admin_url('admin.php?page=admin_manual') . '&post_id=' . $entry->ID . '">' .
+        $entry->post_title . '</a></li>';
 
-        echo $toc; ?></ul><?php
+    echo $toc; ?></ul><?php
 
 
     echo '<a class="page-title-action" href="' . admin_url('admin.php?page=admin_manual') . '">' .

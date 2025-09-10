@@ -786,10 +786,7 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
     }
 
     return sprintf('<%s class="oes-archive-filter-item %s">' .
-        '<a href="javascript:void(0)" data-filter="%s" ' .
-        'data-name="%s" data-type="%s"' .
-        ' class="oes-archive-filter-%s-%s oes-archive-filter" ' .
-        'onClick="%s(\'%s\', \'%s\')">' .
+        '<a href="#" data-filter="%s" data-name="%s" data-type="%s" data-additional="%s" class="oes-archive-filter">' . // todo remove onClick and class with ids?
         '<span>%s</span>' .
         '%s</a>' .
         '</%s>',
@@ -798,11 +795,7 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
         $key,
         $label,
         $filter,
-        $filter,
-        $key,
-        $args['js'],
-        $key,
-        $filter,
+        $args['additional-filter'] ?? '',
         $label,
         $additional,
         $args['element']

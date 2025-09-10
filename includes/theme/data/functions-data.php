@@ -17,6 +17,8 @@ function oes_prepare_data(): void
     $class = oes_get_project_class_name('OES_Template_Redirect');
     $templateRedirect = new $class();
     $templateRedirect->prepare_data();
+
+    do_action('oes/data_prepared');
 }
 
 /**
@@ -103,23 +105,44 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         }
     }
 
-    $cachingEnabled = function_exists('\OES\Caching\get_cache') && !($args['ignore_cache'] ?? false);
+    // Determine if caching is enabled
+    $cachingEnabled = false;
+    if(!is_search()) {
+        if (!empty($args['callables']['is_caching_enabled']) && is_callable($args['callables']['is_caching_enabled'])) {
+            $cachingEnabled = (bool)$args['callables']['is_caching_enabled']($args);
+        } elseif (has_filter('oes/set_archive_data_caching_enabled')) {
+            $cachingEnabled = (bool)apply_filters('oes/set_archive_data_caching_enabled', null, $args);
+        } else {
+            global $oes_caching_enabled;
+            $cachingEnabled = $oes_caching_enabled && !($args['ignore_cache'] ?? false);
+        }
+    }
+
     if($cachingEnabled) {
 
         global $oes_language;
 
         // Build cache key
         $language = empty($oes_language) ? ($args['language'] ?? 'language0') : $oes_language;
-        $cacheKeyType = $oes_is_index ?? ($args['taxonomy'] ?? $postType);
+        $cacheKeyType = $args['taxonomy'] ?? ($oes_is_index ?? $postType);
         $cacheKey = 'oes_cache-' . $cacheKeyType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
 
-        $cached = \OES\Caching\get_cache($cacheKey);
+        // Retrieve from cache
+        if (!empty($args['callables']['get_cache']) && is_callable($args['callables']['get_cache'])) {
+            $cached = $args['callables']['get_cache']($cacheKey, $args);
+        } elseif (has_filter('oes/set_archive_data_get_cache')) {
+            $cached = apply_filters('oes/set_archive_data_get_cache', null, $cacheKey, $args);
+        } else {
+            $cached = \OES\Caching\get_cache($cacheKey);
+        }
+
         if ($cached) {
             global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
-            $oes_archive = $cached['archive'];
-            $oes_archive_data = $cached['archive_data'];
-            $oes_filter = $cached['filter'];
-            $oes_archive_count = $cached['count'];
+            $oes_archive = $cached['archive'] ?? [];
+            $oes_archive_data = $cached['archive_data'] ?? [];
+            $oes_filter = $cached['filter'] ?? [];
+            $oes_archive_count = $cached['count'] ?? 0;
+            $oes_is_index = $oes_archive['is_index'] ?? false;
             return;
         }
     }
@@ -131,51 +154,91 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
     }
 
-    $oes_archive = [
-        'characters' => $oesArchive->characters ?? [],
-        'post_type' => $oesArchive->post_type ?? '',
-        'taxonomy' => $oesArchive->taxonomy ?? '',
-        'term' => $oesArchive->term ?? '',
-        'filtered_language' => $oesArchive->filtered_language ?? '',
-        'label' => $oesArchive->label ?? '',
-        'page_title' => $oesArchive->page_title ?? '',
-        'title_is_link' => $oesArchive->title_is_link ?? false,
-        'filter' => $oesArchive->filter ?? [],
-        'hide_on_empty' => $oesArchive->hide_on_empty ?? true,
-        'childless' => $oesArchive->childless ?? true,
+    [$oes_archive, $oes_filter, $oes_archive_count, $oes_archive_data] = oes_prepare_archive_payload($oesArchive);
+
+    // Store in cache
+    if ($cachingEnabled) {
+        $cachePayload = [
+            'archive' => $oes_archive,
+            'archive_data' => $oes_archive_data,
+            'filter' => $oes_filter,
+            'count' => $oes_archive_count
+        ];
+
+        if (!empty($args['callables']['set_cache']) && is_callable($args['callables']['set_cache'])) {
+            $args['callables']['set_cache']($cacheKey, $cachePayload, $args);
+        } elseif (has_filter('oes/set_archive_data_set_cache')) {
+            do_action('oes/set_archive_data_set_cache', $cacheKey, $cachePayload, $args);
+        } else {
+            \OES\Caching\set_cache($cacheKey, $cachePayload);
+        }
+    }
+}
+
+/**
+ * Prepares normalized archive payload parts from a given OES archive.
+ *
+ * Returns a list with four items that can be destructured:
+ * - [0] archive metadata
+ * - [1] filter
+ * - [2] count
+ * - [3] archive data
+ *
+ * @param OES_Archive $oesArchive The archive instance to extract data from.
+ * @return array{
+ *     0: array<string,mixed>,
+ *     1: mixed,
+ *     2: int|false,
+ *     3: array<mixed>|array<string,mixed>
+ * } A numerically indexed array for destructuring.
+ */
+function oes_prepare_archive_payload($oesArchive): array
+{
+    if(!($oesArchive instanceof OES_Archive)){
+        return [];
+    }
+
+    $archive = [
+        'characters'       => $oesArchive->characters ?? [],
+        'post_type'        => $oesArchive->post_type ?? '',
+        'taxonomy'         => $oesArchive->taxonomy ?? '',
+        'term'             => $oesArchive->term ?? '',
+        'filtered_language'=> $oesArchive->filtered_language ?? '',
+        'label'            => $oesArchive->label ?? '',
+        'page_title'       => $oesArchive->page_title ?? '',
+        'title_is_link'    => $oesArchive->title_is_link ?? false,
+        'filter'           => $oesArchive->filter ?? [],
+        'hide_on_empty'    => $oesArchive->hide_on_empty ?? true,
+        'childless'        => $oesArchive->childless ?? true,
         'only_first_level' => $oesArchive->only_first_level ?? false,
-        'display_content' => $oesArchive->display_content ?? false
+        'display_content'  => $oesArchive->display_content ?? false,
+        'is_index'         => $oesArchive->is_index ?? false,
     ];
 
-    $oes_filter = $oesArchive->filter_array;
+    $filter = $oesArchive->filter_array;
 
-    $oes_archive_count = (
+    $count = (
         $oesArchive->characters &&
         sizeof($oesArchive->characters) > 0 &&
         $oesArchive->count
     ) ? $oesArchive->count : false;
 
-
     global $oes;
-    if($oes->legacy) {
-        $oes_archive_data = [
-            'archive' => (array)$oesArchive,
-            'table-array' => $oesArchive->get_data_as_table()
+    if ($oes->legacy) {
+        $data = [
+            'archive'     => (array)$oesArchive,
+            'table-array' => $oesArchive->get_data_as_table(),
         ];
-    }
-    else {
-        $oes_archive_data = $oesArchive->get_data_as_table();
+    } else {
+        $data = $oesArchive->get_data_as_table();
     }
 
-    // Store in cache
-    if($cachingEnabled) {
-        \OES\Caching\set_cache($cacheKey, [
-            'archive' => $oes_archive,
-            'archive_data' => $oes_archive_data,
-            'filter' => $oes_filter,
-            'count' => $oes_archive_count
-        ]);
-    }
+    return [
+        $archive,
+        $filter,
+        $count,
+        $data
+    ];
 }
 
 /**

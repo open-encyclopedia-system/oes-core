@@ -102,6 +102,67 @@ function oes_array_to_string_flat($input = null): string
     return substr($returnString, 0, -1);
 }
 
+/**
+ * Removes accents and diacritical marks from a UTF-8 string,
+ * emulating the behavior of MySQL's utf8mb4_unicode_ci collation.
+ *
+ * This function normalizes the input string to Unicode NFD form,
+ * strips all non-spacing marks (accents and diacritics),
+ * and returns the string normalized back to NFC form.
+ *
+ * This allows accent-insensitive comparisons similar to MySQL's
+ * utf8mb4_unicode_ci collation, where characters like "ü" become "u",
+ * and "á" becomes "a", while preserving the base letters.
+ *
+ * Note: Requires the PHP intl extension for the Normalizer class.
+ *
+ * @param string $string Input UTF-8 encoded string to normalize.
+ *
+ * @return string The input string with accents and diacritics removed.
+ *
+ * @throws \TypeError If the input is not a string.
+ */
+function oes_remove_accents(string $string): string
+{
+    $string = mb_convert_encoding($string, 'UTF-8', mb_detect_encoding($string));
+    $string = normalizer_normalize($string, Normalizer::FORM_D);
+    $string = preg_replace('/\p{Mn}+/u', '', $string);
+    return normalizer_normalize($string, Normalizer::FORM_C);
+}
+
+/**
+ * Returns a mapping array for normalizing various apostrophe and accent-like characters
+ * to a standard straight apostrophe (').
+ *
+ * This mapping can be used to replace curly quotes, acute/grave accents, and other
+ * similar diacritic marks for consistent text normalization in search and comparison.
+ *
+ * @return array<string,string>  Associative array where keys are variant characters,
+ *                              and values are the normalized replacements.
+ */
+function oes_get_apostrophe_variants(bool $default = false): array
+{
+    $apostrophes = [
+        "´",  // U+00B4 Acute accent
+        "`",  // U+0060 Grave accent
+        "‘",  // U+2018 Left single quotation mark
+        "’",  // U+2019 Right single quotation mark
+        "‛",  // U+201B Single high-reversed-9 quotation mark
+        "ʹ",  // U+02B9 Modifier letter prime
+        "ʼ",  // U+02BC Modifier letter apostrophe
+        "ʽ",  // U+02BD Modifier letter reversed comma
+        "ˊ",  // U+02CA Modifier letter acute accent
+        "ˋ",  // U+02CB Modifier letter grave accent
+        "′",  // U+2032 Prime symbol
+        "̀",  // U+0300 Combining grave accent
+        "́",  // U+0301 Combining acute accent
+    ];
+
+    if($default){
+        $apostrophes[] = "'";
+    }
+    return $apostrophes;
+}
 
 /**
  * Replace double quote by single quote in string.

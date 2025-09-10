@@ -49,6 +49,22 @@ if (!class_exists('Batch')) :
                             <input type="text" id="oes_batch_function" class="regular-text" required>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row">
+                            <label for="oes_batch_post_status"><?php _e('Post Status', 'oes'); ?></label>
+                        </th>
+                        <td>
+                            <select id="oes_batch_post_status" name="oes_batch_post_status" class="regular-text" required>
+                                <option value="any"><?php _e('Any', 'oes');?></option>
+                                <?php
+                                $statuses = get_post_stati([], 'objects');
+                                foreach ($statuses as $statusKey => $statusObj) {
+                                    echo '<option value="' . esc_attr($statusKey) . '">' . esc_html($statusObj->label) . '</option>';
+                                }
+                                ?>
+                            </select>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
                 <button id="oes-tool-batch-start-processing" class="button button-primary"><?php
@@ -65,6 +81,7 @@ if (!class_exists('Batch')) :
 
                         const objectType = $('#oes_batch_object_type').val().trim();
                         const objectFunction = $('#oes_batch_function').val().trim();
+                        const objectStatus = $('#oes_batch_post_status').val().trim();
 
                         if (!objectType || !objectFunction) {
                             alert('Please enter a post type or taxonomy and function before starting the process.');
@@ -82,6 +99,7 @@ if (!class_exists('Batch')) :
                                 batch_size: batchSize,
                                 object_type: objectType,
                                 object_function: objectFunction,
+                                object_status: objectStatus,
                                 _ajax_nonce: '<?php echo wp_create_nonce('oes_tool_batch_process_nonce'); ?>'
                             }, function (response) {
                                 if (response.success) {
@@ -109,6 +127,7 @@ if (!class_exists('Batch')) :
             $batchSize = isset($_POST['batch_size']) ? intval($_POST['batch_size']) : 20;
             $objectType = isset($_POST['object_type']) ? sanitize_text_field($_POST['object_type']) : '';
             $function = isset($_POST['object_function']) ? stripslashes(sanitize_text_field($_POST['object_function'])) : '';
+            $status = isset($_POST['object_status']) ? sanitize_text_field($_POST['object_status']) : 'any';
 
             global $oes;
             if (!isset($oes->post_types[$objectType]) && !isset($oes->taxonomies[$objectType])){
@@ -119,7 +138,7 @@ if (!class_exists('Batch')) :
 
                 $query = new WP_Query([
                     'post_type' => $objectType,
-                    'post_status' => 'publish',
+                    'post_status' => $status,
                     'posts_per_page' => $batchSize,
                     'offset' => $offset,
                     'fields' => 'all',

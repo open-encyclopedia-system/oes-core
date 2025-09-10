@@ -25,6 +25,9 @@ if (!class_exists('OES_Search_Results')) {
         /** @var string Search term from user input */
         protected string $search_term = '';
 
+        /** @var array Turn into search needles from user input */
+        protected array $search_needles = [];
+
         /** @var array Configuration options for the search loop */
         protected array $options = [];
 
@@ -62,6 +65,7 @@ if (!class_exists('OES_Search_Results')) {
             $this->set_args($args);
             $this->set_search_term($args['search_term'] ?? '');
             $this->set_from_global();
+            $this->set_search_needles();
         }
 
         /**
@@ -131,6 +135,23 @@ if (!class_exists('OES_Search_Results')) {
         }
 
         /**
+         * Sets the normalized search term(s) as search needles.
+         */
+        protected function set_search_needles(): void
+        {
+            // Split on any whitespace, remove empty results
+            $term = wp_unslash($this->search_term);
+            $searchTerms = preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY);
+
+            foreach ($searchTerms as $originalTerm) {
+                $normalized = $this->normalize_text($originalTerm);
+                if ($normalized !== '' && !isset($this->search_needles[$normalized])) {
+                    $this->search_needles[$normalized] = $originalTerm;
+                }
+            }
+        }
+
+        /**
          * Loops through all prepared post IDs, highlights matches, and builds result objects.
          */
         public function loop_results(): void
@@ -159,10 +180,10 @@ if (!class_exists('OES_Search_Results')) {
                 $occurrencesArray = [];
 
                 // Title
-                $occurrencesTitle = $this->highlight_search_term($this->search_term, $titleDisplay, $occurrences);
+                $occurrencesTitle = $this->highlight_search_term($titleDisplay, $occurrences);
                 if (!empty($occurrencesTitle)) {
                     $value = implode('', array_column($occurrencesTitle, 'paragraph'));
-                    $occurrencesArray['title'] = ['label' => __('Title', 'oes'), 'value' => $value];
+                    $occurrencesArray['title'] = ['label' => __('Title', 'oes'), 'value' => $value, 'key' => 'title'];
                 }
 
                 // Single Title
@@ -172,15 +193,15 @@ if (!class_exists('OES_Search_Results')) {
                     ($oes->post_types[$post->post_type]['display_titles']['title_archive_display'] !== 'title') &&
                     ($oes->post_types[$post->post_type]['display_titles']['title_sorting_display'] !== 'title')
                 ) {
-                    $occSingle = $this->highlight_search_term($this->search_term, $post->post_title, $occurrences);
+                    $occSingle = $this->highlight_search_term($post->post_title, $occurrences);
                     if (!empty($occSingle)) {
                         $value = implode('', array_column($occSingle, 'paragraph'));
-                        $occurrencesArray[] = ['label' => __('Single Title', 'oes'), 'value' => $value];
+                        $occurrencesArray[] = ['label' => __('Single Title', 'oes'), 'value' => $value, 'key' => 'single_title'];
                     }
                 }
 
                 // Content
-                $occContent = $this->highlight_search_term($this->search_term, $post->post_content, $occurrences);
+                $occContent = $this->highlight_search_term($post->post_content, $occurrences);
                 if (!empty($occContent)) {
 
                     $paragraphs = array_column($occContent, 'paragraph');
@@ -193,7 +214,7 @@ if (!class_exists('OES_Search_Results')) {
                         );
                     }
 
-                    $occurrencesArray['content'] = ['value' => $contentValue];
+                    $occurrencesArray['content'] = ['value' => $contentValue, 'key' => 'content'];
                 }
 
                 // Custom Fields
@@ -268,7 +289,7 @@ if (!class_exists('OES_Search_Results')) {
         {
             global $oes;
 
-            $results = $this->highlight_search_term($this->search_term, $field['value'], $occurrences);
+            $results = $this->highlight_search_term($field['value'], $occurrences);
             if (!$results) return null;
 
             if (count($results) > 1) {
@@ -286,37 +307,28 @@ if (!class_exists('OES_Search_Results')) {
             $label = $oes->post_types[$postType]['field_options'][$field['key']]['label_translation_' . $this->language]
                 ?? $field['label'];
 
-            return ['label' => $label, 'value' => $value];
+            return ['label' => $label, 'value' => $value, 'key' => $field['key'] ?? 'none'];
         }
 
         /**
          * Highlights search terms in a string split by paragraphs.
          *
-         * @param string|array $needles Search term or array of terms.
          * @param string $content Content to search in.
          * @return array[]
          */
-        protected function highlight_search_term(string|array $needles, string $content, int &$occurrences): array
+        protected function highlight_search_term(string $content, int &$occurrences): array
         {
-            if (!is_array($needles)) $needles = [$needles];
-
-            $searchTerms = [];
-            foreach ($needles as $needle) {
-
-                // calculate matches
-                $contentNormalized = $this->normalize_text($content);
-                $termNormalized = $this->normalize_text($needle);
-                $occurrences += substr_count($contentNormalized, $termNormalized);
-
-                // prepare "OR" search
-                $exploded = explode(' ', $needle);
-                if (sizeof($exploded) > 1) {
-                    $searchTerms = array_merge($exploded, $searchTerms);
-                } else {
-                    $searchTerms[] = $needle;
-                }
+            // calculate matches
+            $originalOccurrences = $occurrences;
+            $textOnly = strip_tags($content);
+            $contentNormalized = $this->normalize_text($textOnly);
+            foreach ($this->search_needles as $normalized => $original) {
+                $occurrences += mb_substr_count($contentNormalized, $normalized);
             }
-            $searchTerms = array_unique($searchTerms);
+
+            if($occurrences == $originalOccurrences){
+                return [];
+            }
 
             $paragraphs = array_map(
                 fn($p) => strip_tags($p, '<em><oesnote><strong><span><sub><sup><s>'),
@@ -338,18 +350,21 @@ if (!class_exists('OES_Search_Results')) {
                     default => null
                 };
 
-                foreach ($searchTerms as $term) {
+                $replacementCount = 0;
+                $highlighted = $paragraph;
+                foreach ($this->search_needles as $normalized => $original) {
 
-                    $replacementCount = 0;
+                    $innerReplacementCount = 0;
                     $highlighted = $this->highlight_term(
-                        $paragraph,
-                        $term,
+                        $highlighted,
+                        $original,
+                        $normalized,
                         '<span class="oes-search-highlighted">',
                         '</span>',
-                        $replacementCount
+                        $innerReplacementCount
                     );
 
-                    if ($replacementCount < 1) {
+                    if ($innerReplacementCount < 1) {
                         continue;
                     }
 
@@ -365,12 +380,16 @@ if (!class_exists('OES_Search_Results')) {
                         );
                     }
 
+                    $replacementCount += $innerReplacementCount;
+                    $processed++;
+                }
+
+                if ($replacementCount > 0) {
                     $results[] = [
                         'paragraph' => $highlighted,
                         'occurrences' => $replacementCount,
                         'position' => $position
                     ];
-                    $processed++;
                 }
 
                 if ($processed >= $maxParagraphs) break;
@@ -388,33 +407,52 @@ if (!class_exists('OES_Search_Results')) {
          *
          * @param string $content The content to search in and modify.
          * @param string $term The search term to highlight.
+         * @param string $normalizedTerm The normalized search term to highlight.
          * @param string $wrapperStart The opening HTML to wrap around a match.
          * @param string $wrapperEnd The closing HTML to wrap around a match.
          * @param int    &$count Output parameter for the number of matches replaced.
          * @return string The content string with matches highlighted.
          */
-        function highlight_term(string $content, string $term, string $wrapperStart, string $wrapperEnd, int &$count = 0): string
+        protected function highlight_term(string $content, string $term, string $normalizedTerm, string $wrapperStart, string $wrapperEnd, int &$count = 0): string
         {
-
-            $normalizedContent = $this->normalize_text($content);
-            $normalizedTerm = $this->normalize_text($term);
-            $termLen = mb_strlen($term);
-            $offset = 0;
+            // Split to avoid HTML tags
+            $parts = preg_split('/(<[^>]+>)/i', $content, -1, PREG_SPLIT_DELIM_CAPTURE);
             $count = 0;
 
-            while (($pos = mb_stripos($normalizedContent, $normalizedTerm, $offset)) !== false) {
-                $originalMatch = mb_substr($content, $pos, $termLen);
+            foreach ($parts as &$part) {
+                if (str_starts_with($part, '<')) continue;
 
-                $wrapped = $wrapperStart . $originalMatch . $wrapperEnd;
-                $content = mb_substr($content, 0, $pos) . $wrapped . mb_substr($content, $pos + $termLen);
+                $part = html_entity_decode($part, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                $normalizedContent = $this->normalize_text($content);
+                // This is the regex allowing letters plus apostrophes and combining marks inside words
+                $apostropheVariants = oes_get_apostrophe_variants(true);
+                $apostropheVariants[] = "'";
 
-                $offset = $pos + mb_strlen($wrapped);
-                $count++;
+                $escapedVariants = array_map(fn($c) => preg_quote($c, '/'), $apostropheVariants);
+                $apostropheClass = implode('', $escapedVariants);
+
+                $pattern = '/(\p{L}+(?:[' . $apostropheClass . '\p{M}]\p{L}+)*[' . $apostropheClass . ']?)/u';
+
+                // Match word boundaries if needed (you can drop \b if partial matches are desired)
+                $part = preg_replace_callback($pattern, function ($matches) use ($wrapperStart, $wrapperEnd, $normalizedTerm, &$count) {
+                    $normalizedMatch = $this->normalize_text($matches[1]);
+
+                    $pos = mb_stripos($normalizedMatch, $normalizedTerm);
+                    if ($pos !== false) {
+                        $count++;
+
+                        $length = mb_strlen($normalizedTerm);
+                        $before = mb_substr($matches[1], 0, $pos);
+                        $match  = mb_substr($matches[1], $pos, $length);
+                        $after  = mb_substr($matches[1], $pos + $length);
+
+                        return $before . $wrapperStart . $match . $wrapperEnd . $after;
+                    }
+                    return $matches[1];
+                }, $part);
             }
 
-            return $content;
+            return implode('', $parts);
         }
 
         /**
@@ -426,15 +464,19 @@ if (!class_exists('OES_Search_Results')) {
          * @param string $text The input string to normalize.
          * @return string The normalized string (accents removed, lowercased).
          */
-        function normalize_text(string $text): string
+        protected function normalize_text(string $text): string
         {
+            $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
             if (!($this->options['accent_sensitive'] ?? false)) {
-                $text = remove_accents($text);
+                $text = oes_remove_accents($text);
             }
             if (!($this->options['case_sensitive'] ?? false)) {
                 $text = mb_strtolower($text);
             }
-            return $text;
+
+            $apostropheVariants = oes_get_apostrophe_variants();
+            return str_replace($apostropheVariants, "'", $text);
         }
 
         /**
@@ -452,6 +494,7 @@ if (!class_exists('OES_Search_Results')) {
                 'count' => $this->count,
                 'filter' => $this->filter,
                 'filter_array' => $this->filter_array,
+                'language' => $this->language
             ];
         }
     }

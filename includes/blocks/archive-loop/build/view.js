@@ -1,1 +1,1 @@
-document.addEventListener("DOMContentLoaded",(function(e){oesFilter.applyAll()}));
+document.addEventListener("DOMContentLoaded",(function(e){oesFilter.init()}));

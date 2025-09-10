@@ -44,7 +44,10 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
                 global $oes, $oes_is_index;
                 if (!$oes_is_index && !empty($oes->theme_index_pages)) {
                     foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
-                        if (in_array($postType, $indexPage['objects'] ?? [])) $oes_is_index = $indexPageKey;
+                        if (in_array($postType, $indexPage['objects'] ?? [])) {
+                            $oes_is_index = $indexPageKey;
+                            $this->is_index = $indexPageKey;
+                        }
                 }
             }
 

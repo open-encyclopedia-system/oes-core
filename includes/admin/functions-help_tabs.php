@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Create a help tab on OES data model page.
+ * Create a help tab on OES visibility page.
  * @param $screen
  * @return void
  */
-function oes_settings_page_oes_settings_writing_help_tabs($screen): void
+function oes_settings_page_oes_visibility_help_tabs($screen): void
 {
     $screen->add_help_tab([
         'id' => 'oes_writing',
@@ -46,6 +46,20 @@ function oes_settings_page_oes_settings_writing_help_tabs($screen): void
             '</ul>' .
             '</p>',
     ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_admin_visibility',
+        'title' => 'Admin',
+        'content' => '<p>' .
+            __('This is only configurable for admins.', 'oes') .
+            '<ul>' .
+            '<li><b>Show OES Objects</b>: ' . __('Show the post type "OES Objects". This post type stores the post type ' .
+                'configurations.', 'oes') . '</li>' .
+            '<li><b>Hide Versioning Tab</b>: ' . __('Hide the post fields that hold version information.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
     $screen->set_help_sidebar('<p><strong> See also </strong></p><p><a href="' . admin_url('options-writing.php') .'">WordPress writing settings</a></p>');
 }
 
@@ -82,24 +96,12 @@ function oes_settings_page_oes_settings_reading_help_tabs($screen): void
     ]);
 
     $screen->add_help_tab([
-        'id' => 'oes_reading_languages',
-        'title' => 'Languages',
+        'id' => 'oes_reading_date',
+        'title' => 'Date Format',
         'content' => '<p>' .
-            __('If you are using an OES theme you can define labels for the templates that will be rendered ' .
-                'on certain part of the pages or for specific languages if you are using the OES feature ' .
-                '<b>Bilingualism</b>. Most of the labels are defined by your OES project plugin.', 'oes') .
-            '</p><p>' .
-            __('OES can be displayed in different languages. ' .
-                'Navigation elements will be displayed in the chosen language. Other elements might be ' .
-                'displayed in a different language depending on implemented language switches ' .
-                '(e.g. language switch for articles). ' .
-                'The <strong>abbreviation</strong> is used for e.g. the language switch. ' .
-                'Choose a <strong>date locale</strong> for the date display. Default is "en_BE" for british ' .
-                'date format. Most used locale codes are: "de_DE" (German), "en_BE" (British), ' .
-                '"en_US" (US) and "fr_FR" (French). You can look up further locale codes online, but ' .
-                'unfortunately, there is no list for all php language locale codes provided by an ' .
-                'official source.', 'oes') .
-            '</p>',
+            __('The OES feature <b>Date Format</b> allows you to define the date format which will be applied ' .
+                'to all displayed dates.', 'oes') .
+            '</p>'
     ]);
 
     $screen->add_help_tab([
@@ -122,35 +124,24 @@ function oes_settings_page_oes_settings_reading_help_tabs($screen): void
     ]);
 
     $screen->add_help_tab([
-        'id' => 'oes_reading_search',
-        'title' => 'Search',
+        'id' => 'oes_reading_languages',
+        'title' => 'Languages',
         'content' => '<p>' .
-            __('The OES feature <b>Search</b> allows you to define which parts of the encyclopdia can be ' .
-                'searched and how they are to be displayed.', 'oes') .
+            __('If you are using an OES theme you can define labels for the templates that will be rendered ' .
+                'on certain part of the pages or for specific languages if you are using the OES feature ' .
+                '<b>Bilingualism</b>. Most of the labels are defined by your OES project plugin.', 'oes') .
             '</p><p>' .
-            '<ul>' .
-            '<li><b>Maximum paragraphs in search result</b>: ' . __('The maximum of paragraphs when displaying the ' .
-                'preview in search results', 'oes') . '</li>' .
-            '<li><b>Order of searched objects</b>: ' . __('The order of the post types and taxonomies in which the ' .
-                'results are output', 'oes') . '</li>' .
-            '<li><b>Type Filter Label</b>: ' . __('Label of the type filter.', 'oes') . '</li>' .
-            '<li><b>Archive Filter</b>: ' . __('Elements that will be considered for the archive filter.', 'oes') . '</li>' .
-            '<li><b>Label</b>: ' . __('Label of the Index Page.', 'oes') . '</li>' .
-            '</ul>' .
-            '</p>'
-    ]);
-
-    if(!$oes->block_theme){
-        return;
-    }
-
-    $screen->add_help_tab([
-        'id' => 'oes_reading_date',
-        'title' => 'Date Format',
-        'content' => '<p>' .
-            __('The OES feature <b>Date Format</b> allows you to define the date format which will be applied ' .
-                'to all displayed dates.', 'oes') .
-            '</p>'
+            __('OES can be displayed in different languages. ' .
+                'Navigation elements will be displayed in the chosen language. Other elements might be ' .
+                'displayed in a different language depending on implemented language switches ' .
+                '(e.g. language switch for articles). ' .
+                'The <strong>abbreviation</strong> is used for e.g. the language switch. ' .
+                'Choose a <strong>date locale</strong> for the date display. Default is "en_BE" for british ' .
+                'date format. Most used locale codes are: "de_DE" (German), "en_BE" (British), ' .
+                '"en_US" (US) and "fr_FR" (French). You can look up further locale codes online, but ' .
+                'unfortunately, there is no list for all php language locale codes provided by an ' .
+                'official source.', 'oes') .
+            '</p>',
     ]);
 
     $screen->add_help_tab([
@@ -169,6 +160,29 @@ function oes_settings_page_oes_settings_reading_help_tabs($screen): void
             '</ul>' .
             '</p>'
     ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_reading_search',
+        'title' => 'Search',
+        'content' => '<p>' .
+            __('The OES feature <b>Search</b> allows you to define which parts of the encyclopdia can be ' .
+                'searched and how they are to be displayed.', 'oes') .
+            '</p><p>' .
+            '<ul>' .
+            '<li><b>Maximum paragraphs in search result</b>: ' . __('The maximum of paragraphs when displaying the ' .
+                'preview in search results', 'oes') . '</li>' .
+            '<li><b>Order of searched objects</b>: ' . __('The order of the post types and taxonomies in which the ' .
+                'results are output', 'oes') . '</li>' .
+            '<li><b>Type Filter Label</b>: ' . __('Label of the type filter.', 'oes') . '</li>' .
+            '<li><b>Archive Filter</b>: ' . __('Elements that will be considered for the archive filter.', 'oes') . '</li>' .
+            '<li><b>Label</b>: ' . __('Label of the Index Page.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    if($oes->block_theme){
+        return;
+    }
 
     $screen->add_help_tab([
         'id' => 'oes_reading_colors',
@@ -326,37 +340,6 @@ function oes_settings_page_oes_settings_lod_help_tabs($screen): void
                 'used through semantic queries. The OES feature <b>Linked Open Data</b> enables the search in ' .
                 'databases, e.g. authority files such as GND and GeoNames, that store LOD data.', 'oes') .
             '</p>',
-    ]);
-}
-
-/**
- * Create a help tab on OES data model page.
- * @oesDevelopment Review
- * @param $screen
- * @return void
- */
-function oes_settings_page_oes_admin_help_tabs($screen): void
-{
-    $screen->add_help_tab([
-        'id' => 'oes_admin',
-        'title' => 'Admin',
-        'content' => '<p>' .
-            __('So, you are an OES admin. There is some extra stuff that you can see and administrate. But ' .
-                'beware of the consequences, not every configuration option will be visible after you exit admin mode.',
-                'oes') .
-            '</p>'
-    ]);
-
-    $screen->add_help_tab([
-        'id' => 'oes_admin_visibility',
-        'title' => 'Visibility',
-        'content' => '<p>' .
-            '<ul>' .
-            '<li><b>Show OES Objects</b>: ' . __('Show the post type "OES Objects". This post type stores the post type ' .
-                'configurations.', 'oes') . '</li>' .
-            '<li><b>Hide Versioning Tab</b>: ' . __('Hide the post fields that hold version information.', 'oes') . '</li>' .
-            '</ul>' .
-            '</p>'
     ]);
 }
 

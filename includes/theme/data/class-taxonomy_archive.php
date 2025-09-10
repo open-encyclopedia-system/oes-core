@@ -37,6 +37,20 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
             }
             $this->taxonomy = $thisTaxonomy;
 
+            /* check if index */
+            global $oes, $oes_is_index;
+            if($oes_is_index){
+                $this->is_index = $oes_is_index;
+            }
+            elseif (!empty($oes->theme_index_pages)) {
+                foreach ($oes->theme_index_pages as $indexPageKey => $indexPage) {
+                    if (in_array($thisTaxonomy, $indexPage['objects'] ?? [])) {
+                        $oes_is_index = $indexPageKey;
+                        $this->is_index = $indexPageKey;
+                    }
+                }
+            }
+
             if (isset($args['hide_on_empty'])) $this->hide_on_empty = $args['hide_on_empty'];
         }
 

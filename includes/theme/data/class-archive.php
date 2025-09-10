@@ -45,6 +45,9 @@ if (!class_exists('OES_Archive')) {
         /** @var bool $title_is_link Display the titles of objects as link. */
         public bool $title_is_link = true;
 
+        /** @var string|bool $is_index The archive is part of the index. */
+        public $is_index = false;
+
         /** @var bool $display_content Display the content of posts as part of the archive (e.g. for glossary) */
         public bool $display_content = false;
 
@@ -220,7 +223,7 @@ if (!class_exists('OES_Archive')) {
                     ((Versioning\get_current_version_id($parentID) ?? false) != $post->ID)) return;
 
                 /* check for language and return early if it does not match criteria */
-                if($this->filtered_language !== 'all' && !empty($this->filtered_language)) {
+                if ($this->filtered_language !== 'all' && !empty($this->filtered_language)) {
                     $postLanguage = oes_get_post_language($parentID ?: $post->ID);
                     if ($postLanguage &&
                         $postLanguage !== 'all' &&
@@ -252,7 +255,7 @@ if (!class_exists('OES_Archive')) {
                 /**
                  * Additional processing.
                  *
-                 * @param int $post->ID The post ID.
+                 * @param int $post- >ID The post ID.
                  */
                 do_action('oes/theme_archive_loop_results_post', $post->ID);
             }
@@ -267,7 +270,7 @@ if (!class_exists('OES_Archive')) {
          */
         function get_key_for_alphabet_filter(string $title): string
         {
-            $key = strtoupper(substr($title, 0, 1));
+            $key = strtoupper(substr(remove_accents($title), 0, 1));
             if (!in_array($key, range('A', 'Z'))) $key = 'other';
             return $key;
         }
@@ -368,8 +371,8 @@ if (!class_exists('OES_Archive')) {
 
                                 case 'radio':
                                 case 'select':
-                                    if(is_string($field)) $field = [$field];
-                                    if(is_array($field)) {
+                                    if (is_string($field)) $field = [$field];
+                                    if (is_array($field)) {
                                         foreach ($field as $singleField) {
                                             if (!isset($this->filter_array['json'][$filter][$singleField]) ||
                                                 !in_array($postID, $this->filter_array['json'][$filter][$singleField])) {
@@ -387,10 +390,13 @@ if (!class_exists('OES_Archive')) {
                                         !in_array($postID, $this->filter_array['json'][$filter][$field])) {
 
                                         $multipleValues = explode(';', $field);
-                                        foreach($multipleValues ?? [] as $singleValue) {
+                                        foreach ($multipleValues ?? [] as $singleValue) {
 
                                             /* make sure the key is javascript compatible */
-                                            $cleanKey = hash('md5', $singleValue);
+                                            $cleanKey = (is_numeric($singleValue) && (string)(int)$singleValue === (string)$singleValue)
+                                                ? (int)$singleValue
+                                                : md5($singleValue);
+
                                             $this->filter_array['list'][$filter]['items'][$cleanKey] = $singleValue;
                                             $this->filter_array['json'][$filter][$cleanKey][] = $postID;
                                         }
@@ -416,13 +422,13 @@ if (!class_exists('OES_Archive')) {
 
             /* get first character of displayed title for character array */
             $titleForSorting = oes_get_display_title_sorting($term);
-            $key = strtoupper(substr($titleForSorting, 0, 1));
-            if (!in_array($key, range('A', 'Z'))) $key = 'other';
+            $key = $this->get_key_for_alphabet_filter($titleForSorting);
             if (!in_array($key, $this->characters)) $this->characters[] = $key;
 
             /* add information */
             $this->prepared_posts[$key][strtolower($titleForSorting . $term->term_taxonomy_id)][] = [
                 'termID' => $term->term_id,
+                'postID' => $term->term_id,
                 'termTaxonomyID' => $term->term_taxonomy_id,
                 'title' => $titleDisplay,
                 'titleForDisplay' => $titleDisplay,
@@ -461,10 +467,23 @@ if (!class_exists('OES_Archive')) {
                         $permalink = $object['permalink'];
                         $hidePost = false;
                         $versionExists = true;
+                        $isTerm = false;
                         $additionalInformation = '';
 
                         /* differentiate between post and term */
-                        if ($postID = $object['postID'] ?? false) {
+                        if ($postID = $object['termID'] ?? false) {
+                            $title = $object['titleForDisplay'] ?: $object['title'];
+                            $isTerm = true;
+
+                            if ($archiveData) {
+                                $termWP = get_term($postID);
+                                $taxonomy = $termWP ? $termWP->taxonomy : false;
+                                $term = $taxonomy && class_exists($taxonomy) ?
+                                    new $taxonomy($postID) :
+                                    new OES_Term($postID);
+                                $tableData = $term->get_archive_data();
+                            }
+                        } elseif ($postID = $object['postID'] ?? false) {
 
                             /* check if parent post type */
                             $versionPost = false;
@@ -482,8 +501,8 @@ if (!class_exists('OES_Archive')) {
 
                                         /* get post */
                                         $versionPost = class_exists($versionPostType) ?
-                                            new $versionPostType($versionID) :
-                                            new OES_Post($versionID);
+                                            new $versionPostType($versionID, '', ['skip' => true]) :
+                                            new OES_Post($versionID, '', ['skip' => true]);
                                         $additionalInformation = $versionPost->additional_archive_data;
                                     }
                                 } else $versionExists = false;
@@ -496,8 +515,8 @@ if (!class_exists('OES_Archive')) {
 
                                     $postType = get_post($postID) ? get_post_type($postID) : false;
                                     $versionPost = $postType && class_exists($postType) ?
-                                        new $postType($postID) :
-                                        new OES_Post($postID);
+                                        new $postType($postID, '', ['skip' => true]) :
+                                        new OES_Post($postID, '', ['skip' => true]);
                                     $additionalInformation = $versionPost->additional_archive_data;
                                 }
                             }
@@ -512,26 +531,19 @@ if (!class_exists('OES_Archive')) {
                                 $tableData = $archiveData ? $versionPost->get_archive_data() : [];
                             }
 
-                        } elseif ($object['termID'] ?? false) {
-                            $title = $object['titleForDisplay'] ?: $object['title'];
-
-                            if($archiveData){
-                                $termID = $object['termID'];
-                                $termWP = get_term($termID);
-                                $taxonomy = $termWP ? $termWP->taxonomy : false;
-                                $term = $taxonomy && class_exists($taxonomy) ?
-                                    new $taxonomy($termID) :
-                                    new OES_Term($termID);
-                                $tableData = $term->get_archive_data();
-                            }
                         }
 
                         /* add information to table */
                         if (!$hidePost && $versionExists) {
 
-                            $postLanguage = oes_get_post_language($postID);
-                            if(empty($postLanguage)){
+                            if($isTerm){
                                 $postLanguage = 'all';
+                            }
+                            else {
+                                $postLanguage = oes_get_post_language($postID);
+                                if (empty($postLanguage)) {
+                                    $postLanguage = 'all';
+                                }
                             }
 
                             $prepareRowData = [

@@ -195,6 +195,7 @@ if (!class_exists('OES_Core')) :
             define('OES_CORE_PLUGIN', __DIR__);
             define('OES_BASENAME', basename(__DIR__));
             define('OES_ACF_PRO', class_exists('acf_pro'));
+            define('OES_LIVEMODE', true);
 
             if (!empty($projectPath)) {
                 define('OES_PROJECT_PLUGIN', $projectPath);

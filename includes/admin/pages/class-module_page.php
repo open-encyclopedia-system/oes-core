@@ -37,6 +37,12 @@ if (!class_exists('Module_Page')) :
         public string $setting = '';
 
         /**
+         * @var string $parent_slug
+         * Parent slug in admin menu.
+         */
+        public string $parent_slug = '';
+
+        /**
          * @var int $position
          * Position of the menu item in the WordPress admin menu. Used for ordering.
          */
@@ -96,11 +102,12 @@ if (!class_exists('Module_Page')) :
             $this->name = $args['name'] ?? 'Name missing';
             $this->key = $args['key'] ?? strtolower($this->name);
             $this->setting = $args['setting'] ?? ('oes_' . $this->key);
-            $this->position = $args['position'] ?? 85;
+            $this->position = $args['position'] ?? 50;
             $this->schema_enabled = $args['schema_enabled'] ?? true;
             $this->file = $args['file'] ?? '';
             $this->components = $args['components'] ?? ['post_types'];
             $this->types = $args['types'] ?? ['single-article'];
+            $this->parent_slug = $args['parent_slug'] ?? 'oes_settings';
         }
 
         /**
@@ -118,7 +125,7 @@ if (!class_exists('Module_Page')) :
                     'menu_title' => $this->name,
                     'menu_slug' => $this->setting,
                     'position' => $this->position,
-                    'parent_slug' => 'oes_settings'
+                    'parent_slug' => $this->parent_slug
                 ],
                 'tool' => $this->key
             ];

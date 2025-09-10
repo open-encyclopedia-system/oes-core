@@ -230,7 +230,7 @@ class OES_Archive_Loop
     protected function render_group_wrapper(string $character, string $groupHeader, string $container): string
     {
         return <<<HTML
-<div class="oes-archive-wrapper oes-alphabet-filter-{$character}" data-alphabet="{$character}">
+<div class="oes-archive-wrapper" data-alphabet="{$character}">
     {$groupHeader}
     <div class="oes-alphabet-container">
         {$container}
@@ -282,7 +282,11 @@ HTML;
      */
     protected function is_language_match(array $row): bool
     {
-        if (empty($this->considered_language) || $this->considered_language === 'all') {
+        if (empty($this->considered_language) || $this->considered_language === 'all' || empty($row['language'] ?? '')) {
+            return true;
+        }
+
+        if($row['language'] === 'all'){
             return true;
         }
 
@@ -292,7 +296,7 @@ HTML;
             default => $this->considered_language,
         };
 
-        return empty($row['language']) || $targetLang === $row['language'];
+        return $targetLang === $row['language'];
     }
 
     /**
@@ -427,10 +431,7 @@ HTML;
      */
     protected function render_default_row_with_preview(array $row, string $content, string $preview = '', string $readMore = '', string $language = 'language0', string $additional = ''): string
     {
-        $postId = $row['id'];
-        $wrapperClasses = sprintf('wp-block-group oes-post-filter-wrapper oes-post-%s oes-post-filter-%s', $language, $postId);
-        $tableId = "row{$postId}";
-        $tableClass = ($this->options['className'] ?? 'is-style-oes-default') . ' oes-archive-table';
+        [$postId, $wrapperClasses, $tableId, $tableClass] = $this->prepare_row_preview_data($row, $language);
 
         return <<<HTML
 <div class="{$wrapperClasses}" data-post="{$postId}" {$additional}>
@@ -449,6 +450,19 @@ HTML;
     </div>
 </div>
 HTML;
+    }
+
+    /**
+     * Prepare renders a row with collapsible preview.
+     */
+    protected function prepare_row_preview_data(array $row, string $language = 'language0'): array
+    {
+        $postId = $row['id'];
+        $wrapperClasses = sprintf('wp-block-group oes-post-filter-wrapper oes-post-%s oes-post-filter-%s', $language, $postId);
+        $tableId = "row{$postId}";
+        $tableClass = ($this->options['className'] ?? 'is-style-oes-default') . ' oes-archive-table';
+
+        return [$postId, $wrapperClasses, $tableId, $tableClass];
     }
 
     /**
