@@ -7,19 +7,6 @@
 ---
 
 ## 2.4.1
-- fix language filter in archives
-- replace oes-alphabet-filter-[alphabet] with data-alphabet=[alphabet]
-- replace 
-- add status paramter to batch tool
-- fix caching problem with multilingual index
-- new block: share link
-- improve filter
-- improve archive class
-- add filter: 'oes/data_prepared'
-- caching: make project implementation possible
-- new icon: list
-- improve search accent independent
-
 ### Fixes
 - Fixed language filter in archives
 - Fixed caching issue with multilingual index
