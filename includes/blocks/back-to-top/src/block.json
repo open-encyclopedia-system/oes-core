@@ -1,11 +1,11 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "oes/print",
+	"name": "oes/back-to-top",
 	"version": "0.1.0",
-	"title": "Print Button",
+	"title": "Back To Top Button",
 	"category": "widgets",
-	"description": "Display the print button.",
+	"description": "Adds a floating back-to-top button.",
 	"supports": {
 		"spacing": {
 			"margin": true,
@@ -28,15 +28,8 @@
 		"alignText": true,
 		"fullHeight": true
 	},
-	"attributes": {
-		"icon": {
-			"type": "boolean",
-			"default": true
-		},
-		"labels": {
-			"type": "object"
-		}
-	},
 	"editorScript": "file:./index.js",
-	"style": "file:./style-index.css"
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
 }

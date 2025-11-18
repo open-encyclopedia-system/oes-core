@@ -95,10 +95,10 @@ function oes_get_page_title(array $args = []): string
         if ($isLink) $linkObject = $taxonomy;
         $isTaxonomy = true;
 
-    } elseif ($oes_archive_data) {
+    } elseif ($oes_archive) {
 
         /* get title from archive object */
-        $title = $oes_archive['page_title'] ?? ($oes_archive_data['page_title'] ?? '');
+        $title = $oes_archive['page_title'] ?? ($oes_archive['page_title'] ?? '');
     } elseif (is_404()) $title = __('Error 404', 'oes');
     else $title = get_the_title();
 

@@ -33,7 +33,7 @@ function oes_get_wp_query_posts(array $args): array
 
     $query = new WP_Query($queryArgs);
     $posts = $query->posts;
-    wp_reset_query();
+    wp_reset_postdata();
     return $posts;
 }
 
@@ -147,7 +147,7 @@ function oes_get_display_title($object = false, array $args = [], string $option
         if (!empty($language) && $language !== 'language0' &&
             isset($oes->post_types[$postType]['field_options'][$titleOption]['language_dependent']) &&
             $oes->post_types[$postType]['field_options'][$titleOption]['language_dependent'] &&
-            get_field($titleOption . '_' . $language, $object))
+            oes_get_field($titleOption . '_' . $language, $object))
             $titleOption = $titleOption . '_' . $language;
 
         $title = ($titleOption && $titleOption != 'wp-title') ?

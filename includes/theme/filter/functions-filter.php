@@ -47,8 +47,12 @@ function oes_prepare_filter_items(array $filterItems, string $filterKey, string 
                         ['option' => 'title_sorting_display'])) . $itemKey;
                 break;
 
-            default:
+            case 'sorting_title_case_sensitive':
                 $sortingTitle = oes_replace_umlaute($itemLabel) . $itemKey;
+                break;
+
+            default:
+                $sortingTitle = strtolower(oes_replace_umlaute($itemLabel) . $itemKey);
                 break;
         }
 
@@ -72,12 +76,13 @@ function oes_prepare_filter_items(array $filterItems, string $filterKey, string 
 function oes_alphabet_filter_html($args): string
 {
     global $oes_archive;
-    if ($oes_archive['filter']['alphabet'] ?? false)
+    if ($oes_archive['filter']['alphabet'] ?? false) {
         return '<ul class="' . ($args['style'] ?? 'is-style-oes-default') . ' oes-alphabet-list oes-horizontal-list">' .
             '<li>' .
             implode('</li><li>', oes_archive_get_alphabet_filter($oes_archive['characters'])) .
             '</li>' .
             '</ul>';
+    }
 
     return '';
 }

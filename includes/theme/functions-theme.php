@@ -368,7 +368,10 @@ function oes_field_html(array $args): string
             $oes_term->generate_table_of_contents_header($headerText) :
             $oes_post->generate_table_of_contents_header($headerText);
 
-    return $header . '<div class="' . ($args['class'] ?? '') . '">' . $value . '</div>';
+    /* check for prefix */
+    $prefix = $args['prefix_' . $oes_language] ?? ($args['prefix'] ?? '');
+
+    return $header . '<div class="' . ($args['class'] ?? '') . '">' . $prefix . $value . '</div>';
 }
 
 

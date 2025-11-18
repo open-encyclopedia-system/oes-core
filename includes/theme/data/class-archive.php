@@ -231,10 +231,10 @@ if (!class_exists('OES_Archive')) {
                 }
 
                 /* prepare title */
-                $titleDisplay = oes_get_display_title_archive();
+                $titleDisplay = oes_get_display_title_archive($post);
 
                 /* get first character of displayed title for character array */
-                $titleForSorting = oes_get_display_title_sorting();
+                $titleForSorting = oes_get_display_title_sorting($post);
                 $key = $this->get_key_for_alphabet_filter($titleForSorting);
                 if (!in_array($key, $this->characters)) $this->characters[] = $key;
 
@@ -513,7 +513,6 @@ if (!class_exists('OES_Archive')) {
                                 /* check for OES Post action */
                                 if ($archiveData) {
 
-                                    $postType = get_post($postID) ? get_post_type($postID) : false;
                                     $versionPost = $postType && class_exists($postType) ?
                                         new $postType($postID, '', ['skip' => true]) :
                                         new OES_Post($postID, '', ['skip' => true]);
@@ -546,14 +545,14 @@ if (!class_exists('OES_Archive')) {
                                 }
                             }
 
-                            $prepareRowData = [
+                            $prepareRowData = $this->modify_prepared_row_data([
                                 'id' => $postID,
                                 'title' => $title,
                                 'permalink' => $permalink,
                                 'data' => $tableData,
                                 'additional' => $additionalInformation,
                                 'language' => $postLanguage
-                            ];
+                            ]);
 
                             /* check if content should be added */
                             if ($this->display_content)
@@ -570,6 +569,18 @@ if (!class_exists('OES_Archive')) {
             }
 
             return $tableArray;
+        }
+
+
+        /**
+         * Modify the prepared row data.
+         *
+         * @param array $args
+         * @return array
+         */
+        public function modify_prepared_row_data(array $args = []): array
+        {
+            return $args;
         }
 
 

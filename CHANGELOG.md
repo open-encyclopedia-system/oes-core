@@ -1,10 +1,25 @@
 
 # Changelog
 
-## Unreleased
-- Improve performance of search indexing
+## 2.4.2
+### Fixes
+- Fixed title for archive when there are no entries
+- Fixed filter processing for alphabet filter when no other filters are applied
+- Fixed filter items list: now sorted case-insensitively by default
+- Fixed dashicons alignment in "Print" and "Cite as" block
 
----
+### Improvements
+- Improved caching: transients now stored without autoload
+- Improved table of contents block cleanup
+
+### New
+- Added new block: Back to Top 
+- Added new shortcode: Audit bidirectional ACF relationship fields for a given post type 
+- Added new icon: arrow up 
+- Added new filter: archive caching keys 
+- Added new method: archive processing row data 
+- Added parameter prefix to shortcode oes_field 
+- Added display value support for fields of type file
 
 ## 2.4.1
 ### Fixes

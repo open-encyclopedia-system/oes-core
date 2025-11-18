@@ -394,6 +394,7 @@ function oes_get_featured_post_html($featuredPost = false, array $args = []): st
             $featuredPost = get_post();
             $random = true;
         }
+        wp_reset_postdata();
     }
 
     if ($featuredPost instanceof WP_Post) {
@@ -809,19 +810,20 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
  * This function supports multilingual strings separated by the "%" character,
  * for example: "English%Français%Deutsch".
  *
- * @param string $rawString     The raw string, potentially containing multiple language versions separated by "%".
- * @param string $languageKey  A string identifying the language index.
+ * @param string $rawString The raw string, potentially containing multiple language versions separated by "%".
+ * @param string $languageKey A string identifying the language index.
  *
  * @return string              The translated and HTML-escaped string. If no match is found, returns the original string escaped.
  */
-function oes_get_translated_string(string $rawString, string $languageKey = ''): string {
+function oes_get_translated_string(string $rawString, string $languageKey = ''): string
+{
 
-    if(empty($languageKey)){
+    if (empty($languageKey)) {
         global $oes_language;
         $languageKey = $oes_language;
     }
 
-    if(empty($languageKey)){
+    if (empty($languageKey)) {
         return $rawString;
     }
 

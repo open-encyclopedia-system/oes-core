@@ -19,6 +19,38 @@ if (!class_exists('\OES\Icon\Icons')) {
     {
 
         /**
+         * Returns SVG for "arrow up" icon.
+         *
+         * @return string
+         */
+        protected function arrow_up(): string {
+            return <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+     fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round"
+     class="icon icon-arrow-up" aria-hidden="true" focusable="false">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+</svg>
+SVG;
+        }
+
+        /**
+         * Returns SVG for "arrow up" caret (^).
+         *
+         * @return string
+         */
+        protected function arrow_caret_up(): string {
+            return <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+     fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round"
+     class="icon icon-arrow-caret-up" aria-hidden="true" focusable="false">
+    <path d="M6 15l6-6 6 6"/>
+</svg>
+SVG;
+        }
+
+        /**
          * Returns SVG for "arrow right" icon.
          *
          * @return string

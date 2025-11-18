@@ -1,0 +1,1 @@
+jQuery(document).ready((function(o){const n=[];o(".wp-block-oes-back-to-top").each((function(){const c=o(this).find(".oes-back-to-top");n.push(c)})),o(window).on("scroll",(function(){const c=o(window).width()>991&&o(window).scrollTop()>65;n.forEach((function(o){c?o.fadeIn():o.fadeOut()}))}))}));

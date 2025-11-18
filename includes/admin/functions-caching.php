@@ -64,13 +64,43 @@ function set_cache(string $key, $data, bool $expires = false, int $chunkSize = O
 
     foreach ($chunks as $i => $chunk) {
         $partKey = "{$key}_part_{$i}";
-        if (!set_transient($partKey, $chunk, $expiration)) {
+        if (!set_transient_noautoload($partKey, $chunk, $expiration)) {
             return false; // Early exit on failure
         }
     }
 
     // Store the number of parts for later retrieval
-    return set_transient("{$key}_count", count($chunks), $expiration);
+    return set_transient_noautoload("{$key}_count", count($chunks), $expiration);
+}
+
+/**
+ * Set a WordPress transient that does NOT autoload.
+ *
+ * @param string $transient Transient name (without _transient_ prefix).
+ * @param mixed $value Value to store.
+ * @param int $expiration Optional. Time until expiration in seconds. Default: 0 (no expiration).
+ *
+ * @return bool True if set successfully, false otherwise.
+ */
+function set_transient_noautoload(string $transient, $value, $expiration = 0): bool
+{
+    global $wpdb;
+
+    if (!set_transient($transient, $value, $expiration)) {
+        return false;
+    }
+
+    if (!wp_using_ext_object_cache()) {
+        $option = '_transient_' . $transient;
+
+        $wpdb->update(
+            $wpdb->options,
+            array('autoload' => 'no'),
+            array('option_name' => $option)
+        );
+    }
+
+    return true;
 }
 
 /**
@@ -150,27 +180,29 @@ function clear_archive_cache_post(int $postID): void
     }
 
     global $oes;
-    $post_type = $post->post_type;
+    $postType = $post->post_type;
 
-    if (!isset($oes->post_types[$post_type])) {
+    if (!isset($oes->post_types[$postType])) {
         return;
     }
 
-    $class = $post_type . '_Post_Archive';
+    $class = $postType . '_Post_Archive';
     if (!class_exists($class)) {
         $class = 'OES_Post_Archive';
     }
 
-    clear_archive_cache($post_type, $class);
+    $language = oes_get_post_language($postID);
+
+    clear_archive_cache($postType, $class, $language);
 }
 
 /**
  * Handles cache clearing when a term is deleted.
  *
- * @param int        $termID   The term ID.
- * @param int        $tt_id    Term taxonomy ID.
- * @param string     $taxonomy The taxonomy name.
- * @param \WP_Term    $deletedTerm The term object before deletion.
+ * @param int $termID The term ID.
+ * @param int $tt_id Term taxonomy ID.
+ * @param string $taxonomy The taxonomy name.
+ * @param \WP_Term $deletedTerm The term object before deletion.
  * @return void
  */
 function clear_archive_cache_term(int $termID, $tt_id, string $taxonomy, $deletedTerm = null): void
@@ -202,17 +234,26 @@ function clear_archive_cache_term(int $termID, $tt_id, string $taxonomy, $delete
  * Clears archive cache for a specific object (post type or taxonomy) in all languages.
  *
  * @param string $objectKey Post type or taxonomy key.
- * @param string $class     Archive class name (or fallback).
+ * @param string $class Archive class name (or fallback).
  * @return void
  */
-function clear_archive_cache(string $objectKey, string $class): void
+function clear_archive_cache(string $objectKey, string $class, string $postLanguage = 'all'): void
 {
     global $oes;
 
-    foreach (array_keys($oes->languages) as $language) {
-        $key = 'oes_cache-' . $objectKey . '-' . sanitize_key($class) . '-' . sanitize_key($language);
-        clear_cache_parts($key);
-    }
+    // Prepare cache keys for one or all languages
+    $languages = $postLanguage === 'all'
+        ? array_keys($oes->languages)
+        : [$postLanguage];
+
+    $keys = array_map(
+        static fn(string $language): string => 'oes_cache-' . $objectKey . '-' . sanitize_key($class) . '-' . sanitize_key($language),
+        $languages
+    );
+
+    $keys = modify_cache_keys($keys, ['object' => $objectKey, 'class' => $class]);
+
+    array_map('\OES\Caching\clear_cache_parts', $keys);
 
     // Clear index
     foreach ($oes->theme_index_pages as $indexKey => $indexData) {
@@ -221,10 +262,14 @@ function clear_archive_cache(string $objectKey, string $class): void
             $archiveClass = $indexKey . '_Index_Archive';
             if (!class_exists($archiveClass)) $archiveClass = 'OES_Index_Archive';
 
-            foreach (array_keys($oes->languages) as $language) {
-                $key = 'oes_cache-' . $indexKey . '-' . sanitize_key($archiveClass) . '-' . sanitize_key($language);
-                clear_cache_parts($key);
-            }
+            $keys = array_map(
+                static fn(string $language): string => 'oes_cache-' . $indexKey . '-' . sanitize_key($archiveClass) . '-' . sanitize_key($language),
+                array_keys($oes->languages)
+            );
+
+            $keys = modify_cache_keys($keys, ['index' => $indexKey, 'class' => $archiveClass]);
+
+            array_map('\OES\Caching\clear_cache_parts', $keys);
         }
     }
 }
@@ -243,15 +288,27 @@ function regenerate_archive_cache(string $postType, array $args = []): void
         $class = 'OES_Post_Archive';
     }
 
-    foreach (array_keys($oes->languages) as $language) {
-        $key = 'oes_cache-' . $postType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
+    // Prepare initial cache keys
+    $keys = [];
+    foreach ($oes->languages as $language => $_) {
+        $keys[] = 'oes_cache-' . $postType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
+    }
+
+    $keys = modify_cache_keys($keys, ['postType' => $postType, 'class' => $class]);
+
+    foreach ($keys as $index => $key) {
+        $language = array_keys($oes->languages)[$index] ?? null;
+        if (!$language) {
+            continue;
+        }
 
         clear_cache_parts($key);
 
         $args = [
             'post-type' => $postType,
-            'language' => $language
+            'language' => $language,
         ];
+
         oes_set_archive_data($class, $args, false);
     }
 }
@@ -353,13 +410,13 @@ function maybe_schedule_regeneration_archive(): void
 /**
  * Schedule archive regeneration for a given post type only once per request.
  *
- * @param int $post_id The post being saved/deleted.
+ * @param int $postID The post being saved/deleted.
  */
-function maybe_schedule_regeneration($post_id): void
+function maybe_schedule_regeneration($postID): void
 {
     global $oes;
 
-    $post = get_post($post_id);
+    $post = get_post($postID);
     if (!$post || !isset($oes->post_types[$post->post_type])) {
         return;
     }
@@ -375,5 +432,20 @@ function maybe_schedule_regeneration($post_id): void
     if (!wp_next_scheduled("oes_regenerate_archive_cache_{$post->post_type}")) {
         wp_schedule_single_event(strtotime('tomorrow 2:00am'), "oes_regenerate_archive_cache_{$post->post_type}");
     }
+}
+
+/**
+ * Applies a filter to modify the provided cache keys before use.
+ *
+ * @param array $keys Array of cache keys to be filtered.
+ * @param array $args Optional. Context arguments for the filter (e.g., object type, class name). Default [].
+ * @return array The filtered array of cache keys.
+ */
+function modify_cache_keys(array $keys, array $args = []): array
+{
+    if (has_filter('oes/modify_cache_keys')) {
+        return apply_filters('oes/modify_cache_keys', $keys, $args);
+    }
+    return $keys;
 }
 

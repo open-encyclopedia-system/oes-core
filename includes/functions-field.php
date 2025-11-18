@@ -287,10 +287,20 @@ function oes_get_field_display_value(string $fieldName, $postID, array $args = [
                 case 'range' :
                     return is_string($value) ? $value : '';
 
+                case 'file':
+                    if (!empty($value['url'] ?? false)) {
+                        return oes_get_html_anchor(
+                            empty($value['title']) ? $value['url'] : $value['title'],
+                            $value['url'],
+                            '',
+                            '',
+                            '_blank');
+                    }
+                    return ''; //@oesDevelopment
+
                 case 'button_group' :
                 case 'accordion' :
                 case 'checkbox' :
-                case 'file' :
                 case 'google_map' :
                 case 'image' :
                 case 'tab':
@@ -673,11 +683,11 @@ function oes_resolve_taxonomy_context($object, string $taxonomyKey): array
     }
 
     // Handle 'taxonomy__' reference
-    if(str_starts_with($taxonomyKey, 'taxonomy__')){
+    if (str_starts_with($taxonomyKey, 'taxonomy__')) {
         $taxonomyKey = substr($taxonomyKey, 10);
     }
 
-    if(!taxonomy_exists($taxonomyKey)) $taxonomyKey = 'invalid';
+    if (!taxonomy_exists($taxonomyKey)) $taxonomyKey = 'invalid';
 
     return [$objectID, $taxonomyKey];
 }

@@ -193,7 +193,7 @@ if (!class_exists('OES_Post')) {
             global $oes_language;
             if ($oes_language !== 'language0' &&
                 isset($field['language_dependent']) && $field['language_dependent'] &&
-                get_field($key . '_' . $oes_language, $this->object_ID))
+                oes_get_field($key . '_' . $oes_language, $this->object_ID))
                 $key = $key . '_' . $oes_language;
 
             /* get field object */

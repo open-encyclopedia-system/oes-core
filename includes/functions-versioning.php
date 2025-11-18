@@ -427,13 +427,13 @@ function meta_box_parent_post(WP_Post $post, array $callbackArgs): void
  * Hide permalink for post types that are controlled by a parent post type.
  *
  * @param string $return The permalink before it is being displayed.
- * @param int $post_id The post ID.
+ * @param int $postID The post ID.
  * @return string Return the permalink or empty string.
  */
-function get_sample_permalink_html(string $return, int $post_id): string
+function get_sample_permalink_html(string $return, int $postID): string
 {
     /* check if post type is controlled by a parent post type and return empty string */
-    $post = get_post($post_id);
+    $post = get_post($postID);
     if (get_version_post_type($post->post_type)) return '';
 
     /* if post type is not controlled by a parent post type, return string as it was before the hook. */
@@ -539,17 +539,17 @@ function add_meta_boxes(string $post_type): void
 /**
  * Add post meta information when updating a version controlling or version controlled post.
  *
- * @param int $post_id The current post id.
+ * @param int $postID The current post id.
  * @param WP_Post $post The current post.
  * @return void
  */
-function save_post(int $post_id, WP_Post $post): void
+function save_post(int $postID, WP_Post $post): void
 {
     /* check if post type has parent post type, post is published */
     if (get_parent_post_type($post->post_type) && 'trash' !== $post->post_status) {
 
         /* update parent post */
-        $parentID = get_parent_id($post_id);
+        $parentID = get_parent_id($postID);
 
         /* break if post has no parent post and therefore is orphaned post */
         if (!$parentID) return;
@@ -559,33 +559,33 @@ function save_post(int $post_id, WP_Post $post): void
 
         /* check if new post should be current version by comparing the version number */
         if ($post->post_status === 'publish') {
-            if (!$currentVersionID) set_current_version_id($parentID, $post_id);
-            elseif ($currentVersionID !== $post_id) {
+            if (!$currentVersionID) set_current_version_id($parentID, $postID);
+            elseif ($currentVersionID !== $postID) {
 
                 /* compare versions */
                 $currentVersionNumber = get_version_field($currentVersionID);
-                $postVersionNumberText = get_version_field($post_id);
+                $postVersionNumberText = get_version_field($postID);
                 $postVersionNumber = get_version_number_from_string($postVersionNumberText);
 
                 /* update parent post if version number is bigger than current version number */
                 if (floatval($currentVersionNumber) < floatval($postVersionNumber[0] ?? $postVersionNumberText))
-                    set_current_version_id($parentID, $post_id);
+                    set_current_version_id($parentID, $postID);
             }
         }
 
         /* add hook */
-        do_action('oes/modify_parent_when_saving_child', $parentID, $post_id, $post->post_type);
+        do_action('oes/modify_parent_when_saving_child', $parentID, $postID, $post->post_type);
 
     } elseif (get_version_post_type($post->post_type) && 'trash' !== $post->post_status) {
 
         /* check if current version is set */
-        $currentVersionID = get_current_version_id($post_id);
-        $versions = get_all_version_ids($post_id);
+        $currentVersionID = get_current_version_id($postID);
+        $versions = get_all_version_ids($postID);
         if (!empty($versions)) {
 
             /* get version with the highest version number */
-            $max = get_max_version_number($post_id, true);
-            if ($max && $max !== $currentVersionID) set_current_version_id($post_id, $max);
+            $max = get_max_version_number($postID, true);
+            if ($max && $max !== $currentVersionID) set_current_version_id($postID, $max);
         }
     }
 }
@@ -604,7 +604,7 @@ function admin_action_oes_copy_version(): void
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
     if (wp_verify_nonce($nonce, 'oes-copy-version-' . $parentID)
-        && current_user_can('edit_posts')) {
+        && current_user_can('edit_posts', $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -738,7 +738,7 @@ function admin_action_oes_create_version(): void
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
     if (wp_verify_nonce($nonce, 'oes-create-version-' . $parentID)
-        && current_user_can('edit_posts')) {
+        && current_user_can('edit_posts', $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -835,7 +835,7 @@ function admin_action_oes_create_translation(): void
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
     if (wp_verify_nonce($nonce, 'oes-create-translation-' . $parentID)
-        && current_user_can('edit_posts')) {
+        && current_user_can('edit_posts', $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])

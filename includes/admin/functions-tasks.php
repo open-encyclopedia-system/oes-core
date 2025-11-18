@@ -240,14 +240,14 @@ function posts_columns(array $columns): array
  * Display values for column in the list display of post types in the wp admin area.
  *
  * @param string $column The column name.
- * @param string $post_id The post ID.
+ * @param string $postID The post ID.
  * @return void
  */
-function posts_custom_column(string $column, string $post_id): void
+function posts_custom_column(string $column, string $postID): void
 {
 
     /* acf field */
-    if ($value = oes_get_field($column, $post_id)) {
+    if ($value = oes_get_field($column, $postID)) {
 
         /* check type */
         $fieldObject = oes_get_field_object($column);
@@ -257,7 +257,7 @@ function posts_custom_column(string $column, string $post_id): void
 
                 case 'radio' :
                 case 'select' :
-                    $newValue = oes_get_select_field_value($column, $post_id);
+                    $newValue = oes_get_select_field_value($column, $postID);
                     break;
 
                 case 'user' :
@@ -320,7 +320,7 @@ function posts_custom_column(string $column, string $post_id): void
     } /* taxonomy */
     elseif (get_taxonomy($column)) {
 
-        $terms = get_the_terms($post_id, $column);
+        $terms = get_the_terms($postID, $column);
 
         $termStringArray = [];
         if ($terms) {
@@ -355,12 +355,12 @@ function sortable_columns(array $columns): array
  * Hide permalink for tasks post type.
  *
  * @param string $return The permalink.
- * @param int $post_id The post id.
+ * @param int $postID The post id.
  * @return string Return empty if tasks post type
  */
-function hide_permalink(string $return, int $post_id): string
+function hide_permalink(string $return, int $postID): string
 {
-    $post = get_post($post_id);
+    $post = get_post($postID);
     if ($post->post_type === 'oes_task') return '';
     return $return;
 }

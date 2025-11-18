@@ -1,39 +1,36 @@
-document.addEventListener("DOMContentLoaded", function (event) {
-
+document.addEventListener("DOMContentLoaded", function () {
     const toc = document.querySelectorAll(".oes-table-of-contents");
-    if (toc.length > 0) {
+    if (toc.length === 0) return;
 
-        /* query all headings in text */
-        const headings = document.querySelectorAll(".oes-single-content .oes-content-table-header");
+    const headings = document.querySelectorAll(".oes-single-content .oes-content-table-header");
+    let headingsList = '';
 
-        /* prepare list */
-        let headingsList = '';
-        for (let x = 0; x < headings.length; x++) {
-            if (!headings[x].classList.contains('oes-exclude-heading-from-toc')) {
+    for (let x = 0; x < headings.length; x++) {
 
-                /* remove notes etc */
-                let headerText = headings[x].cloneNode(true);
-                for (let i = 0; i < headerText.childNodes.length; i++) {
-                    if (headerText.childNodes[i].nodeType !== Node.TEXT_NODE)
-                        if (headerText.childNodes[i].classList.contains('oes-popup') ||
-                            headerText.childNodes[i].classList.contains('oes_popup_popup'))
-                            headerText.removeChild(headerText.childNodes[i]);
-                }
+        const heading = headings[x];
+        if (heading.classList.contains('oes-exclude-heading-from-toc')) continue;
 
-                headingsList += '<li class="oes-toc-header' + parseInt(headings[x].tagName.substring(1)) +
-                    ' oes-toc-anchor">' +
-                    '<a href="#' + headings[x].id + '">' +
-                    headerText.innerHTML +
-                    '</a></li>';
-            }
-        }
+        let headerText = heading.cloneNode(true);
 
-        if (headingsList.length < 1) {
-            document.querySelector(".wp-block-oes-table-of-contents").style.display = 'none';
-        } else {
-            for (let i = 0; i < toc.length; i++) {
-                toc[i].innerHTML = headingsList;
-            }
-        }
+        // Remove unwanted child elements (notes/popups)
+        headerText.querySelectorAll('.oes-popup, .oes_popup_popup').forEach(el => el.remove());
+
+        // Remove all <a> tags inside the header ***
+        headerText.querySelectorAll('a').forEach(link => {
+            const textNode = document.createTextNode(link.textContent);
+            link.replaceWith(textNode);
+        });
+
+        headingsList += `<li class="oes-toc-header${parseInt(heading.tagName.substring(1))} oes-toc-anchor">
+            <a href="#${heading.id}">${headerText.innerHTML}</a>
+        </li>`;
+    }
+
+    if (headingsList.trim().length === 0) {
+        const tocWrapper = document.querySelector(".wp-block-oes-table-of-contents");
+        if (tocWrapper) tocWrapper.style.display = 'none';
+    } else {
+        toc.forEach(el => el.innerHTML = headingsList);
     }
 });
+

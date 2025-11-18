@@ -1,4 +1,4 @@
-import './editor.scss';
+import './editor.css';
 
 export default function Edit() {
     return (

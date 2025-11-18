@@ -293,6 +293,228 @@ function display_audit(array $args): string {
 }
 
 /**
+ * Audit bidirectional ACF relationship fields for a given post type.
+ *
+ * This version detects the case:
+ *  - A -> B via fieldA1
+ *  - B links back to A, but via fieldB2 (not the expected fieldB1)
+ *  => flagged as "linked back via different field" (possible mismatch).
+ */
+function display_audit_relations(array $args = []): string
+{
+    $postType   = $args['post_type'] ?? false;
+    $fieldsRaw  = $args['fields'] ?? false;
+    $fields     = $fieldsRaw ? array_filter(array_map('trim', explode(';', $fieldsRaw))) : [];
+    $displayOk  = $args['include_ok'] ?? false;
+
+    if (!$postType || empty($fields)) {
+        return '<p style="color:red;"><strong>' . __('Error:', 'oes') .'</strong> ' .
+            __('Missing parameters. Provide post_type and fields.', 'oes') . '</p>';
+    }
+
+    // helper: normalize ACF relationship values into an array of integer post IDs
+    $normalizeToIDs = function ($value): array {
+        $ids = [];
+        if ($value === null || $value === false) {
+            return [];
+        }
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                if (is_object($item) && property_exists($item, 'ID')) {
+                    $ids[] = (int)$item->ID;
+                } elseif (is_numeric($item)) {
+                    $ids[] = (int)$item;
+                } elseif (is_string($item) && ctype_digit($item)) {
+                    $ids[] = (int)$item;
+                }
+            }
+        } elseif (is_object($value) && property_exists($value, 'ID')) {
+            $ids[] = (int)$value->ID;
+        } elseif (is_numeric($value)) {
+            $ids[] = (int)$value;
+        }
+        return array_values(array_unique($ids));
+    };
+
+    $posts = get_posts([
+        'post_status'    => 'publish',
+        'post_type'      => $postType,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+    ]);
+
+    $expectedTargetsPerSource = [];
+    foreach ($fields as $fieldKey) {
+        $fieldObj = get_field_object($fieldKey);
+        $targets = [];
+        if (is_array($fieldObj) && isset($fieldObj['bidirectional_target'])) {
+            $t = $fieldObj['bidirectional_target'];
+            $targets = is_array($t) ? array_map('trim', $t) : [trim((string)$t)];
+            $targets = array_filter($targets);
+        }
+        $expectedTargetsPerSource[$fieldKey] = $targets;
+    }
+
+    $allTargetFieldNames = [];
+    foreach ($expectedTargetsPerSource as $targets) {
+        foreach ((array)$targets as $t) {
+            $allTargetFieldNames[] = $t;
+        }
+    }
+    $allTargetFieldNames = array_values(array_unique($allTargetFieldNames));
+    $fieldCache = [];
+
+    $get_field_cached = function ($fieldName, $postId) use (&$fieldCache, $normalizeToIDs) {
+        if (!isset($fieldCache[$postId])) {
+            $fieldCache[$postId] = [];
+        }
+        if (array_key_exists($fieldName, $fieldCache[$postId])) {
+            return $fieldCache[$postId][$fieldName];
+        }
+        $raw = oes_get_field($fieldName, $postId);
+        $normalized = $normalizeToIDs($raw);
+        $fieldCache[$postId][$fieldName] = $normalized;
+        return $normalized;
+    };
+
+    $status = [
+        'mismatch'      => [],
+        'wrong_field'   => [],
+        'missing_posts' => [],
+        'ok'            => [],
+    ];
+
+    foreach ($posts as $postId) {
+        if (!($postId instanceof WP_Post)) {
+            $postObj = get_post($postId);
+        } else {
+            $postObj = $postId;
+        }
+        if (!$postObj) {
+            continue;
+        }
+        $postId = (int)$postObj->ID;
+
+        foreach ($expectedTargetsPerSource as $sourceField => $expectedTargetFields) {
+            $connectedIds = $get_field_cached($sourceField, $postId);
+
+            if (empty($connectedIds)) {
+                // nothing connected via this source field — skip
+                continue;
+            }
+
+            foreach ($connectedIds as $connectedId) {
+                $connectedId = (int)$connectedId;
+                $connectedPostObj = get_post($connectedId);
+
+                $titleB = $connectedPostObj
+                    ? '<a href="' . esc_url(get_edit_post_link($connectedId)) . '">' . esc_html(get_the_title($connectedId)) . '</a>'
+                    : 'Post ID ' . intval($connectedId);
+
+                if (!$connectedPostObj) {
+                    $status['missing_posts'][$postId][] = sprintf(
+                        __('Field <code>%s</code> links to %s but that post does not exist (maybe deleted).', 'oes'),
+                        esc_html($sourceField),
+                        esc_html('ID ' . $connectedId)
+                    );
+                    continue;
+                }
+
+                // 1) Check expected target field(s) on the connected post for a true reciprocal link
+                $reciprocalFound = false;
+                foreach ($expectedTargetFields as $expectedTargetField) {
+                    $vals = $get_field_cached($expectedTargetField, $connectedId);
+                    if (in_array($postId, $vals, true)) {
+                        $reciprocalFound = true;
+                        break;
+                    }
+                }
+
+                if ($reciprocalFound) {
+                    $status['ok'][$postId][] = sprintf(
+                        __('Field <code>%s</code> -> %s (reciprocal in expected field).', 'oes'),
+                        esc_html($sourceField),
+                        $titleB
+                    );
+                    continue;
+                }
+
+                // 2) Not found in expected target fields — check whether the connected post links back via any other known target field
+                $otherFieldsThatContainA = [];
+                foreach ($allTargetFieldNames as $targetFieldName) {
+                    $vals = $get_field_cached($targetFieldName, $connectedId);
+                    if (in_array($postId, $vals, true)) {
+                        $otherFieldsThatContainA[] = $targetFieldName;
+                    }
+                }
+
+                if (!empty($otherFieldsThatContainA)) {
+                    $status['wrong_field'][$postId][] = sprintf(
+                        __('Field <code>%s</code> is linked to %s, but that post links back to this post via field(s): <code>%s</code> instead of expected field(s): <code>%s</code>.', 'oes'),
+                        esc_html($sourceField),
+                        $titleB,
+                        esc_html(implode(', ', $otherFieldsThatContainA)),
+                        esc_html(implode(', ', $expectedTargetFields ?: ['(none configured)']))
+                    );
+                } else {
+                    $status['mismatch'][$postId][] = sprintf(
+                        __('<strong>Mismatch</strong>: Field <code>%s</code> is linked to %s, but there is no reciprocal connection in expected field(s): <code>%s</code>.', 'oes'),
+                        esc_html($sourceField),
+                        $titleB,
+                        esc_html(implode(', ', $expectedTargetFields ?: ['(none configured)']))
+                    );
+                }
+            }
+        }
+    }
+
+    // Build output HTML
+    $output = '<div style="margin-bottom:18px;"><strong>' .
+        __('Audit Report: Bidirectional Relationships', 'oes') . '</strong></div>';
+
+    $countMismatch    = count(array_filter($status['mismatch']));
+    $countWrongField  = count(array_filter($status['wrong_field']));
+    $countMissing     = count(array_filter($status['missing_posts']));
+    $countOk          = count(array_filter($status['ok']));
+
+    $output .= '<p>' . sprintf(
+            __('%d posts with mismatches; %d posts linked back via different field(s); %d posts linked to missing posts; %d posts with reciprocal links.', 'oes'),
+            $countMismatch,
+            $countWrongField,
+            $countMissing,
+            $countOk
+        ) . '</p>';
+
+    $renderSection = function ($title, $items) {
+        $html = '<h2>' . esc_html($title) . '</h2>';
+        $html .= '<table class="wp-list-table widefat fixed striped table-view-list"><thead><tr><th>Post</th><th>Findings</th></tr></thead><tbody>';
+        foreach ($items as $postId => $messages) {
+            $unique = array_values(array_unique($messages));
+            $postObj = get_post((int)$postId);
+            $postTitle = $postObj ? '<a href="' . esc_url(get_edit_post_link($postId)) . '">' . esc_html($postObj->post_title) . '</a>' : 'Post ID ' . intval($postId);
+            $html .= '<tr><td style="vertical-align:top;">' . $postTitle . '</td><td>' . implode('<br>', $unique) . '</td></tr>';
+        }
+        $html .= '</tbody></table><br>';
+        return $html;
+    };
+
+    if (!empty($status['mismatch'])) {
+        $output .= $renderSection(__('Mismatches (no reciprocal link)', 'oes'), $status['mismatch']);
+    }
+    if (!empty($status['wrong_field'])) {
+        $output .= $renderSection(__('Possible mismatches (linked back via different field)', 'oes'), $status['wrong_field']);
+    }
+    if (!empty($status['missing_posts'])) {
+        $output .= $renderSection(__('Linked to missing posts', 'oes'), $status['missing_posts']);
+    }
+    if (!empty($status['ok']) && $displayOk) {
+        $output .= $renderSection(__('Reciprocal links (expected field)', 'oes'), $status['ok']);
+    }
+
+    return $output;
+}
+
+/**
  * Display a warning about using HTML quote characters.
  *
  * @return void

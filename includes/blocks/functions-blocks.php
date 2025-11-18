@@ -44,6 +44,7 @@ function register(): void
         'archive-loop',
         'author-byline',
         'author-vita',
+        'back-to-top',
         'citation',
         'cite-as',
         'empty-result',

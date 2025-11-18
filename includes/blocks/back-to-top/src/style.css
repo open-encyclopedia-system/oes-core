@@ -1,0 +1,35 @@
+.oes-back-to-top {
+  background: var(--wp--preset--color--primary);
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  border-radius: 50%;
+  -moz-border-radius: 50%;
+  -webkit-border-radius: 50%;
+  text-align: center;
+  color: var(--wp--preset--color--text-invert);
+  display: none;
+  padding: 0.1em;
+  height: 2rem;
+  width: 2rem;
+  z-index: 1000;
+}
+
+.oes-back-to-top:after {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  content: "";
+  display: block;
+  height: 1rem;
+  width: 1rem;
+  background-image: url("arrow-up.svg");
+  background-repeat: no-repeat;
+  background-position: center center;
+  filter: invert(100%);
+}
+
+.oes-back-to-top:hover {
+  opacity: 0.8;
+  text-decoration: none;
+}

@@ -94,10 +94,10 @@ function add_post_column(array $columns): array
  * Display values for columns in the list display of post types in the WP admin area.
  *
  * @param string $column The column name.
- * @param string $post_id The post ID.
+ * @param string $postID The post ID.
  * @return void
  */
-function display_post_column_value(string $column, string $post_id): void
+function display_post_column_value(string $column, string $postID): void
 {
     if (str_starts_with($column, 'taxonomy-')) {
         return;
@@ -110,8 +110,8 @@ function display_post_column_value(string $column, string $post_id): void
             return;
 
         case 'date_modified':
-            $date = get_post_datetime($post_id);
-            $dateMod = get_post_datetime($post_id, 'modified');
+            $date = get_post_datetime($postID);
+            $dateMod = get_post_datetime($postID, 'modified');
 
             if (!$date || !$dateMod) return;
 
@@ -127,7 +127,7 @@ function display_post_column_value(string $column, string $post_id): void
             return;
 
         case 'parent':
-            $parentID = get_parent_id($post_id);
+            $parentID = get_parent_id($postID);
 
             if ($parentID) {
                 $parentPost = get_post($parentID);
@@ -144,17 +144,17 @@ function display_post_column_value(string $column, string $post_id): void
         default:
 
             // ACF field check
-            $value = oes_get_field($column, $post_id);
+            $value = oes_get_field($column, $postID);
 
             if (!empty($value)) {
                 $fieldObject = oes_get_field_object($column);
-                echo format_acf_field_value($fieldObject, $value, $column, $post_id);
+                echo format_acf_field_value($fieldObject, $value, $column, $postID);
                 return;
             }
 
             // Taxonomy fallback
             if (get_taxonomy($column)) {
-                $terms = get_the_terms($post_id, $column);
+                $terms = get_the_terms($postID, $column);
 
                 if (!empty($terms) && !is_wp_error($terms)) {
                     $termLinks = array_map(function ($term) use ($column) {

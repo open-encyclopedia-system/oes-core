@@ -33,6 +33,7 @@ add_shortcode('oes_popup', '\OES\Popup\render_shortcode');
 
 // Admin tools
 add_shortcode('oes_audit', '\OES\Admin\display_audit');
+add_shortcode('oes_audit_relations', '\OES\Admin\display_audit_relations');
 
 //@oesDevelopment xml output in development
 add_shortcode('oes_xml_button', 'oes_xml_shortcode');

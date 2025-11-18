@@ -95,12 +95,13 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
                     $posts = new WP_Query($queryArgs);
 
                     /* loop through results */
-                    if ($posts->have_posts())
+                    if ($posts->have_posts()) {
                         while ($posts->have_posts()) {
                             $posts->the_post();
                             $post = get_post(get_the_ID());
                             $this->loop_results_post($post);
                         }
+                    }
                 } elseif (taxonomy_exists($object)) {
 
                     /* prepare query args */

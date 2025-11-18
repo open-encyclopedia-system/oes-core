@@ -134,14 +134,18 @@ if (!class_exists('Batch')) :
                 wp_send_json_error(__('Invalid post type.', 'oes'));
             }
 
+            $paged = floor($offset / $batchSize) + 1;
+
             if(isset($oes->post_types[$objectType])) {
 
                 $query = new WP_Query([
-                    'post_type' => $objectType,
-                    'post_status' => $status,
+                    'post_type'      => $objectType,
+                    'post_status'    => $status,
                     'posts_per_page' => $batchSize,
-                    'offset' => $offset,
-                    'fields' => 'all',
+                    'paged'          => $paged,
+                    'orderby'        => 'ID',
+                    'order'          => 'ASC',
+                    'fields'         => 'all',
                 ]);
 
                 if (!$query->have_posts()) {
@@ -162,11 +166,13 @@ if (!class_exists('Batch')) :
             elseif(isset($oes->taxonomies[$objectType])){
 
                 $terms = get_terms([
-                    'taxonomy' => $objectType,
+                    'taxonomy'   => $objectType,
                     'hide_empty' => false,
-                    'offset' => $offset,
-                    'number' => $batchSize,
-                    'fields' => 'all',
+                    'number'     => $batchSize,
+                    'offset'     => $offset,
+                    'orderby'    => 'term_id',
+                    'order'      => 'ASC',
+                    'fields'     => 'all',
                 ]);
 
                 if (is_wp_error($terms) || empty($terms)) {

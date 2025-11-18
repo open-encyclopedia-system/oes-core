@@ -25,4 +25,10 @@
   resize: none;
 }
 
+.dashicons.dashicons-editor-quote {
+  text-decoration: none;
+  vertical-align: middle;
+  padding-right: 5px;
+}
+
 /*# sourceMappingURL=style.css.map */
