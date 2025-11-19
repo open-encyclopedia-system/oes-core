@@ -393,11 +393,12 @@ if (!class_exists('OES_Archive')) {
                                         foreach ($multipleValues ?? [] as $singleValue) {
 
                                             /* make sure the key is javascript compatible */
-                                            $cleanKey = (is_numeric($singleValue) && (string)(int)$singleValue === (string)$singleValue)
-                                                ? (int)$singleValue
-                                                : md5($singleValue);
+                                            $cleanValue = trim((string)$singleValue);
+                                            $cleanKey = (is_numeric($cleanValue) && (string)(int)$cleanValue === $cleanValue)
+                                                ? (int)$cleanValue
+                                                : md5($cleanValue);
 
-                                            $this->filter_array['list'][$filter]['items'][$cleanKey] = $singleValue;
+                                            $this->filter_array['list'][$filter]['items'][$cleanKey] = $cleanValue;
                                             $this->filter_array['json'][$filter][$cleanKey][] = $postID;
                                         }
                                     }
