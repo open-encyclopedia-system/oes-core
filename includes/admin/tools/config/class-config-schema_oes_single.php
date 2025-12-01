@@ -168,7 +168,7 @@ if (!class_exists('Schema_OES_Single')) :
             if ($hasPattern) {
                 $jsonValue = is_array($value) ? $value : [];
                 $triggerText = $this->get_pattern_text($jsonValue['pattern'] ?? [], $allOptions);
-                $patternID = str_replace(['[', ']'], '-', "$keyPrefix-$paramKey");
+                $patternID = str_replace(['[', ']'], ['-', ''], "$keyPrefix-$paramKey");
                 $patternButton = $this->get_pattern_button($patternID, $triggerText);
                 $patternValue = isset($jsonValue['pattern']) ? esc_attr(json_encode($jsonValue['pattern'])) : '';
 

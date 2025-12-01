@@ -9,7 +9,7 @@
      * Initialize the popup with the pattern configuration.
      */
     oesPattern.InitPanel = function (id) {
-        pattern_ID = id.substring(1);
+        pattern_ID = id; //.substring(1);
         oesAdminPopup.get();
         oesAdminPopup.setTitle(getLabel());
         setContent();

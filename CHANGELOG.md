@@ -4,6 +4,7 @@
 ## 2.4.3 (in developlment)
 ### Improvements
 - Improved filter items: clean name and key when splitting text fields
+- Fix pattern popup
 
 ## 2.4.2
 ### Fixes
