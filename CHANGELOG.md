@@ -5,6 +5,7 @@
 ### Improvements
 - Improved filter items: clean name and key when splitting text fields
 - Fix pattern popup
+- Added new filter css classes for classic theme
 
 ## 2.4.2
 ### Fixes
