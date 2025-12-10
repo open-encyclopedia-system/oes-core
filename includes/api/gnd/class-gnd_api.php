@@ -19,7 +19,7 @@ if (!class_exists('GND_API')) {
     {
 
         /** @var string The url to the lobid api. */
-        public string $url = 'http://lobid.org/gnd/';
+        public string $url = 'https://lobid.org/gnd/';
 
         /** @var string|bool The html representation of an image (depiction) for a gnd entry. */
         public $imageHTML = false;

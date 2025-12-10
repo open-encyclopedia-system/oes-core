@@ -7,6 +7,7 @@
 ### Fixes
 - Fixed pattern popup
 - Fixed OES Image Panel block when images are deleted
+- Fixed GND API call (https instead of http)
 
 ### Improvements
 - Improved filter items: clean name and key when splitting text fields
