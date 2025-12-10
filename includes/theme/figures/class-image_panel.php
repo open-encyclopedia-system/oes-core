@@ -41,7 +41,10 @@ if (!class_exists('OES_Image_Panel')) {
             $this->type = 'image';
 
             if ($this->figure_ID && empty($this->figure)) {
-                $this->figure = acf_get_attachment($this->figure_ID);
+                $figure = acf_get_attachment($this->figure_ID);
+                if($figure) {
+                    $this->figure = acf_get_attachment($this->figure_ID);
+                }
             }
 
             $this->calculate_anchor_id();

@@ -7,11 +7,11 @@
  * Plugin Name:       OES Core
  * Plugin URI:        https://www.open-encyclopedia-system.org/
  * Description:       Tools for building and maintaining online encyclopedias.
- * Version:           2.4.3
+ * Version:           2.4.4
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT
  * Author URI:        https://www.it.fu-berlin.de/die-fub-it/mitarbeitende/mstrobl.html
  * Requires at least: 6.5
- * Tested up to:      6.8.2
+ * Tested up to:      6.8.3
  * Requires PHP:      8.1
  * Tags:              encyclopedia, open-access, digital-humanities, academic, wiki, lexicon, education
  * License:           GPLv2 or later
@@ -90,7 +90,7 @@ if (!class_exists('OES_Core')) :
     {
 
         /** @var string The version of the OES Core plugin. */
-        public string $version = '2.4.3';
+        public string $version = '2.4.4';
 
         /** @var string The version of the OES database schema. */
         public string $db_version = '2.0';

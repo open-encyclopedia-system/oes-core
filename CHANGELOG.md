@@ -1,10 +1,17 @@
 
 # Changelog
 
-## 2.4.3 (in developlment)
+## 2.4.4 (in development)
+
+## 2.4.3
+### Fixes
+- Fixed pattern popup
+- Fixed OES Image Panel block when images are deleted
+
 ### Improvements
 - Improved filter items: clean name and key when splitting text fields
-- Fix pattern popup
+
+### New
 - Added new filter css classes for classic theme
 
 ## 2.4.2
