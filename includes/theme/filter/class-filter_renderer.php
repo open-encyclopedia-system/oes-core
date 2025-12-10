@@ -135,7 +135,7 @@ if (!class_exists('OES_Filter_Renderer')) {
             $triggerId = 'trigger_' . $filterKey;
 
             return sprintf(
-                '<li id="%s"><a href="#oes-filter-component-%s" data-toggle="collapse" ' .
+                '<li id="%s" class="oes-filter-list-type-accordion"><a href="#oes-filter-component-%s" data-toggle="collapse" ' .
                 'aria-expanded="false" class="oes-filter-component oes-toggle-down-after">%s</a>%s</li>',
                 $triggerId,
                 $filterKey,
@@ -159,7 +159,7 @@ if (!class_exists('OES_Filter_Renderer')) {
             $triggerId = 'trigger_' . $filterKey;
 
             return sprintf(
-                '<li id="%s"><span class="oes-filter-component">%s</span>%s</li>',
+                '<li id="%s" class="oes-filter-list-type-classic"><span class="oes-filter-component">%s</span>%s</li>',
                 $triggerId,
                 $label,
                 $filterList
@@ -186,7 +186,7 @@ if (!class_exists('OES_Filter_Renderer')) {
             }
             $dataList .= '</datalist>';
 
-            return '<li>' .
+            return '<li class="oes-filter-list-type-datalist">' .
                 '<label for="' . $filterKey . '_search">' . $label . '</label>' .
                 '<input type="text" id="' . $filterKey . '_search" name="' . $filterKey . '" list="' . $filterKey . '_list" placeholder="Search...">' .
                 $dataList . '</li>';
@@ -206,7 +206,7 @@ if (!class_exists('OES_Filter_Renderer')) {
             $label = $container['label'] ?? 'Label missing';
             $triggerId = 'trigger_' . $filterKey;
 
-            return '<li>' . $this->get_details_block(
+            return '<li class="oes-filter-list-type-default">' . $this->get_details_block(
                     '<span class="oes-filter-component">' . $label . '</span>',
                     $filterList,
                     $triggerId
