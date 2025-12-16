@@ -2,6 +2,7 @@
 # Changelog
 
 ## 2.4.4 (in development)
+- Added filter: 'oes/get_literature_field_display_value'
 
 ## 2.4.3
 ### Fixes

@@ -58,7 +58,7 @@ function oes_render_block_core_heading(string $block_content, array $parsed_bloc
  */
 function oes_get_page_title(array $args = []): string
 {
-    global $oes_post, $oes_archive, $oes_archive_data, $oes_term;
+    global $oes_post, $oes_archive, $oes_term;
 
     /* get page title according to page type */
     $isLink = $args['is_link'] ?? false;
@@ -270,12 +270,35 @@ function oes_get_literature_html(array $args = []): string
                     $literatureField = substr($literatureField, 8);
                     $postID = $oes_post->parent_ID;
                 }
-                $fieldValue = oes_get_field_display_value($literatureField,
+
+                $displayArgs = [
+                    'list-class' => 'oes-custom-ident oes-vertical-list',
+                    'permalink'  => false,
+                ];
+
+                /**
+                 * Filter the literature field.
+                 *
+                 * @param string      $literatureField Field key.
+                 * @param int|bool    $postID           Post ID.
+                 * @param array       $displayArgs      Display arguments.
+                 */
+                $fieldValue = apply_filters(
+                    'oes/get_literature_field_display_value',
+                    null,
+                    $literatureField,
                     $postID,
-                    [
-                        'list-class' => 'oes-custom-ident oes-vertical-list',
-                        'permalink' => false
-                    ]);
+                    $displayArgs
+                );
+
+                // Fallback if filter returned nothing
+                if ($fieldValue === false || $fieldValue === null) {
+                    $fieldValue = oes_get_field_display_value(
+                        $literatureField,
+                        $postID,
+                        $displayArgs
+                    );
+                }
 
                 if (!empty($fieldValue)) {
                     $literatureHTML .= $oes_post->generate_table_of_contents_header(
