@@ -61,7 +61,7 @@ function redirect_page(array $templates): array
         $localized = [];
 
         foreach (array_slice($templates, 0, 2) as $template) {
-            $localized[] = str_replace('.php', "_{$oes_language}.php", $template);
+            $localized[] = str_replace('.php', "-{$oes_language}.php", $template);
         }
 
         array_unshift($templates, ...array_reverse($localized));
