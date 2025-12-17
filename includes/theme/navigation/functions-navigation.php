@@ -26,11 +26,20 @@ function redirect_page(array $templates): array
             'single-contributor',
             'single-index'
         ], true)) {
-        array_splice($templates, 2, 0, [$oes_post->schema_type]);
 
-        if (!empty($oes_language) && $oes_language !== 'language0' && !empty($templates)) {
-            array_splice($templates, 2, 0, [$oes_post->schema_type . '_' . $oes_language]);
+        $insert = [$oes_post->schema_type];
+
+        if (!empty($oes_language) && $oes_language !== 'language0') {
+            $insert = array_merge(
+                [
+                    "{$oes_post->schema_type}_{$oes_language}", // legacy underscore
+                    "{$oes_post->schema_type}-{$oes_language}", // should be dash
+                ],
+                $insert
+            );
         }
+
+        array_splice($templates, 2, 0, $insert);
     }
     elseif (!empty($oes_is_index_page)) {
         array_unshift($templates, 'archive-index');
@@ -49,9 +58,15 @@ function redirect_page(array $templates): array
     }
 
     if (!empty($oes_language) && $oes_language !== 'language0' && !empty($templates)) {
-        $localized_template = str_replace('.php', '-' . $oes_language . '.php', $templates[0]);
-        array_unshift($templates, $localized_template);
+        $localized = [];
+
+        foreach (array_slice($templates, 0, 2) as $template) {
+            $localized[] = str_replace('.php', "_{$oes_language}.php", $template);
+        }
+
+        array_unshift($templates, ...array_reverse($localized));
     }
+
 
     return $templates;
 }

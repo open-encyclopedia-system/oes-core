@@ -22,6 +22,7 @@
 - Fixed filter processing for alphabet filter when no other filters are applied
 - Fixed filter items list: now sorted case-insensitively by default
 - Fixed dashicons alignment in "Print" and "Cite as" block
+- Added localized schema templates for archives
 
 ### Improvements
 - Improved caching: transients now stored without autoload
