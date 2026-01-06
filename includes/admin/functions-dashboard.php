@@ -37,6 +37,9 @@ function modify(): void
     remove_action('welcome_panel', 'wp_welcome_panel');
     remove_action('try_gutenberg_panel', 'wp_try_gutenberg_panel');
 
+    /* return early if only subscriber */
+    if(current_user_can('subscriber')) return;
+
     /* get options where feature options are stored */
     $features = \OES\Admin\get_features();
 

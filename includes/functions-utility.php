@@ -76,6 +76,31 @@ function oes_get_path(string $path = '', string $root = ''): string
 }
 
 
+/**
+ * Normalize a plugin-relative path.
+ *
+ * Removes a leading '/oes' prefix (optionally only on localhost),
+ * ensures proper slashes, and trims extra slashes.
+ *
+ * @param string $path Relative path from the plugin root.
+ * @param bool $strip Whether to remove '/oes' only on localhost. Default true.
+ * @return string Normalized path.
+ */
+function oes_normalize_path_for_localhost(string $path = '', bool $strip = true): string
+{
+    $path = trim($path);
+    $path = str_replace('\\', '/', $path);
+
+    if ($strip) {
+        $isLocalhost = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'], true);
+        if ($isLocalhost) {
+            $path = preg_replace('#^/oes#', '', $path);
+        }
+    }
+
+    return untrailingslashit($path);
+}
+
 
 /**
  * Get the OES plugin version.

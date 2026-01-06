@@ -3,6 +3,8 @@
 
 ## 2.4.4 (in development)
 - Added filter: 'oes/get_literature_field_display_value'
+- Added new function: 'oes_normalize_path_for_localhost', removes a leading '/oes' prefix in path
+- Modify dashboard view for user with role "subscriber"
 
 ## 2.4.3
 ### Fixes
