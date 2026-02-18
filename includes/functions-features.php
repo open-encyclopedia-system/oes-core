@@ -193,7 +193,7 @@ function user_profile_settings(): void
  */
 function user_rights(): void
 {
-    include_once __DIR__ . '/admin/functions-rights.php'
+    include_once __DIR__ . '/admin/functions-rights.php';
 }
 
 /**
