@@ -233,6 +233,7 @@ if (!class_exists('OES_Core')) :
             \OES\Features\assets();
             \OES\Features\columns();
             \OES\Features\user_profile_settings();
+            \OES\Features\user_rights();
 
             \OES\Features\remarks($is_enabled('remarks'));
             \OES\Features\manual($is_enabled('manual'));

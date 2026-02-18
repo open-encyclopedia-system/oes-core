@@ -187,6 +187,16 @@ function user_profile_settings(): void
 }
 
 /**
+ * Bootstrap OES user rights and role-based access control.
+ *
+ * @return void
+ */
+function user_rights(): void
+{
+    include_once __DIR__ . '/admin/functions-rights.php';
+}
+
+/**
  * Include the data model.
  *
  * This enables the "Data Model" feature, allowing for the modification of WordPress objects such as 'post type'
