@@ -153,7 +153,7 @@ function initialize_admin_menu_pages(): void
             ],
             'oes_settings_features' => [
                 'title' => __('Features', 'oes'),
-                'tool' => 'features'
+                'view_file_name' => 'view-settings-features'
             ],
             'oes_settings_index' => [
                 'title' => __('Index', 'oes'),
