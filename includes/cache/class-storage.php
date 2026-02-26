@@ -1,0 +1,161 @@
+<?php
+
+namespace OES\Caching;
+
+/**
+ * Class Storage
+ *
+ * Implements the Storage_Interface to provide database-backed cache storage
+ * for the OES plugin. Supports chunked storage of large payloads and stores
+ * metadata for objects, classes, languages, and additional info.
+ *
+ * This class handles:
+ * - Storing cache entries in a custom database table
+ * - Retrieving chunked cache entries
+ * - Deleting cache by key or by prefix
+ *
+ * Table schema expected:
+ *  - cache_key varchar(191)
+ *  - part int(11)
+ *  - cache_value longtext
+ *  - created_at datetime
+ *  - object_type varchar(50)
+ *  - archive_class varchar(100)
+ *  - cache_language varchar(10)
+ *  - additional json
+ *
+ * Chunking:
+ *  - For large payloads, cache_value is split into parts.
+ *  - Maximum chunk size is defined by OES_MAX_CHUNK_SIZE.
+ */
+class Storage implements Storage_Interface
+{
+
+    /**
+     * Name of the database table used for cache storage.
+     *
+     * @var string
+     */
+    private string $table;
+
+    /**
+     * Maximum size (in bytes) for each chunked cache entry.
+     * Longtext can store more, but splitting ensures safer inserts and reads.
+     */
+    const OES_MAX_CHUNK_SIZE = 65535;
+
+    /**
+     * Storage constructor.
+     *
+     * Initializes the cache storage by setting the table name.
+     * Uses the WordPress $wpdb global for database access.
+     */
+    public function __construct()
+    {
+        global $wpdb;
+        $this->table = $wpdb->prefix . 'oes_cache';
+    }
+
+    /** @inheritdoc */
+    public function get(string $key)
+    {
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT cache_value 
+                 FROM {$this->table}
+                 WHERE cache_key = %s
+                 ORDER BY part ASC",
+                $key
+            ),
+            ARRAY_A
+        );
+
+        if (!$rows) {
+            return null;
+        }
+
+        $serialized = implode('', array_column($rows, 'cache_value'));
+
+        return unserialize($serialized);
+    }
+
+    /** @inheritdoc */
+    public function set(string $key, $value, array $args = []): bool
+    {
+        global $wpdb;
+
+        $serialized = serialize($value);
+        $chunks = $this->safe_chunk_split($serialized, self::OES_MAX_CHUNK_SIZE);
+
+        $wpdb->delete($this->table, ['cache_key' => $key]);
+
+        $created = current_time('mysql');
+
+        foreach ($chunks as $index => $chunk) {
+            $wpdb->insert($this->table, [
+                'cache_key' => $key,
+                'part' => $index,
+                'cache_value' => $chunk,
+                'created_at' => $created,
+                'object_type' => $args['object_type'] ?? '',
+                'archive_class' => $args['archive_class'] ?? '',
+                'cache_language' => $args['cache_language'] ?? '',
+                'additional' => json_encode($args['additional'] ?? '')
+            ]);
+
+            oes_write_log(sprintf(
+                'Cache was created for %s at %s.',
+                $key,
+                $created
+            ), 'Cache');
+        }
+
+        return true;
+    }
+
+    /** @inheritdoc */
+    public function delete(string $key): void
+    {
+        global $wpdb;
+        $wpdb->delete($this->table, ['cache_key' => $key]);
+    }
+
+    /** @inheritdoc */
+    public function delete_by_prefix(string $prefix): void
+    {
+        global $wpdb;
+
+        $wpdb->query(
+            $wpdb->prepare(
+                "DELETE FROM {$this->table}
+                 WHERE cache_key LIKE %s",
+                $wpdb->esc_like($prefix) . '%'
+            )
+        );
+    }
+
+    /**
+     * Splits a UTF-8 string safely at byte boundaries without breaking characters.
+     *
+     * @param string $string The full string to split.
+     * @param int $chunk_size Maximum chunk size in bytes.
+     *
+     * @return array An array of UTF-8-safe string chunks.
+     */
+    protected function safe_chunk_split(string $string, int $chunk_size): array
+    {
+        $chunks = [];
+        $offset = 0;
+        $length = strlen($string);
+
+        while ($offset < $length) {
+            $chunk = mb_strcut($string, $offset, $chunk_size, 'UTF-8');
+            $chunks[] = $chunk;
+            $offset += strlen($chunk);
+        }
+
+        return $chunks;
+    }
+}
