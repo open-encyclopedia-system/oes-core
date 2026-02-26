@@ -1,10 +1,47 @@
 
 # Changelog
 
+## 3.3.0 (in development)
+### Renaming / Branding
+- Rename OES Core → OES Framework 
+- Rename OES Manual → Guidelines 
+- Rename OES_LIVEMODE → OES_LIVE_MODE
+- Rename Project → Application
+
+### Features / New Components
+- Introduce new rights model 
+- Introduce new application plugin initialization logic
+- Introduce OES_List_Table (extends WP_List_Table)
+- Introduce factory_service and improved data model factory 
+- Introduce cache database table
+- Re-do operations and feature display
+- New page icons and re-designed icons
+
+### Improvements
+- Improve internal page generation
+- Re-organize settings and tools pages
+- Stabilize config tools and redesign GUI administration of settings and tools
+- Improve caching
+- Fix encoding issues when editing settings
+
+### Removals / Cleanups
+- Remove “Show OES Objects” setting (admin-only feature)
+- Remove hide_version_tab (now admin-only by default)
+- Remove oes_replace_for_serializing, oes_stripslashes_array, oes_replace_for_form, oes_replace_from_serializing
+- Remove obsolete CSS
+
 ## 2.4.4 (in development)
-- Added filter: 'oes/get_literature_field_display_value'
-- Added new function: 'oes_normalize_path_for_localhost', removes a leading '/oes' prefix in path
-- Modify dashboard view for user with role "subscriber"
+### New Filters / Functions
+- Added filter: 'oes/get_literature_field_display_value' 
+- Added function: oes_normalize_path_for_localhost() (removes leading /oes prefix in path)
+
+### Roles / Permissions
+- Modify dashboard view for users with role subscriber
+- Remove role read-only
+- Add role blocked
+
+### UI / CSS
+- Modified admin CSS oes-grey-out to make it darker
 
 ## 2.4.3
 ### Fixes

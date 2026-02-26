@@ -4,7 +4,6 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-
 /**
  * Create container pages.
  * @return void
@@ -13,22 +12,22 @@ function initialize_container_pages(): void
 {
     global $oes;
 
-    /* add container page for versioning posts */
     foreach ($oes->post_types ?? [] as $postTypeKey => $postType) {
-        if (!empty($postType['parent'] ?? '') &&
-            (($postType['parent'] ?? '') != 'none') &&
-            !isset($oes->admin_pages['container'][$postTypeKey])) {
+        $parent = $postType['parent'] ?? '';
+
+        if ($parent && $parent !== 'none' && !isset($oes->admin_pages['container'][$postTypeKey])) {
             $oes->admin_pages['container'][$postTypeKey] = prepare_container_page_args($postTypeKey);
         }
     }
 
     foreach ($oes->admin_pages['container'] ?? [] as $key => $page) {
-        if (is_array($page) && !($page['hide'] ?? false)) {
-            create_container($key, $page);
+        if (!is_array($page) || ($page['hide'] ?? false)) {
+            continue;
         }
+
+        create_container($key, $page);
     }
 }
-
 
 /**
  * Create a container admin page.
@@ -52,32 +51,38 @@ function create_container(string $key, array $args = []): void
  */
 function prepare_container_page_args(string $postTypeKey = ''): array
 {
-    $postType = OES()->post_types[$postTypeKey] ?? false;
-    if (!$postType) return [];
+    $postType = OES()->post_types[$postTypeKey] ?? null;
+    if (!$postType) {
+        return [];
+    }
 
-    $elements = [
-        $postType['parent'],
-        $postTypeKey
-    ];
+    $elements = [$postType['parent'] ?? '', $postTypeKey];
+
     $subPages = $elements;
-    foreach (get_post_type_object($postTypeKey)->taxonomies ?? [] as $taxonomy) $subPages[] = $taxonomy;
-    foreach (get_post_type_object($postType['parent'])->taxonomies ?? [] as $taxonomy) $subPages[] = $taxonomy;
+
+    foreach (get_post_type_object($postTypeKey)->taxonomies ?? [] as $taxonomy) {
+        $subPages[] = $taxonomy;
+    }
+
+    foreach (get_post_type_object($postType['parent'] ?? '')->taxonomies as $taxonomy) {
+        $subPages[] = $taxonomy;
+    }
 
     return [
         'page_parameters' => [
-            'menu_title' => '[' . $postType['label'] . ']',
-            'position' => '20',
-            'subpages' => $subPages
+            'menu_title' => sprintf('[%s]', $postType['label'] ?? ''),
+            'position'   => 26,
+            'subpages'   => $subPages,
+            'icon_url'   => $postType['type'] ?? 'container',
         ],
         'info_page' => [
             'elements' => $elements,
-            'label' => __('Recently worked on', 'oes')
+            'label'    => __('Recently worked on', 'oes'),
         ],
         'generated' => true,
-        'hide' => false
+        'hide'      => false,
     ];
 }
-
 /**
  * Enqueue script for an admin page.
  * @param string $hook The page hook
@@ -111,9 +116,8 @@ function add_page_scripts(string $hook): void
         wp_enqueue_script('oes-admin_' . $hook);
     }
 
-    if (str_starts_with($hook, 'oes-settings')) \OES\ACF\enqueue_select2();
+    if (str_contains($hook, 'oes_settings')) \OES\ACF\enqueue_select2();
 }
-
 
 /**
  * Initialize the OES Settings pages
@@ -123,260 +127,176 @@ function initialize_admin_menu_pages(): void
 {
     global $oes;
 
-    $adminMenuPages['010_settings'] = [
-        'page_parameters' => [
-            'page_title' => 'OES Settings',
-            'menu_title' => 'OES Settings',
-            'position' => 55,
-            'menu_slug' => 'oes_settings',
-        ],
-        'separator' => 'before',
-        'is_core_page' => true
+    $adminMenuPages = [
+        '000_editor_tools' => ['separator' => true, 'position' => 49.9],
+        '000_settings'     => ['separator' => true, 'position' => 54.9],
     ];
 
-    $adminMenuPages['020_information'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Information',
-            'menu_title' => 'Information',
-            'menu_slug' => 'oes_settings',
-            'parent_slug' => 'oes_settings'
-        ],
-        'view_file_name' => 'view-settings-information',
-        'is_core_page' => true
-    ];
+    if (\OES\Rights\user_can_read_settings()) {
 
-    $adminMenuPages['050_project'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Project',
-            'menu_title' => 'Project',
-            'menu_slug' => 'oes_general_project',
-            'position' => 90,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tool' => 'project',
-        'is_core_page' => true
-    ];
+        $adminMenuPages['oes_settings'] = [
+            'page_parameters' => [
+                'page_title' => __('OES', 'oes'),
+                'menu_title' => __('OES', 'oes'),
+                'position'   => 55,
+                'menu_slug'  => 'oes_settings',
+                'icon_url'   => 'oes',
+            ],
+            'is_core_page' => true
+        ];
 
-    $adminMenuPages['050_schema'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Schema',
-            'menu_title' => 'Schema',
-            'menu_slug' => 'oes_settings_schema',
-            'position' => 31,
-            'parent_slug' => 'oes_settings'
-        ],
-        'view_file_name' => 'view-settings-schema',
-        'is_core_page' => true
-    ];
+        $settingsSubpages = [
+            'oes_settings_dashboard' => [
+                'title' => __('Dashboard', 'oes'),
+                'menu_slug'  => 'oes_settings',
+                'view_file_name' => 'view-settings-information'
+            ],
+            'oes_settings_features' => [
+                'title' => __('Features', 'oes'),
+                'tool' => 'features'
+            ],
+            'oes_settings_index' => [
+                'title' => __('Index', 'oes'),
+                'tool'       => 'theme-index-pages'
+            ],
+            'oes_settings_languages' => [
+                'title' => __('Languages & Text', 'oes'),
+                'tabs' => [
+                    'theme-languages'        => __('Languages', 'oes'),
+                    'theme-labels-general'   => __('General', 'oes'),
+                    'theme-labels-media'     => __('Media', 'oes'),
+                    'theme-labels-objects'   => __('Objects', 'oes'),
+                    'theme-date'             => __('Date Format', 'oes'),
+                ]
+            ],
+            'oes_settings_media' => [
+                'title' => __('Media', 'oes'),
+                'tool'       => 'theme-media'
+            ],
+            'oes_settings_schema' => [
+                'title' => __('Schema', 'oes'),
+                'view_file_name' => 'view-settings-schema'
+            ],
+            'oes_settings_search' => [
+                'title' => __('Search', 'oes'),
+                'tool'       => 'theme-search'
+            ],
+        ];
 
-    $visibilityTabs = [
-        'admin-columns' => 'Columns',
-        'admin-container' => 'Container'
-    ];
+        $applicationOptions = \OES\Admin\get_application_settings();
+        if(!empty($applicationOptions)) {
+            $settingsSubpages['oes_settings_application'] = [
+                'title' => __('Application', 'oes'),
+                'tool'       => 'application'
+            ];
+        }
 
-    if (function_exists('\OES\Rights\user_is_oes_admin') &&
-        \OES\Rights\user_is_oes_admin()) {
+        if (\OES\Rights\user_is_admin()) {
+            $settingsSubpages['oes_settings_advanced'] = [
+                'title' => __('Advanced', 'oes'),
+                'tabs' => [
+                    'admin-columns'   => __('Columns', 'oes'),
+                    'admin-container' => __('Container', 'oes'),
+                    'admin-features'  => __('Features', 'oes')
+                ]
+            ];
+        }
 
-        $visibilityTabs['admin-features'] = 'Features';
-        $visibilityTabs['admin'] = 'Admin';
+        $lodTabs = array_map(function ($apiData) {
+            return $apiData->label;
+        }, $oes->apis ?? []);
+        $settingsSubpages['oes_settings_lod'] = [
+            'title' => __('Linked Open Data', 'oes'),
+            'tabs'       => $lodTabs
+        ];
+
+        if (!$oes->block_theme) {
+            $settingsSubpages['oes_settings_theme'] = [
+                'title' => __('Theme', 'oes'),
+                'tabs' => [
+                    'theme-colors' => __('Colors', 'oes'),
+                    'theme-logos'  => __('Logos', 'oes')
+                ]
+            ];
+        }
+
+        $adminMenuPages['oes_tools'] = [
+            'page_parameters' => [
+                'page_title' => __('OES Tools', 'oes'),
+                'menu_title' => __('OES Tools', 'oes'),
+                'menu_slug' => 'oes_tools',
+                'position' => 56,
+                'icon_url' => 'oes'
+            ],
+            'is_core_page' => true
+        ];
+
+        $toolsSubpages = [
+            'oes_tools_dashboard' => [
+                'title' => __('Dashboard', 'oes'),
+                'menu_slug'  => 'oes_tools',
+                'view_file_name' => 'view-tools'
+            ],
+            'oes_tools_model' => [
+                'title' => __('Data Model', 'oes'),
+                'view_file_name' => 'view-tools-model'
+            ],
+            'oes_tools_cache' => [
+                'title' => __('Cache', 'oes'),
+                'view_file_name' => 'view-tools-cache'
+            ],
+            'oes_tools_import' => [
+                'title' => __('Import', 'oes'),
+                'capability' => 'oes_manage_content',
+                'tool' => 'import'
+            ],
+            'oes_tools_export' => [
+                'title' => __('Export', 'oes'),
+                'tool' => 'export'
+            ],
+            'oes_tools_batch' => [
+                'title' => __('Batch Processing', 'oes'),
+                'capability' => 'manage_options',
+                'tool' => 'batch'
+            ]
+        ];
+
+        foreach(['oes_settings' => $settingsSubpages, 'oes_tools' => $toolsSubpages] as $slug => $subpages) {
+            foreach ($subpages as $pageSlug => $subpage) {
+
+                $pageParameters = [
+                    'page_title' => $subpage['title'] ?? '',
+                    'menu_title' => $subpage['title'] ?? '',
+                    'menu_slug'  => $subpage['menu_slug'] ?? $pageSlug,
+                    'capability' => $subpage['capability'] ?? 'oes_read_settings',
+                    'parent_slug'=> $slug
+                ];
+
+                $adminMenuPages[$pageSlug] = [
+                    'subpage'         => true,
+                    'is_core_page'    => true,
+                    'page_parameters' => $pageParameters,
+                ];
+
+                foreach (['view_file_name', 'tool', 'tabs'] as $optKey) {
+                    if (isset($subpage[$optKey])) {
+                        $adminMenuPages[$pageSlug][$optKey] = $subpage[$optKey];
+                    }
+                }
+            }
+        }
     }
 
-    $adminMenuPages['050_visibility'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Visibility',
-            'menu_title' => 'Visibility',
-            'menu_slug' => 'oes_visibility',
-            'parent_slug' => 'oes_settings',
-            'position' => 80
-        ],
-        'tabs' => $visibilityTabs,
-        'is_core_page' => true
-    ];
-
-    $lodTabs = [];
-    foreach ($oes->apis ?? [] as $apiKey => $apiData) {
-        $lodTabs[$apiKey] = $apiData->label;
-    }
-
-    $adminMenuPages['050_lod'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Linked Open Data',
-            'menu_title' => 'Linked Open Data',
-            'menu_slug' => 'oes_settings_lod',
-            'position' => 60,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => $lodTabs,
-        'is_core_page' => true
-    ];
-
-    $readingTabs = [
-        'theme-date' => 'Date Format',
-        'theme-index-pages' => 'Index',
-        'theme-languages' => 'Languages',
-        'theme-media' => 'Media',
-        'theme-search' => 'Search'
-    ];
-
-    if (!$oes->block_theme) {
-        $readingTabs['theme-colors'] = 'Colors';
-        $readingTabs['theme-logos'] = 'Logos';
-        ksort($readingTabs);
-    }
-
-    $adminMenuPages['050_reading'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Reading & Display',
-            'menu_title' => 'Reading & Display',
-            'menu_slug' => 'oes_settings_reading',
-            'position' => 30,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => $readingTabs,
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['050_labels'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Labels',
-            'menu_title' => 'Labels',
-            'menu_slug' => 'oes_settings_labels',
-            'position' => 32,
-            'parent_slug' => 'oes_settings'
-        ],
-        'tabs' => [
-            'theme-labels-general' => 'General',
-            'theme-labels-media' => 'Media',
-            'theme-labels-objects' => 'Objects'
-        ],
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['210_tools'] = [
-        'page_parameters' => [
-            'page_title' => 'OES Tools',
-            'menu_title' => 'OES Tools',
-            'menu_slug' => 'oes_tools',
-            'position' => 56
-        ],
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['220_tools_information'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Information',
-            'menu_title' => 'Information',
-            'menu_slug' => 'oes_tools',
-            'parent_slug' => 'oes_tools'
-        ],
-        'view_file_name' => 'view-tools',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_data_model'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Data Model',
-            'menu_title' => 'Data Model',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_model',
-            'position' => 20
-        ],
-        'view_file_name' => 'view-tools-model',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_cache'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Cache',
-            'menu_title' => 'Cache',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_cache',
-            'position' => 25
-        ],
-        'view_file_name' => 'view-tools-cache',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_import'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Import',
-            'menu_title' => 'Import',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_import',
-            'position' => 30
-        ],
-        'tool' => 'import',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_export'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Export',
-            'menu_title' => 'Export',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_export',
-            'position' => 50
-        ],
-        'tool' => 'export',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_operations'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Operations',
-            'menu_title' => 'Operations',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_operations',
-            'position' => 70
-        ],
-        'tool' => 'operations',
-        'is_core_page' => true
-    ];
-
-    $adminMenuPages['230_tools_batch'] = [
-        'subpage' => true,
-        'page_parameters' => [
-            'page_title' => 'Batch',
-            'menu_title' => 'Batch',
-            'parent_slug' => 'oes_tools',
-            'menu_slug' => 'oes_tools_batch',
-            'position' => 80
-        ],
-        'tool' => 'batch',
-        'is_core_page' => true
-    ];
-
-
-    /**
-     * Filters the OES settings pages.
-     *
-     * @param array $settings The OES settings pages.
-     */
     $adminMenuPages = apply_filters('oes/admin_menu_pages', $adminMenuPages);
 
-    ksort($adminMenuPages);
     foreach ($adminMenuPages as $adminMenuPage) {
-        if (isset($adminMenuPage['subpage']) || isset($adminMenuPage['sub_page'])) {
+        if (!empty($adminMenuPage['subpage'])) {
             new Subpage($adminMenuPage);
         } else {
             new Page($adminMenuPage);
         }
     }
 }
-
 
 /**
  * Create a help tab on OES remark page.
@@ -388,5 +308,52 @@ function help_tab(): void
     $functionName = str_replace('-', '_', $screen->id) . '_help_tabs';
     if ($screen->id && function_exists($functionName)) {
         call_user_func($functionName, $screen);
+    }
+}
+
+/**
+ * Sorts the submenus of the OES top-level menu alphabetically,
+ * while keeping "Dashboard" first and "Advanced" last.
+ */
+function sort_submenus_alphabetically(): void
+{
+    global $submenu;
+
+    $consideredMenus = ['oes_tools', 'oes_settings'];
+    foreach ($consideredMenus as $mainMenu) {
+        if (isset($submenu[$mainMenu]) && count($submenu[$mainMenu]) > 1) {
+
+            $dashboardItem = null;
+            foreach ($submenu[$mainMenu] as $key => $item) {
+                if (strcasecmp($item[0], 'Dashboard') === 0) {
+                    $dashboardItem = $item;
+                    unset($submenu[$mainMenu][$key]);
+                    break;
+                }
+            }
+
+            $advancedItem = null;
+            foreach ($submenu[$mainMenu] as $key => $item) {
+                if (strcasecmp($item[0], 'Advanced') === 0) {
+                    $advancedItem = $item;
+                    unset($submenu[$mainMenu][$key]);
+                    break;
+                }
+            }
+
+            usort($submenu[$mainMenu], function ($a, $b) {
+                return strcasecmp($a[0], $b[0]);
+            });
+
+            $submenu[$mainMenu] = array_values($submenu[$mainMenu]);
+
+            if ($dashboardItem) {
+                array_unshift($submenu[$mainMenu], $dashboardItem);
+            }
+
+            if ($advancedItem) {
+                $submenu[$mainMenu][] = $advancedItem;
+            }
+        }
     }
 }

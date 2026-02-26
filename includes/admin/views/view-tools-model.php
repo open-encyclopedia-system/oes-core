@@ -1,40 +1,55 @@
-<div class="oes-page-header-wrapper">
-    <div class="oes-page-header">
+<div class="wrap">
+    <div class="oes-page-header-wrapper">
         <h1><?php _e('Data Model', 'oes'); ?></h1>
+        <h2 class="oes-display-none"></h2>
+        <div class="oes-page-navigation">
+            <ul class="subsubsub"><?php
+
+                $tabs = [
+                    'status' => __('Status', 'oes'),
+                    'bidirectional' => __('Bidirectional Fields', 'oes')
+                ];
+
+                if (\OES\Rights\user_is_oes_admin()) {
+                    $tabs['model'] = __('Config', 'oes');
+                    $tabs['factory'] = __('Factory', 'oes');
+                }
+
+                foreach ($tabs as $tab => $label) {
+                    printf('<li class="%s"><a href="%s" class="oes-tab %s">%s</a></li>',
+                        $tab,
+                        admin_url('admin.php?page=oes_tools_model&tab=' . $tab),
+                        ((($_GET['tab'] ?? 'status') == $tab) ? 'current' : ''),
+                        $label
+                    );
+                }
+
+                ?>
+            </ul>
+            <div style="clear: both;"></div>
+            <hr>
+        </div>
     </div>
-    <nav class="oes-tabs-wrapper hide-if-no-js tab-count-4" aria-label="Secondary menu"><?php
+    <div class="oes-page-body">
+        <?php
 
-        $tabs['status'] = 'Status';
-        if (\OES\Rights\user_is_oes_admin()) {
-            $tabs['model'] = 'Config';
-            $tabs['factory'] = 'Factory';
-        }
+        switch ($_GET['tab'] ?? 'status') {
 
-        foreach ($tabs as $tab => $label) {
-            printf('<a href="%s" class="oes-tab %s">%s</a>',
-                admin_url('admin.php?page=oes_tools_model&tab=' . $tab),
-                ((($_GET['tab'] ?? 'status') == $tab) ? 'active' : ''),
-                $label
-            );
-        }
-        ?>
-    </nav>
-</div>
-<div class="oes-page-body">
-    <?php
+            case 'status':
+                oes_get_view('view-tools-model-status');
+                break;
 
-    switch ($_GET['tab'] ?? 'status') {
+            case 'bidirectional':
+                oes_get_view('view-tools-model-bidirectional');
+                break;
 
-        case 'status':
-            oes_get_view('view-tools-model-status');
-            break;
+            case 'model':
+                \OES\Admin\Tools\display('model');
+                break;
 
-        case 'model':
-            \OES\Admin\Tools\display('model');
-            break;
-
-        case 'factory':
-            \OES\Admin\Tools\display('factory');
-            break;
-    } ?>
+            case 'factory':
+                \OES\Admin\Tools\display('factory');
+                break;
+        } ?>
+    </div>
 </div>

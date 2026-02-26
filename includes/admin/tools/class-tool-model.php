@@ -31,12 +31,14 @@ if (!class_exists('Model')) :
         /** @inheritdoc */
         function html(): void
         {
+            ?>
+            <div class="oes-configuration-header">
+                <p><?php
+                    _e('The data model configuration defined via the editorial layer (OES settings) overrides the plugin-based configuration. You can restore the original plugin configuration using the button below, or export your current configuration for backup or migration.', 'oes'); ?>
+                </p>
+            </div>
+            <?php
             if (\OES\Rights\user_is_oes_admin()):?>
-                <div class="oes-configuration-header">
-                    <p><?php
-                        _e('The data model configuration defined via the editorial layer (OES settings) overrides the plugin-based configuration. You can restore the original plugin configuration using the button below, or export your current configuration for backup or migration.', 'oes'); ?>
-                    </p>
-                </div>
                 <span>
                     <input type="submit" name="import_json" id="import_json" class="button"
                            value="Reload from Plugin Config" onClick="return confirm('<?php

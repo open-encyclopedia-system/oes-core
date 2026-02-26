@@ -56,7 +56,7 @@ if (!class_exists('Container')) :
                 'menu_title' => '[' . $this->key . ']',
                 'capability' => 'edit_posts',
                 'function' => [$this, 'html'],
-                'position' => 20,
+                'position' => 26,
                 'menu_slug' => 'container_' . $this->key,
                 'generated' => true,
                 'hide' => false

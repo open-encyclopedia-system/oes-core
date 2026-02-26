@@ -24,7 +24,6 @@ function oesRemoveElementById(id, confirmMessage = null) {
     if (el) el.remove();
 }
 
-
 function oesGoToAdminPage(select) {
     const url = select.value;
     if (url) {

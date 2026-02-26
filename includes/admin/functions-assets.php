@@ -55,7 +55,7 @@ function oes_add_style_admin(
 
 
 /**
- * Add project style to be registered.
+ * Add application style to be registered.
  *
  * @param string $handle A string containing the name of the style.
  * @param string $src A string containing the full url of the style. If false, style is alias.
@@ -65,7 +65,7 @@ function oes_add_style_admin(
  * @param bool $admin Optional boolean identifying if style is enqueued only for admin.
  * @return void
  */
-function oes_add_project_style(
+function oes_add_application_style(
     string $handle,
     string $src,
     array  $deps = [],
@@ -73,15 +73,17 @@ function oes_add_project_style(
     string $media = 'all',
     bool   $admin = false): void
 {
-    global $oes_assets;
-    $oes_assets['styles'][$handle] = [
-        'handle' => $handle,
-        'src' => plugins_url(OES_BASENAME_PROJECT . $src),
-        'deps' => $deps,
-        'ver' => is_null($ver) ? oes_get_version() : $ver,
-        'media' => $media,
-        'admin' => $admin
-    ];
+    if(defined('OES_BASENAME_PROJECT')) {
+        global $oes_assets;
+        $oes_assets['styles'][$handle] = [
+            'handle' => $handle,
+            'src' => plugins_url(OES_BASENAME_PROJECT . $src),
+            'deps' => $deps,
+            'ver' => is_null($ver) ? oes_get_version() : $ver,
+            'media' => $media,
+            'admin' => $admin
+        ];
+    }
 }
 
 
@@ -143,7 +145,7 @@ function oes_add_script_admin(
 
 
 /**
- * Add project script to be registered.
+ * Add application script to be registered.
  *
  * @param string $handle A string containing the name of the script.
  * @param string $src A string containing the full url of the script. If false, script is alias.
@@ -153,6 +155,27 @@ function oes_add_script_admin(
  * @param bool $admin Optional boolean identifying if style is enqueued only for admin.
  * @return void
  */
+function oes_add_application_script(
+    string $handle,
+    string $src,
+    array  $depends = [],
+           $ver = false,
+    bool   $in_footer = true,
+    bool   $admin = false): void
+{
+    if(defined('OES_BASENAME_PROJECT')) {
+        global $oes_assets;
+        $oes_assets['scripts'][$handle] = [
+            'handle' => $handle,
+            'src' => plugins_url(OES_BASENAME_PROJECT . $src),
+            'depends' => $depends,
+            'ver' => $ver,
+            'in_footer' => $in_footer,
+            'admin' => $admin
+        ];
+    }
+}
+
 function oes_add_project_script(
     string $handle,
     string $src,
@@ -161,17 +184,8 @@ function oes_add_project_script(
     bool   $in_footer = true,
     bool   $admin = false): void
 {
-    global $oes_assets;
-    $oes_assets['scripts'][$handle] = [
-        'handle' => $handle,
-        'src' => plugins_url(OES_BASENAME_PROJECT . $src),
-        'depends' => $depends,
-        'ver' => $ver,
-        'in_footer' => $in_footer,
-        'admin' => $admin
-    ];
+    oes_add_application_script($handle, $src, $depends, $ver, $in_footer, $admin);
 }
-
 
 /**
  * Register all scripts and styles.

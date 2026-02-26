@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function oes_filter_html($args): string
 {
-    $class = oes_get_project_class_name('OES_Filter_Renderer');
+    $class = oes_get_application_class_name('OES_Filter_Renderer');
     $renderer = new $class();
     return $renderer->render($args);
 }

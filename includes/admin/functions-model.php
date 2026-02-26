@@ -20,6 +20,7 @@ function register_model(): void
 {
     register_oes_object_post_type();
     register_oes_objects(get_option('oes_admin-factory_mode'));
+    add_fields_to_page();
 
     /* add action hook (e.g. used by menu container) */
     do_action('oes/data_model_registered');
@@ -41,9 +42,7 @@ function register_oes_object_post_type(): void
                 'description' => 'internal use only',
                 'public' => false,
                 'show_ui' => true,
-                'show_in_menu' => !empty(get_option('oes_admin-show_oes_objects')),
-                'menu_position' => 56,
-                'menu_icon' => oes_get_menu_icon_path('admin'),
+                'show_in_menu' => 'oes_tools',
                 'capabilities' => [
                     'publish_posts' => 'manage_options',
                     'edit_posts' => 'manage_options',
@@ -70,19 +69,31 @@ function register_oes_objects(bool $factoryMode = false): void
 {
     $oesObjects = get_oes_objects();
     if (empty($oesObjects) && is_admin()) {
+
         add_action('admin_notices', function () {
-            echo '<div class="notice notice-warning"><p>' .
-                __('There is no OES data model registered. Navigate to ', 'oes') .
-                oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
-                    admin_url('admin.php?page=oes_tools_model&tab=model')) .
-                __(' and use ' .
-                    'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
-                    'project plugin (this will only work if you have admin rights). After that you should see the ' .
-                    'list of registered post types and taxonomies.<br>' .
-                    'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
-                    'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
-                    '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
-                '</p></div>';
+
+            global $oes;
+
+            if($oes->application_initialized){
+                echo '<div class="notice notice-warning"><p>' .
+                    __('There is no OES data model registered. Navigate to ', 'oes') .
+                    oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
+                        admin_url('admin.php?page=oes_tools_model&tab=model')) .
+                    __(' and use ' .
+                        'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
+                        'application plugin (this will only work if you have admin rights). After that you should see the ' .
+                        'list of registered post types and taxonomies.<br>' .
+                        'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
+                        'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
+                        '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
+                    '</p></div>';
+            }
+            else {
+                //TODO
+                echo '<div class="notice notice-warning"><p>' .
+                    __('There is no OES data model registered and no application plugin activated.', 'oes') .
+                    '</p></div>';
+            }
         });
         return;
     }
@@ -107,11 +118,10 @@ function register_oes_objects(bool $factoryMode = false): void
 
             $taxonomyKey = $post->post_title;
             $argsAll = json_decode($post->post_content, true) ?? [];
-            if (register_taxonomy_and_evaluate(
+            if ($factoryMode || register_taxonomy_and_evaluate(
                     $taxonomyKey,
                     (is_array($argsAll['object_type'] ?? false) ? $argsAll['object_type'] : []),
-                    $argsAll) ||
-                $factoryMode) {
+                    $argsAll)) {
 
                 $oesArgs = json_decode($post->post_excerpt, true) ?? [];
 
@@ -129,11 +139,22 @@ function register_oes_objects(bool $factoryMode = false): void
             $registerArgs = json_decode($post->post_content, true);
 
             /* replace icon */
-            if (isset($registerArgs['menu_icon']) &&
-                in_array($registerArgs['menu_icon'], ['default', 'parent', 'second', 'admin']))
-                $registerArgs['menu_icon'] = oes_get_menu_icon_path($registerArgs['menu_icon']);
+            $menuIcon = $registerArgs['menu_icon'] ?? 'default';
+            if (in_array($menuIcon, ['default', 'parent', 'second', 'admin'])) {
 
-            if (register_post_type_and_evaluate($postTypeKey, $registerArgs) || $factoryMode) {
+                if($menuIcon == 'default'){
+                    $oesArgs = json_decode($post->post_excerpt, true) ?? [];
+                    $menuIcon = $oesArgs['type'] ?? 'default';
+                }
+
+                $registerArgs['menu_icon'] = oes_get_menu_icon_path($menuIcon);
+            }
+
+            if(is_null($registerArgs['menu_position'])) {
+                $registerArgs['menu_position'] = 30;
+            }
+
+            if ($factoryMode || register_post_type_and_evaluate($postTypeKey, $registerArgs)) {
 
                 $oesArgs = json_decode($post->post_excerpt, true) ?? [];
                 if (!empty($oesArgs)) OES()->set_post_type_parameters($postTypeKey, $oesArgs, $registerArgs);
@@ -219,12 +240,14 @@ function set_oes_object_option(string $objectKey, string $postID, bool $undersco
  */
 function get_oes_object_option(string $objectKey, string $type = 'post_type', bool $languageGroup = false)
 {
-    /* clean type */
     $typesMatch = ['post_types' => 'post_type', 'taxonomies' => 'taxonomy'];
     $type = $typesMatch[$type] ?? $type;
 
     $optionName = 'oes_object-' . $type . '_' . $objectKey;
-    if ($languageGroup) $optionName .= '_language';
+    if ($languageGroup) {
+        $optionName .= '_language';
+    }
+
     return get_option($optionName);
 }
 
@@ -252,7 +275,7 @@ function delete_oes_object_option(string $objectKey, string $type = ''): void
 function import_model_from_json(): void
 {
     delete_oes_objects();
-    insert_data_model_as_an_oes_objects(read_data_from_project_json_file());
+    insert_data_model_as_an_oes_objects(read_data_from_application_json_file());
     set_default_options();
 }
 
@@ -295,8 +318,10 @@ function export_model_to_json(): bool
         }
     }
 
+    $name = oes_get_application_name();
+
     return !empty($exportData) &&
-        oes_export_json_data('model_' . OES_BASENAME_PROJECT . '_' . date('Y-m-d') . '.json', $exportData);
+        oes_export_json_data('model_' . $name . '_' . date('Y-m-d') . '.json', $exportData);
 }
 
 
@@ -428,15 +453,16 @@ function register_post_type_and_evaluate(string $postTypeKey, array $args = []):
 {
 
     /* exit early if taxonomy already exists */
-    if (post_type_exists($postTypeKey))
-        return oes_write_log(sprintf(__('Post type %s already exists. Skip registration.', 'oes'), $postTypeKey));
+    if (post_type_exists($postTypeKey)) {
+        return oes_write_log(sprintf(__('Post type %s already exists. Skip registration.', 'oes'), $postTypeKey), 'Data Model');
+    }
 
     $registered = register_post_type($postTypeKey, $args);
     if (is_wp_error($registered))
         return oes_write_log(sprintf(__('Failed register_post_type for %s.%s', 'oes'),
             $postTypeKey,
             '<br>' . implode(' ', $registered->get_error_messages())
-        ));
+        ), 'Data Model');
     return true;
 }
 
@@ -455,7 +481,7 @@ function register_taxonomy_and_evaluate(string $taxonomyKey, array $objectType =
 
     /* exit early if taxonomy already exists */
     if (taxonomy_exists($taxonomyKey))
-        return oes_write_log(sprintf(__('Taxonomy %s already exists. Skip registration.', 'oes'), $taxonomyKey));
+        return oes_write_log(sprintf(__('Taxonomy %s already exists. Skip registration.', 'oes'), $taxonomyKey), 'Data Model');
 
     if (isset($args['object_type'])) unset($args['object_type']);
     $registered = register_taxonomy($taxonomyKey, $objectType, $args);
@@ -463,7 +489,7 @@ function register_taxonomy_and_evaluate(string $taxonomyKey, array $objectType =
         return oes_write_log(sprintf(__('Failed register_taxonomy for %s.%s', 'oes'),
             $taxonomyKey,
             '<br>' . implode(' ', $registered->get_error_messages())
-        ));
+        ), 'Data Model');
     return true;
 }
 
@@ -906,18 +932,25 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
     return ['all' => $fieldGroup, 'language' => $languageFieldGroupArgs];
 }
 
+// @oesLegacy:
+function read_data_from_project_json_file(): array
+{
+    return read_data_from_application_json_file();
+}
+
 
 /**
- * Get the data from the project json file.
+ * Get the data from the application json file.
  *
  * @return array Return the data as array.
  */
-function read_data_from_project_json_file(): array
+function read_data_from_application_json_file(): array
 {
+    $paths = [];
 
-    /* prepare path to data model */
-    $paths = [OES_PROJECT_PLUGIN . '/config/model.json'];
-
+    if (defined('OES_PROJECT_PLUGIN')) {
+        $paths = [OES_PROJECT_PLUGIN . '/config/model.json'];
+    }
 
     /**
      * Filters the paths to data model.
@@ -946,7 +979,7 @@ function insert_data_model_as_an_oes_objects(array $dataModel = []): void
 {
 
     /* get data from path(s) */
-    if (empty($dataModel)) $dataModel = read_data_from_project_json_file();
+    if (empty($dataModel)) $dataModel = read_data_from_application_json_file();
 
     /* evaluate general config first (might be useful someday) */
     if (!empty($dataModel['oes_config'])) insert_general_config_as_an_oes_object($dataModel['oes_config']);
@@ -1412,75 +1445,84 @@ function get_schema_types(): array
  * @param array $fieldTypes
  * @return void
  */
+function hook_fields_to_page(array $fieldTypes = []): void
+{
+    add_action('oes/data_model_registered', function () use ($fieldTypes) {
+        \OES\Model\add_fields_to_page($fieldTypes);
+    });
+}
+
+/**
+ * Add a field group to the page object containing the language field.
+ *
+ * @param array $fieldTypes
+ * @return void
+ */
 function add_fields_to_page(array $fieldTypes = []): void
 {
+    $fields = [];
+    if (empty($fieldTypes) ||
+        in_array('language', $fieldTypes) ||
+        in_array('translation', $fieldTypes)) {
 
-    add_action('oes/data_model_registered', function () use ($fieldTypes) {
+        /* prepare languages */
+        $languages = [];
+        $oes = OES();
+        if (!empty($oes->languages))
+            foreach ($oes->languages as $languageKey => $language) $languages[$languageKey] = $language['label'];
 
-        $fields = [];
-        if (empty($fieldTypes) ||
-            in_array('language', $fieldTypes) ||
-            in_array('translation', $fieldTypes)) {
-
-            /* prepare languages */
-            $languages = [];
-            $oes = OES();
-            if (!empty($oes->languages))
-                foreach ($oes->languages as $languageKey => $language) $languages[$languageKey] = $language['label'];
-
-            if (empty($fieldTypes) || in_array('language', $fieldTypes))
-                $fields[] = [
-                    'key' => 'field_oes_post_language',
-                    'label' => 'Language',
-                    'name' => 'field_oes_post_language',
-                    'type' => 'select',
-                    'instructions' => '',
-                    'required' => true,
-                    'choices' => $languages
-                ];
-
-            if (empty($fieldTypes) || in_array('translation', $fieldTypes))
-                $fields[] = [
-                    'key' => 'field_oes_page_translations',
-                    'label' => 'Translations',
-                    'name' => 'field_oes_page_translations',
-                    'type' => 'relationship',
-                    'return_format' => 'id',
-                    'post_type' => ['page'],
-                    'filters' => ['search']
-                ];
-        }
-
-        if (empty($fieldTypes) || in_array('toc', $fieldTypes))
+        if (empty($fieldTypes) || in_array('language', $fieldTypes))
             $fields[] = [
-                'key' => 'field_oes_page_include_toc',
-                'label' => 'Include Table of Content',
-                'name' => 'field_oes_page_include_toc',
-                'type' => 'true_false',
+                'key' => 'field_oes_post_language',
+                'label' => 'Language',
+                'name' => 'field_oes_post_language',
+                'type' => 'select',
                 'instructions' => '',
-                'default_value' => true
+                'required' => true,
+                'choices' => $languages
             ];
 
+        if (empty($fieldTypes) || in_array('translation', $fieldTypes))
+            $fields[] = [
+                'key' => 'field_oes_page_translations',
+                'label' => 'Translations',
+                'name' => 'field_oes_page_translations',
+                'type' => 'relationship',
+                'return_format' => 'id',
+                'post_type' => ['page'],
+                'filters' => ['search']
+            ];
+    }
 
-        /**
-         * Filter page fields before registration.
-         *
-         * @param array $fields The current fields.
-         */
-        $fields = apply_filters('oes/data_model_register_page_fields', $fields);
+    if (empty($fieldTypes) || in_array('toc', $fieldTypes))
+        $fields[] = [
+            'key' => 'field_oes_page_include_toc',
+            'label' => 'Include Table of Content',
+            'name' => 'field_oes_page_include_toc',
+            'type' => 'true_false',
+            'instructions' => '',
+            'default_value' => true
+        ];
 
-        if (!empty($fields) && function_exists('acf_add_local_field_group'))
-            acf_add_local_field_group([
-                'key' => 'group_oes_page',
-                'title' => 'Page',
-                'fields' => $fields,
-                'location' => [[[
-                    'param' => 'post_type',
-                    'operator' => '==',
-                    'value' => 'page'
-                ]]]
-            ]);
-    });
+
+    /**
+     * Filter page fields before registration.
+     *
+     * @param array $fields The current fields.
+     */
+    $fields = apply_filters('oes/data_model_register_page_fields', $fields);
+
+    if (!empty($fields) && function_exists('acf_add_local_field_group'))
+        acf_add_local_field_group([
+            'key' => 'group_oes_page',
+            'title' => 'Page',
+            'fields' => $fields,
+            'location' => [[[
+                'param' => 'post_type',
+                'operator' => '==',
+                'value' => 'page'
+            ]]]
+        ]);
 }
 
 
@@ -1553,18 +1595,76 @@ function term_save_fields_for_multilingualism(int $term_id): void
 function set_default_options(): void
 {
     $options = [
-        'oes_admin-show_oes_objects' => false,
         'oes_admin-hide_version_tab' => false,
         'oes_features' => json_encode([
-            'dashboard' => true,
-            'comments' => true,
+            'remarks' => true,
             'task' => false,
             'manual' => false,
+            'cache' => false,
             'factory' => true,
-            'lod_apis' => true,
-            'figures' => true,
-            'search' => true])
+            'lod_apis' => true
+        ])
     ];
     foreach ($options as $optionKey => $option)
         if (!oes_option_exists($optionKey)) add_option($optionKey, $option);
+}
+
+/**
+ * Generates a structured array of schema-related admin links for OES components (post types and taxonomies).
+ *
+ * The returned array is grouped by schema type, and each group contains:
+ * - a human-readable label
+ * - a sorted list of schema object links (e.g., to post types or taxonomies).
+ *
+ * Each link entry includes:
+ * - 'key'   => The object key (e.g., post type or taxonomy name)
+ * - 'link'  => The HTML anchor tag to the admin schema settings page
+ * - 'label' => The object label (human-readable name)
+ *
+ * @return array
+ */
+function get_schema_links(): array
+{
+    global $oes;
+    $schemaLinks = [];
+
+    $schemaTypes = get_schema_types();
+    foreach ($schemaTypes as $schemaType => $schemaLabel) {
+        $schemaLinks[$schemaType]['label'] = $schemaLabel;
+    }
+
+    foreach (['post_types', 'taxonomies'] as $component) {
+        foreach ($oes->$component as $objectKey => $objectData) {
+            $type = $objectData['type'] ?? 'index';
+            $objectLabel = $objectData['label'] ?? $objectKey;
+
+            $url = 'admin.php?page=oes_settings_schema&tab=schema&type=oes' .
+                '&component=' . $component .
+                '&object=' . $objectKey;
+
+            $uniqueKey = $objectLabel . $objectKey;
+
+            $schemaLinks[$type]['data'][$uniqueKey] = [
+                'key' => $objectKey,
+                'label' => $objectLabel,
+                'component' => $component,
+                'url' => $url
+            ];
+        }
+    }
+
+    $sanitizedSchemaLinks = [];
+    foreach ($schemaLinks as $schemaType => $schemaData) {
+        if (!empty($schemaData['data'])) {
+            $schemaDataSorted = $schemaData['data'];
+            ksort($schemaDataSorted);
+
+            $sanitizedSchemaLinks[$schemaType] = [
+                'label' => $schemaData['label'] ?? $schemaType,
+                'data' => $schemaDataSorted,
+            ];
+        }
+    }
+
+    return $sanitizedSchemaLinks;
 }

@@ -45,7 +45,7 @@ An OES installation typically includes:
 1. Download the OES Core plugin from GitHub and add it to your WordPress plugin directory.
 2. Install and activate required dependencies (e.g., ACF).
 3. Activate the OES Core plugin.
-4. Install a project-specific OES plugin or use the OES Demo plugin (see its documentation).
+4. Install an application-specific OES plugin or use the OES Demo plugin (see its documentation).
 5. *(Optional)* Install and activate an OES-compatible theme.
 
 ## Support

@@ -175,65 +175,6 @@ function oes_replace_double_quote(string &$value): void
     $value = str_replace('"', "'", $value);
 }
 
-
-/**
- * Replace characters for html form.
- *
- * @param mixed $value The value to be cleaned.
- * @return mixed Returns clean value
- */
-function oes_replace_for_form($value)
-{
-    return str_replace(["\"", "\„", "“", "„"], ['&#8220;', '&#8222;', '&#8220;', '&#8222;'], $value);
-}
-
-
-/**
- * Replace characters for serializing.
- *
- * @param mixed $value The value to be serialized.
- * @return mixed Returns clean value.
- */
-function oes_replace_for_serializing($value)
-{
-    if (is_string($value)) {
-        $replacedStringParams = [
-            '\"' => "&quot;",
-            "\'" => "&apos;",
-            '\\\\' => "&bsol;"
-        ];
-        $value = str_replace(array_keys($replacedStringParams), array_values($replacedStringParams), $value);
-    } elseif (is_array($value))
-        foreach ($value as $key => $singleValue)
-            $value[$key] = oes_replace_for_serializing($singleValue);
-
-    return $value;
-}
-
-
-/**
- * Replace characters from serializing.
- *
- * @param mixed $value The serialized value.
- * @return mixed Returns clean value.
- */
-function oes_replace_from_serializing($value)
-{
-    if (is_string($value)) {
-        $replacedStringParams = [
-            "&quot;" => '\"',
-            "&apos;" => "\'",
-            "&bsol;" => '\\\\'
-        ];
-        $value = str_replace(array_keys($replacedStringParams), array_values($replacedStringParams), $value);
-    } elseif (is_array($value))
-        foreach ($value as $key => $singleValue)
-            $value[$key] = oes_replace_from_serializing($singleValue);
-
-    return $value;
-}
-
-
 /**
  * Escape encoding for csv output.
  *

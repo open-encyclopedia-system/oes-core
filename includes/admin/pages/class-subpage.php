@@ -37,7 +37,7 @@ if (!class_exists('Subpage')) :
 
         /** @inheritdoc */
         function add_page() {
-            return add_submenu_page(
+            $this->page_hook = add_submenu_page(
                 $this->page_parameters['parent_slug'],
                 $this->page_parameters['page_title'],
                 $this->page_parameters['menu_title'],
@@ -46,6 +46,8 @@ if (!class_exists('Subpage')) :
                 $this->page_parameters['function'],
                 $this->page_parameters['position']
             );
+
+            return $this->page_hook;
         }
     }
 endif;

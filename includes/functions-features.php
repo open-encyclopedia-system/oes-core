@@ -34,9 +34,15 @@ function utility_functions(): void
 function database(): void
 {
     if (is_admin()) {
-        include_once __DIR__ . '/admin/db/initialize-db.php';
-        include_once __DIR__ . '/admin/db/class-operation.php';
-        include_once __DIR__ . '/admin/db/functions-operation.php';
+
+        include_once __DIR__ . '/admin/operations/class-operation.php';
+        include_once __DIR__ . '/admin/operations/class-display_builder.php';
+        include_once __DIR__ . '/admin/operations/class-executor.php';
+        include_once __DIR__ . '/admin/operations/class-repository.php';
+        include_once __DIR__ . '/admin/operations/functions-operation.php';
+
+        add_action('admin_action_oes_operation_import', '\OES\Admin\Operations\import_operations');
+        add_action('admin_action_oes_operation_delete', '\OES\Admin\Operations\delete_operations');
     }
 }
 
@@ -84,9 +90,12 @@ function admin_functions(): void
 {
     include_once __DIR__ . '/admin/functions-admin.php';
     include_once __DIR__ . '/admin/functions-acf.php';
+    include_once __DIR__ . '/admin/functions-audit.php';
+
     if (is_admin()) {
         add_action('admin_head', '\OES\Admin\set_page_icon');
         add_filter('admin_body_class', '\OES\Admin\set_oes_body_class');
+        add_filter('plugin_action_links_' . OES_CORE_PLUGIN_BASENAME, '\OES\Admin\plugin_action_links');
     }
 }
 
@@ -123,12 +132,21 @@ function admin_pages(): void
     include_once __DIR__ . '/admin/pages/class-module_page.php';
     include_once __DIR__ . '/admin/pages/functions-pages.php';
     include_once __DIR__ . '/admin/functions-help_tabs.php';
+
+    add_action('admin_init', function () {
+        include_once __DIR__ . '/admin/lists/class-oes_list_table.php';
+    });
+
     if (is_admin()) {
         add_action('admin_enqueue_scripts', 'OES\Admin\add_page_scripts');
         add_action('oes/data_model_registered', 'OES\Admin\initialize_admin_menu_pages');
         add_action('oes/data_model_registered', '\OES\Admin\initialize_container_pages');
         add_action('admin_head', '\OES\Admin\help_tab');
+        add_filter('admin_menu', '\OES\Admin\sort_submenus_alphabetically', 999);
+        add_action('load-toplevel_page_oes_settings','\OES\Dashboard\settings_dashboard');
     }
+
+    add_action('admin_action_oes_toggle_feature', '\OES\Admin\toggle_feature');
 }
 
 /**
@@ -189,18 +207,27 @@ function user_profile_settings(): void
 /**
  * Bootstrap OES user rights and role-based access control.
  *
+ * Loads user-rights–related functionality and registers hooks that:
+ * - define and register custom OES user roles ("Blocked" and "Read-Only")
+ * - block authentication for users assigned to the "Blocked" role
+ * - display admin notices for users with the "Read-Only" role
+ *
  * @return void
  */
 function user_rights(): void
 {
     include_once __DIR__ . '/admin/functions-rights.php';
+    add_action('init', '\OES\Rights\add_blocked_role');
+    add_action('admin_init', '\OES\Rights\add_capabilities');
+    add_action('admin_init', '\OES\Rights\add_oes_roles');
+    add_filter('authenticate', '\OES\Rights\block_blocked_users', 30, 1);
 }
 
 /**
  * Include the data model.
  *
  * This enables the "Data Model" feature, allowing for the modification of WordPress objects such as 'post type'
- * and 'taxonomy'. It creates custom post types and taxonomies according to the project data model file.
+ * and 'taxonomy'. It creates custom post types and taxonomies according to the application data model file.
  * Additionally, it generates forms with fields for structured data.
  *
  * @return void
@@ -221,6 +248,7 @@ function data_model(): void
 function data_model_factory(): void
 {
     include_once __DIR__ . '/admin/functions-factory.php';
+    include_once __DIR__ . '/admin/tools/class-factory_service.php';
     if (is_admin()) {
         if (get_option('oes_admin-factory_mode')) {
             add_action('admin_notices', '\OES\Factory\display_factory_notice');
@@ -267,6 +295,7 @@ function versioning(): void
         add_action('admin_action_oes_copy_version', 'OES\Versioning\admin_action_oes_copy_version');
         add_action('admin_action_oes_create_version', 'OES\Versioning\admin_action_oes_create_version');
         add_action('admin_action_oes_create_translation', 'OES\Versioning\admin_action_oes_create_translation');
+        add_filter('acf/prepare_field', '\OES\Versioning\hide_fields_for_non_admins');
     }
 }
 
@@ -380,20 +409,33 @@ function theme_classes(): void
  */
 function cache(bool $enabled = true): void
 {
-    include_once __DIR__ . '/admin/functions-caching.php';
-    if ($enabled) {
 
+    static $registered = false;
+    if ($registered) return;
+    $registered = true;
+
+    include_once __DIR__ . '/cache/class-storage_interface.php';
+    include_once __DIR__ . '/cache/class-storage.php';
+    include_once __DIR__ . '/cache/class-manager.php';
+    include_once __DIR__ . '/cache/functions-cache.php';
+
+    if($enabled) {
+
+        // @oesDevelopment: replace global
         global $oes_caching_enabled;
         $oes_caching_enabled = true;
 
-        if(is_admin()) {
-            add_action('save_post', '\OES\Caching\clear_archive_cache_post');
-            add_action('before_delete_post', '\OES\Caching\clear_archive_cache_post');
-            add_action('trashed_post', '\OES\Caching\clear_archive_cache_post');
-            add_action('created_term', '\OES\Caching\clear_archive_cache_term', 10, 3);
-            add_action('edited_term', '\OES\Caching\clear_archive_cache_term', 10, 3);
-            add_action('delete_term', '\OES\Caching\clear_archive_cache_term', 10, 4);
-        }
+        $manager = oes_cache();
+
+        add_action('save_post', [$manager, 'clear_archive_cache_post']);
+        add_action('before_delete_post', [$manager, 'clear_archive_cache_post']);
+        add_action('trashed_post', [$manager, 'clear_archive_cache_post']);
+
+        add_action('created_term', [$manager, 'clear_archive_cache_term'], 10, 3);
+        add_action('edited_term', [$manager, 'clear_archive_cache_term'], 10, 3);
+        add_action('delete_term', [$manager, 'clear_archive_cache_term'], 10, 4);
+
+        add_action('admin_action_oes_cache_delete', 'oes_cache_delete');
     }
 }
 
@@ -403,20 +445,17 @@ function cache(bool $enabled = true): void
  * This enables the "Figures" feature. It modifies the display of images and galleries by adding a lightbox
  * and additional caption text.
  *
- * @param bool $enabled Whether the feature setup should be enabled. Defaults to true.
  * @return void
  */
-function figures(bool $enabled = true): void
+function figures(): void
 {
     include_once __DIR__ . '/theme/figures/functions-figures.php';
     include_once __DIR__ . '/theme/figures/functions-panel.php';
     include_once __DIR__ . '/theme/figures/class-panel.php';
     include_once __DIR__ . '/theme/figures/class-gallery_panel.php';
     include_once __DIR__ . '/theme/figures/class-image_panel.php';
-    if ($enabled) {
-        oes_add_style('oes-panel', '/includes/theme/figures/panel.css');
-        oes_add_script('oes-figures', '/includes/theme/figures/figures' . oes_minify() . '.js', ['jquery']);
-    }
+    oes_add_style('oes-panel', '/includes/theme/figures/panel.css');
+    oes_add_script('oes-figures', '/includes/theme/figures/figures' . oes_minify() . '.js', ['jquery']);
 }
 
 /**
@@ -449,7 +488,7 @@ function labels(): void
 /**
  * Include language switch.
  *
- * This enables the "Language Switch" feature, which is used in projects that include two or more languages.
+ * This enables the "Language Switch" feature, which is used in applications that include two or more languages.
  * The switch allows users to change the website's language.
  *
  * @oesDevelopment Is this needed outside of frontend?
@@ -536,7 +575,7 @@ function lod_api(bool $enabled = true): void
  */
 function remarks(bool $enabled = true): void
 {
-    include_once __DIR__ . '/admin/remarks/functions-remarks.php';
+    include_once __DIR__ . '/admin/functions-remarks.php';
     if (is_admin() && $enabled) {
         add_action('admin_menu', '\OES\Remarks\create_page');
         add_filter('set-screen-option', '\OES\Remarks\set_screen_option', 10, 3);
@@ -546,22 +585,22 @@ function remarks(bool $enabled = true): void
 /**
  * Include admin manual.
  *
- * This enables the "Admin Manual" feature, which allows creating internal manual pages.
+ * This enables the "Author Guidelines" feature, which allows creating internal manual pages.
  *
  * @param bool $enabled Whether the feature setup should be enabled. Defaults to true.
  * @return void
  */
-function manual(bool $enabled = true): void
+function guidelines(bool $enabled = true): void
 {
-    include_once __DIR__ . '/admin/functions-manual.php';
+    include_once __DIR__ . '/admin/functions-guidelines.php';
     if ($enabled) {
-        add_action('init', '\OES\Manual\register', 8);
+        add_action('init', '\OES\Guidelines\register', 8);
 
         if (is_admin()) {
-            add_filter('parent_file', '\OES\Manual\modify_parent_file');
-            add_action('admin_enqueue_scripts', '\OES\Manual\include_style');
-            add_action('admin_head', '\OES\Manual\include_stylesheet');
-            add_action('admin_footer', '\OES\Manual\toc_panel');
+            add_filter('parent_file', '\OES\Guidelines\modify_parent_file');
+            add_action('admin_enqueue_scripts', '\OES\Guidelines\include_style');
+            add_action('admin_head', '\OES\Guidelines\include_stylesheet');
+            add_action('admin_footer', '\OES\Guidelines\toc_panel');
         }
     }
 }

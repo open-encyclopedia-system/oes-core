@@ -28,7 +28,7 @@ if (!class_exists('Schema_LOD')) :
         function empty(): string
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
-                __('There are no configurations found for this API for your project. ' .
+                __('There are no configurations found for this API for your application. ' .
                     'Enable API options in the <b>General</b> tab.', 'oes') .
                 '</p></div>';
         }
@@ -70,7 +70,6 @@ if (!class_exists('Schema_LOD')) :
                         'args' => [
                             'options' => $option['options'],
                             'multiple' => $option['multiple'] ?? true,
-                            'class' => 'oes-replace-select2',
                             'hidden' => ($option['type'] === 'select')
                         ]
                     ],

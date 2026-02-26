@@ -107,3 +107,14 @@ function get_field_display_value(string $fieldName, $postID = false, array $args
 {
     return \oes_get_field_display_value($fieldName, $postID, $args);
 }
+
+/**
+ * Determine if a field key is an acf generated key.
+ *
+ * @param string $key
+ * @return bool
+ */
+function is_acf_generated_key(string $key): bool
+{
+    return (bool) preg_match('/^field_[a-f0-9]{13}$/', $key);
+}

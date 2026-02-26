@@ -34,7 +34,7 @@ if (!class_exists('LOD')) :
         function empty(): string
         {
             return '<div class="oes-tool-information-wrapper"><p>' .
-                __('There are no configurations found for this API for your project. ' .
+                __('There are no configurations found for this API for your application. ' .
                     'Enable API options in the <b>General</b> tab.', 'oes') .
                 '</p></div>';
         }

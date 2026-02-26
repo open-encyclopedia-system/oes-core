@@ -46,9 +46,8 @@ if (!class_exists('GND')) :
                     '</a>'
                 ) .
                 '</p><p>' .
-                sprintf(__('The API is %spowered by %s%s.', 'oes'),
+                sprintf(__('The API is %spowered by lobid%s.', 'oes'),
                     '<a href="https://lobid.org/" target="_blank" title="powered by lobid data">',
-                    '<img src="https://lobid.org/images/lobid.png" alt="lobid-Logo" width="110" height="32"/>',
                     '</a>') .
                 '</p>' .
                 '</div>';

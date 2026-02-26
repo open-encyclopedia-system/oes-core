@@ -573,7 +573,10 @@ function oes_get_object_select_options(
                         'group',
                         'flexible_content',
                         'repeater'
-                    ]))
+                    ]) && (
+                        empty($fieldTypes) ||
+                        in_array($parentField['type'], $fieldTypes)
+                    ))
                     $parentFieldOptions['parent__' . $parentFieldKey] = __('Parent Field: ', 'oes') .
                         (empty($parentField['label']) ? $parentFieldKey : $parentField['label']);
             asort($parentFieldOptions);

@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 function get(string $name = ''): string
 {
     // Resolve class name from child theme or fallback
-    $class = oes_get_project_class_name('\OES\Icon\Icons');
+    $class = oes_get_application_class_name('\OES\Icon\Icons');
 
     if (!class_exists($class)) {
         return "<!-- Icon class '{$class}' not found -->";

@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * @return string
  */
 function oes_minify(): string {
-    return OES_LIVEMODE ? '.min' : '';
+    return OES_LIVE_MODE ? '.min' : '';
 }
 
 
@@ -15,7 +15,7 @@ function oes_minify(): string {
  * Includes a file relative to the plugin path.
  *
  * @param string $file     Relative file path from the root or includes directory.
- * @param string $root     Optional. Absolute base path. Defaults to OES Core Plugin path.
+ * @param string $root     Optional. Absolute base path. Defaults to OES Framework Plugin path.
  * @param bool   $includes Optional. Whether to prepend the 'includes/' directory. Default true.
  * @return void
  */
@@ -36,26 +36,22 @@ function oes_include(string $file, string $root = '', bool $includes = true): vo
 
 
 /**
- * Includes a file relative to the OES Project Plugin path.
+ * Includes a file relative to the OES Application Plugin path.
  *
- * This is a wrapper for oes_include() using the project plugin as the base path.
+ * This is a wrapper for oes_include() using the application plugin as the base path.
  *
  * @param string $file     Relative file path from the root or includes directory.
- * @param string $root     Optional. Absolute base path. Defaults to OES Project Plugin path.
+ * @param string $root     Optional. Absolute base path. Defaults to OES Application Plugin path.
  * @param bool   $includes Optional. Whether to prepend the 'includes/' directory. Default true.
  * @return void
  */
 function oes_include_project(string $file, string $root = '', bool $includes = true): void
 {
-    if (empty($root)) {
+    if (empty($root) && defined('OES_PROJECT_PLUGIN')) {
         $root = OES_PROJECT_PLUGIN;
     }
 
-    if (function_exists('oes_include')) {
-        oes_include($file, $root, $includes);
-    } else {
-        error_log('oes_include_project: oes_include function does not exist.');
-    }
+    oes_include($file, $root, $includes);
 }
 
 
@@ -138,28 +134,29 @@ function oes_get_view(string $path = '', array $args = [], string $root = ''): v
 
 
 /**
- * Includes a view file from the admin views directory of the project plugin.
+ * Includes a view file from the admin views directory of the application plugin.
  *
- * This is a wrapper around oes_get_view() using the project plugin root.
+ * This is a wrapper around oes_get_view() using the application plugin root.
  *
  * @param string $path Relative path to the view file from '/includes/admin/views/'. '.php' extension is optional.
  * @param array  $args Optional. Variables to extract into the view scope.
  * @param string $root Optional. Absolute plugin root. Defaults to OES_PROJECT_PLUGIN.
  * @return void
  */
-function oes_get_project_view(string $path = '', array $args = [], string $root = ''): void
+function oes_get_application_view(string $path = '', array $args = [], string $root = ''): void
 {
-    if (empty($root)) {
+    if (empty($root) && defined('OES_PROJECT_PLUGIN')) {
         $root = OES_PROJECT_PLUGIN;
     }
 
-    if (function_exists('oes_get_view')) {
-        oes_get_view($path, $args, $root);
-    } else {
-        error_log('oes_get_project_view: oes_get_view function does not exist.');
-    }
+    oes_get_view($path, $args, $root);
 }
 
+//@oesLegacy
+function oes_get_project_view(string $path = '', array $args = [], string $root = ''): void
+{
+    oes_get_application_view($path, $args, $root);
+}
 
 /**
  * Get data from a JSON file.
@@ -251,7 +248,6 @@ function oes_hide_obsolete_menu_structure(): void
  */
 function oes_hide_obsolete_menu_structure_filter(): void
 {
-    remove_menu_page('jetpack'); // Jetpack7
     remove_menu_page('edit.php'); // Posts7
     remove_menu_page('edit-comments.php'); // Comments7
 }
@@ -265,7 +261,7 @@ function oes_hide_obsolete_menu_structure_filter(): void
  */
 function oes_add_fields_to_page(array $fieldTypes = []): void
 {
-    \OES\Model\add_fields_to_page($fieldTypes);
+    \OES\Model\hook_fields_to_page($fieldTypes);
 }
 
 
@@ -277,14 +273,37 @@ function oes_add_fields_to_page(array $fieldTypes = []): void
  */
 function oes_get_menu_icon_path(string $identifier = 'default'): string
 {
+    if($identifier == 'single-article'){
+        return 'dashicons-media-document';
+    }
+    elseif($identifier == 'single-contributor'){
+        return 'dashicons-groups';
+    }
+    elseif($identifier == 'single-index'){
+        return 'dashicons-paperclip';
+    }
+    elseif($identifier == 'single-internal'){
+        return 'dashicons-admin-generic';
+    }
+    elseif($identifier == 'other'){
+        return 'dashicons-admin-generic';
+    }
+    elseif($identifier == 'container'){
+        return 'dashicons-admin-generic';
+    }
+    elseif($identifier == 'default'){
+        return 'dashicons-admin-generic';
+    }
+
     $icons = [
-        'default' => '/assets/images/oes_cubic_18x18.png',
+        'oes' =>  '/assets/images/oes_cubic_outline_white.png',
+        'editor' => '/assets/images/oes_cubic_18x18_editor.png',
         'second'  => '/assets/images/oes_cubic_18x18_second.png',
         'parent'  => '/assets/images/oes_cubic_18x18_parent.png',
         'admin'   => '/assets/images/oes_cubic_18x18_admin.png',
     ];
 
-    $customIconPath = $icons[$identifier] ?? $icons['default'];
+    $customIconPath = $icons[$identifier] ?? $icons['oes'];
     $fullPath = OES_CORE_PLUGIN . $customIconPath;
 
     $menuIcon = false;
@@ -381,13 +400,14 @@ function oes_option_exists(string $option, bool $siteWide = false)
  * @param mixed $messages The log messages, strings, arrays, or objects.
  * @return bool Always returns false to avoid interrupting execution flow.
  */
-function oes_write_log(mixed $messages): bool {
+function oes_write_log(mixed $messages, string $component = ''): bool {
     if (defined('WP_DEBUG') && WP_DEBUG === true) {
         $logMessage = is_array($messages) || is_object($messages)
             ? print_r($messages, true)
             : var_export($messages, true);
 
-        error_log('[' . date('Y-m-d H:i:s') . '] ' . $logMessage);
+        $prefix = trim('OES ' . $component);
+        error_log('[' . $prefix . '] ' . $logMessage);
     }
     return false;
 }
@@ -418,17 +438,52 @@ function oes_get_global_post_value(string $key, string $type = 'text', mixed $de
 
 
 /**
- * Resolves a dynamically constructed class name based on project context.
+ * Resolves a dynamically constructed class name based on application context.
  *
  * @param string $defaultClass   The fully qualified default class name (e.g., 'OES\Map\Map').
  * @param string $cleanedClass   Optional cleaned version of the class name to avoid duplication.
  * @return string                The resolved class name if it exists, otherwise the default class.
  */
-function oes_get_project_class_name(string $defaultClass, string $cleanedClass = ''): string
+function oes_get_application_class_name(string $defaultClass, string $cleanedClass = ''): string
 {
-    $base = str_replace(['oes-', '-'], ['', '_'], OES_BASENAME_PROJECT);
+    $applicationName = oes_get_application_name('');
+    $base = str_replace(['oes-', '-'], ['', '_'], $applicationName);
     $consideredClass = (empty($cleanedClass) ? $defaultClass : $cleanedClass);
     $cleanSuffix =  str_replace(['OES\\', 'OES', '\\'], ['', '', '_'], $consideredClass);
     $className = $base . $cleanSuffix;
     return class_exists($className) ? $className : $defaultClass;
+}
+
+//@oesLegacy
+function oes_get_project_class_name(string $defaultClass, string $cleanedClass = ''): string
+{
+    return oes_get_application_class_name($defaultClass, $cleanedClass);
+}
+
+/**
+ * Get the current OES application name.
+ *
+ * @param mixed $default Default application name to use if the constant is not defined. Default null.
+ * @param bool $replaceHyphen Whether to replace hyphens (-) with underscores (_). Default true.
+ *
+ * @return string The sanitized application name.
+ */
+function oes_get_application_name($default = null, bool $replaceHyphen = true): string
+{
+    $name = is_string($default) ? $default : 'OES';
+    if(defined('OES_BASENAME_PROJECT')){
+        $name = OES_BASENAME_PROJECT;
+    }
+
+    if($replaceHyphen){
+        return str_replace('-', '_', $name);
+    }
+
+    return $name;
+}
+
+//@oesLegacy
+function oes_get_project_name($default = null, bool $replaceHyphen = true): string
+{
+    return oes_get_application_name($default, $replaceHyphen);
 }

@@ -6,16 +6,13 @@ $type = $_GET['type'] ?? false;
 $component = $_GET['component'] ?? false;
 $oesType = $oes->$component[$object]['type'] ?? 'other';
 
-// Show notice for specific type
 ?>
 <div class="oes-page-header-wrapper">
     <div class="oes-page-header">
         <?php
 
-        // Get schema links
-        $schemaLinks = oes_config_get_schema_links();
+        $schemaLinks = \OES\Model\get_schema_links();
 
-        // Prepare dropdown options
         $optionsHTML = '<option value="admin.php?page=oes_settings_schema">' . esc_html__('Overview', 'oes') . '</option>';
         foreach ($schemaLinks ?? [] as $schemaLinksType) {
             foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
@@ -33,21 +30,19 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
             }
         }
 
-        // Build header HTML
         $headerHTML  = esc_html__('Schema', 'oes') . ' ';
         $headerHTML .= '<select id="schema-links" onchange="oesGoToAdminPage(this)">' . $optionsHTML . '</select>';
         if ($object) {
-            $headerHTML .= '<code class="oes-object-identifier">' . esc_html($object) . '</code>';
+            $headerHTML .= ' <code class="oes-object-identifier">' . esc_html($object) . '</code>';
         }
         ?>
         <h1><?php echo $headerHTML; ?></h1>
     </div>
 
     <?php if ($object): ?>
-        <nav class="oes-tabs-wrapper hide-if-no-js tab-count-8" aria-label="Secondary menu">
+    <ul class="subsubsub">
             <?php
 
-            // Define default tabs
             $tabs = [
                 'oes'         => __('General', 'oes'),
                 'oes_single'  => __('Single', 'oes'),
@@ -79,17 +74,20 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                     '&component=' . urlencode($component) .
                     '&object=' . urlencode($object));
 
-                $class = ($type === $tabType) ? 'active' : '';
+                $class = ($type === $tabType) ? 'current' : '';
 
                 printf(
-                    '<a href="%s" class="oes-tab %s">%s</a>',
+                    '<li class="%s"><a href="%s" class="oes-tab %s">%s</a></li>',
+                    esc_html($tabType),
                     esc_url($link),
                     esc_attr($class),
                     esc_html($label)
                 );
             }
             ?>
-        </nav>
+        </ul>
+        <div style="clear: both;"></div>
+        <hr>
     <?php endif; ?>
 </div>
 
@@ -99,10 +97,15 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
     if ($type):
         \OES\Admin\Tools\display('schema-' . $type);
     else: ?>
-        <table class="oes-config-table oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">
             <?php
             foreach ($schemaLinks ?? [] as $type => $schemaLinksType) {
-                $dataHTML = '';
+
+                if(empty($schemaLinksType['data'] ?? '')){
+                    continue;
+                }
+
+                $label = $schemaLinksType['label'] ?? $type;
+                echo '<h2>' . esc_html($type === 'other' ? '[Default]' : $label) . '</h2>';
 
                 foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
                     $label = $objectData['label'] ?? $objectDataKey;
@@ -110,26 +113,17 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                     $key   = $objectData['key'] ?? '';
 
                     $link = oes_get_html_anchor(
-                        '<strong>' . esc_html($label) . '</strong>',
+                        esc_html($label),
                         esc_url($url)
                     );
 
-                    $dataHTML .= '<tr>
-                        <th><strong>' . $link . '</strong> <code class="oes-object-identifier">' . esc_html($key) . '</code></th>
-                    </tr>';
-                }
-
-                if (!empty($dataHTML)) {
-                    $label = $schemaLinksType['label'] ?? $type;
-                    echo '<thead>
-                        <tr class="oes-config-table-separator">
-                            <th><strong>' . esc_html($type === 'other' ? '[Default]' : $label) . '</strong></th>
-                        </tr>
-                    </thead>
-                    <tbody>' . $dataHTML . '</tbody>';
+                    printf(
+                        '<p>%s <code class="oes-object-identifier">%s</code></p>',
+                        $link,
+                        esc_html($key)
+                    );
                 }
             }
             ?>
-        </table>
     <?php endif; ?>
 </div>

@@ -190,7 +190,7 @@ function oes_archive_get_alphabet_filter(array $characters): array
  */
 function oes_get_archive_loop_html(array $args = []): string
 {
-    $class = oes_get_project_class_name('OES_Archive_Loop');
+    $class = oes_get_application_class_name('OES_Archive_Loop');
 
     /**
      * Filter to override the class used for rendering the archive loop.

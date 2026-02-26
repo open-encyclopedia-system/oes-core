@@ -603,8 +603,7 @@ function admin_action_oes_copy_version(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-copy-version-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-copy-version-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -737,8 +736,7 @@ function admin_action_oes_create_version(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-create-version-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-create-version-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -834,8 +832,7 @@ function admin_action_oes_create_translation(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-create-translation-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-create-translation-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -900,4 +897,31 @@ function admin_action_oes_create_translation(): void
 
         } else wp_die('Translation creation failed for parent post with ID ' . $parentID . '.');
     } else wp_die('Security check issue. Please try again.');
+}
+
+/**
+ * Hides specific ACF fields from non-admin users.
+ *
+ * @param array $field The ACF field array.
+ * @return array|false Returns the field array for admins or false to hide it for non-admins.
+ */
+function hide_fields_for_non_admins($field) {
+
+    // Normalize the field key if it is in the format 'acf[field_key]'
+    if (preg_match('/acf\[(.+)\]/', $field['key'], $matches)) {
+        $fieldKey = $matches[1];
+    } else {
+        $fieldKey = $field['key'];
+    }
+
+    $isVersioningField =
+        $fieldKey === 'oes_versioning_tab'
+        || str_starts_with($fieldKey, 'field_oes_versioning_')
+        || str_starts_with($fieldKey, 'field_connected_parent');
+
+    if ($isVersioningField && !\OES\Rights\user_is_admin()) {
+        return false;
+    }
+
+    return $field;
 }

@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 /**
  * Registers WordPress search modification hooks for custom search behavior.
  *
- * This function initializes a project-specific `OES_Search_Query` class and applies
+ * This function initializes a application-specific `OES_Search_Query` class and applies
  * filters to modify WordPress's default search to include postmeta fields. It is called
  * by an OES theme.
  *
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function oes_theme_modify_search(array $args = []): void
 {
-    $class = oes_get_project_class_name('OES_Search_Query');
+    $class = oes_get_application_class_name('OES_Search_Query');
     $search = new $class($args);
     $search->register_hooks();
 }
@@ -38,7 +38,7 @@ function oes_theme_modify_search(array $args = []): void
  */
 function oes_get_search_data(array $args = []): OES_Search
 {
-    $class = oes_get_project_class_name('OES_Search');
+    $class = oes_get_application_class_name('OES_Search');
     return new $class($args);
 }
 
@@ -77,7 +77,7 @@ function oes_search_get_results(array $args = [], array $additionalArgs = []): a
 {
     global $oes_is_search;
 
-    $class = oes_get_project_class_name('OES_Search_Results');
+    $class = oes_get_application_class_name('OES_Search_Results');
     $searchHandler = new $class($args, $additionalArgs);
     $searchHandler->loop_results();
     $oes_is_search = true;

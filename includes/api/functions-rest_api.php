@@ -214,15 +214,11 @@ function lod_post_box(): void
             <div class="oes-lod-meta-box-copy-options-container oes-lod-meta-box-options-container">
                 <ul class="oes-lod-options-list"></ul>
             </div>
-            <div class="oes-lod-meta-box-copy-options-button"><?php
-                if (\OES\Rights\user_is_read_only()):?>
-                    <span class="oes-disable-button button-primary"><?php
-                    _e('Copy to post', 'oes'); ?></span><?php
-                else:?><a id="oes-lod-copy-to-post" class="button-primary" href="javascript:void(0);"
+            <div class="oes-lod-meta-box-copy-options-button">
+                <a id="oes-lod-copy-to-post" class="button-primary" href="javascript:void(0);"
                           onClick="oesLodAdmin.copyToPost()"><?php
-                    _e('Copy to post', 'oes'); ?></a><?php
-                endif;
-                ?></div>
+                    _e('Copy to post', 'oes'); ?></a>
+            </div>
             </div><?php endif; ?>
         <div id="oes-admin-popup-frame" class="oes-lod-frame">
             <div class="oes-admin-popup-frame-content" role="document">

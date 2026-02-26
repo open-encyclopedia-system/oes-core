@@ -224,8 +224,8 @@ function oes_get_language_switch()
 {
     global $oes_language_switch;
     if (empty($oes_language_switch)) {
-
-        $languageSwitchClass = str_replace('-', '_', OES_BASENAME_PROJECT) . '_Language_Switch';
+        $name = oes_get_application_name();
+        $languageSwitchClass = $name . '_Language_Switch';
         $oes_language_switch = class_exists($languageSwitchClass) ?
             new $languageSwitchClass() :
             new \OES\Navigation\Language_Switch();

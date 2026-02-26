@@ -148,10 +148,10 @@ if (!class_exists('Module_Page')) :
         public function help_tab(): void
         {
             $screen = get_current_screen();
-            $modulePageId = 'oes-settings_page_' . $this->setting;
+            $modulePageId = 'oes_page_' . $this->setting;
 
             if ($screen->id === $modulePageId ||
-                ($screen->id === 'oes-settings_page_oes_settings_schema' && ($_GET['type'] ?? '') === $this->key)) {
+                ($screen->id === 'oes_page_oes_settings_schema' && ($_GET['type'] ?? '') === $this->key)) {
                 $this->set_help_tabs($screen);
             }
         }

@@ -236,7 +236,7 @@ if (!class_exists('Language_Switch')) {
 
 
         /**
-         * Custom page link (overwritten by project processing).
+         * Custom page link (overwritten by application processing).
          *
          * @return void
          */
