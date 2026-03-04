@@ -22,7 +22,6 @@ function include_tools(): void
     foreach ([
                  'admin_columns',
                  'admin_container',
-                 'admin_features',
                  'schema',
                  'schema_oes',
                  'schema_oes_single',

@@ -414,10 +414,10 @@ function cache(bool $enabled = true): void
     if ($registered) return;
     $registered = true;
 
-    include_once __DIR__ . '/cache/class-storage_interface.php';
-    include_once __DIR__ . '/cache/class-storage.php';
-    include_once __DIR__ . '/cache/class-manager.php';
-    include_once __DIR__ . '/cache/functions-cache.php';
+    include_once __DIR__ . '/caching/class-storage_interface.php';
+    include_once __DIR__ . '/caching/class-storage.php';
+    include_once __DIR__ . '/caching/class-manager.php';
+    include_once __DIR__ . '/caching/functions-caching.php';
 
     if($enabled) {
 
@@ -425,17 +425,21 @@ function cache(bool $enabled = true): void
         global $oes_caching_enabled;
         $oes_caching_enabled = true;
 
-        $manager = oes_cache();
+        add_action('init', function () {
 
-        add_action('save_post', [$manager, 'clear_archive_cache_post']);
-        add_action('before_delete_post', [$manager, 'clear_archive_cache_post']);
-        add_action('trashed_post', [$manager, 'clear_archive_cache_post']);
+            $manager = oes_cache();
 
-        add_action('created_term', [$manager, 'clear_archive_cache_term'], 10, 3);
-        add_action('edited_term', [$manager, 'clear_archive_cache_term'], 10, 3);
-        add_action('delete_term', [$manager, 'clear_archive_cache_term'], 10, 4);
+            add_action('save_post', [$manager, 'clear_archive_cache_post']);
+            add_action('before_delete_post', [$manager, 'clear_archive_cache_post']);
+            add_action('trashed_post', [$manager, 'clear_archive_cache_post']);
+
+            add_action('created_term', [$manager, 'clear_archive_cache_term'], 10, 3);
+            add_action('edited_term', [$manager, 'clear_archive_cache_term'], 10, 3);
+            add_action('delete_term', [$manager, 'clear_archive_cache_term'], 10, 4);
+        });
 
         add_action('admin_action_oes_cache_delete', 'oes_cache_delete');
+        add_action('admin_action_oes_cache_regenerate', 'oes_cache_regenerate');
     }
 }
 

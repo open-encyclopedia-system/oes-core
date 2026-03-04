@@ -196,8 +196,7 @@ function initialize_admin_menu_pages(): void
                 'title' => __('Advanced', 'oes'),
                 'tabs' => [
                     'admin-columns'   => __('Columns', 'oes'),
-                    'admin-container' => __('Container', 'oes'),
-                    'admin-features'  => __('Features', 'oes')
+                    'admin-container' => __('Container', 'oes')
                 ]
             ];
         }

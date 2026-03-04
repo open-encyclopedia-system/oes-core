@@ -34,6 +34,14 @@ interface Storage_Interface {
     public function delete(string $key): void;
 
     /**
+     * Regenerate a cached value by key.
+     *
+     * @param string $key The cache key to delete.
+     * @return void
+     */
+    public function regenerate(string $key): void;
+
+    /**
      * Delete all cached entries where the key starts with the given prefix.
      *
      * @param string $prefix The key prefix to match for deletion.

@@ -73,11 +73,11 @@ function oes_add_application_style(
     string $media = 'all',
     bool   $admin = false): void
 {
-    if(defined('OES_BASENAME_PROJECT')) {
+    if(defined('OES_BASENAME_APPLICATION')) {
         global $oes_assets;
         $oes_assets['styles'][$handle] = [
             'handle' => $handle,
-            'src' => plugins_url(OES_BASENAME_PROJECT . $src),
+            'src' => plugins_url(OES_BASENAME_APPLICATION . $src),
             'deps' => $deps,
             'ver' => is_null($ver) ? oes_get_version() : $ver,
             'media' => $media,
@@ -163,11 +163,11 @@ function oes_add_application_script(
     bool   $in_footer = true,
     bool   $admin = false): void
 {
-    if(defined('OES_BASENAME_PROJECT')) {
+    if(defined('OES_BASENAME_APPLICATION')) {
         global $oes_assets;
         $oes_assets['scripts'][$handle] = [
             'handle' => $handle,
-            'src' => plugins_url(OES_BASENAME_PROJECT . $src),
+            'src' => plugins_url(OES_BASENAME_APPLICATION . $src),
             'depends' => $depends,
             'ver' => $ver,
             'in_footer' => $in_footer,

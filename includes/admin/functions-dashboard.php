@@ -105,8 +105,8 @@ function settings_dashboard(): void
     $screen = get_current_screen();
 
     $name = 'OES';
-    if (defined('OES_BASENAME_PROJECT')) {
-        $name = OES_BASENAME_PROJECT;
+    if (defined('OES_BASENAME_APPLICATION')) {
+        $name = OES_BASENAME_APPLICATION;
     }
 
     add_meta_box(
@@ -193,74 +193,35 @@ function data_model_meta_box()
     }
 
     /**
-     * Helper: count non-layout fields
-     */
-    $count_fields = static function (array $fields): int {
-        $count = 0;
-        foreach ($fields as $field) {
-            if (
-                    isset($field['type'])
-                    && !in_array($field['type'], ['tab', 'accordion'], true)
-            ) {
-                $count++;
-            }
-        }
-        return $count;
-    };
-
-    /**
      * Helper: render object list (post types / taxonomies)
      */
-    $render_object_list = static function (array $objects, string $title) use ($count_fields) {
+    $render_object_list = static function (array $objects, string $title) {
         if (empty($objects)) {
             return;
         }
 
         ksort($objects);
 
-        echo '<h4>' . esc_html(sprintf(
+        echo '<div>';
+        echo '<strong>' . esc_html(sprintf(
                         '%d %s',
                         count($objects),
                         $title
-                )) . '</h4>';
+                )) . '</strong>: ';
 
-        echo '<ul class="oes-dashboard-list">';
-
+        $labels = [];
         foreach ($objects as $key => $object) {
-            $label = $object['label'] ?? $key;
-            $fields = $object['field_options'] ?? [];
-            $count = $count_fields($fields);
-
-            echo '<li>';
-            echo '<strong>' . esc_html($label) . '</strong> ';
-            echo '<code class="oes-object-identifier">' . esc_html($key) . '</code>';
-
-            if ($count > 0) {
-                echo ' <span class="oes-field-count">';
-                echo esc_html(
-                        sprintf(
-                                _n('%d Field', '%d Fields', $count, 'oes'),
-                                $count
-                        )
-                );
-                echo '</span>';
-            }
-
-            echo '</li>';
+            $labels[] = $object['label'] ?? $key;
         }
 
-        echo '</ul>';
+        echo implode(', ', $labels);
+        echo '</div>';
     };
-
-    echo '<div class="oes-dashboard-grid">';
-    echo '<div class="oes-dashboard-column">';
 
     $render_object_list($oes->post_types ?? [], __('Post Types', 'oes'));
     $render_object_list($oes->taxonomies ?? [], __('Taxonomies', 'oes'));
 
-    echo '</div>';
-
-    echo '<div class="oes-dashboard-column oes-dashboard-actions">';
+    echo '<div class="oes-dashboard-actions">';
 
     echo '<p>';
     esc_html_e(
@@ -298,7 +259,6 @@ function data_model_meta_box()
     }
 
     echo '</div>';
-    echo '</div>';
 }
 
 //TODO @3.0.0
@@ -307,7 +267,7 @@ function content_meta_box()
 
     echo '<p>';
     esc_html_e(
-            'TODO: ', //if demo you can load content here. what if no content
+            'TODO on empty ', //if demo you can load content here. what if no content
             'oes'
     );
     echo '</p>';
@@ -331,9 +291,6 @@ function content_meta_box()
         );
     }
 
-    /**
-     * Custom Post Types (exclude "post")
-     */
     $postTypes = get_post_types(
             [
                     'public' => true,
@@ -341,6 +298,7 @@ function content_meta_box()
             ],
             'objects'
     );
+    ksort($postTypes);
 
     global $oes;
     foreach ($postTypes as $postType) {
@@ -356,15 +314,13 @@ function content_meta_box()
         }
 
         printf(
-                '<li><strong>%d</strong> %s</li>',
+                '<li><strong>%d</strong> <a href="%s">%s</a></li>',
                 intval($count),
+                get_post_type_archive_link($postType->name),
                 esc_html($postType->labels->name)
         );
     }
 
-    /**
-     * Custom taxonomies (term counts)
-     */
     $taxonomies = get_taxonomies(
             [
                     'public' => true,
@@ -373,6 +329,7 @@ function content_meta_box()
             'objects'
     );
 
+    ksort($taxonomies);
     foreach ($taxonomies as $taxonomy) {
 
         if (!isset($oes->taxonomies[$taxonomy->name])) {

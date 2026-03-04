@@ -948,8 +948,8 @@ function read_data_from_application_json_file(): array
 {
     $paths = [];
 
-    if (defined('OES_PROJECT_PLUGIN')) {
-        $paths = [OES_PROJECT_PLUGIN . '/config/model.json'];
+    if (defined('OES_APPLICATION_PLUGIN')) {
+        $paths = [OES_APPLICATION_PLUGIN . '/config/model.json'];
     }
 
     /**

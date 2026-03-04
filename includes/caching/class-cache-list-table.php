@@ -18,17 +18,32 @@ class Cache_List_Table extends OES_List_Table
     {
         $id = $item['id'] ?? false;
 
-        $label = sprintf('<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div>',
+        $additional = ($item['additional'] != '""') ? $item['additional'] : '';
+
+        $label = sprintf('<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div><div>%s</div>',
             $item['name'] ?? '',
             $item['cache_language'] ?? '',
-            $item['archive_class'] ?? ''
+            $item['archive_class'] ?? '',
+            $additional
         );
 
         $actions = '';
         if (\OES\Rights\user_can_manage_cache()) {
-            $actions = sprintf('<div class="row-actions visible">
-        <span class="delete"><a href="%s">%s</a></span>
-    </div>',
+
+            $actions = '<div class="row-actions visible">';
+
+            $actions .= sprintf('<span class="regenerate"><a href="%s">%s</a></span>',
+                esc_url(add_query_arg([
+                    'action' => 'oes_cache_regenerate',
+                    'list_ids' => $id,
+                    '_wpnonce' => wp_create_nonce('oes_cache_regenerate'),
+                ], admin_url('admin.php'))),
+                __('Regenerate', 'oes')
+            );
+
+            $actions .= ' | ';
+
+            $actions .= sprintf('<span class="delete"><a href="%s">%s</a></span>',
                 esc_url(add_query_arg([
                     'action' => 'oes_cache_delete',
                     'list_ids' => $id,
@@ -36,6 +51,8 @@ class Cache_List_Table extends OES_List_Table
                 ], admin_url('admin.php'))),
                 __('Delete', 'oes')
             );
+
+            $actions .= '</div>';
         }
 
         return $label . $actions;
@@ -81,6 +98,7 @@ class Cache_List_Table extends OES_List_Table
         $actions = [];
 
         if (\OES\Rights\user_can_manage_cache()) {
+            $actions['regenerate'] = __('Regenerate', 'oes');
             $actions['delete'] = __('Delete', 'oes');
         }
 
@@ -127,7 +145,8 @@ class Cache_List_Table extends OES_List_Table
                     'cache_language' => $language,
                     'size' => strlen(serialize($value)),
                     'parts' => 1,
-                    'timestamp' => $row['created_at'] ?? ''
+                    'timestamp' => $row['created_at'] ?? '',
+                    'additional' => $row['additional'] ?? ''
                 ];
             } else {
                 $data[$name]['parts']++;

@@ -36,7 +36,7 @@ class Storage implements Storage_Interface
      *
      * @var string
      */
-    private string $table;
+    protected string $table;
 
     /**
      * Maximum size (in bytes) for each chunked cache entry.
@@ -157,5 +157,47 @@ class Storage implements Storage_Interface
         }
 
         return $chunks;
+    }
+
+    public function regenerate(string $key): void {
+
+        global $wpdb;
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT archive_class, object_type, cache_language, additional 
+                 FROM {$this->table}
+                 WHERE cache_key = %s
+                 AND part = 0",
+                $key
+            ),
+            ARRAY_A
+        );
+
+        if (!$rows) {
+            return;
+        }
+
+        $class = $rows[0]['archive_class'];
+        $objectType = $rows[0]['object_type'];
+        $cacheLanguage = $rows[0]['cache_language'];
+        $args = json_decode($rows[0]['additional'], true);
+
+        $args['language'] = $cacheLanguage;
+        $args['object'] = $objectType;
+
+        if(post_type_exists($objectType)){
+            $args['post-type'] = $objectType;
+        }
+        elseif(taxonomy_exists($objectType)){
+            $args['taxonomy'] = $objectType;
+        }
+        else {
+            $args['index'] = '';//TODO index?
+        }
+
+        $this->delete($key);
+
+        oes_set_archive_data($class, $args, false);
     }
 }

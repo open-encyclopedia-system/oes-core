@@ -55,7 +55,9 @@ if (!function_exists('OES')) {
 
         if (!isset($oes)) {
             $oes = new OES_Core($args);
-            if ($oes->initialized) $oes->initialize_core();
+            if ($oes->initialized) {
+                $oes->initialize_core();
+            }
         }
 
         if(!$oes->application_initialized && !empty($applicationPath)){
@@ -237,6 +239,11 @@ if (!class_exists('OES_Core')) :
         public function define_application_constants(string $applicationPath = ''): void
         {
             if (!empty($applicationPath)) {
+
+                define('OES_APPLICATION_PLUGIN', $applicationPath);
+                define('OES_BASENAME_APPLICATION', basename($applicationPath));
+
+                // @oesLegacy
                 define('OES_PROJECT_PLUGIN', $applicationPath);
                 define('OES_BASENAME_PROJECT', basename($applicationPath));
             }
@@ -320,6 +327,11 @@ if (!class_exists('OES_Core')) :
             $this->define_application_constants($applicationPath);
             $this->application_initialized = true;
             $this->project_initialized = true;
+
+            /**
+             * Fires after the OES Application Plugin has been fully initialized.
+             */
+            do_action('oes/application_initialized');
         }
 
         /**

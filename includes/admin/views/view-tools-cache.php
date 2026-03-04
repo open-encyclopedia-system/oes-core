@@ -12,24 +12,29 @@
         if (!$enabled) {
             echo '<div class="notice notice-warning"><p>' .
                 __('Caching Feature is not enabled. Set Feature in ', 'oes') .
-                oes_get_html_anchor(__('OES / Admin', 'oes'),
-                    esc_url(admin_url('admin.php?page=oes_admin'))) . '.</p></div>';
+                oes_get_html_anchor(__('OES / Features', 'oes'),
+                    esc_url(admin_url('admin.php?page=oes_settings_features'))) . '.</p></div>';
         }
 
-        if (!empty($_GET['cache_updated'])) {
+        if (!empty($_GET['cache_deleted'])) {
             echo '<div class="notice notice-success is-dismissible"><p>'
                 . esc_html__('Cache deletion completed.', 'oes')
                 . '</p></div>';
         }
+        elseif (!empty($_GET['cache_regenerated'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>'
+                    . esc_html__('Cache regeneration completed.', 'oes')
+                    . '</p></div>';
+        }
 
-        require_once OES_CORE_PLUGIN . '/includes/cache/class-cache-list-table.php';
+        require_once OES_CORE_PLUGIN . '/includes/caching/class-cache-list-table.php';
         $listTable = new \Cache_List_Table([
             'singular' => 'Cache',
             'plural' => 'Cache',
             'columns' => [
                 'cb' => ' ',
                 'name' => __('Name', 'oes'),
-                'id' => __('Transient Key', 'oes'),
+                'id' => __('Key', 'oes'),
                 'parts' => __('Parts', 'oes'),
                 'size' => __('Size (KB)', 'oes'),
                 'timestamp' => __('Timestamp', 'oes')

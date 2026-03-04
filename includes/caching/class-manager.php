@@ -210,6 +210,17 @@ class Manager {
     }
 
     /**
+     * Regenerate a cached entry by key.
+     *
+     * @param string $key The cache key to delete.
+     * @return void
+     */
+    public function regenerate(string $key): void
+    {
+        $this->storage->regenerate($key);
+    }
+
+    /**
      * Delete all cached entries with a key starting with the given prefix.
      *
      * @param string $prefix The key prefix to match.

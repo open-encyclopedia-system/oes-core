@@ -137,8 +137,8 @@ class Factory_Service
     {
 
         $factoryPosts = [];
-        if ($dataFromFile && defined('OES_PROJECT_PLUGIN')) {
-            $path = OES_PROJECT_PLUGIN . '/config/acf.json';
+        if ($dataFromFile && defined('OES_APPLICATION_PLUGIN')) {
+            $path = OES_APPLICATION_PLUGIN . '/config/acf.json';
             if (!empty($path)) {
                 $factoryPosts = oes_get_json_data_from_file($path);
             }

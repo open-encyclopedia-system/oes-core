@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
  */
 function install_operation_table(): void
 {
-    $version = '1.0';
+    $version = '2.0';
     $installed = get_option('oes_operations_table_version');
 
     if ($installed === $version) {
@@ -26,6 +26,10 @@ function install_operation_table(): void
     $charsetCollate = $wpdb->get_charset_collate();
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+    if ($installed && version_compare($installed, $version, '<')) {
+        $wpdb->query("DROP TABLE IF EXISTS {$table}");
+    }
 
     $sql = "CREATE TABLE {$table} (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -59,7 +63,7 @@ function install_operation_table(): void
  */
 function install_cache_table(): void
 {
-    $version = '1.0';
+    $version = '2.0';
     $installed = get_option('oes_cache_table_version');
 
     if ($installed === $version) {
@@ -72,6 +76,10 @@ function install_cache_table(): void
     $charsetCollate = $wpdb->get_charset_collate();
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+    if ($installed && version_compare($installed, $version, '<')) {
+        $wpdb->query("DROP TABLE IF EXISTS {$table}");
+    }
 
     $sql = "CREATE TABLE {$table} (
             cache_key varchar(191) NOT NULL,

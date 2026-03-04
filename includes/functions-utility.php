@@ -47,8 +47,8 @@ function oes_include(string $file, string $root = '', bool $includes = true): vo
  */
 function oes_include_project(string $file, string $root = '', bool $includes = true): void
 {
-    if (empty($root) && defined('OES_PROJECT_PLUGIN')) {
-        $root = OES_PROJECT_PLUGIN;
+    if (empty($root) && defined('OES_APPLICATION_PLUGIN')) {
+        $root = OES_APPLICATION_PLUGIN;
     }
 
     oes_include($file, $root, $includes);
@@ -140,13 +140,13 @@ function oes_get_view(string $path = '', array $args = [], string $root = ''): v
  *
  * @param string $path Relative path to the view file from '/includes/admin/views/'. '.php' extension is optional.
  * @param array  $args Optional. Variables to extract into the view scope.
- * @param string $root Optional. Absolute plugin root. Defaults to OES_PROJECT_PLUGIN.
+ * @param string $root Optional. Absolute plugin root. Defaults to OES_APPLICATION_PLUGIN.
  * @return void
  */
 function oes_get_application_view(string $path = '', array $args = [], string $root = ''): void
 {
-    if (empty($root) && defined('OES_PROJECT_PLUGIN')) {
-        $root = OES_PROJECT_PLUGIN;
+    if (empty($root) && defined('OES_APPLICATION_PLUGIN')) {
+        $root = OES_APPLICATION_PLUGIN;
     }
 
     oes_get_view($path, $args, $root);
@@ -447,7 +447,7 @@ function oes_get_global_post_value(string $key, string $type = 'text', mixed $de
 function oes_get_application_class_name(string $defaultClass, string $cleanedClass = ''): string
 {
     $applicationName = oes_get_application_name('');
-    $base = str_replace(['oes-', '-'], ['', '_'], $applicationName);
+    $base = str_replace(['oes-', 'oes_', '-'], ['', '', '_'], $applicationName);
     $consideredClass = (empty($cleanedClass) ? $defaultClass : $cleanedClass);
     $cleanSuffix =  str_replace(['OES\\', 'OES', '\\'], ['', '', '_'], $consideredClass);
     $className = $base . $cleanSuffix;
@@ -471,8 +471,8 @@ function oes_get_project_class_name(string $defaultClass, string $cleanedClass =
 function oes_get_application_name($default = null, bool $replaceHyphen = true): string
 {
     $name = is_string($default) ? $default : 'OES';
-    if(defined('OES_BASENAME_PROJECT')){
-        $name = OES_BASENAME_PROJECT;
+    if(defined('OES_BASENAME_APPLICATION')){
+        $name = OES_BASENAME_APPLICATION;
     }
 
     if($replaceHyphen){

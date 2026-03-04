@@ -29,6 +29,7 @@
 - Remove hide_version_tab (now admin-only by default)
 - Remove oes_replace_for_serializing, oes_stripslashes_array, oes_replace_for_form, oes_replace_from_serializing
 - Remove obsolete CSS
+- Remove filter 'oes/set_archive_data_caching_enabled'
 
 ## 2.4.4 (in development)
 ### New Filters / Functions
