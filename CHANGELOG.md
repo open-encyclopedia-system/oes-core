@@ -18,6 +18,7 @@
 - Introduce new LOD API: ROR
 - Introduce new LOD API: ORCID (prepared)
 - Introduce Display_Helper for LOD APIs
+- Introduce new block: Context Link
 - Re-do operations and feature display
 - New page icons and re-designed icons
 - New block "Context Link"
