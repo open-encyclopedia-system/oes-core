@@ -33,17 +33,22 @@ if (!class_exists('LOC_API')) {
     class LOC_API extends Rest_API
     {
 
-        /** @var string The url to the loc api. */
+
+        public string $identifier = 'loc';
         public string $url = 'https://id.loc.gov/';
 
 
         /** @inheritdoc */
         function get_request_url(string $url, array $args): string
         {
-            $this->searchTerm = $args['search_term'] ?? '';
+            if(empty($url)){
+                $url = $this->url;
+            }
 
-            if (!empty($this->searchTerm)) $url .= 'search/?q=' . $this->searchTerm . '&q=cs:http://id.loc.gov/authorities/subjects&format=json';
-            elseif ($args['lodid'] ?? false) $url .= $args['lodid'];
+            $this->search_term = $args['search_term'] ?? '';
+
+            if (!empty($this->search_term)) $url .= 'search/?q=' . $this->search_term . '&q=cs:http://id.loc.gov/authorities/subjects&format=json';
+            elseif ($args['lod_id'] ?? false) $url .= $args['lod_id'];
 
             return $url;
         }
@@ -97,8 +102,7 @@ if (!class_exists('LOC_API')) {
                 'id' => $id,
                 'name' => $name,
                 'type' => 'Subject Heading',
-                'link' => '<a class="oes-admin-link oes-gnd-external" href="' . $link .
-                    '" target="_blank"></a>',
+                'link' => $link,
                 'link_frontend' => '<a href="https://catalog.loc.gov/vwebv/search?searchArg=' .
                     $name . '&searchCode=SKEY%5E*&searchType=1" target="_blank">' .
                     $name . '</a>'

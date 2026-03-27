@@ -135,13 +135,15 @@ if (!class_exists('OES_Post')) {
                         $this->current_version = $currentVersion;
 
                     /* check if translation exists */
-                    if ($translationParent = get_translation_id($this->parent_ID))
-                        if ($currentVersion = get_current_version_id($translationParent))
+                    if ($translationParent = get_translation_id($this->parent_ID)) {
+                        if ($currentVersion = get_current_version_id($translationParent)) {
                             $this->translations[] = [
                                 'id' => $currentVersion,
                                 'language' => oes_get_post_language($currentVersion) ?:
                                     oes_get_post_language($translationParent)
                             ];
+                        }
+                    }
                 } elseif ($translationField =
                     oes_get_field('field_' . $this->post_type . '__translations', $this->object_ID)) {
                     if (is_array($translationField))

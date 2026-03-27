@@ -489,9 +489,8 @@ function get_features(): array
                             ],
                             'lod' => [
                                     'name' => __('Linked Open Data (LoD)', 'oes'),
-                                    'description' => __('Data enrichment through connection with authority files (GND, GeoNames, LoC). Import can be semi-automated.', 'oes'),
+                                    'description' => __('Data enrichment through connection with authority files (GND, GeoNames, ROR, LoC). Import can be semi-automated.', 'oes'),
                                     'enable' => 'lod_apis',
-                                'source' => __('Test', 'oes'),
                                     'actions' => [
                                             'gnd' => [
                                                     'page' => 'oes_settings_lod',
@@ -500,6 +499,14 @@ function get_features(): array
                                             'geonames' => [
                                                     'page' => 'oes_settings_lod&tab=geonames',
                                                     'label' => __('GeoNames', 'oes'),
+                                            ],
+                                            'ror' => [
+                                                    'page' => 'oes_settings_lod&tab=ror',
+                                                    'label' => __('ROR', 'oes'),
+                                            ],
+                                            'orcid' => [
+                                                    'page' => 'oes_settings_lod&tab=orcid',
+                                                    'label' => __('ORCID', 'oes'),
                                             ],
                                             'loc' => [
                                                     'page' => 'oes_settings_lod&tab=loc',

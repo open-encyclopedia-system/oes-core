@@ -551,20 +551,19 @@ function search(): void
  */
 function lod_api(bool $enabled = true): void
 {
-
     include_once __DIR__ . '/api/functions-rest_api.php';
     include_once __DIR__ . '/api/class-rest_api.php';
+    include_once __DIR__ . '/api/class-display_helper.php';
     if ($enabled) {
+
         add_action('wp_enqueue_scripts', '\OES\API\scripts');
         add_action('oes/initialized', '\OES\API\initialize');
-        add_action('wp_ajax_oes_lod_search_query', '\OES\API\lod_search_query');
-        add_action('wp_ajax_oes_lod_add_post_meta', '\OES\API\lod_add_post_meta');
         add_action('wp_ajax_oes_lod_box', '\OES\API\lod_box');
         add_action('wp_ajax_nopriv_oes_lod_box', '\OES\API\lod_box');
+        add_action('rest_api_init', '\OES\API\register_rest_routes');
 
         if (is_admin()) {
             add_action('admin_enqueue_scripts', '\OES\API\admin_scripts');
-            add_action('enqueue_block_editor_assets', '\OES\API\sidebar_enqueue');
         }
     }
 }

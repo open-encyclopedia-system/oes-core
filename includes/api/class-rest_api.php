@@ -18,14 +18,8 @@ if (!class_exists('Rest_API')) {
         /** @var string The url to the api. */
         public string $url = '';
 
-        /** @var string|array The api response. */
-        public $response = '';
-
-        /** @var string|bool The api request error message. */
-        public $request_error = false;
-
-        /** @var array The transformed api response. */
-        public array $transformed_data = [];
+        /** @var string The url to the api for a single request. */
+        public string $url_single = '';
 
         /** @var string The login information. */
         public string $login = '';
@@ -33,32 +27,43 @@ if (!class_exists('Rest_API')) {
         /** @var string The login password. */
         public string $password = '';
 
-        /** @var mixed The json decoded API response. */
-        public $data = [];
-
-        /** @var bool|string The query parameter. */
-        public $searchTerm = false;
-
         /** @var string The interface language. Default is 'german'. Valid values are 'english', 'german'. */
         public string $language = 'german';
 
         /** @var string The post method. Default is 'get'. */
         public string $method = 'get';
 
+        /** @var string|array The api response. */
+        public $response = '';
+
+        /** @var mixed The decoded API response. */
+        public $data = [];
+
+        /** @var array The transformed api response. */
+        public array $transformed_data = [];
+
+        /** @var string|bool The api request error message. */
+        public $request_error = false;
+
+        /** @var bool|string The query parameter. */
+        public $search_term = false;
+
+        /** @var string API version */
+        public string $api_version = '1.0';
 
         /**
-         * Rest_API constructor.
-         *
-         * @param array $args Additional parameters.
-         * @param string $url The url to the api.
+         * @param string $url
+         * @param array $args
          */
-        function __construct(string $url = '', array $args = [])
-        {
-            if (!empty($url)) $this->url = $url;
+        public function __construct(string $url = '', array $args = []) {
+
+            if (!empty($url)) {
+                $this->url = $url;
+            }
+
             $this->set_credentials();
             $this->set_additional_parameters($args);
         }
-
 
         /**
          * Set additional parameters.
@@ -66,84 +71,77 @@ if (!class_exists('Rest_API')) {
          * @param array $args Additional parameters.
          * @return void
          */
-        function set_additional_parameters(array $args = []): void
-        {
-        }
-
-
+        protected function set_additional_parameters(array $args = []): void { /* override if needed */ }
+        
         /**
          * Set the rest api credentials.
          * @return void
          */
-        function set_credentials(): void
-        {
-        }
-
+        protected function set_credentials(): void { /* override in child if needed */ }
 
         /**
-         * Put a request to the api (prepare posting the request).
-         *
-         * @param array $args An array containing parameters for the request.
-         * @return void
+         * Perform GET or POST request
          */
-        function put(array $args = []): void
-        {
-        }
+        public function request(array $args = []): void {
 
-
-        /**
-         * Post a request to the api and retrieve api response.
-         *
-         * @param array $args An array containing parameters for the request.
-         * @return void
-         */
-        function post(array $args = []): void
-        {
-
-            /* post request */
-            $requestURL = $this->get_request_url($this->url, $args);
+            $requestURL = $this->get_request_url('', $args);
             $requestArgs = $this->get_request_args(['headers' => ['Content-Type' => 'application/json']], $args);
 
-            //Exit early
-            if(!$requestURL || !$requestArgs || !is_array($requestArgs)) return;
+            if (!$requestURL || !$requestArgs || !is_array($requestArgs)) {
+                return;
+            }
 
-            if($this->method == 'post') $response = wp_remote_post($requestURL, $requestArgs);
-            else $response = wp_remote_get($requestURL, $requestArgs);
+            $response = $this->method === 'post'
+                ? wp_remote_post($requestURL, $requestArgs)
+                : wp_remote_get($requestURL, $requestArgs);
 
-            /* check if wp request was successful */
-            if (is_wp_error($response))
+            if (is_wp_error($response)) {
                 $this->request_error = $response->get_error_message();
-            else {
-
-                /* Check for other request errors or retrieve data */
-                if (isset($resonse['response']['code']) && $resonse['response']['code'] !== '200')
-                    $this->request_error = $resonse['response']['message'] ?? $resonse['response']['code'];
-                else {
-                    if ($this->request_error !== false)
-                        $this->response = 'Error: ' . $this->request_error;
-                    else {
-                        $this->response = wp_remote_retrieve_body($response);
-                        $this->data = $this->get_data_from_response(json_decode($this->response));
-                    }
+            } else {
+                $statusCode = wp_remote_retrieve_response_code($response);
+                if ($statusCode !== 200) {
+                    $this->request_error = wp_remote_retrieve_response_message($response) ?: "HTTP {$statusCode}";
+                } else {
+                    $this->response = wp_remote_retrieve_body($response);
+                    $this->data = $this->get_data_from_response(json_decode($this->response));
                 }
             }
 
-            //@oesDevelopment log error with oes_write_log
+            oes_write_log($this->request_error, $this->identifier . ' API');
         }
 
+        /**
+         * Get data from API.
+         * @param array $args
+         * @return void
+         */
+        public function get(array $args = []): void {
+            $this->request($args);
+        }
 
         /**
-         * Prepare the request url.
+         * Post a request to the api and return the response (optional: return the transformed response).
+         *
+         * @param array $args An array containing parameters for the request.
+         * @return array|string The api response.
+         */
+        public function get_data(array $args = [])
+        {
+            $this->get($args);
+            return $this->response ? $this->transform_data($args) : false;
+        }
+
+        /**
+         * Get the request url.
          *
          * @param string $url The api url.
          * @param array $args The post arguments.
          * @return string The request url.
          */
-        function get_request_url(string $url, array $args): string
+        protected function get_request_url(string $url, array $args): string
         {
             return $url;
         }
-
 
         /**
          * Prepare the request arguments.
@@ -152,13 +150,13 @@ if (!class_exists('Rest_API')) {
          * @param array $args The post arguments.
          * @return mixed Return the modified request arguments.
          */
-        function get_request_args(array $array, array $args = [])
+        protected function get_request_args(array $array, array $args = [])
         {
-            if(!empty($this->login) && !empty($this->password))
+            if(!empty($this->login) && !empty($this->password)) {
                 $array['Authorization'] = 'Basic ' . base64_encode($this->login . ':' . $this->password);
+            }
             return $array;
         }
-
 
         /**
          * Retrieve data from response.
@@ -166,37 +164,10 @@ if (!class_exists('Rest_API')) {
          * @param mixed $response The api response.
          * @return mixed The modified api response.
          */
-        function get_data_from_response($response)
+        protected function get_data_from_response($response)
         {
             return $response;
         }
-
-
-        /**
-         * Prepare and post a request to the api (set api response).
-         *
-         * @param array $args An array containing parameters for the request.
-         * @return void
-         */
-        function get(array $args = []): void
-        {
-            $this->put($args);
-            $this->post($args);
-        }
-
-
-        /**
-         * Post a request to the api and return the response (optional: return the transformed response).
-         *
-         * @param array $args An array containing parameters for the request.
-         * @return array|string The api response.
-         */
-        function get_data(array $args = [])
-        {
-            $this->get($args);
-            return $this->response ? $this->transform_data($args) : false;
-        }
-
 
         /**
          * Transform the api response.
@@ -204,37 +175,40 @@ if (!class_exists('Rest_API')) {
          * @param array $args An array containing parameters for the transformation.
          * @return array|string The transformed response.
          */
-        function transform_data(array $args = [])
+        protected function transform_data(array $args = [])
         {
-            /* exit early if no data */
-            if ($this->request_error) return $this->request_error;
-            if (!$this->data) return [];
+            if ($this->request_error) {
+                return $this->request_error;
+            }
 
-            $transformedData = [];
+            if (!$this->data) {
+                return [];
+            }
+
+            $transformed = [];
+            $apiInterface = $this->identifier . '_Interface';
+            $propertyLabel = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
+
             foreach ($this->data as $entryKey => $entry) {
+                $transformedEntry = [];
 
-                /* loop through data and prepare for display */
-                $transformedDataEntry = [];
-                $apiInterface = $this->identifier . '_Interface';
-                $propertyLabel = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
                 foreach ($entry as $propertyKey => $property) {
 
-                    /* prepare property position */
                     $position = 10000 + ($propertyLabel[$propertyKey]['position'] ?? 8000);
                     $raw = null;
 
-                    /* get label */
                     $label = $propertyLabel[$propertyKey]['label'][$this->language] ?? $propertyKey;
 
-                    /* get value */
                     if (is_string($property) || is_int($property)) {
                         $value = $raw = $property;
                     }
                     elseif (is_object($property)) {
                         $prepareValue = [];
+
                         foreach ($property as $propertyPart) {
-                            $prepareValue[] = is_string($propertyPart) ? $propertyPart : implode(' ', $propertyPart);
+                            $prepareValue[] = oes_normalize_to_string($propertyPart);
                         }
+
                         $value = implode(' ', $prepareValue);
                         $raw = $prepareValue;
                     }
@@ -242,8 +216,7 @@ if (!class_exists('Rest_API')) {
                         $value = 'missing';
                     }
 
-                    /* prepare position */
-                    $transformedDataEntry[$propertyKey] = [
+                    $transformedEntry[$propertyKey] = [
                         'label' => $label,
                         'value' => $value,
                         'raw' => $raw,
@@ -251,17 +224,14 @@ if (!class_exists('Rest_API')) {
                     ];
                 }
 
-                /* sort after position */
-                $col = array_column($transformedDataEntry, 'position');
-                array_multisort($col, SORT_ASC, $transformedDataEntry);
+                $col = array_column($transformedEntry, 'position');
+                array_multisort($col, SORT_ASC, $transformedEntry);
 
-                /* prepare transformed data */
-                $transformedData[$entryKey] = $this->transform_data_entry($transformedDataEntry);
+                $transformed[$entryKey] = $this->transform_data_entry($transformedEntry);
             }
 
-            return $this->transformed_data = $transformedData;
+            return $this->transformed_data = $transformed;
         }
-
 
         /**
          * Prepare single entry for processing.
@@ -269,76 +239,16 @@ if (!class_exists('Rest_API')) {
          * @param mixed $entry The LOD entry.
          * @return array The prepared entry.
          */
-        function transform_data_entry($entry) : array
+        protected function transform_data_entry($entry) : array
         {
             return [
                 'entry' => $entry,
-                'id' => 'ID missing',
-                'name' => 'name missing',
-                'type' => 'type missing',
-                'link' => 'link missing',
-                'link_frontend' => 'link frontend missing'
+                'id' => $entry['id']['value'] ?? 'ID missing',
+                'name' => $entry['name']['value'] ?? 'name missing',
+                'type' => $entry['type']['value'] ?? 'type missing',
+                'link' => $entry['link']['value'] ?? '#',
+                'link_frontend' => $entry['link_frontend']['value'] ?? '#'
             ];
-        }
-
-
-        /**
-         * Prepare API response for frontend display.
-         *
-         * @param int $resultKey Only one entry will be considered. Take the first '0' if not specified.
-         * @return string Return API response as html string.
-         */
-        function get_data_for_display(int $resultKey = 0): string
-        {
-            $entry = $this->transformed_data[$resultKey];
-
-            /* prepare title */
-            $title =  $this->get_data_for_display_title($entry);
-
-            /* prepare table */
-            $tableData = $this->get_data_for_display_modify_table_data($entry);
-            $table = '<table class="is-style-oes-simple">';
-            foreach ($tableData as $row)
-                $table .= '<tr><th>' . $row['label'] . '</th><td>' . $row['value'] . '</td></tr>';
-            $table .= '</table>';
-
-            return $this->get_data_for_display_prepare_html($title, $table, $entry);
-        }
-
-
-        /**
-         * Get the title for the preview box.
-         *
-         * @param mixed $entry The LOD entry.
-         * @return mixed|string Return the title.
-         */
-        function get_data_for_display_title($entry){
-            return $entry['link_frontend'] ?? ($entry['name'] ?? 'Entry name and link missing.');
-        }
-
-
-        /**
-         * Get the modified table data for the preview box.
-         *
-         * @param mixed $entry The LOD entry.
-         * @return mixed Return the modified entry data.
-         */
-        function get_data_for_display_modify_table_data($entry){
-            return $entry['entry'];
-        }
-
-
-        /**
-         * Prepare the html for the preview box.
-         *
-         * @param string $title The title.
-         * @param string $table The html table string.
-         * @param mixed $entry The LOD entry.
-         * @return string
-         */
-        function get_data_for_display_prepare_html(string $title, string $table, $entry): string
-        {
-            return '<div class="oes-lod-box-title">' . $title . '</div>' . $table;
         }
     }
 }

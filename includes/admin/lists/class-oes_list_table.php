@@ -12,6 +12,8 @@ class OES_List_Table extends WP_List_Table
 
     protected string $meta_key = '';
 
+    protected array $search_keys = [];
+
     protected string $default_sorting_key = 'id';
 
     protected array $info_meta_keys = [];
@@ -182,12 +184,7 @@ class OES_List_Table extends WP_List_Table
         $data = $this->get_data();
 
         if($this->search){
-            if (!empty($_REQUEST['s'])) {
-                $search = strtolower(sanitize_text_field($_REQUEST['s']));
-                $data = array_filter($data, function ($item) use ($search) {
-                    return (str_contains(strtolower($item[$this->meta_key]), $search));
-                });
-            }
+            $this->search_content($data);
         }
 
         foreach($this->filter as $filterKey){
@@ -225,6 +222,31 @@ class OES_List_Table extends WP_List_Table
         ]);
     }
 
+    /**
+     * Filter the list with search term.
+     *
+     * @param array $data
+     * @return void
+     */
+    protected function search_content(array &$data): void
+    {
+        if (empty($_REQUEST['s'])) {
+            return;
+        }
+
+        $search = strtolower(sanitize_text_field($_REQUEST['s']));
+
+        $data = array_filter($data, function ($item) use ($search) {
+
+            $searchIn = '';
+            foreach($this->search_keys as $key){
+                $searchIn .= strtolower($item[$key] ?? '');
+            }
+
+            return str_contains($searchIn, $search);
+        });
+    }
+
     /** @inheritdoc */
     public function extra_tablenav($which)
     {
@@ -249,35 +271,59 @@ class OES_List_Table extends WP_List_Table
         echo '</div>';
     }
 
+    /**
+     * Display a simple filter
+     *
+     * @param string $key
+     * @param array $options
+     * @return void
+     */
+    protected function display_filter(string $key, array $options): void
+    {
+        $selected = $_REQUEST[$key] ?? 'all';
+
+        echo '<select name="' . $key . '">';
+
+        foreach ($options as $optionKey => $optionValue) {
+            echo '<option value="' . $optionKey . '"' . selected($selected, $optionKey, false) .
+                '>' . $optionValue . '</option>';
+        }
+
+        echo '</select>';
+
+    }
+
+    /**
+     * Display the post type filter
+     *
+     * @return void
+     */
     protected function display_post_type_filter(): void
     {
         global $oes;
 
-        $selectedPostType = $_REQUEST['post_type_filter'] ?? 'all';
-        echo '<select name="post_type_filter">';
-        echo '<option value="all"' . selected($selectedPostType, 'all', false) . '>' .
-            __('All Post Types', 'oes') . '</option>';
+        $options = ['all' => __('All Post Types', 'oes')];
         foreach ($oes->post_types as $singlePostType => $singlePostTypeData) {
-            echo '<option value="' . $singlePostType . '"' . selected($selectedPostType, $singlePostType, false) .
-                '>' . ($singlePostTypeData['label'] ?? $singlePostType) . '</option>';
+            $options[$singlePostType] = $singlePostTypeData['label'] ?? $singlePostType;
         }
-        echo '</select>';
+
+        $this->display_filter('post_type_filter', $options);
     }
 
+    /**
+     * Display the OES status filter
+     *
+     * @return void
+     */
     protected function display_oes_status_filter(): void
     {
-        $selectedStatus = $_REQUEST['oes_status_filter'] ?? 'all';
-        $oesStatus = get_field_object('field_oes_status');
-        echo '<select name="oes_status_filter">';
-        echo '<option value="all"' . selected($selectedStatus, 'all', false) . '>' .
-            __('All OES Status', 'oes') . '</option>';
+        $options = ['all' => __('All OES Status', 'oes')];
 
-        if (isset($oesStatus['choices'])) {
-            foreach ($oesStatus['choices'] as $statusLabel) {
-                echo '<option value="' . $statusLabel . '"' . selected($selectedStatus, $statusLabel, false) .
-                    '>' . $statusLabel . '</option>';
-            }
+        $oesStatus = get_field_object('field_oes_status');
+        foreach ($oesStatus['choices'] ?? [] as $status => $statusLabel) {
+            $options[$statusLabel] = $statusLabel;
         }
-        echo '</select>';
+
+        $this->display_filter('oes_status_filter', $options);
     }
 }

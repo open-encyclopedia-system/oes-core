@@ -12,6 +12,13 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 class Remarks_List_Table extends OES_List_Table
 {
+    protected string $meta_key = 'field_oes_comment';
+
+    protected array $search_keys = [
+        'field_oes_comment',
+        'title'
+    ];
+
     /**
      * Return the column "OES Remark"
      * @param $item

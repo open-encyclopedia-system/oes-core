@@ -1,34 +1,43 @@
-/* execute api request */
 jQuery(".oes-lodlink").on("click", function (event) {
 
-    const id = this.dataset.lodid,
-        box_exists = this.nextSibling;
+    event.preventDefault();
 
-    if (box_exists) {
-        box_exists.style.display = 'block';
-        jQuery('.oes-spinner').each(function () {
-            this.style.display = 'none';
-        });
-    } else {
+    const $link = jQuery(this);
+    const api = $link.data("api");
+    const id = $link.data("lod_id");
+    const boxID = $link.data("box_id");
 
-        /* add api information to request */
-        const params = {};
-        params['api'] = this.dataset.api;
-        params['lodid'] = id;
-        params['boxid'] = this.dataset.boxid;
+    const $box = jQuery("#oes-lod-box-" + boxID);
 
-        /* call rest api */
-        jQuery.ajax({
-            type: "POST",
-            url: oesLodAJAX.ajax_url,
-            data: {action: 'oes_lod_box', nonce: oesLodAJAX.ajax_nonce, param: params}
-        }).done(function (data) {
-            jQuery('.oes-spinner').each(function () {
-                this.style.display = 'none';
-            });
-            jQuery('#oes-lod-box-' + data.boxid).each(function () {
-                this.innerHTML = data.html;
-            });
-        });
+    const onlySpinner =
+        $box.children().length === 1 &&
+        $box.children().first().is("img.oes-spinner");
+
+    if (!onlySpinner) {
+        return;
     }
+
+    const params = {
+        api: api,
+        lod_id: id,
+        box_id: boxID
+    };
+
+    jQuery.ajax({
+        type: "POST",
+        url: oesLodAJAX.ajax_url,
+        data: {
+            action: "oes_lod_box",
+            nonce: oesLodAJAX.ajax_nonce,
+            param: params
+        }
+    }).done(function (data) {
+
+        jQuery(".oes-spinner").hide();
+
+        const $target = jQuery("#oes-lod-box-" + data.box_id);
+        if ($target.length) {
+            $target.html(data.html);
+        }
+    });
 });

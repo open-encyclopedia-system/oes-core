@@ -306,7 +306,6 @@ if (!class_exists('OES_Core')) :
             \OES\Features\search();
             \OES\Features\shortcodes();
 
-
             /**
              * Fires after the OES Plugin has been fully initialized.
              */

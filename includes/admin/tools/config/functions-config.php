@@ -90,19 +90,25 @@ function update_config_post(int $postID, array $updateValues = []): string {
     $updateValues = wp_unslash($updateValues);
 
     $mergeCallback = function($current, $new) {
-        foreach ($new as $argsKey => $components) {
-            foreach ($components as $componentKey => $value) {
-                if (!isset($current[$argsKey][$componentKey])) {
-                    $current[$argsKey][$componentKey] = $value;
-                } else {
-                    $current[$argsKey][$componentKey] = match ($componentKey) {
-                        'theme_labels' => array_replace_recursive($current[$argsKey][$componentKey], $value),
-                        'display_titles' => array_merge($current[$argsKey][$componentKey], $value),
-                        default => normalize_option_value($value, $current[$argsKey][$componentKey]),
+        foreach ($new as $key => $value) {
+
+            if (is_array($value)) {
+                foreach ($value as $subKey => $subValue) {
+                    $currentValue = $current[$key][$subKey] ?? null;
+
+                    $current[$key][$subKey] = match ($subKey) {
+                        'theme_labels' => is_array($currentValue) ? array_replace_recursive($currentValue, $subValue) : $subValue,
+                        'display_titles' => is_array($currentValue) ? array_merge((array) $currentValue, (array) $subValue) : $subValue,
+                        default => normalize_option_value($subValue, $currentValue),
                     };
                 }
             }
+            else {
+                $currentValue = $current[$key] ?? null;
+                $current[$key] = is_null($currentValue) ? $value : normalize_option_value($value, $currentValue);
+            }
         }
+
         return $current;
     };
 

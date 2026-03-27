@@ -938,7 +938,6 @@ function read_data_from_project_json_file(): array
     return read_data_from_application_json_file();
 }
 
-
 /**
  * Get the data from the application json file.
  *
@@ -952,18 +951,12 @@ function read_data_from_application_json_file(): array
         $paths = [OES_APPLICATION_PLUGIN . '/config/model.json'];
     }
 
-    /**
-     * Filters the paths to data model.
-     *
-     * @param array $paths The data model paths.
-     */
     $paths = apply_filters('oes/data_model_paths', $paths);
 
-
-    /* get data from path(s) */
     $jsonData = [];
-    foreach ($paths as $path)
+    foreach ($paths as $path) {
         $jsonData = array_merge(oes_get_json_data_from_file($path), $jsonData);
+    }
 
     return $jsonData;
 }

@@ -116,10 +116,19 @@ class Schema_OES extends Schema
             parent::admin_post_tool_action();
         }
         foreach ($_POST['oes_option'] ?? [] as $option => $value) {
-            if ($value === 'hidden') $value = false;
-            elseif ($value === 'on') $value = true;
-            if (!oes_option_exists($option)) add_option($option, $value);
-            else update_option($option, $value);
+            if ($value === 'hidden') {
+                $value = false;
+            }
+            elseif ($value === 'on') {
+                $value = true;
+            }
+
+            if (!oes_option_exists($option)) {
+                add_option($option, $value);
+            }
+            else {
+                update_option($option, $value);
+            }
         }
     }
 }

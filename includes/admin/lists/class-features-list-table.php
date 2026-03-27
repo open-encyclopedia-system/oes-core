@@ -7,6 +7,16 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 class Features_List_Table extends OES_List_Table
 {
+    protected string $meta_key = 'title';
+
+    protected array $filter = ['group', 'status'];
+
+    protected array $search_keys = [
+        'title',
+        'description',
+        'group'
+    ];
+
     protected function get_data(): array
     {
         $features = \OES\Dashboard\get_features();

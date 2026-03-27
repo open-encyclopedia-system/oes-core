@@ -1,0 +1,37 @@
+{
+  "apiVersion": 3,
+  "name": "oes/context-link",
+  "title": "OES Context Link",
+  "category": "widgets",
+  "description": "Creates a link that adds context parameters (e.g. object_id) to a target URL.",
+  "keywords": [
+    "OES",
+    "context",
+    "dynamic",
+    "link"
+  ],
+  "supports": {
+    "anchor": true,
+    "customClassName": true
+  },
+  "attributes": {
+    "labels": {
+      "type": "object",
+      "default": {}
+    },
+    "link": {
+      "type": "string",
+      "default": ""
+    },
+    "params": {
+      "type": "array",
+      "default": []
+    },
+    "additional": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}

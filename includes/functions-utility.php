@@ -280,19 +280,19 @@ function oes_get_menu_icon_path(string $identifier = 'default'): string
         return 'dashicons-groups';
     }
     elseif($identifier == 'single-index'){
-        return 'dashicons-paperclip';
+        return 'dashicons-editor-ul';
     }
     elseif($identifier == 'single-internal'){
-        return 'dashicons-admin-generic';
+        return 'dashicons-category';
     }
     elseif($identifier == 'other'){
-        return 'dashicons-admin-generic';
+        return 'dashicons-category';
     }
     elseif($identifier == 'container'){
-        return 'dashicons-admin-generic';
+        return 'dashicons-category';
     }
     elseif($identifier == 'default'){
-        return 'dashicons-admin-generic';
+        return 'dashicons-admin-post';
     }
 
     $icons = [
@@ -486,4 +486,41 @@ function oes_get_application_name($default = null, bool $replaceHyphen = true): 
 function oes_get_project_name($default = null, bool $replaceHyphen = true): string
 {
     return oes_get_application_name($default, $replaceHyphen);
+}
+
+/**
+ * Normalize value to string
+ * @param $value
+ * @return string
+ */
+function oes_normalize_to_string($value): string
+{
+    if (is_string($value) || is_numeric($value)) {
+        return (string) $value;
+    }
+
+    if (is_array($value)) {
+        return implode(' ', array_map('oes_normalize_to_string', $value));
+    }
+
+    if (is_object($value)) {
+        if (method_exists($value, '__toString')) {
+            return (string) $value;
+        }
+
+        if (isset($value->value)) {
+            return oes_normalize_to_string($value->value);
+        }
+
+        if (isset($value->raw)) {
+            return oes_normalize_to_string($value->raw);
+        }
+
+        return implode(' ', array_map(
+            'oes_normalize_to_string',
+            get_object_vars($value)
+        ));
+    }
+
+    return '';
 }

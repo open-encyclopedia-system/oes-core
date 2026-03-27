@@ -18,6 +18,7 @@ if (!class_exists('LOC_Interface')) {
         public string $identifier = 'loc';
         public string $label = 'Library of Congress (Subjects)';
         public string $database_link = 'https://id.loc.gov/authorities/subjects.html';
+        public bool $schema = false;
 
         const PROPERTIES = [];
 
@@ -28,7 +29,7 @@ if (!class_exists('LOC_Interface')) {
         function render_shortcode(array $args, string $content = ""): string
         {
             /* get loc object */
-            if ($lodID = $args['id'] ?? false) {
+            if ($id = $args['id'] ?? false) {
 
                 $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
                 $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
@@ -37,7 +38,7 @@ if (!class_exists('LOC_Interface')) {
 
 
                 /* if no modification exists, replace comma in label*/
-                $label = $args['label'] ?? $lodID;
+                $label = $args['label'] ?? $id;
 
 
                 /**
@@ -45,16 +46,16 @@ if (!class_exists('LOC_Interface')) {
                  *
                  * @param string $label The label.
                  * @param string $this->identifier The LOD identifier.
-                 * @param string $lodID The LOD id.
+                 * @param string $id The LOD id.
                  */
                 if (has_filter('oes/api_label_modify'))
-                    $label = apply_filters('oes/api_label_modify', $label, $this->identifier, $lodID);
+                    $label = apply_filters('oes/api_label_modify', $label, $this->identifier, $id);
                 else
                     $label = str_replace(';', ',', $label);
 
                 return '<span class="oes-lod-container">' .
                     sprintf('<a href="https://id.loc.gov/authorities/subjects/%s" target="_blank">%s</a>',
-                        $lodID,
+                        $id,
                         $label . oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
                     ) . '</span>';
 
@@ -62,7 +63,7 @@ if (!class_exists('LOC_Interface')) {
                 //@oesDevelopment Try to retrieve other objects than subjects
                 /*return '<span class="oes-lod-container">' .
                     sprintf('<a href="https://catalog.loc.gov/vwebv/search?searchArg=%s" target="_blank">%s</a>',
-                        ($args['label'] ?? $lodID) . '&searchCode=SKEY%5E*&searchType=1',
+                        ($args['label'] ?? $id) . '&searchCode=SKEY%5E*&searchType=1',
                         $label . oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
                     ) . '</span>';*/
 
@@ -70,7 +71,5 @@ if (!class_exists('LOC_Interface')) {
         }
     }
 
-    /* include loc api files and instantiate api interface */
-    oes_include('api/loc/class-loc_api.php');
     OES()->apis['loc'] = new LOC_Interface('loc');
 }

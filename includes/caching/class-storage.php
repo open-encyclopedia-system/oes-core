@@ -14,16 +14,6 @@ namespace OES\Caching;
  * - Retrieving chunked cache entries
  * - Deleting cache by key or by prefix
  *
- * Table schema expected:
- *  - cache_key varchar(191)
- *  - part int(11)
- *  - cache_value longtext
- *  - created_at datetime
- *  - object_type varchar(50)
- *  - archive_class varchar(100)
- *  - cache_language varchar(10)
- *  - additional json
- *
  * Chunking:
  *  - For large payloads, cache_value is split into parts.
  *  - Maximum chunk size is defined by OES_MAX_CHUNK_SIZE.
@@ -99,8 +89,9 @@ class Storage implements Storage_Interface
                 'part' => $index,
                 'cache_value' => $chunk,
                 'created_at' => $created,
+                'cache_type' => $args['cache_type'] ?? '',
                 'object_type' => $args['object_type'] ?? '',
-                'archive_class' => $args['archive_class'] ?? '',
+                'class' => $args['class'] ?? '',
                 'cache_language' => $args['cache_language'] ?? '',
                 'additional' => json_encode($args['additional'] ?? '')
             ]);
@@ -165,7 +156,7 @@ class Storage implements Storage_Interface
 
         $rows = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT archive_class, object_type, cache_language, additional 
+                "SELECT cache_type, class, object_type, cache_language, additional 
                  FROM {$this->table}
                  WHERE cache_key = %s
                  AND part = 0",
@@ -178,10 +169,21 @@ class Storage implements Storage_Interface
             return;
         }
 
-        $class = $rows[0]['archive_class'];
-        $objectType = $rows[0]['object_type'];
-        $cacheLanguage = $rows[0]['cache_language'];
-        $args = json_decode($rows[0]['additional'], true);
+        $cacheType = $rows[0]['cache_type'] ?? '';
+        if($cacheType == 'archive') {
+            $this->regenerate_archive($key, $rows[0]);
+        }
+        elseif(function_exists('oes_cache_regenerate_' . $cacheType)) {
+            call_user_func('oes_cache_regenerate_' . $cacheType, $key, $rows[0]);
+        }
+    }
+
+    protected function regenerate_archive(string $key, array $row): void {
+
+        $class = $row['class'] ?? '';
+        $objectType = $row['object_type'] ?? '';
+        $cacheLanguage = $row['cache_language'] ?? '';
+        $args = json_decode($row['additional'] ?? '', true);
 
         $args['language'] = $cacheLanguage;
         $args['object'] = $objectType;

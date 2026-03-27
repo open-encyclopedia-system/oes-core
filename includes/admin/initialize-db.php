@@ -63,7 +63,7 @@ function install_operation_table(): void
  */
 function install_cache_table(): void
 {
-    $version = '2.0';
+    $version = '2.1';
     $installed = get_option('oes_cache_table_version');
 
     if ($installed === $version) {
@@ -86,8 +86,9 @@ function install_cache_table(): void
             part int(11) NOT NULL DEFAULT 0,
             cache_value longtext NOT NULL,
             created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            cache_type varchar(50) NOT NULL,
 			object_type varchar(50) NOT NULL,
-			archive_class varchar(100) NOT NULL,
+			class varchar(100) NOT NULL,
 			cache_language varchar(10) NOT NULL,
 			additional json NOT NULL,
             PRIMARY KEY (cache_key, part)

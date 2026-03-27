@@ -482,6 +482,24 @@ function oes_convert_date_to_formatted_string(
         $timeType);
 }
 
+/**
+ * Format timestamps for HTML output.
+ *
+ * @param int $timestamp
+ * @return string
+ */
+function oes_format_timestamp_date(int $timestamp): string
+{
+    if ($timestamp <= 0) {
+        return __('Never', 'oes');
+    }
+
+    return date_i18n(
+        get_option('date_format') . ' ' . get_option('time_format'),
+        $timestamp
+    );
+}
+
 
 /**
  * Generate a table of contents header. Return the title with an anchor indicating the header level.

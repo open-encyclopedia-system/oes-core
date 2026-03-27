@@ -14,7 +14,7 @@ if (!class_exists('GND_Interface')) {
     class GND_Interface extends API_Interface
     {
 
-        //Set parent parameter
+        /** @inheritdoc */
         public string $identifier = 'gnd';
         public string $label = 'GND';
         public string $database_link = 'https://www.dnb.de/';
@@ -359,7 +359,5 @@ if (!class_exists('GND_Interface')) {
         ];
     }
 
-    /* include gnd api files and instantiate api interface */
-    oes_include('api/gnd/class-gnd_api.php');
     OES()->apis['gnd'] = new GND_Interface('gnd');
 }

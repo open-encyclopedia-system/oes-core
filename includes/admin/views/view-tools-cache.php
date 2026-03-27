@@ -35,6 +35,7 @@
                 'cb' => ' ',
                 'name' => __('Name', 'oes'),
                 'id' => __('Key', 'oes'),
+                'type' => __('Type', 'oes'),
                 'parts' => __('Parts', 'oes'),
                 'size' => __('Size (KB)', 'oes'),
                 'timestamp' => __('Timestamp', 'oes')

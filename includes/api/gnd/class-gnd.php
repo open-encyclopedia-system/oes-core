@@ -9,7 +9,7 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('api/class-lod.php');
+if (!class_exists('LOD')) oes_include('api/class-lod_config.php');
 
 if (!class_exists('GND')) :
 
@@ -22,8 +22,6 @@ if (!class_exists('GND')) :
     {
         /** @inheritdoc */
         public string $api_key = 'gnd';
-
-        /** @inheritdoc */
         public bool $credentials_password = false;
 
         /** @inheritdoc */
@@ -54,7 +52,6 @@ if (!class_exists('GND')) :
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\GND', 'gnd');
 
 endif;

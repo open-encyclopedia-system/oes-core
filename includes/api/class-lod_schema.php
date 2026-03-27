@@ -11,18 +11,24 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
 
-if (!class_exists('Schema_LOD')) :
+if (!class_exists('LOD_Schema')) :
 
     /**
-     * Class Schema_LOD
+     * Class LOD_Schema
      *
      * Implement the config tool for LOD options configurations.
      */
-    class Schema_LOD extends Schema
+    class LOD_Schema extends Schema
     {
 
         /** @var string The api key. */
         public string $api_key = 'lod';
+
+        /** @inheritdoc */
+        protected function additional_parameters(array $args = []): void
+        {
+            $this->api_key = $args['api_key'] ?? 'lod';
+        }
 
         /** @inheritdoc */
         function empty(): string
@@ -30,6 +36,15 @@ if (!class_exists('Schema_LOD')) :
             return '<div class="oes-tool-information-wrapper"><p>' .
                 __('There are no configurations found for this API for your application. ' .
                     'Enable API options in the <b>General</b> tab.', 'oes') .
+                '</p></div>';
+        }
+
+        /** @inheritdoc */
+        function additional_html(): string
+        {
+            return '<div class="oes-tool-information-wrapper"><p>' .
+                __('Define the field mapping that determines which entry data will be imported to which post ' .
+                    'object field.', 'oes') .
                 '</p></div>';
         }
 

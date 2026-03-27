@@ -18,14 +18,57 @@ class Cache_List_Table extends OES_List_Table
     {
         $id = $item['id'] ?? false;
 
-        $additional = ($item['additional'] != '""') ? $item['additional'] : '';
+        $additionalRaw = $item['additional'] ?? '';
+        $additional = ($additionalRaw !== '""') ? $additionalRaw : '';
 
-        $label = sprintf('<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div><div>%s</div>',
-            $item['name'] ?? '',
-            $item['cache_language'] ?? '',
-            $item['archive_class'] ?? '',
-            $additional
-        );
+        $additionalDecoded = json_decode($additionalRaw, true);
+
+        $cacheType = $item['type'] ?? 'default';
+
+        $name  = esc_html($item['name'] ?? __('Unknown', 'oes'));
+        $lang  = esc_html($item['cache_language'] ?? '');
+        $class = esc_html($item['class'] ?? '');
+
+        if ($cacheType === 'archive') {
+
+            if (is_array($additionalDecoded) && isset($additionalDecoded['view'])) {
+
+                $view = esc_html($additionalDecoded['view']);
+
+                $label = sprintf(
+                    '<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div>',
+                    "{$name}, {$view}",
+                    $lang,
+                    $class
+                );
+
+            } else {
+
+                $label = sprintf(
+                    '<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div><div>%s</div>',
+                    $name,
+                    $lang,
+                    $class,
+                    esc_html($additional)
+                );
+
+            }
+
+        } elseif (is_array($additionalDecoded)) {
+
+            $label = sprintf(
+                '<strong>%s</strong>',
+                esc_html($additionalDecoded['label'] ?? $additional)
+            );
+
+        } else {
+
+            $label = sprintf(
+                '<strong>%s</strong>',
+                esc_html__('Unknown', 'oes')
+            );
+
+        }
 
         $actions = '';
         if (\OES\Rights\user_can_manage_cache()) {
@@ -127,8 +170,9 @@ class Cache_List_Table extends OES_List_Table
             if (!isset($data[$name])) {
 
                 $objectType = $row['object_type'] ?? false;
-                $archiveClass = $row['archive_class'] ?? false;
+                $class = $row['class'] ?? false;
                 $languageKey = $row['cache_language'] ?? false;
+                $type = $row['cache_type'] ?? false;
 
                 $label =
                     $oes->theme_index_pages[$objectType]['label']['language0'] ??
@@ -141,7 +185,8 @@ class Cache_List_Table extends OES_List_Table
                 $data[$name] = [
                     'id' => $name,
                     'name' => $label,
-                    'archive_class' => $archiveClass,
+                    'type' => $type,
+                    'class' => $class,
                     'cache_language' => $language,
                     'size' => strlen(serialize($value)),
                     'parts' => 1,

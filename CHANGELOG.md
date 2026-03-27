@@ -7,6 +7,7 @@
 - Rename OES Manual → Guidelines 
 - Rename OES_LIVEMODE → OES_LIVE_MODE
 - Rename Project → Application
+- Move Modules Setting in new section
 
 ### Features / New Components
 - Introduce new rights model 
@@ -14,8 +15,12 @@
 - Introduce OES_List_Table (extends WP_List_Table)
 - Introduce factory_service and improved data model factory 
 - Introduce cache database table
+- Introduce new LOD API: ROR
+- Introduce new LOD API: ORCID (prepared)
+- Introduce Display_Helper for LOD APIs
 - Re-do operations and feature display
 - New page icons and re-designed icons
+- New block "Context Link"
 
 ### Improvements
 - Improve internal page generation
@@ -23,6 +28,7 @@
 - Stabilize config tools and redesign GUI administration of settings and tools
 - Improve caching
 - Fix encoding issues when editing settings
+- LOD query via react
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
@@ -30,6 +36,7 @@
 - Remove oes_replace_for_serializing, oes_stripslashes_array, oes_replace_for_form, oes_replace_from_serializing
 - Remove obsolete CSS
 - Remove filter 'oes/set_archive_data_caching_enabled'
+- Remove parameters 3 and 5 from filter 'oes/api_gnd_display_entry'
 
 ## 2.4.4 (in development)
 ### New Filters / Functions

@@ -99,15 +99,31 @@ if (!class_exists('Module_Page')) :
          */
         public function set_parameters(array $args): void
         {
-            $this->name = $args['name'] ?? 'Name missing';
-            $this->key = $args['key'] ?? strtolower($this->name);
-            $this->setting = $args['setting'] ?? ('oes_' . $this->key);
-            $this->position = $args['position'] ?? 50;
-            $this->schema_enabled = $args['schema_enabled'] ?? true;
-            $this->file = $args['file'] ?? '';
-            $this->components = $args['components'] ?? ['post_types'];
-            $this->types = $args['types'] ?? ['single-article'];
-            $this->parent_slug = $args['parent_slug'] ?? 'oes_settings';
+            $this->name             = $this->param($args, 'name', $this->name ?: 'Name missing');
+            $this->key              = $this->param($args, 'key', $this->key ?: strtolower($this->name));
+            $this->setting          = $this->param($args, 'setting', $this->setting ?: ('oes_' . $this->key));
+            $this->position         = $this->param($args, 'position', $this->position ?: 50);
+            $this->schema_enabled   = $this->param($args, 'schema_enabled', $this->schema_enabled ?: true);
+            $this->file             = $this->param($args, 'file', $this->file ?: '');
+            $this->components       = $this->param($args, 'components', $this->components ?: ['post_types']);
+            $this->types            = $this->param($args, 'types', $this->types ?: ['single-article']);
+            $this->parent_slug      = $this->param($args, 'parent_slug', $this->parent_slug ?: 'oes_modules');
+        }
+
+        /**
+         * Set single parameter
+         *
+         * @param array $args
+         * @param string $key
+         * @param $default
+         * @param bool $allowEmpty
+         * @return mixed
+         */
+        private function param(array $args, string $key, $default, bool $allowEmpty = false) {
+            if (array_key_exists($key, $args)) {
+                return ($allowEmpty || !empty($args[$key])) ? $args[$key] : $default;
+            }
+            return $default;
         }
 
         /**

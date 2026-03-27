@@ -50,7 +50,5 @@ if (!class_exists('Geonames_Interface')) {
         ];
     }
 
-    /* include geonames api files and instantiate api interface */
-    oes_include('api/geonames/class-geonames_api.php');
     OES()->apis['geonames'] = new Geonames_Interface('geonames');
 }

@@ -117,7 +117,7 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         global $oes_language;
 
         $language = empty($oes_language) ? ($args['language'] ?? 'language0') : $oes_language;
-        $cacheKeyType = $args['taxonomy'] ?? ($args['index']  ?? ($oes_is_index ?? $postType));
+        $cacheKeyType = $args['taxonomy'] ?? ($args['index'] ?? ($oes_is_index ?? $postType));
         $cacheKey = $cacheKeyType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
 
         if (!empty($args['callables']['get_cache']) && is_callable($args['callables']['get_cache'])) {
@@ -130,7 +130,7 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
 
         if ($cached) {
 
-            if($setGlobals) {
+            if ($setGlobals) {
                 global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
                 $oes_archive = $cached['archive'] ?? [];
                 $oes_archive_data = $cached['archive_data'] ?? [];
@@ -141,10 +141,11 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
             return;
         } else {
             $cachingArgs = $args + [
-                'object_type' => $cacheKeyType,
-                'archive_class' => $class,
-                'cache_language' => $language
-            ];
+                    'object_type' => $cacheKeyType,
+                    'class' => $class,
+                    'cache_language' => $language,
+                    'cache_type' => 'archive'
+                ];
         }
     }
 

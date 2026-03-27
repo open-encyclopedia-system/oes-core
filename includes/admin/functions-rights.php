@@ -8,56 +8,105 @@ use WP_User;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
- * Check whether the current user has OES admin rights.
+ * Determine whether the current user can manage site options.
  *
- * A user is considered an OES admin if they have the `manage_options` capability.
+ * In WordPress, users with the `manage_options` capability are typically Administrators.
  *
- * @return bool True if the current user is an OES admin, false otherwise.
+ * @return bool True if the current user has the capability, false otherwise.
  */
 function user_is_admin(): bool
 {
-    return current_user_can('manage_options');
+    return current_user_has_cap('manage_options');
 }
-//TODO
 
+/**
+ * Determine whether the current user has the `oes_admin` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_is_oes_admin(): bool
 {
-    return current_user_can('oes_admin');
+    return current_user_has_cap('oes_admin');
 }
 
+/**
+ * Determine whether the current user has the `oes_read` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_read(): bool
 {
-    return current_user_can('oes_read');
+    return current_user_has_cap('oes_read');
 }
 
+/**
+ * Determine whether the current user has the `oes_read_settings` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_read_settings(): bool
 {
-    return current_user_can('oes_read_settings');
+    return current_user_has_cap('oes_read_settings');
 }
 
+/**
+ * Determine whether the current user has the `oes_edit_settings` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_edit_settings(): bool
 {
-    return current_user_can('oes_edit_settings');
+    return current_user_has_cap('oes_edit_settings');
 }
 
+/**
+ * Determine whether the current user has the `oes_read_config` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_read_config(): bool
 {
-    return current_user_can('oes_read_config');
+    return current_user_has_cap('oes_read_config');
 }
 
+/**
+ * Determine whether the current user has the `oes_edit_config` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_edit_config(): bool
 {
-    return current_user_can('oes_edit_config');
+    return current_user_has_cap('oes_edit_config');
 }
 
+/**
+ * Determine whether the current user has the `oes_manage_content` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_manage_content(): bool
 {
-    return current_user_can('oes_manage_content');
+    return current_user_has_cap('oes_manage_content');
 }
 
+/**
+ * Determine whether the current user has the `oes_manage_cache` capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
 function user_can_manage_cache(): bool
 {
-    return current_user_can('oes_manage_cache');
+    return current_user_has_cap('oes_manage_cache');
+}
+
+/**
+ * Determine whether the current user has a capability.
+ *
+ * @return bool True if the current user has the capability, false otherwise.
+ */
+function current_user_has_cap(string $capability): bool
+{
+    return current_user_can($capability);
 }
 
 /**
@@ -125,7 +174,7 @@ function add_oes_roles(): void
     $managerCaps['oes_manage_cache']  = true;
 
     if (!get_role('oes_manager')) {
-        add_role('oes_manager', 'OES Manager', $managerCaps);
+        add_role('oes_manager', __('OES Managing Editor', 'oes'), $managerCaps);
     }
 
     $adminCaps = $managerCaps;
@@ -135,7 +184,7 @@ function add_oes_roles(): void
     $adminCaps['oes_admin']           = true;
 
     if (!get_role('oes_admin')) {
-        add_role('oes_admin', 'OES Admin', $adminCaps);
+        add_role('oes_admin', __('OES Admin', 'oes'), $adminCaps);
     }
 }
 

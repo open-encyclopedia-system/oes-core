@@ -9,9 +9,7 @@ $listTable = new Features_List_Table([
         'title' => __('Feature', 'oes'),
         'description' => __('Description', 'oes'),
         'actions' => __('Actions', 'oes')
-    ],
-    'meta_key' => 'title',
-    'filter' => ['group', 'status']
+    ]
 ]);
 
 $listTable->prepare_items();

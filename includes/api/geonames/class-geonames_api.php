@@ -32,80 +32,71 @@ if (!class_exists('Geonames_API')) {
     class Geonames_API extends Rest_API
     {
 
-        /** @var string The url to the geonames api. */
+        /** @inheritdoc */
+        public string $identifier = 'geonames';
         public string $url = 'http://api.geonames.org/';
 
-
-        //Overwrite
+        /** @inheritdoc */
         function set_credentials(): void
         {
             $this->login = get_option('oes_api-geonames_login');
         }
 
-
         /** @inheritdoc */
         function get_request_url(string $url, array $args): string
         {
-            $this->searchTerm = $args['search_term'] ?? '';
+            if(empty($url)){
+                $url = $this->url;
+            }
 
-            if(!empty($this->searchTerm)) $url .= 'searchJSON?q=' . $this->searchTerm;
-            elseif($args['lodid'] ?? false)  $url .= 'getJSON?geonameId=' . $args['lodid'];
+            $this->search_term = $args['search_term'] ?? '';
 
-            /* add size */
+            if(!empty($this->search_term)) {
+                $url .= 'searchJSON?q=' . $this->search_term;
+            }
+            elseif($args['lod_id'] ?? false) {
+                $url .= 'getJSON?geonameId=' . $args['lod_id'];
+            }
+
             $size = $args['oes-geonames-size'] ?? 10;
-            if(!empty($size)) $url .= '&maxRows=' . $size;
+            if(!empty($size)) {
+                $url .= '&maxRows=' . $size;
+            }
 
-            /* add user */
-            if(!empty($this->login)) $url .= '&username=' . $this->login;
+            if(!empty($this->login)) {
+                $url .= '&username=' . $this->login;
+            }
 
             //@oesDevelopment Encode url.
             return $url;
         }
 
-
         /** @inheritdoc */
         function get_data_from_response($response)
         {
-            return $response->geonames ?? [$response];
+            if($response->geonames ?? false){
+                return $response->geonames;
+            }
+            return [(array) $response];
         }
-
 
         /** @inheritdoc */
         function transform_data_entry(mixed $entry):array
         {
+            if(!is_array($entry)) {
+                $entry = array($entry);
+            }
 
             $entryID = $entry['geonameId']['value'] ?? false;
             return [
                 'entry' => $entry,
-                'id' => $entryID,
+                'id' => (string) $entryID,
                 'name' => $entry['name']['value'] ?? false,
                 'type' => 'Geographikum',
-                'link' => '<a class="oes-admin-link oes-gnd-external" href="https://www.geonames.org/' . $entryID .
-                    '" target="_blank"></a>',
+                'link' => 'https://www.geonames.org/' . $entryID,
                 'link_frontend' => '<a href="https://www.geonames.org/' . $entryID . '" target="_blank">' .
                     ($entry['name']['value'] ?? $entryID) . '</a>'
             ];
-        }
-
-
-        /** @inheritdoc */
-        function get_data_for_display_modify_table_data(mixed $entry): array
-        {
-
-            $modifiedEntryKeys = ['geonameId', 'name', 'countryCode', 'countryName', 'lng', 'lat', 'wikipediaURL'];
-
-            $modifiedEntry = [];
-            foreach($modifiedEntryKeys as $key)
-                if(isset($entry['entry'][$key])) $modifiedEntry[$key] = $entry['entry'][$key];
-
-            return $modifiedEntry;
-        }
-
-
-        /** @inheritdoc */
-        function get_data_for_display_prepare_html(string $title, string $table, mixed $entry): string
-        {
-            return '<div class="oes-lod-box-title">' . $title . '</div>' . $table;
         }
     }
 }

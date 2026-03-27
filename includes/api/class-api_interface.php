@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('API_Interface')) {
+if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
 
     /**
      * API Interface
@@ -30,33 +30,35 @@ if (!class_exists('API_Interface')) {
         /** @var bool Rest API requires credentials. */
         public bool $credentials = false;
 
+        /** @var string Rest API schema version (if existing). */
+        public string $schema_version = '';
+
         /* The properties for matching and configuration. */
-        const PROPERTIES = [];
+        public const PROPERTIES = [];
 
         /** The search parameters for the LOD interface. */
-        const SEARCH_PARAMETERS = [];
-
+        public const SEARCH_PARAMETERS = [];
 
         /**
          * API_Interface constructor.
          */
-        function __construct(string $apiKey = '')
+        public function __construct(string $apiKey = '')
         {
-            /* set parameters */
-            $this->identifier = $apiKey;
+            $this->identifier = sanitize_key($apiKey);
             $this->set_parameters();
+
             $this->search_options = $this->set_search_options();
             $this->config_options = $this->set_config_options();
 
-            /* register styles */
-            if (file_exists(oes_get_path('/includes/api/' . $this->identifier . '/' . $this->identifier . '.css',
-                OES_CORE_PLUGIN)))
+            $cssFile = OES_CORE_PLUGIN . "/includes/api/{$this->identifier}/{$this->identifier}.css";
+            if (file_exists($cssFile)) {
                 add_action('wp_enqueue_scripts', [$this, 'enqueue_style']);
+            }
 
-            /* add shortcode */
-            add_shortcode($apiKey . 'link', [$this, 'render_shortcode']);
+            if ($this->identifier) {
+                add_shortcode($this->identifier . 'link', [$this, 'render_shortcode']);
+            }
         }
-
 
         /**
          * Enqueue the API style for frontend display.
@@ -69,66 +71,52 @@ if (!class_exists('API_Interface')) {
             wp_enqueue_style('oes-' . $this->identifier);
         }
 
-
         /**
          * Generate link text from shortcode.
          *
          * @param array $args The shortcode parameters.
          * @param string $content The shortcode content.
-         * @return string Return the generated html link.
+         * @return string Return the generated HTML link.
          */
         function render_shortcode(array $args, string $content = ""): string
         {
+            static $apiBoxCounter = 0;
+            $apiBoxCounter++;
 
-            /* count boxes */
-            global $oesAPIBox;
-            if(!is_int($oesAPIBox)) $oesAPIBox = 0;
-            ++$oesAPIBox;
+            $id = $args['id'] ?? null;
+            if (!$id) return $content;
 
-            /* get gnd object */
-            if ($lodID = $args['id'] ?? false) {
+            $iconPath = OES_CORE_PLUGIN . "/includes/api/{$this->identifier}/icon_{$this->identifier}.png";
+            $iconUrl = file_exists($iconPath)
+                ? plugins_url(OES_BASENAME . "/includes/api/{$this->identifier}/icon_{$this->identifier}.png")
+                : plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
 
-                $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
-                $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
-                    plugins_url(OES_BASENAME . $iconPath) :
-                    plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
+            $label = $args['label'] ?? $id;
+            $label = has_filter('oes/api_label_modify')
+                ? apply_filters('oes/api_label_modify', $label, $this->identifier, $id)
+                : str_replace(';', ',', $label);
 
-                /* if no modification exists, replace comma in label*/
-                $label = $args['label'] ?? $lodID;
-
-
-                /**
-                 * Filter the label of the LOD entry.
-                 *
-                 * @param string $label The label.
-                 * @param string $this- >identifier The LOD identifier.
-                 * @param string $lodID The LOD id.
-                 */
-                if (has_filter('oes/api_label_modify'))
-                    $label = apply_filters('oes/api_label_modify', $label, $this->identifier, $lodID);
-                else
-                    $label = str_replace(';', ',', $label);
-
-                return '<span class="oes-lod-popup oes-popup" data-fn="popup_lod' . $lodID . '">' .
-                    sprintf('<a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lodid="%s" data-boxid="%s">%s&nbsp;%s</a>',
-                        $this->identifier,
-                        $lodID,
-                        $oesAPIBox,
-                        $label,
-                        oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
-                    ) .
-                    '</span>' .
-                    '<span class="oes-lod-box-' . $oesAPIBox . ' oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod' . $lodID . '" id="oes-lod-box-' . $oesAPIBox . '">' .
-                    oes_get_html_img(
-                        plugins_url(OES_BASENAME . '/assets/images/spinner.gif'),
-                        'waiting...',
-                        false,
-                        'oes-spinner') .
-                    '</span>';
-
-            } else return $content;
+            return sprintf(
+                '<span class="oes-lod-popup oes-popup" data-fn="popup_lod%s">
+            <a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lod_id="%s" data-box_id="%s">
+                %s&nbsp;%s
+            </a>
+        </span>
+        <span class="oes-lod-box-%s oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod%s" id="oes-lod-box-%s">
+            %s
+        </span>',
+                esc_attr($id),
+                esc_attr($this->identifier),
+                esc_attr($id),
+                esc_attr($apiBoxCounter),
+                esc_html($label),
+                oes_get_html_img($iconUrl, 'oes-' . $this->identifier . '-icon'),
+                esc_attr($apiBoxCounter),
+                esc_attr($id),
+                esc_attr($apiBoxCounter),
+                oes_get_html_img(plugins_url(OES_BASENAME . '/assets/images/spinner.gif'), 'waiting...', false, 'oes-spinner')
+            );
         }
-
 
         /**
          * Set optional parameters (implement)
@@ -138,55 +126,72 @@ if (!class_exists('API_Interface')) {
         {
         }
 
-
         /**
          * Set search options for LOD search interface. Valid Format is an array with 'value' and 'form' pair.
          */
         function set_search_options(): array
         {
             $searchOptions = [];
+            
             foreach (static::SEARCH_PARAMETERS as $option) {
 
-                /* prepare class name */
-                $classNameArray = ['oes-' . $this->identifier . '-search-options', 'oes-lod-search-options'];
-                if (isset($option['args']['class'])) {
-                    $currentClasses = explode(' ', $option['args']['class']);
-                    $classNameArray = array_merge($currentClasses, $classNameArray);
-                }
-                $option['args']['class'] = implode(' ', array_unique($classNameArray));
+                $defaultClasses = [
+                    'oes-lod__search-option',
+                    'oes-' . $this->identifier . '-search-option'
+                ];
 
-                /* prepare form element */
+                if (!empty($option['args']['class'])) {
+                    $customClasses = explode(' ', $option['args']['class']);
+                    $defaultClasses = array_merge($defaultClasses, $customClasses);
+                }
+
+                $option['args']['class'] = implode(' ', array_unique($defaultClasses));
+
+                $optionID = $option['id'] ?? 'oes-lod-missing-id';
+
+                $labelHtml = sprintf(
+                    '<label for="%1$s">%2$s</label>',
+                    esc_attr($optionID),
+                    esc_html($option['label'] ?? '[Label missing]')
+                );
+
+                $formHtml = oes_html_get_form_element(
+                    $option['type'] ?? 'checkbox',
+                    $optionID,
+                    $optionID,
+                    $option['value'] ?? '',
+                    $option['args'] ?? []
+                );
+
                 $searchOptions[] = [
-                    'label' => '<label for="' . $option['id'] . '">' . $option['label'] . '</label>',
-                    'form' => oes_html_get_form_element(
-                        $option['type'] ?? 'checkbox',
-                        $option['id'] ?? 'name-missing',
-                        $option['id'] ?? 'id-missing',
-                        $option['value'] ?? false,
-                        $option['args'])
+                    'label2' => $labelHtml,
+                    'form'  => $formHtml, //TODO
+                    'id'    => $optionID,
+                    'label' => $option['label'] ?? '[Label missing]',
+                    'type'  => $option['type'] ?? 'select',
+                    'value' => $option['value'] ?? '',
+                    'args'  => $option['args'] ?? [],
+                    'options' => $option['args']['options'] ?? []
                 ];
             }
 
             return $searchOptions;
         }
 
-
         /**
          * Set config options for editorial layer.
          */
         function set_config_options(): array
         {
-            /* prepare options for admin configuration : loop through all properties and store as option */
             $properties = [];
-            foreach (static::PROPERTIES as $key => $property)
+
+            foreach (static::PROPERTIES as $key => $property) {
                 $properties[$key] = ($property['label']['german'] ?? '[Label missing]') . '/' .
                     ($property['label']['english'] ?? '[Label missing]') . ' (' . $key . ')';
+            }
+
             asort($properties);
 
-
-            /**
-             * Filter the API properties.
-             */
             $properties = apply_filters('oes/data_model_lod_fields', $properties, $this->identifier);
 
             return [

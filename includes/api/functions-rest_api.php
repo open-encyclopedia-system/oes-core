@@ -4,35 +4,31 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-
 /**
  * Enqueue admin scripts for API.
  * @return void
  */
 function admin_scripts(): void
 {
-    global $post;
-    wp_register_script(
-        'oes-api',
-        plugins_url(OES_BASENAME . '/includes/api/assets/api-admin' . oes_minify() . '.js'),
-        ['jquery'],
-        false,
-        true);
-    wp_localize_script(
-        'oes-api',
-        'oesLodAJAX',
-        [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'ajax_nonce' => wp_create_nonce('oes_lod_nonce'),
-            'post_id' => $post ? $post->ID : false
-        ]
-    );
-    wp_enqueue_script('oes-api');
-
     wp_register_style('oes-api', plugins_url(OES_BASENAME . '/includes/api/assets/api.css'));
     wp_enqueue_style('oes-api');
-}
 
+    wp_enqueue_script(
+        'oes-lod-app',
+        plugins_url(OES_BASENAME . '/includes/api/assets/lod-app' . oes_minify() . '.js'),
+        [
+            'wp-plugins',
+            'wp-edit-post',
+            'wp-element',
+            'wp-components',
+            'wp-i18n',
+            'wp-api-fetch'
+        ],
+        '1.0',
+        true
+    );
+    wp_set_script_translations('oes-lod-app', 'oes');
+}
 
 /**
  * Enqueue scripts and styles for frontend display of API elements.
@@ -57,499 +53,501 @@ function scripts(): void
     wp_enqueue_style('oes-api');
 }
 
-
-/**
- * Enqueue lod sidebar scripts for block editor to display LoD Sidebar.
- */
-function sidebar_enqueue(): void
-{
-    wp_register_script(
-        'oes-lod-sidebar',
-        plugins_url(OES_BASENAME . '/includes/api/assets/lod-sidebar' . oes_minify() . '.js'),
-        ['wp-plugins', 'wp-edit-post', 'wp-element']
-    );
-    wp_enqueue_script('oes-lod-sidebar');
-}
-
-
 /**
  * Initialize api interfaces.
  * @return void
  */
 function initialize(): void
 {
-    //@oesDevelopment: include only if required
-
     include_once __DIR__ . '/class-api_interface.php';
+
     include_once __DIR__ . '/gnd/class-gnd_interface.php';
     include_once __DIR__ . '/geonames/class-geonames_interface.php';
+    include_once __DIR__ . '/ror/class-ror_interface.php';
+    include_once __DIR__ . '/orcid/class-orcid_interface.php';
     include_once __DIR__ . '/loc/class-loc_interface.php';
 
-    /* configs and schema */
-    include_once __DIR__ . '/class-lod.php';
-    include_once __DIR__ . '/class-schema_lod.php';
+    include_once __DIR__ . '/class-lod_config.php';
+    include_once __DIR__ . '/class-lod_schema.php';
 
-    $oes = OES();
-    if (!empty($oes->apis))
-        foreach ($oes->apis as $apiKey => $apiData) {
-            $pathPrefix = __DIR__ . '/' . $apiKey . '/';
-            $pathSuffix = $apiKey . '.php';
+    foreach (OES()->apis ?? [] as $apiKey => $apiData) {
 
-            foreach(['class-', 'class-schema_', 'functions-'] as $path){
-                $wholePath = $pathPrefix . $path . $pathSuffix;
-                if(file_exists($wholePath)){
-                    include_once $wholePath;
-                }
+        $pathPrefix = __DIR__ . '/' . strtolower($apiKey) . '/';
+        $files = [
+            "class-$apiKey.php",
+            "class-{$apiKey}_api.php",
+            "class-{$apiKey}_display_helper.php",
+            "functions-$apiKey.php",
+        ];
+
+        foreach ($files as $file) {
+            $path = $pathPrefix . $file;
+            if (file_exists($path)) {
+                include_once $path;
             }
         }
 
-    add_action('add_meta_boxes', '\OES\API\lod_add_meta_box');
-}
+        if ($apiData->schema ?? false) {
 
-
-/**
- * Add meta box for the LOD search interface if LOD option is set for the post type.
- *
- * @param string $post_type The post type.
- * @return void
- */
-function lod_add_meta_box(string $post_type): void
-{
-    $oes = OES();
-    if (!empty($oes->apis) &&
-        isset($oes->post_types[$post_type]) &&
-        function_exists('\OES\API\lod_post_box') &&
-        !oes_check_if_gutenberg($post_type))
-        add_meta_box('oes-api',
-            __('OES Linked Open Data Search', 'oes'),
-            '\OES\API\lod_post_box',
-            null,
-            'side',
-            'high'
-        );
-}
-
-
-/**
- * Callback for LOD post box.
- * @return void
- */
-function lod_post_box(): void
-{
-    global $post_type;
-    $oes = OES();
-
-    $availableApis = [];
-    $prepareApis = $oes->apis;
-    foreach ($prepareApis as $apiKey => $args) $availableApis[$apiKey] = $args;
-
-    if (!empty($availableApis)) :
-        ?>
-        <div>
-        <div class="oes-lod-meta-box-title"><?php
-
-            /* get all api links */
-            $apiLinks = [];
-            foreach ($availableApis as $apiArgs)
-                $apiLinks[] = '<a href="' . $apiArgs->database_link . '" target="_blank">' . $apiArgs->label . '</a>';
-            printf(__('Search in the %s database and create shortcodes or copy values to this post.', 'oes'),
-                implode(', ', $apiLinks)
-            );
-            ?></div>
-        <div class="oes-lod-meta-box-options-wrapper">
-            <a href="javascript:void(0)" class="oes-lod-meta-box-api-toggle oes-lod-meta-box-toggle"
-               onClick="oesLodAdmin.toggleOptions()">
-                <span><?php _e('Options', 'oes'); ?></span>
-            </a>
-            <div class="oes-lod-meta-box-api-options-container oes-lod-meta-box-options-container oes-collapsed">
-                <div class="oes-lod-authority-file-container">
-                    <div><label for="oes-lod-authority-file"><?php
-                            _e('Authority File', 'oes'); ?></label></div>
-                    <select id="oes-lod-authority-file" name="oes-lod-authority-file" class="oes-lod-search-options"
-                            onchange="oesLodAdmin.searchOptions(this)"><?php
-                        $authorityOptions = '';
-                        foreach ($availableApis as $apiKey => $args)
-                            $authorityOptions .= '<option value="' . $apiKey . '">' .
-                                ($args->label ?? $apiKey) . '</option>';
-                        echo $authorityOptions;
-                        ?></select>
-                </div><?php
-
-                foreach ($availableApis as $apiKey => $args)
-                    if (!empty($args->search_options))
-                        foreach ($args->search_options as $option)
-                            echo '<div' .
-                                ($apiKey !== array_key_first($availableApis) ? ' style="display:none"' : '') . '>' .
-                                $option['label'] . $option['form'] . '</div>';
-                ?>
-            </div>
-        </div>
-        <div class="oes-lod-meta-box-search-wrapper">
-            <label for="oes-lod-search-input" class="screen-reader-text">LOD Search</label>
-            <input id="oes-lod-search-input" type="text" placeholder="<?php
-            _e('Type to search', 'oes'); ?>" value="">
-            <a id="oes-admin-popup-frame-show" class="button-primary" href="javascript:void(0);"
-               onClick="oesLodAdmin.apiRequest()"><?php
-                _e('Look Up Value', 'oes'); ?></a>
-        </div>
-        <div class="oes-lod-result-shortcode">
-            <div class="oes-lod-shortcode-title"><strong><?php
-                    _e('Shortcode:', 'oes'); ?></strong></div>
-            <div class="oes-lod-meta-box-shortcode-container-wrapper">
-                <div class="oes-code-container " id="oes-lod-shortcode-container">
-                    <div id="oes-lod-shortcode"><?php
-                        _e('No entry selected.', 'oes'); ?></div>
-                </div>
-            </div>
-        </div>
-        <?php
-
-        /* Copy To Post ----------------------------------------------------------------------------------------------*/
-        if ($oes->post_types[$post_type]['lod'] ?? false):?>
-            <div class="oes-lod-result-copy">
-            <a href="javascript:void(0)" class="oes-lod-meta-box-copy-options oes-lod-meta-box-toggle"
-               onClick="oesLodAdmin.toggleCopyOptions()">
-                <span><?php _e('Copy Options', 'oes'); ?></span>
-            </a>
-            <div class="oes-lod-meta-box-copy-options-container oes-lod-meta-box-options-container">
-                <ul class="oes-lod-options-list"></ul>
-            </div>
-            <div class="oes-lod-meta-box-copy-options-button">
-                <a id="oes-lod-copy-to-post" class="button-primary" href="javascript:void(0);"
-                          onClick="oesLodAdmin.copyToPost()"><?php
-                    _e('Copy to post', 'oes'); ?></a>
-            </div>
-            </div><?php endif; ?>
-        <div id="oes-admin-popup-frame" class="oes-lod-frame">
-            <div class="oes-admin-popup-frame-content" role="document">
-                <button type="button" id="oes-admin-popup-frame-close" onClick="oesLodAdmin.hidePanel()"><span></span>
-                </button>
-                <div class="oes-admin-popup-title"><h1><?php _e('Results', 'oes'); ?></h1></div>
-                <div class="oes-admin-popup-content">
-                    <div class="oes-lod-results">
-                        <div class="oes-admin-popup-information"><?php
-                            _e('You can find results for your search in the table below. Click on the ' .
-                                'icon to get further information from the selected database. Click on the link on the ' .
-                                'right to ' .
-                                'get to the database page. Select an entry by clicking on the checkbox on the left. ' .
-                                'If the post type support the LOD feature "Copy to Post" you will find a list of copy ' .
-                                'options on the right side. Select the options you want to copy to your post and ' .
-                                'confirm by pressing the button.', 'oes');
-                            ?>
-                        </div>
-                        <div class="oes-lod-results-table-wrapper">
-                            <table id="oes-lod-results-table">
-                                <thead>
-                                <tr class="oes-lod-results-table-header">
-                                    <th></th>
-                                    <th><?php _e('Name', 'oes'); ?></th>
-                                    <th class="oes-lod-results-table-header-type"><?php
-                                        _e('Type', 'oes'); ?></th>
-                                    <th><?php _e('ID', 'oes'); ?></th>
-                                    <th></th>
-                                </tr>
-                                </thead>
-                                <tbody id="oes-lod-results-table-tbody"><!-- filled by js --></tbody>
-                            </table>
-                            <div class="oes-lod-results-spinner"><?php
-                                echo oes_get_html_img(
-                                    plugins_url(OES_BASENAME . '/assets/images/spinner.gif'),
-                                    'waiting...',
-                                    false,
-                                    'oes-spinner'); ?></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="oes-admin-popup-frame-backdrop"></div>
-        </div>
-        </div><?php
-    endif;
-}
-
-
-/**
- * Execute LOD admin query (search).
- * @return void
- */
-function lod_search_query()
-{
-    /* validate nonce */
-    if (!wp_verify_nonce($_POST['nonce'], 'oes_lod_nonce'))
-        die('Invalid nonce.' . var_export($_POST, true));
-
-    $response = [];
-    $apiKey = $_POST['param']['oes-lod-authority-file'];
-    if (!empty($_POST['param']) && isset($_POST['param']['search_term']) && !empty($_POST['param']['search_term'])) {
-
-        /* post request */
-        if ($apiKey) {
-            $class = '\\OES\\API\\' . $apiKey . '_API';
-            $restAPI = class_exists($class) ? new $class() : new Rest_API();
-            $response['response'] = $restAPI->get_data($_POST['param']);
-        } else $response['response'] = json_encode(['error' => 'API Class not found.']);
-    } else $response['response'] = json_encode(['error' => 'No search term.']);
-
-
-    /* prepare copy to post options */
-    $oes = OES();
-    $post_type = $_POST['param']['post_type'] ?? null;
-    $lodOptions = $oes->post_types[$post_type]['lod'] ?? false;
-    $copyOptions = '';
-    if ($lodOptions && $apiKey) {
-
-        /* loop through fields and check if copy option is set for this field */
-        $fieldOptions = $oes->post_types[$post_type]['field_options'] ?? false;
-        if ($fieldOptions)
-            foreach ($fieldOptions as $fieldKey => $fieldParams)
-                foreach ($fieldParams as $paramKey => $param)
-                    if ($paramKey === $apiKey . '_properties')
-                        foreach ($param as $apiFieldKey)
-                            if ($apiFieldKey != 'base-timestamp') {
-
-                                /* get field object */
-                                $fieldObject = oes_get_field_object($fieldKey);
-                                $copyOptions .= '<li class="oes-lod-copy-option oes-lod-copy-option-' .
-                                    $apiKey . '">' .
-                                    oes_html_get_form_element(
-                                        'checkbox',
-                                        'oes-lod-' . $apiKey . '-copy[' . $apiFieldKey . '][' . $fieldKey . ']',
-                                        $apiFieldKey,
-                                        false,
-                                        [
-                                            'class' => 'oes-' . $apiKey . '-field-checkbox',
-                                            'label' => ($fieldObject ? $fieldObject['label'] : $fieldKey)
-                                        ]
-                                    ) . ': <span id="' . $apiFieldKey .
-                                    '_value" class="oes-lod-copy-value">-</span></li>';
-                            }
+            $schemaPath = $pathPrefix . "class-{$apiKey}_schema.php";
+            if (file_exists($schemaPath)) {
+                include_once $schemaPath;
+            } else {
+                \OES\Admin\Tools\register_tool('\OES\Admin\Tools\LOD_Schema', "schema-$apiKey", ['api_key' => $apiKey]);
+            }
+        }
     }
 
-    if (!empty($copyOptions)) $response['copy_options'] = $copyOptions;
-
-    /* add preview icon path */
-    $iconPath = '/includes/api/' . $apiKey . '/icon_' . $apiKey . '.png';
-    $response['icon_path'] = file_exists(OES_CORE_PLUGIN . $iconPath) ?
-        plugins_url(OES_BASENAME . $iconPath) :
-        plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
-
-    /* prepare return value */
-    header("Content-Type: application/json");
-    echo json_encode($response);
-
-    /* exit ajax function */
-    exit();
+    include_once __DIR__ . '/functions-meta_box.php';
+    add_action('add_meta_boxes', __NAMESPACE__ . '\\lod_add_meta_box', 10, 2);
 }
-
 
 /**
- * Add lod properties as post meta values.
- * @return void
+ * Execute LOD API Request.
+ *
+ * @param $request
+ * @return array|\WP_Error
  */
-function lod_add_post_meta()
+function rest_lod_search($request)
 {
 
-    /* validate nonce */
-    if (!wp_verify_nonce($_POST['nonce'], 'oes_lod_nonce'))
-        die('Invalid nonce.' . var_export($_POST, true));
+    $params = $request->get_param('param');
+    $apiKey = $params['authority_file'] ?? '';
+    $searchTerm = $params['search_term'] ?? '';
 
-    /* prepare response */
-    $response = [];
-    $apiKey = $_POST['param']['oes-lod-authority-file'];
-    if (!empty($_POST['param']) && $apiKey) {
+    if (!$apiKey || empty($searchTerm)) {
+        return new \WP_Error('no_search_term', 'Please provide a search term.', ['status' => 400]);
+    }
 
-        /* exit early if post is not publish or draft */
-        if (!in_array(get_post($_POST['post_id'])->post_status, ['publish', 'draft']))
-            $response['error'] = 'Post must be published or saved as draft.';
-        elseif (!empty($_POST['post_id']) && $post = get_post($_POST['post_id'])) {
+    $class = "\\OES\\API\\{$apiKey}_API";
+    $api = class_exists($class) ? new $class() : new Rest_API();
+    $responseData = $api->get_data($params);
 
-            /* get field options */
-            $fieldOptions = OES()->post_types[$post->post_type]['field_options'] ?? [];
+    $copyOptionsArray = [];
+    $oes = OES();
+    $postType = $params['post_type'] ?? null;
+    $lodOptions = $oes->post_types[$postType]['lod'] ?? [];
+    $fieldOptions = $oes->post_types[$postType]['field_options'] ?? [];
 
-            /* check for matching fields */
-            $timestamp = [];
-            $timestampField = false;
-            foreach ($fieldOptions as $fieldKey => $fieldParams)
-                if (isset($fieldParams[$apiKey . '_properties']))
-                    foreach ($fieldParams[$apiKey . '_properties'] as $apiOptionKey) {
+    if ($lodOptions) {
+        foreach ($fieldOptions as $fieldKey => $fieldParams) {
+            foreach ($fieldParams as $paramKey => $param) {
 
-                        /* check if new value for this field available, update and store if timestamp field found */
-                        if ($apiOptionKey === 'base-timestamp') $timestampField = $fieldKey;
-                        elseif (isset($_POST['param'][$apiOptionKey . '_value'])) {
+                if ($paramKey != $apiKey . '_properties') {
+                    continue;
+                }
 
-                            /* prepare new value */
-                            $newValue = false;
-                            $fieldObjectOriginal = oes_get_field_object($fieldKey);
+                if (!is_array($param)) {
+                    continue;
+                }
 
-                            /* only relevant for acf pro fields */
-                            //@oesDevelopment Multiple subfields - take only first one.
-                            if ($fieldObjectOriginal['type'] === 'repeater')
-                                $fieldObject = $fieldObjectOriginal['sub_fields'][0] ?? false;
-                            else $fieldObject = $fieldObjectOriginal;
-
-                            $rawValue = $_POST['param'][$apiOptionKey . '_value'];
-                            switch ($fieldObject['type']) {
-
-                                case 'text':
-                                case 'textarea':
-                                case 'wysiwyg' :
-                                case 'email' :
-                                case 'url' :
-                                    $newValue = $rawValue;
-                                    break;
-
-                                case 'number' :
-                                case 'range' :
-                                    $newValue = intval($rawValue) ?? false;
-                                    break;
-
-                                case 'true_false' :
-                                    $newValue = (bool)$rawValue;
-                                    break;
-
-                                case 'checkbox' :
-                                case 'radio' :
-                                case 'select' :
-                                    //@oesDevelopment What if multiple values are to be added at once
-                                    $choices = $fieldObject['choices'];
-                                    if (isset($choices[$rawValue])) $newValue = $rawValue;
-                                    elseif (in_array(strtolower($rawValue), $choices))
-                                        $newValue = array_search(strtolower($rawValue), $choices);
-                                    break;
-
-                                case 'taxonomy':
-
-                                    /* get new value */
-                                    $prepareValue = preg_split("/\r\n|\n|\r/", $rawValue);
-
-                                    /* loop through all values */
-                                    if (!empty($prepareValue))
-                                        foreach ($prepareValue as $singleValue) {
-
-                                            /* check the term if it does not already exist */
-                                            $termID = get_term_by('name',
-                                                $singleValue,
-                                                $fieldObject['taxonomy'])->term_id ??
-                                                false;
-
-                                            if (!$termID)
-                                                $termID = wp_insert_term($singleValue,
-                                                    $fieldObject['taxonomy'])['term_id'] ?? false;
-
-                                            /* prepare the new value */
-                                            if ($termID)
-                                                if ($fieldObject['field_type'] === 'multi_select' ||
-                                                    $fieldObjectOriginal['type'] === 'repeater') $newValue[] = $termID;
-                                                else {
-
-                                                    /* exit early after the first value if field does not allow multiple
-                                                    values */
-                                                    $newValue = $termID;
-                                                    break;
-                                                }
-                                        }
-                                    break;
-
-                                case 'date_picker' :
-                                case 'date_time_picker' :
-                                case 'time_picker' :
-                                    //@oesDevelopment Check for different time formats.
-                                    $newValue = date($rawValue) ?? false;
-                                    break;
-
-                                case 'link' :
-                                    //@oesDevelopment Check if title different from url.
-                                    $newValue = [
-                                        'title' => $rawValue,
-                                        'url' => $rawValue,
-                                        'target' => '_blank'
-                                    ];
-                                    break;
-
-                                case 'post_object' :
-                                case 'relationship' :
-                                case 'image' :
-                                case 'file' :
-                                case 'password' :
-                                case 'google_map' :
-                                default :
-                                    $newValue = false;
-                                    break;
-                            }
-
-                            $updated = false;
-                            if ($newValue)
-                                if ($fieldObjectOriginal['type'] === 'repeater') {
-
-                                    /* split value into new values */
-                                    $repeaterValue = [];
-                                    if (is_array($newValue))
-                                        foreach ($newValue as $singleValue)
-                                            $repeaterValue[] = [
-                                                $fieldObject['name'] => $singleValue
-                                            ];
-                                    elseif (is_string($newValue)) {
-                                        $splitValueString = preg_split("/\r\n|\n|\r/", $rawValue);
-                                        foreach ($splitValueString as $singleValue)
-                                            $repeaterValue[] = [
-                                                $fieldObject['name'] => $singleValue
-                                            ];
-                                    }
-                                    $updated = update_field($fieldKey, $repeaterValue, $_POST['post_id']);
-                                } else $updated = update_field($fieldKey, $newValue, $_POST['post_id']);
-                            if ($updated) $timestamp[] = $fieldKey . ':' . $rawValue;
-                        }
+                foreach ($param as $lodKey) {
+                    if ($lodKey === 'base-timestamp') {
+                        continue;
                     }
 
-            /* update timestamp */
-            if ($timestampField && !empty($timestamp)) {
-                $oldValue = oes_get_field($timestampField, $_POST['post_id']);
-                $newValue = date('d.m.Y h:i:s') .
-                    " Update fields:\r\n" . implode(",\r\n", $timestamp) .
-                    (empty($oldValue) ? '' : "\r\n\r\n") . $oldValue;
-                update_field($timestampField, $newValue, $_POST['post_id']);
+                    $fieldObject = oes_get_field_object($fieldKey);
+
+                    $copyOptionsArray[$fieldKey . ':' . $lodKey] = $fieldObject['label'] ?? $fieldKey;
+                }
             }
-        } else $response['error'] = 'Post ID missing.';
-    } else $response['error'] = 'Error.';
+        }
+    }
 
-    /* prepare return value */
-    header("Content-Type: application/json");
-    echo json_encode($response);
+    $iconPath = '/includes/api/' . $apiKey . '/icon_' . $apiKey . '.png';
+    $iconURL = file_exists(OES_CORE_PLUGIN . $iconPath)
+        ? plugins_url(OES_BASENAME . $iconPath)
+        : plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
 
-    /* exit ajax function */
-    exit();
+    return [
+        'response' => $responseData,
+        'icon_path' => $iconURL,
+        'copy_options' => $copyOptionsArray
+    ];
 }
 
+/**
+ * Copy selected data to post.
+ * @param $request
+ * @return true|\WP_Error
+ */
+function rest_copy_to_post($request)
+{
+
+    $currentPostID = $request->get_param('post_id');
+
+    if (!$currentPostID) {
+        return new \WP_Error('missing_post_id', __('Missing post ID.', 'oes'), ['status' => 400]);
+    }
+
+    $currentPost = get_post($currentPostID);
+
+    if (!$currentPost) {
+        return new \WP_Error('invalid_post', __('Invalid post.', 'oes'), ['status' => 400]);
+    }
+
+    if (!current_user_can('edit_post', $currentPostID)) {
+        return new \WP_Error('permission_denied', __('Permission denied.', 'oes'), ['status' => 400]);
+    }
+
+    if (!in_array($currentPost->post_status, ['publish', 'draft'], true)) {
+        return new \WP_Error('post_not_published', __('Post must be draft or published.', 'oes'), ['status' => 400]);
+    }
+
+    $apiKey = $request->get_param('authority_file');
+
+    if (!$apiKey) {
+        return new \WP_Error('missing_api_key', __('Missing API key.', 'oes'), ['status' => 400]);
+    }
+
+    $params = $request->get_param('param');
+
+    if (empty($params)) {
+        return new \WP_Error('missing_param', __('Missing parameters.', 'oes'), ['status' => 400]);
+    }
+
+    $timestampField = false;
+
+    $fieldOptions = OES()->post_types[$currentPost->post_type]['field_options'] ?? [];
+
+    if (!$fieldOptions) {
+        return true;
+    } else {
+        foreach ($fieldOptions as $fieldKey => $fieldParams) {
+            $properties = $fieldParams[$apiKey . '_properties'] ?? null;
+
+            if (is_array($properties) && in_array('base-timestamp', $properties, true)) {
+                $timestampField = $fieldKey;
+                break;
+            }
+        }
+    }
+
+    $timestamp = [];
+    foreach ($params as $key => $rawValue) {
+
+        if (!str_contains($key, ':')) {
+            continue;
+        }
+
+        [$fieldKey, $apiOptionKey] = array_pad(explode(':', $key), 2, $key);
+
+        if ($apiOptionKey === 'base-timestamp') {
+            $timestampField = $fieldKey;
+            continue;
+        }
+
+        if (empty($rawValue)) {
+            continue;
+        }
+
+        $fieldObjectOriginal = oes_get_field_object($fieldKey);
+
+        if (!$fieldObjectOriginal) {
+            continue;
+        }
+
+        $fieldObject = $fieldObjectOriginal;
+
+        if ($fieldObjectOriginal['type'] === 'repeater') {
+            $fieldObject = $fieldObjectOriginal['sub_fields'][0] ?? null;
+        }
+
+        if (!$fieldObject) {
+            continue;
+        }
+
+        $newValue = prepare_lod_field_value($fieldObject, $rawValue);
+
+        if ($newValue === false) {
+            continue;
+        }
+
+        if ($fieldObjectOriginal['type'] === 'repeater') {
+
+            $repeaterValue = [];
+
+            $values = is_array($newValue) ? $newValue : [$newValue];
+
+            foreach ($values as $value) {
+                $repeaterValue[] = [
+                    $fieldObject['name'] => $value
+                ];
+            }
+
+            $updated = update_field($fieldKey, $repeaterValue, $currentPostID);
+
+        } else {
+            $updated = update_field($fieldKey, $newValue, $currentPostID);
+        }
+
+        if ($updated) {
+            $collectValue = is_string($newValue) ? $newValue : json_encode($newValue);
+            $timestamp[] = $fieldKey . ':' . $collectValue;
+        }
+    }
+
+    if ($timestampField && $timestamp) {
+
+        $oldValue = oes_get_field($timestampField, $currentPostID);
+
+        $newValue =
+            current_time('d.m.Y H:i:s') .
+            " Update fields:\n" .
+            implode(",\n", $timestamp) .
+            ($oldValue ? "\n\n" . $oldValue : '');
+
+        update_field($timestampField, $newValue, $currentPostID);
+    }
+
+    return true;
+}
+
+/**
+ * Prepare a value for an ACF field based on field type.
+ *
+ * @param array $fieldObject ACF field configuration.
+ * @param mixed $rawValue Raw value retrieved from LOD API.
+ *
+ * @return mixed|false Prepared value or false if invalid.
+ */
+function prepare_lod_field_value(array $fieldObject, $rawValue)
+{
+    $type = $fieldObject['type'] ?? '';
+
+    switch ($type) {
+
+        case 'text':
+        case 'textarea':
+        case 'wysiwyg':
+        case 'email':
+        case 'url':
+            if (is_string($rawValue)) {
+                return sanitize_text_field($rawValue);
+            }
+
+            if (is_array($rawValue)) {
+                return implode(', ', array_map(function ($val) {
+                    return is_string($val) ? sanitize_text_field($val) : '';
+                }, $rawValue));
+            }
+
+            return '';
+
+        case 'number':
+        case 'range':
+            return is_numeric($rawValue) ? (int)$rawValue : false;
+
+        case 'true_false':
+            return filter_var($rawValue, FILTER_VALIDATE_BOOLEAN);
+
+        case 'checkbox':
+        case 'radio':
+        case 'select':
+            //@oesDevelopment What if multiple values are to be added at once
+            $choices = $fieldObject['choices'] ?? [];
+
+            if (isset($choices[$rawValue])) {
+                return $rawValue;
+            }
+
+            foreach ($choices as $key => $label) {
+                if (strtolower($label) === strtolower($rawValue)) {
+                    return $key;
+                }
+            }
+
+            return false;
+
+        case 'taxonomy':
+
+            $taxonomy = $fieldObject['taxonomy'] ?? null;
+
+            if (!$taxonomy) {
+                return false;
+            }
+
+            $values = preg_split("/\r\n|\n|\r|;|,/", $rawValue);
+            $values = array_filter(array_map('trim', $values));
+
+            if (!$values) {
+                return false;
+            }
+
+            $termIDs = [];
+
+            foreach ($values as $singleValue) {
+
+                $term = get_term_by('name', $singleValue, $taxonomy);
+
+                if (!$term) {
+                    $created = wp_insert_term($singleValue, $taxonomy);
+
+                    if (is_wp_error($created)) {
+                        continue;
+                    }
+
+                    $termIDs[] = $created['term_id'];
+                } else {
+                    $termIDs[] = $term->term_id;
+                }
+            }
+
+            if (!$termIDs) {
+                return false;
+            }
+
+            if (($fieldObject['field_type'] ?? '') === 'multi_select') {
+                return $termIDs;
+            }
+
+            return $termIDs[0];
+
+        case 'date_picker':
+        case 'date_time_picker':
+        case 'time_picker':
+            //@oesDevelopment Check for different time formats.
+            $timestamp = strtotime($rawValue);
+            return $timestamp ? date('Y-m-d H:i:s', $timestamp) : false;
+
+        case 'link':
+            //@oesDevelopment Check if title different from url.
+            $url = esc_url_raw($rawValue);
+
+            if (!$url) {
+                return false;
+            }
+
+            return [
+                'title' => $url,
+                'url' => $url,
+                'target' => '_blank'
+            ];
+
+        case 'post_object' :
+        case 'relationship' :
+        case 'image' :
+        case 'file' :
+        case 'password' :
+        case 'google_map' :
+        default:
+            return false;
+    }
+}
 
 /**
  * Execute LOD query for frontend box.
  */
-function lod_box()
+function lod_box(): void
+{
+    if (!check_ajax_referer('oes_lod_nonce', 'nonce', false)) {
+        wp_send_json_error('Invalid nonce.');
+    }
+
+    $params = isset($_POST['param']) ? (array)$_POST['param'] : [];
+
+    $apiKey = sanitize_key($params['api'] ?? '');
+    $id = sanitize_text_field($params['lod_id'] ?? '');
+    $boxID = sanitize_text_field($params['box_id'] ?? '');
+
+    if (!$apiKey || !$id) {
+        wp_send_json_error('Missing parameters.');
+    }
+
+    if (!isset(OES()->apis[$apiKey])) {
+        wp_send_json_error('Unknown API.');
+    }
+
+    $apiClass = "\\OES\\API\\{$apiKey}_API";
+
+    if (!class_exists($apiClass)) {
+        wp_send_json_error('API class not found.');
+    }
+
+    $restAPI = new $apiClass();
+
+    $data = $restAPI->get_data([
+        'lod_id' => $id
+    ]);
+
+    $firstEntry = !empty($data[0]) ? (array)$data[0] : [];
+
+    $displayClass = "\\OES\\API\\{$apiKey}_Display_Helper";
+    $displayHelper = class_exists($displayClass) ? new $displayClass() : new Display_Helper();
+
+    $html = $displayHelper->html($firstEntry);
+
+    wp_send_json([
+        'html' => $html,
+        'id' => $id,
+        'box_id' => $boxID
+    ]);
+}
+
+/**
+ * Register LOD API Rest Routes
+ * @return void
+ */
+function register_rest_routes(): void
 {
 
-    /* validate nonce */
-    if (!wp_verify_nonce($_POST['nonce'], 'oes_lod_nonce'))
-        die('Invalid nonce.' . var_export($_POST, true));
+    register_rest_route('oes/v1', '/apis', [
+        'methods' => 'GET',
+        'callback' => function () {
 
-    $response = [];
-    $apiKey = $_POST['param']['api'] ?? false;
-    if (!empty($_POST['param']['lodid'])) {
+            $oes = OES();
+            $apis = $oes->apis ?? [];
 
-        /* post request */
-        if ($apiKey) {
-            $class = '\\OES\\API\\' . $apiKey . '_API';
-            $restAPI = class_exists($class) ? new $class() : new Rest_API();
-            $restAPI->get_data(['lodid' => $_POST['param']['lodid']]);
-            $response['html'] = $restAPI->get_data_for_display();
-            $response['id'] = $_POST['param']['lodid'];
-            $response['boxid'] = $_POST['param']['boxid'];
-        } else $response['response'] = json_encode(['error' => 'API Class not found.']);
-    } else $response['response'] = json_encode(['No search term.']);
+            $data = [];
 
-    /* prepare return value */
-    header("Content-Type: application/json");
-    echo json_encode($response);
+            foreach ($apis as $key => $api) {
+                $data[] = [
+                    'key' => $key,
+                    'label' => $api->label ?? '',
+                    'database_link' => $api->database_link ?? '',
+                    'search_options' => $api->search_options ?? [],
+                    'post_type' => 'post',
+                ];
+            }
 
-    /* exit ajax function */
-    exit();
+            return $data;
+        },
+        'permission_callback' => '__return_true'
+    ]);
+
+    register_rest_route('oes/v1', '/lod-search', [
+        'methods' => 'POST',
+        'callback' => '\OES\API\rest_lod_search',
+        'permission_callback' => '__return_true',
+        'args' => [
+            'param' => [
+                'required' => true,
+                'validate_callback' => function ($param) {
+                    return is_array($param);
+                },
+            ],
+        ],
+    ]);
+
+    register_rest_route('oes/v1', '/lod-copy', [
+        'methods' => 'POST',
+        'callback' => '\OES\API\rest_copy_to_post',
+        'permission_callback' => function () {
+            return current_user_can('edit_posts');
+        },
+        'args' => [
+            'param' => [
+                'required' => true,
+                'validate_callback' => function ($param) {
+                    return is_array($param);
+                },
+            ],
+            'post_id' => [
+                'required' => true,
+                'validate_callback' => function ($post_id) {
+                    return is_numeric($post_id);
+                },
+            ],
+        ],
+    ]);
 }

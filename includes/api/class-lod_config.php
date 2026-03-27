@@ -20,14 +20,9 @@ if (!class_exists('LOD')) :
      */
     class LOD extends Config
     {
-
         /** @inheritdoc */
         public bool $empty_allowed = true;
-
-        /** @var string The api key. */
         public string $api_key = 'lod';
-
-        /** @var boolean Include credentials password. */
         public bool $credentials_password = true;
 
         /** @inheritdoc */
