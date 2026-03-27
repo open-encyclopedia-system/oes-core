@@ -292,7 +292,7 @@ if (!class_exists('OES_Core')) :
             \OES\Features\formula_functions();
             \OES\Features\versioning();
             \OES\Features\cache($is_enabled('cache'));
-            \OES\Features\lod_api($is_enabled('lod_apis'));
+            \OES\Features\lod_apis($is_enabled('lod_apis'));
 
             \OES\Features\icons();
             \OES\Features\popup();

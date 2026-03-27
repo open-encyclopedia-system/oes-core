@@ -31,10 +31,10 @@ if (!class_exists('LOC_Interface')) {
             /* get loc object */
             if ($id = $args['id'] ?? false) {
 
-                $iconPath = '/includes/api/' . $this->identifier . '/icon_' . $this->identifier . '.png';
+                $iconPath = '/includes/lod/' . $this->identifier . '/icon_' . $this->identifier . '.png';
                 $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
                     plugins_url(OES_BASENAME . $iconPath) :
-                    plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
+                    plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
 
 
                 /* if no modification exists, replace comma in label*/

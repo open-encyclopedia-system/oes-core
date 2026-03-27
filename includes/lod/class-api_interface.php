@@ -30,6 +30,9 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
         /** @var bool Rest API requires credentials. */
         public bool $credentials = false;
 
+        /** @var bool Use config schema. */
+        public bool $schema = true;
+
         /** @var string Rest API schema version (if existing). */
         public string $schema_version = '';
 
@@ -50,7 +53,7 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
             $this->search_options = $this->set_search_options();
             $this->config_options = $this->set_config_options();
 
-            $cssFile = OES_CORE_PLUGIN . "/includes/api/{$this->identifier}/{$this->identifier}.css";
+            $cssFile = OES_CORE_PLUGIN . "/includes/lod/{$this->identifier}/{$this->identifier}.css";
             if (file_exists($cssFile)) {
                 add_action('wp_enqueue_scripts', [$this, 'enqueue_style']);
             }
@@ -67,7 +70,7 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
         function enqueue_style(): void
         {
             wp_register_style('oes-' . $this->identifier,
-                plugins_url(OES_BASENAME . '/includes/api/' . $this->identifier . '/' . $this->identifier . '.css'));
+                plugins_url(OES_BASENAME . '/includes/lod/' . $this->identifier . '/' . $this->identifier . '.css'));
             wp_enqueue_style('oes-' . $this->identifier);
         }
 
@@ -86,10 +89,10 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
             $id = $args['id'] ?? null;
             if (!$id) return $content;
 
-            $iconPath = OES_CORE_PLUGIN . "/includes/api/{$this->identifier}/icon_{$this->identifier}.png";
+            $iconPath = OES_CORE_PLUGIN . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png";
             $iconUrl = file_exists($iconPath)
-                ? plugins_url(OES_BASENAME . "/includes/api/{$this->identifier}/icon_{$this->identifier}.png")
-                : plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
+                ? plugins_url(OES_BASENAME . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png")
+                : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
 
             $label = $args['label'] ?? $id;
             $label = has_filter('oes/api_label_modify')

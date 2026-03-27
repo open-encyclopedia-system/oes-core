@@ -8,14 +8,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * Enqueue admin scripts for API.
  * @return void
  */
-function admin_scripts(): void
+function lod_admin_scripts(): void
 {
-    wp_register_style('oes-api', plugins_url(OES_BASENAME . '/includes/api/assets/api.css'));
-    wp_enqueue_style('oes-api');
+    wp_register_style('oes-lod', plugins_url(OES_BASENAME . '/includes/lod/assets/lod.css'));
+    wp_enqueue_style('oes-lod');
 
     wp_enqueue_script(
         'oes-lod-app',
-        plugins_url(OES_BASENAME . '/includes/api/assets/lod-app' . oes_minify() . '.js'),
+        plugins_url(OES_BASENAME . '/includes/lod/assets/lod-app' . oes_minify() . '.js'),
         [
             'wp-plugins',
             'wp-edit-post',
@@ -34,30 +34,30 @@ function admin_scripts(): void
  * Enqueue scripts and styles for frontend display of API elements.
  * @return void
  */
-function scripts(): void
+function lod_scripts(): void
 {
-    wp_register_script('oes-api',
-        plugins_url(OES_BASENAME . '/includes/api/assets/api-frontend' . oes_minify() . '.js'),
+    wp_register_script('oes-lod',
+        plugins_url(OES_BASENAME . '/includes/lod/assets/lod-frontend' . oes_minify() . '.js'),
         ['jquery'], false, true);
     wp_localize_script(
-        'oes-api',
+        'oes-lod',
         'oesLodAJAX',
         [
             'ajax_url' => admin_url('admin-ajax.php'),
             'ajax_nonce' => wp_create_nonce('oes_lod_nonce')
         ]
     );
-    wp_enqueue_script('oes-api');
+    wp_enqueue_script('oes-lod');
 
-    wp_register_style('oes-api', plugins_url(OES_BASENAME . '/includes/api/assets/api-frontend.css'));
-    wp_enqueue_style('oes-api');
+    wp_register_style('oes-lod', plugins_url(OES_BASENAME . '/includes/lod/assets/lod-frontend.css'));
+    wp_enqueue_style('oes-lod');
 }
 
 /**
  * Initialize api interfaces.
  * @return void
  */
-function initialize(): void
+function lod_initialize(): void
 {
     include_once __DIR__ . '/class-api_interface.php';
 
@@ -154,10 +154,10 @@ function rest_lod_search($request)
         }
     }
 
-    $iconPath = '/includes/api/' . $apiKey . '/icon_' . $apiKey . '.png';
+    $iconPath = '/includes/lod/' . $apiKey . '/icon_' . $apiKey . '.png';
     $iconURL = file_exists(OES_CORE_PLUGIN . $iconPath)
         ? plugins_url(OES_BASENAME . $iconPath)
-        : plugins_url(OES_BASENAME . '/includes/api/assets/icon_lod_preview.png');
+        : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
 
     return [
         'response' => $responseData,
@@ -488,7 +488,7 @@ function lod_box(): void
  * Register LOD API Rest Routes
  * @return void
  */
-function register_rest_routes(): void
+function lod_register_rest_routes(): void
 {
 
     register_rest_route('oes/v1', '/apis', [

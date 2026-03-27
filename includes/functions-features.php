@@ -541,7 +541,7 @@ function search(): void
 }
 
 /**
- * Include LOD API.
+ * Include LOD APIs
  *
  * This enables the "Linked Open Data" feature, which allows searching for linked open data, such as GND or
  * Geonames. The results can be used as shortcodes or copied into post objects.
@@ -549,21 +549,21 @@ function search(): void
  * @param bool $enabled Whether the feature setup should be enabled. Defaults to true.
  * @return void
  */
-function lod_api(bool $enabled = true): void
+function lod_apis(bool $enabled = true): void
 {
-    include_once __DIR__ . '/api/functions-rest_api.php';
-    include_once __DIR__ . '/api/class-rest_api.php';
-    include_once __DIR__ . '/api/class-display_helper.php';
+    include_once __DIR__ . '/lod/functions-rest_api.php';
+    include_once __DIR__ . '/lod/class-rest_api.php';
+    include_once __DIR__ . '/lod/class-display_helper.php';
     if ($enabled) {
 
-        add_action('wp_enqueue_scripts', '\OES\API\scripts');
-        add_action('oes/initialized', '\OES\API\initialize');
+        add_action('wp_enqueue_scripts', '\OES\API\lod_scripts');
+        add_action('oes/initialized', '\OES\API\lod_initialize');
         add_action('wp_ajax_oes_lod_box', '\OES\API\lod_box');
         add_action('wp_ajax_nopriv_oes_lod_box', '\OES\API\lod_box');
-        add_action('rest_api_init', '\OES\API\register_rest_routes');
+        add_action('rest_api_init', '\OES\API\lod_register_rest_routes');
 
         if (is_admin()) {
-            add_action('admin_enqueue_scripts', '\OES\API\admin_scripts');
+            add_action('admin_enqueue_scripts', '\OES\API\lod_admin_scripts');
         }
     }
 }
