@@ -47,6 +47,7 @@ function register(): void
         'back-to-top',
         'citation',
         'cite-as',
+        'context-link',
         'empty-result',
         'featured-image',
         'featured-post',
