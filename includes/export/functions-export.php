@@ -74,6 +74,13 @@ function export_post_with_acf_to_json(int $postID): string {
     }
 
     $data = [
+        'name' => get_bloginfo('name'),
+        'description' => get_bloginfo('description'),
+        'url' => get_site_url(),
+        'home' => get_home_url(),
+        'language' => get_bloginfo('language'),
+        'charset' => get_bloginfo('charset'),
+        'timezone' => get_option('timezone_string'),
         'ID' => $post->ID,
         'slug' => $post->post_name,
         'type' => $post->post_type,
