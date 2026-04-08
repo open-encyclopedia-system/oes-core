@@ -12,7 +12,13 @@ function register_rest_routes(): void {
         'methods' => 'GET',
         'permission_callback' => '__return_true',
         'callback' => function ($request) {
-            return json_decode(export_post_with_acf_to_json($request['id']), true);
+
+            $json = export_post_with_acf_to_json($request['id']);
+
+            header('Content-Type: application/json; charset=utf-8');
+
+            echo $json;
+            exit;
         }
     ]);
 }
@@ -73,6 +79,7 @@ function export_post_with_acf_to_json(int $postID): string {
         'type' => $post->post_type,
         'status' => $post->post_status,
         'title' => get_the_title($post),
+        'content_raw' => $post->post_content,
         'content' => apply_filters('the_content', $post->post_content),
         'excerpt' => get_the_excerpt($post),
         'link' => get_permalink($post),
@@ -127,5 +134,5 @@ function export_post_with_acf_to_json(int $postID): string {
         }
     }
 
-    return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 }
