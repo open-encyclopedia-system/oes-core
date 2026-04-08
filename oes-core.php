@@ -304,6 +304,7 @@ if (!class_exists('OES_Core')) :
             \OES\Features\labels();
             \OES\Features\language_switch(!$this->block_theme);
             \OES\Features\search();
+            \OES\Features\export();
             \OES\Features\shortcodes();
 
             /**

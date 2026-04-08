@@ -541,6 +541,19 @@ function search(): void
 }
 
 /**
+ * Include export format.
+ *
+ * This enables the "Export" feature, which is used in applications that include export formats.
+ *
+ * @return void
+ */
+function export(): void
+{
+    include_once __DIR__ . '/export/functions-export.php';
+    add_action('rest_api_init', '\OES\Export\register_rest_routes');
+}
+
+/**
  * Include LOD APIs
  *
  * This enables the "Linked Open Data" feature, which allows searching for linked open data, such as GND or
