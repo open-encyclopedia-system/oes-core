@@ -40,6 +40,9 @@
 - Remove filter 'oes/set_archive_data_caching_enabled'
 - Remove parameters 3 and 5 from filter 'oes/api_gnd_display_entry'
 
+### Fix
+- fix warning on custom post archive page
+
 ## 2.4.4 (in development)
 ### New Filters / Functions
 - Added filter: 'oes/get_literature_field_display_value' 

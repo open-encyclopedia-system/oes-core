@@ -993,8 +993,10 @@ function insert_data_model_as_an_oes_objects(array $dataModel = []): void
             /* check if taxonomy or post type */
             if (isset($oesObject['taxonomy']) && $oesObject['taxonomy']) insert_taxonomy_as_an_oes_object($oesObject);
             else {
-                if (!isset($oesObject['post_type'])) $oesObject['post_type'] = $key;
-                insert_post_type_as_an_oes_object($oesObject);
+                if(isset($oesObject['register_args']['post_type'])){
+                    unset($oesObject['register_args']['post_type']); //@oesLegacy
+                }
+                insert_post_type_as_an_oes_object($oesObject, $key);
             }
         }
 }
@@ -1028,10 +1030,9 @@ function insert_general_config_as_an_oes_object(array $args = []): void
  * @param array $data The object data.
  * @return bool Return true on success.
  */
-function insert_post_type_as_an_oes_object(array $data = []): bool
+function insert_post_type_as_an_oes_object(array $data = [], string $postTypeKey  = ''): bool
 {
     /* prepare name and args, skip if post type key is longer than 20 characters. */
-    $postTypeKey = $data['post_type'] ?? false;
     if (!$postTypeKey || strlen($postTypeKey) > 20)
         return oes_write_log(sprintf(__('The post type key must have at least 3 characters and not exceed 20 ' .
             'characters. Skip registration of: %s'), $postTypeKey));
