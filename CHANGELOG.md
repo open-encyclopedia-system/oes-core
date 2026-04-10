@@ -16,7 +16,7 @@
 - Introduce factory_service and improved data model factory 
 - Introduce cache database table
 - Introduce new LOD API: ROR
-- Introduce new LOD API: ORCID (prepared)
+- Introduce new LOD API: ORCID
 - Introduce Display_Helper for LOD APIs
 - Introduce new block: Context Link
 - Re-do operations and feature display
@@ -30,6 +30,7 @@
 - Improve caching
 - Fix encoding issues when editing settings
 - LOD query via react
+- make language switch block available outside of navigation
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
