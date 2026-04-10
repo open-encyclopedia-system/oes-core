@@ -36,6 +36,12 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
         /** @var string Rest API schema version (if existing). */
         public string $schema_version = '';
 
+        /** @var bool Include a preview box. */
+        public bool $preview_box = false;
+
+        /** @var string Direct record link prefix. */
+        public string $url = '';
+
         /* The properties for matching and configuration. */
         public const PROPERTIES = [];
 
@@ -99,8 +105,9 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
                 ? apply_filters('oes/api_label_modify', $label, $this->identifier, $id)
                 : str_replace(';', ',', $label);
 
-            return sprintf(
-                '<span class="oes-lod-popup oes-popup" data-fn="popup_lod%s">
+            if($this->preview_box) {
+                return sprintf(
+                    '<span class="oes-lod-popup oes-popup" data-fn="popup_lod%s">
             <a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lod_id="%s" data-box_id="%s">
                 %s&nbsp;%s
             </a>
@@ -108,17 +115,27 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
         <span class="oes-lod-box-%s oes-lod-popup__popup oes-popup__popup" data-fn="popup_lod%s" id="oes-lod-box-%s">
             %s
         </span>',
-                esc_attr($id),
-                esc_attr($this->identifier),
-                esc_attr($id),
-                esc_attr($apiBoxCounter),
-                esc_html($label),
-                oes_get_html_img($iconUrl, 'oes-' . $this->identifier . '-icon'),
-                esc_attr($apiBoxCounter),
-                esc_attr($id),
-                esc_attr($apiBoxCounter),
-                oes_get_html_img(plugins_url(OES_BASENAME . '/assets/images/spinner.gif'), 'waiting...', false, 'oes-spinner')
-            );
+                    esc_attr($id),
+                    esc_attr($this->identifier),
+                    esc_attr($id),
+                    esc_attr($apiBoxCounter),
+                    esc_html($label),
+                    oes_get_html_img($iconUrl, 'oes-' . $this->identifier . '-icon'),
+                    esc_attr($apiBoxCounter),
+                    esc_attr($id),
+                    esc_attr($apiBoxCounter),
+                    oes_get_html_img(plugins_url(OES_BASENAME . '/assets/images/spinner.gif'), 'waiting...', false, 'oes-spinner')
+                );
+            }
+            elseif(!empty($this->url)) {
+                return sprintf('<a href="%s" class="oes-lodlink-db" target="_blank">%s&nbsp;%s</a>',
+                    $this->url . $id,
+                    esc_html($label),
+                    oes_get_html_img($iconUrl, 'oes-' . $this->identifier . '-icon')
+                );
+            }
+
+            return '';
         }
 
         /**
@@ -138,37 +155,9 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
             
             foreach (static::SEARCH_PARAMETERS as $option) {
 
-                $defaultClasses = [
-                    'oes-lod__search-option',
-                    'oes-' . $this->identifier . '-search-option'
-                ];
-
-                if (!empty($option['args']['class'])) {
-                    $customClasses = explode(' ', $option['args']['class']);
-                    $defaultClasses = array_merge($defaultClasses, $customClasses);
-                }
-
-                $option['args']['class'] = implode(' ', array_unique($defaultClasses));
-
                 $optionID = $option['id'] ?? 'oes-lod-missing-id';
 
-                $labelHtml = sprintf(
-                    '<label for="%1$s">%2$s</label>',
-                    esc_attr($optionID),
-                    esc_html($option['label'] ?? '[Label missing]')
-                );
-
-                $formHtml = oes_html_get_form_element(
-                    $option['type'] ?? 'checkbox',
-                    $optionID,
-                    $optionID,
-                    $option['value'] ?? '',
-                    $option['args'] ?? []
-                );
-
                 $searchOptions[] = [
-                    'label2' => $labelHtml,
-                    'form'  => $formHtml, //TODO
                     'id'    => $optionID,
                     'label' => $option['label'] ?? '[Label missing]',
                     'type'  => $option['type'] ?? 'select',

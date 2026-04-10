@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('ORCID')) :
+if (!class_exists('ORCID')) {
 
     /**
      * Class ORCID
@@ -15,7 +15,6 @@ if (!class_exists('ORCID')) :
      */
     class ORCID extends LOD
     {
-        /** @inheritdoc */
         public string $api_key = 'orcid';
         public bool $credentials_password = false;
 
@@ -45,7 +44,5 @@ if (!class_exists('ORCID')) :
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\ORCID', 'orcid');
-
-endif;
+}

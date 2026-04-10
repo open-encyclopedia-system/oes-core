@@ -417,9 +417,7 @@
                                                 Object.entries(entry.entry || {}).map(([key, value]) =>
                                                     el('tr', {key},
                                                         el('th', {}, value.label),
-                                                        el('td', {}, Array.isArray(value.raw) ? el('ul', {},
-                                                            value.raw.map((v, i) => el('li', {key: i}, v))
-                                                        ) : value.raw)
+                                                        el('td', {}, value.value)
                                                     )
                                                 )
                                             )

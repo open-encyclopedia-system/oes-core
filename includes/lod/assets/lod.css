@@ -114,6 +114,10 @@ body:not(.block-editor-page) .oes-lod__copy {
 .oes-lod__results th {
   font-weight: 600;
 }
+.oes-lod__results tr:last-child th,
+.oes-lod__results tr:last-child td {
+  border-bottom: none;
+}
 .oes-lod__results-entry td span {
   display: inline-flex;
 }
@@ -177,4 +181,4 @@ body:not(.block-editor-page) .oes-lod__copy {
   }
 }
 
-/*# sourceMappingURL=api.css.map */
+/*# sourceMappingURL=lod.css.map */

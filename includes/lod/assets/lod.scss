@@ -142,6 +142,13 @@ body:not(.block-editor-page) {
     font-weight: 600;
   }
 
+  tr:last-child {
+    th,
+    td {
+      border-bottom: none;
+    }
+  }
+
   &-entry {
 
     td span {

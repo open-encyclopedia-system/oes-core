@@ -13,15 +13,24 @@ if (!class_exists('\OES\API\Display_Helper')) {
     {
 
         /** @var string|mixed The displayed language. */
-        public string $language = '';
+        public string $language = 'german';
 
         /**
          * @param array $args
          */
-        function __construct(array $args = []) {
-            if($args['language'] ?? false) {
-                $this->language = $args['language'];
-            }
+        public function __construct(array $args = []) {
+            $this->language = $this->get_language($args['date_locale']);
+        }
+
+        /**
+         * Get entry language.
+         *
+         * @var string $locale The date locale.
+         * @return string
+         */
+        protected function get_language(string $locale = 'de_DE'): string
+        {
+            return $locale === 'de_DE' ? 'german' : 'english';
         }
 
         /**
@@ -38,6 +47,11 @@ if (!class_exists('\OES\API\Display_Helper')) {
 
             $table = '<table class="is-style-oes-simple">';
             foreach ($tableData as $row) {
+
+                if((!$row['frontend'] ?? true)){
+                    continue;
+                }
+
                 $table .= '<tr><th>' . $row['label'] . '</th><td>' . $row['value'] . '</td></tr>';
             }
             $table .= '</table>';
@@ -52,7 +66,15 @@ if (!class_exists('\OES\API\Display_Helper')) {
          * @return mixed|string Return the title.
          */
         protected function get_title($entry){
-            return $entry['link_frontend'] ?? ($entry['name'] ?? 'Entry name and link missing.');
+
+            $text = $entry['text'] ?? __('Entry name missing.', 'oes');
+            $link = $entry['link'] ?? '#';
+
+            if(empty($link)){
+               return $text;
+            }
+
+            return '<a href="' . $link . '" target="_blank">' . $text . '</a>';
         }
 
         /**
@@ -62,7 +84,7 @@ if (!class_exists('\OES\API\Display_Helper')) {
          * @return mixed Return the modified entry data.
          */
         protected function get_table($entry){
-            return $entry['entry'];
+            return $entry['entry'] ?? [];
         }
 
         /**

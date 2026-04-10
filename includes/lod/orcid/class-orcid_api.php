@@ -11,89 +11,78 @@ if (!class_exists('ORCID_API')) {
      */
     class ORCID_API extends Rest_API
     {
-        /** @inheritdoc */
-        public string $identifier = 'ror';
-        public string $url = 'https://pub.orcid.org/v3.0/search/';
-        public string $url_single = 'https://pub.orcid.org/v3.0/';
+        public string $identifier = 'orcid';
+        public string $url = 'https://pub.orcid.org/v3.0/';
 
         /** @inheritdoc */
-        public function get_request_url(string $url, array $args): string
+        protected function get_request_url_search(string $url, array $args, string $searchTerm): string
         {
-            if (empty($url)) {
-                $url = $this->url;
-            }
-
-            if ($args['lod_id'] ?? false) {
-                return $this->url_single . $args['lod_id'] . '/person';
-            }
-
-            $this->search_term = $args['search_term'] ?? '';
-
-            if (!empty($args['search_term'])) {
-                $query = sprintf(
-                    'given-names:%1$s OR family-name:%1$s OR credit-name:%1$s',
-                    $args['search_term']
-                );
-                $url = add_query_arg('q', urlencode($query), $url);
-            }
-
-            if (!empty($args['page'])) {
-                $rows = 10;
-                $start = (intval($args['page']) - 1) * $rows;
-
-                $url = add_query_arg('rows', $rows, $url);
-                $url = add_query_arg('start', $start, $url);
-            }
-
-            return $url;
+            $query = sprintf(
+                'given-names:%1$s OR family-name:%1$s OR credit-name:%1$s',
+                $args['search_term']
+            );
+            return add_query_arg('q', urlencode($query), $url . 'expanded-search/');
         }
 
         /** @inheritdoc */
-        public function transform_data(array $args = [])
+        protected function get_request_url_single(string $url, array $args, string $id): string
         {
-            if ($this->request_error) {
-                return $this->request_error;
-            }
-
-            if (!$this->data || !isset($this->data['items'])) {
-                return [];
-            }
-
-            $properties = ORCID_Interface::PROPERTIES;;
-
-            $transformed = [];
-
-            foreach ($this->data['items'] as $item) {
-
-                $path = $item->{'orcid-identifier'}->path;
-                $uri = $item->{'orcid-identifier'}->uri;
-
-                $transformed[] = [
-                    'entry' => [],
-                    'id' => $path,
-                    'name' => $path,
-                    'type' => __('', 'oes'),
-                    'link' => $uri,
-                    'link_frontend' => '<a href="' . $uri . '" target="_blank">' . $path . '</a>',
-                ];
-            }
-
-            return $this->transformed_data = $transformed;
+            return $this->url . $id . '/record';
         }
 
         /** @inheritdoc */
-        public function get_data_from_response($response): array
+        protected function get_data_from_response($response): array
         {
-            if (isset($response->result)) {
-                return ['items' => (array)$response->result];
+            if (property_exists($response, 'expanded-result')) {
+                return ['items' => (array)$response->{"expanded-result"}];
             }
 
-            //TODO
-            if($response->id ?? false) {
+            if(property_exists($response, 'orcid-identifier')) {
                 return ['items' => [(array)$response]];
             }
 
             return [];
+        }
+
+        /** @inheritdoc */
+        protected function get_entry_id($entry, $item): string
+        {
+            $entryID = $entry['orcid-identifier']['value'] ?? '';
+
+            if(!empty($entryID)) {
+                return $entryID;
+            }
+
+            if(property_exists($item, 'orcid-id')) {
+                return $item->{'orcid-id'};
+            }
+
+            return '';
+        }
+
+        /** @inheritdoc */
+        protected function get_entry_name($entry, $item): string
+        {
+            $name = $entry['person']['value'] ?? '';
+
+            if(!empty($name)) {
+                return $name;
+            }
+
+            $names[] = $entry['given-names']['value'] ?? '';
+            $names[] = $entry['family-names']['value'] ?? '';
+            return trim(implode(' ', $names));
+        }
+
+        /** @inheritdoc */
+        protected function get_entry_type($entry, $item): string {
+            return __('ORCID', 'oes');
+        }
+
+        /** @inheritdoc */
+        protected function get_entry_link($entry, $item): string {
+            $id = $this->get_entry_id($entry, $item);
+            return 'https://orcid.org/' . $id;
         }
     }
 }

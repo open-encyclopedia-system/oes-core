@@ -8,21 +8,19 @@ if (!class_exists('ROR_Interface')) {
 
     /**
      * ROR Interface
-     *
-     * @oesDevelopment Read the properties from API?
      */
     class ROR_Interface extends API_Interface
     {
-
-        /** @inheritdoc */
         public string $identifier = 'ror';
         public string $label = 'ROR';
         public string $database_link = 'https://ror.org/';
+        public string $url = 'https://ror.org/';
         public string $schema_version = '2.1';
 
         const PROPERTIES = [
-            'rorID' => [
-                'label' => ['german' => 'ID', 'english' => 'ID']
+            'id' => [
+                'label' => ['german' => 'ID', 'english' => 'ID'],
+                'frontend' => false
             ],
             'names' => [
                 'label' => ['german' => 'Names', 'english' => 'Names'],
@@ -89,8 +87,6 @@ if (!class_exists('ROR_Interface')) {
                 'pattern' => '{type} {preferred} ({all})'
             ],
         ];
-
-        const SEARCH_PARAMETERS = [];
 
     }
 

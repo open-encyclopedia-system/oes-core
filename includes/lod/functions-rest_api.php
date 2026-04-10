@@ -36,6 +36,10 @@ function lod_admin_scripts(): void
  */
 function lod_scripts(): void
 {
+    global $oes, $oes_language;
+
+    $dateLocale = $oes->languages[$oes_language]['locale'] ?? 'en_BE';
+
     wp_register_script('oes-lod',
         plugins_url(OES_BASENAME . '/includes/lod/assets/lod-frontend' . oes_minify() . '.js'),
         ['jquery'], false, true);
@@ -44,7 +48,8 @@ function lod_scripts(): void
         'oesLodAJAX',
         [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'ajax_nonce' => wp_create_nonce('oes_lod_nonce')
+            'ajax_nonce' => wp_create_nonce('oes_lod_nonce'),
+            'date_locale' => $dateLocale
         ]
     );
     wp_enqueue_script('oes-lod');
@@ -119,8 +124,8 @@ function rest_lod_search($request)
         return new \WP_Error('no_search_term', 'Please provide a search term.', ['status' => 400]);
     }
 
-    $class = "\\OES\\API\\{$apiKey}_API";
-    $api = class_exists($class) ? new $class() : new Rest_API();
+    $apiClass = "\\OES\\API\\{$apiKey}_API";
+    $api = class_exists($apiClass) ? new $apiClass() : new Rest_API();
     $responseData = $api->get_data($params);
 
     $copyOptionsArray = [];
@@ -450,6 +455,8 @@ function lod_box(): void
     $id = sanitize_text_field($params['lod_id'] ?? '');
     $boxID = sanitize_text_field($params['box_id'] ?? '');
 
+    $dateLocale = $_POST['date_locale'] ?? 'en_BE';
+
     if (!$apiKey || !$id) {
         wp_send_json_error('Missing parameters.');
     }
@@ -464,7 +471,8 @@ function lod_box(): void
         wp_send_json_error('API class not found.');
     }
 
-    $restAPI = new $apiClass();
+    $apiArgs = ['date_locale' => $dateLocale];
+    $restAPI = new $apiClass('', $apiArgs);
 
     $data = $restAPI->get_data([
         'lod_id' => $id
@@ -473,7 +481,8 @@ function lod_box(): void
     $firstEntry = !empty($data[0]) ? (array)$data[0] : [];
 
     $displayClass = "\\OES\\API\\{$apiKey}_Display_Helper";
-    $displayHelper = class_exists($displayClass) ? new $displayClass() : new Display_Helper();
+    $displayArgs = ['date_locale' => $dateLocale];
+    $displayHelper = class_exists($displayClass) ? new $displayClass($displayArgs) : new Display_Helper($displayArgs);
 
     $html = $displayHelper->html($firstEntry);
 

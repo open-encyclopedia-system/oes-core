@@ -8,22 +8,46 @@ if (!class_exists('ORCID_Interface')) {
 
     /**
      * ORCID Interface
-     *
-     * @oesDevelopment Read the properties from API?
      */
     class ORCID_Interface extends API_Interface
     {
-
-        /** @inheritdoc */
         public string $identifier = 'orcid';
         public string $label = 'ORCID';
         public string $database_link = 'https://orcid.org/';
-        public string $schema_version = '2.1';
+        public string $url = 'https://orcid.org/';
 
-        const PROPERTIES = [];
-
-        const SEARCH_PARAMETERS = [];
-
+        const PROPERTIES = [
+            'orcid-id' => [
+                'label' => ['german' => 'ORCID ID', 'english' => 'ORCID ID'],
+            ],
+            'given-names' => [
+                'label' => ['german' => 'Namen', 'english' => 'Names'],
+            ],
+            'family-names' => [
+                'label' => ['german' => 'Nachnamen', 'english' => 'Surnames'],
+            ],
+            'credit-name' => [
+                'label' => ['german' => 'Name', 'english' => 'Credit Name'],
+                'type' => 'array',
+            ],
+            'institution-name' => [
+                'label' => ['german' => 'Insitutionen', 'english' => 'Affiliations'],
+                'type' => 'array',
+            ],
+            'orcid-identifier' => [
+                'label' => ['german' => 'ORCID ID', 'english' => 'ORCID ID'],
+                'type' => 'object',
+                'subproperties' => ['path']
+            ],
+            'person' => [
+                'label' => ['german' => 'Name', 'english' => 'Name'],
+                'type' => 'object',
+                'subproperties' => [
+                    'name:given-names',
+                    'name:family-name',
+                ]
+            ]
+        ];
     }
 
     OES()->apis['orcid'] = new ORCID_Interface('orcid');

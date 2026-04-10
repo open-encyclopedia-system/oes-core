@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('LOD')) :
+if (!class_exists('LOD')) {
 
     /**
      * Class LOD
@@ -20,7 +20,6 @@ if (!class_exists('LOD')) :
      */
     class LOD extends Config
     {
-        /** @inheritdoc */
         public bool $empty_allowed = true;
         public string $api_key = 'lod';
         public bool $credentials_password = true;
@@ -75,11 +74,10 @@ if (!class_exists('LOD')) :
             foreach ($options as $option) {
                 if (!oes_option_exists($option)) {
                     add_option($option, $_POST[$option]);
-                }
-                else {
+                } else {
                     update_option($option, $_POST[$option]);
                 }
             }
         }
     }
-endif;
+}

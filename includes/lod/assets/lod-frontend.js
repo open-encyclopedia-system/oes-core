@@ -23,13 +23,16 @@ jQuery(".oes-lodlink").on("click", function (event) {
         box_id: boxID
     };
 
+    jQuery(".oes-spinner").show();
+
     jQuery.ajax({
         type: "POST",
         url: oesLodAJAX.ajax_url,
         data: {
             action: "oes_lod_box",
             nonce: oesLodAJAX.ajax_nonce,
-            param: params
+            param: params,
+            date_locale: oesLodAJAX.date_locale
         }
     }).done(function (data) {
 

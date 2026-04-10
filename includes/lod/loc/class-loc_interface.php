@@ -8,67 +8,26 @@ if (!class_exists('LOC_Interface')) {
 
     /**
      * LOC Interface
-     *
-     * @oesDevelopment Read the properties from API?
      */
     class LOC_Interface extends API_Interface
     {
-
-        //Set parent parameter
         public string $identifier = 'loc';
         public string $label = 'Library of Congress (Subjects)';
         public string $database_link = 'https://id.loc.gov/authorities/subjects.html';
+        public string $url = 'https://id.loc.gov/authorities/subjects/';
         public bool $schema = false;
 
-        const PROPERTIES = [];
-
-        const SEARCH_PARAMETERS = [];
-
-
-        /** @inheritdoc */
-        function render_shortcode(array $args, string $content = ""): string
-        {
-            /* get loc object */
-            if ($id = $args['id'] ?? false) {
-
-                $iconPath = '/includes/lod/' . $this->identifier . '/icon_' . $this->identifier . '.png';
-                $iconPathAbsolute = file_exists(OES_CORE_PLUGIN . $iconPath) ?
-                    plugins_url(OES_BASENAME . $iconPath) :
-                    plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
-
-
-                /* if no modification exists, replace comma in label*/
-                $label = $args['label'] ?? $id;
-
-
-                /**
-                 * Filter the label of the LOD entry.
-                 *
-                 * @param string $label The label.
-                 * @param string $this->identifier The LOD identifier.
-                 * @param string $id The LOD id.
-                 */
-                if (has_filter('oes/api_label_modify'))
-                    $label = apply_filters('oes/api_label_modify', $label, $this->identifier, $id);
-                else
-                    $label = str_replace(';', ',', $label);
-
-                return '<span class="oes-lod-container">' .
-                    sprintf('<a href="https://id.loc.gov/authorities/subjects/%s" target="_blank">%s</a>',
-                        $id,
-                        $label . oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
-                    ) . '</span>';
-
-
-                //@oesDevelopment Try to retrieve other objects than subjects
-                /*return '<span class="oes-lod-container">' .
-                    sprintf('<a href="https://catalog.loc.gov/vwebv/search?searchArg=%s" target="_blank">%s</a>',
-                        ($args['label'] ?? $id) . '&searchCode=SKEY%5E*&searchType=1',
-                        $label . oes_get_html_img($iconPathAbsolute, 'oes-' . $this->identifier . '-icon')
-                    ) . '</span>';*/
-
-            } else return $content;
-        }
+        const PROPERTIES = [
+            'id' => [
+                'label' => ['german' => 'ID', 'english' => 'ID'],
+            ],
+            'name' => [
+                'label' => ['german' => 'Titel', 'english' => 'Title'],
+            ],
+            'link' => [
+                'label' => ['german' => 'Link', 'english' => 'Link'],
+            ],
+        ];
     }
 
     OES()->apis['loc'] = new LOC_Interface('loc');

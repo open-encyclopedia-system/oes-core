@@ -1,17 +1,12 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('GND')) :
+if (!class_exists('GND')) {
 
     /**
      * Class GND
@@ -20,7 +15,6 @@ if (!class_exists('GND')) :
      */
     class GND extends LOD
     {
-        /** @inheritdoc */
         public string $api_key = 'gnd';
         public bool $credentials_password = false;
 
@@ -54,4 +48,4 @@ if (!class_exists('GND')) :
 
     register_tool('\OES\Admin\Tools\GND', 'gnd');
 
-endif;
+}

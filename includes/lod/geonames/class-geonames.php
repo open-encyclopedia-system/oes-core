@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('Geonames')) :
+if (!class_exists('Geonames')) {
 
     /**
      * Class Geonames
@@ -20,7 +20,6 @@ if (!class_exists('Geonames')) :
      */
     class Geonames extends LOD
     {
-        /** @inheritdoc */
         public string $api_key = 'geonames';
         public bool $credentials_password = false;
 
@@ -61,7 +60,5 @@ if (!class_exists('Geonames')) :
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\Geonames', 'geonames');
-
-endif;
+}

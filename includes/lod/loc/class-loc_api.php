@@ -7,8 +7,6 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 if (!class_exists('LOC_API')) {
 
     /**
-     * @oesDevelopment
-     *
      * Class LOC_API
      * https://www.loc.gov/apis/json-and-yaml/
      *
@@ -32,81 +30,84 @@ if (!class_exists('LOC_API')) {
      */
     class LOC_API extends Rest_API
     {
-
-
         public string $identifier = 'loc';
         public string $url = 'https://id.loc.gov/';
 
+        /** @inheritdoc */
+        protected function get_request_url_search(string $url, array $args, string $searchTerm): string
+        {
+            $query = 'q=' . urlencode($searchTerm)
+                . '&q=' . urlencode('cs:http://id.loc.gov/authorities/subjects')
+                . '&format=json';
+
+            return $url . 'search/?' . $query;
+        }
 
         /** @inheritdoc */
-        function get_request_url(string $url, array $args): string
+        protected function get_request_url_single(string $url, array $args, string $id): string
         {
-            if(empty($url)){
-                $url = $this->url;
+            return $url . 'authorities/subjects/' . rawurlencode($id) . '.json';
+        }
+
+        /** @inheritdoc */
+        protected function get_data_from_response($response): array
+        {
+            $items = [];
+
+            if (!is_array($response)) {
+                return [];
             }
 
-            $this->search_term = $args['search_term'] ?? '';
+            foreach ($response as $entry) {
 
-            if (!empty($this->search_term)) $url .= 'search/?q=' . $this->search_term . '&q=cs:http://id.loc.gov/authorities/subjects&format=json';
-            elseif ($args['lod_id'] ?? false) $url .= $args['lod_id'];
-
-            return $url;
-        }
-
-
-        /** @inheritdoc */
-        function get_data_from_response($response): array
-        {
-            $data = [];
-            foreach ($response as $entry)
-                if (is_array($entry) && $entry[0] === "atom:entry") {
-
-                    $name = false;
-                    $link = false;
-                    foreach ($entry as $entryData)
-                        if (is_array($entryData) &&
-                            $entryData[0] === "atom:link" &&
-                            isset($entryData[1]) &&
-                            $entryData[1]->href &&
-                            !$entryData[1]->type
-                        ) {
-                            $link = $entryData[1]->href;
-                            if ($name) break;
-                        } elseif (is_array($entryData) &&
-                            $entryData[0] === "atom:title" &&
-                            isset($entryData[2]) &&
-                            is_string($entryData[2])) {
-                            $name = $entryData[2];
-                            if ($link) break;
-                        }
-
-                    if ($name && $link)
-                        $data[] = [
-                            'name' => $name,
-                            'link' => $link
-                        ];
+                if (!is_array($entry)) {
+                    continue;
                 }
 
-            return $data;
+                if($entry[0] !== 'atom:entry'){
+                    continue;
+                }
+
+                $title = '';
+                $link = '';
+
+                foreach($entry as $property){
+
+                    if ($title && $link) {
+                        break;
+                    }
+
+                    if (!is_array($property)) {
+                        continue;
+                    }
+
+                    $first = $property[0] ?? null;
+
+                    if ($first === 'atom:title' && isset($property[2]) && is_string($property[2])) {
+                        $title = $property[2];
+                    }
+
+                    if ($first === 'atom:link' && isset($property[1]) && is_object($property[1]) && property_exists($property[1], 'href')) {
+                        $link = $property[1]->href;
+                    }
+                }
+
+                if ($title && $link) {
+                    $items[] = [
+                        'id' => basename($link),
+                        'name' => $title,
+                        'link' => $link
+                    ];
+                }
+            }
+
+            return ['items' => $items];
         }
 
-
         /** @inheritdoc */
-        function transform_data_entry(mixed $entry): array
+        protected function get_entry_type($entry, $item): string
         {
-            $link = $entry['link']['value'] ?? false;
-            $name = $entry['name']['value'] ?? false;
-            $id = substr($link, strrpos($link, '/') + 1);
-            return [
-                'entry' => $entry,
-                'id' => $id,
-                'name' => $name,
-                'type' => 'Subject Heading',
-                'link' => $link,
-                'link_frontend' => '<a href="https://catalog.loc.gov/vwebv/search?searchArg=' .
-                    $name . '&searchCode=SKEY%5E*&searchType=1" target="_blank">' .
-                    $name . '</a>'
-            ];
+            return __('LOC Subject', 'oes');
         }
     }
 }

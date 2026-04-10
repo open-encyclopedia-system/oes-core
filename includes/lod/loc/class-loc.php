@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('LoC')) :
+if (!class_exists('LoC')) {
 
     /**
      * Class LoC
@@ -20,8 +20,6 @@ if (!class_exists('LoC')) :
      */
     class LoC extends LOD
     {
-
-        /** @inheritdoc */
         public string $api_key = 'loc';
 
         /** @inheritdoc */
@@ -42,7 +40,5 @@ if (!class_exists('LoC')) :
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\LoC', 'loc');
-
-endif;
+}

@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('ROR')) :
+if (!class_exists('ROR')) {
 
     /**
      * Class ROR
@@ -15,7 +15,6 @@ if (!class_exists('ROR')) :
      */
     class ROR extends LOD
     {
-        /** @inheritdoc */
         public string $api_key = 'ror';
         public bool $credentials_password = false;
 
@@ -44,7 +43,5 @@ if (!class_exists('ROR')) :
         }
     }
 
-    // initialize
     register_tool('\OES\Admin\Tools\ROR', 'ror');
-
-endif;
+}
