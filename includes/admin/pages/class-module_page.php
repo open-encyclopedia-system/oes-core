@@ -31,6 +31,12 @@ if (!class_exists('Module_Page')) :
         public string $name = '';
 
         /**
+         * @var string $title
+         * Human-readable title of the module, shown in the admin page.
+         */
+        public string $title = '';
+
+        /**
          * @var string $setting
          * Option key used for storing/retrieving this module's settings.
          */
@@ -100,6 +106,7 @@ if (!class_exists('Module_Page')) :
         public function set_parameters(array $args): void
         {
             $this->name             = $this->param($args, 'name', $this->name ?: 'Name missing');
+            $this->title            = $this->param($args, 'title', $this->title ?: ($this->name ?: 'Title missing'));
             $this->key              = $this->param($args, 'key', $this->key ?: strtolower($this->name));
             $this->setting          = $this->param($args, 'setting', $this->setting ?: ('oes_' . $this->key));
             $this->position         = $this->param($args, 'position', $this->position ?: 50);
@@ -137,8 +144,8 @@ if (!class_exists('Module_Page')) :
             $args = [
                 'subpage' => true,
                 'page_parameters' => [
-                    'page_title' => $this->name,
-                    'menu_title' => $this->name,
+                    'page_title' => $this->title,
+                    'menu_title' => $this->title,
                     'menu_slug' => $this->setting,
                     'position' => $this->position,
                     'parent_slug' => $this->parent_slug
