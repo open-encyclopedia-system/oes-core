@@ -116,7 +116,9 @@ function add_page_scripts(string $hook): void
         wp_enqueue_script('oes-admin_' . $hook);
     }
 
-    if (str_contains($hook, 'oes_settings')) \OES\ACF\enqueue_select2();
+    if (str_contains($hook, 'oes_settings') || str_contains($hook, 'oes-modules')) {
+        \OES\ACF\enqueue_select2();
+    }
 }
 
 /**
