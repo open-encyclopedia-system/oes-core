@@ -1454,49 +1454,51 @@ function hook_fields_to_page(array $fieldTypes = []): void
  */
 function add_fields_to_page(array $fieldTypes = []): void
 {
+    $oes = OES();
     $fields = [];
-    if (empty($fieldTypes) ||
-        in_array('language', $fieldTypes) ||
-        in_array('translation', $fieldTypes)) {
 
-        /* prepare languages */
-        $languages = [];
-        $oes = OES();
-        if (!empty($oes->languages))
-            foreach ($oes->languages as $languageKey => $language) $languages[$languageKey] = $language['label'];
+    $languages = array_map(function ($language) {
+        return $language['label'];
+    }, $oes->languages ?? []);
+    $multilingual = count($languages) > 1;
 
-        if (empty($fieldTypes) || in_array('language', $fieldTypes))
+    if($multilingual){
+
+        if (empty($fieldTypes) || in_array('language', $fieldTypes) ) {
             $fields[] = [
-                'key' => 'field_oes_post_language',
-                'label' => 'Language',
-                'name' => 'field_oes_post_language',
-                'type' => 'select',
-                'instructions' => '',
-                'required' => true,
-                'choices' => $languages
+                    'key' => 'field_oes_post_language',
+                    'label' => 'Language',
+                    'name' => 'field_oes_post_language',
+                    'type' => 'select',
+                    'instructions' => '',
+                    'required' => true,
+                    'choices' => $languages
             ];
+        }
 
-        if (empty($fieldTypes) || in_array('translation', $fieldTypes))
+        if (empty($fieldTypes) || in_array('translation', $fieldTypes)) {
             $fields[] = [
-                'key' => 'field_oes_page_translations',
-                'label' => 'Translations',
-                'name' => 'field_oes_page_translations',
-                'type' => 'relationship',
-                'return_format' => 'id',
-                'post_type' => ['page'],
-                'filters' => ['search']
+                    'key' => 'field_oes_page_translations',
+                    'label' => 'Translations',
+                    'name' => 'field_oes_page_translations',
+                    'type' => 'relationship',
+                    'return_format' => 'id',
+                    'post_type' => ['page'],
+                    'filters' => ['search']
             ];
+        }
     }
 
-    if (empty($fieldTypes) || in_array('toc', $fieldTypes))
+    if (!$oes->block_theme && (empty($fieldTypes) || in_array('toc', $fieldTypes))) {
         $fields[] = [
-            'key' => 'field_oes_page_include_toc',
-            'label' => 'Include Table of Content',
-            'name' => 'field_oes_page_include_toc',
-            'type' => 'true_false',
-            'instructions' => '',
-            'default_value' => true
+                'key' => 'field_oes_page_include_toc',
+                'label' => 'Include Table of Content',
+                'name' => 'field_oes_page_include_toc',
+                'type' => 'true_false',
+                'instructions' => '',
+                'default_value' => true
         ];
+    }
 
 
     /**
