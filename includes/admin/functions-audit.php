@@ -248,6 +248,7 @@ function display_audit_field_value(array $args = []): string
     $fields        = $fieldsRaw ? array_filter(array_map('trim', explode(';', $fieldsRaw))) : [];
     $orderby       = $args['orderby'] ?? 'date';
     $order         = $args['order'] ?? 'DESC';
+    $checkEmpty    = $args['checkempty'] ?? false;
 
     if (!$postType || empty($fields)) {
         return '<p style="color:red;"><strong>' . __('Error:', 'oes') .'</strong> ' .
@@ -271,9 +272,6 @@ function display_audit_field_value(array $args = []): string
     ]);
 
     $data = [];
-    $countEmpty = 0;
-    $count = 0;
-
     foreach ($posts as $postID) {
         if (!($postID instanceof \WP_Post)) {
             $postObj = get_post($postID);
@@ -285,58 +283,76 @@ function display_audit_field_value(array $args = []): string
         }
         $postID = (int)$postObj->ID;
 
+        $countEmpty = 0;
+        $prepareData = [];
         foreach($fields as $field) {
             $raw = oes_get_field($field, $postID);
             $display = oes_get_field_display_value($field, $postID, ['status' => 'all']);
 
             if(empty($raw)) {
-                $data[$postID][$field] = __('(empty)', 'oes');
+                $prepareData[$field] = __('(empty)', 'oes');
                 $countEmpty++;
             }
             else {
-                $data[$postID][$field] = $display;
-                $count++;
+                $prepareData[$field] = $display;
             }
+        }
+        
+        if($checkEmpty) {
+            $data[$countEmpty][$postID] = $prepareData;
+        }
+        else {
+            $data[0][$postID] = $prepareData;
         }
     }
 
     $output = '<div style="margin-bottom:18px;"><strong>' .
         __('Audit Report: Field values', 'oes') . '</strong></div>';
 
-    $output .= '<p>' . sprintf(
-            __('%d fields with empty value; %d fields with value.', 'oes'),
-            $countEmpty,
-            $count
-        ) . '</p>';
+    krsort($data);
+    foreach($data as $count => $dataPerCount) {
 
-    $output .= '<table class="wp-list-table widefat fixed striped table-view-list">';
-    $output .= '<thead><tr>';
-    $output .= '<th>Post</th>';
-
-    foreach ($fields as $field) {
-        $output .= '<th>' . esc_html($fieldObjects[$field] ?? $field) . '</th>';
-    }
-
-    $output .= '</tr></thead>';
-    $output .= '<tbody>';
-
-    foreach ($data as $postID => $postData) {
-
-        $output .= '<tr>';
-
-        $postObj = get_post((int)$postID);
-        $postTitle = $postObj->post_title ?: __('(Title missing)', 'oes');
-        $postLink = $postObj ? '<a href="' . esc_url(get_edit_post_link($postID)) . '">' . $postTitle . '</a>' : 'Post ID ' . intval($postID);
-        $output .= '<td>' . $postLink . '</td>';
-
-        foreach($fields as $field) {
-            $output .= '<td>' . ($postData[$field] ?? __('(Information missing)', 'oes')) . '</td>';
+        $countPosts = count($dataPerCount);
+        if($count) {
+            $output .= '<h3>' . sprintf(
+                    __('%s Posts with %s fields with empty value.', 'oes'),
+                    $countPosts,
+                    $count
+                ) . '</h3>';
+        }
+        elseif($checkEmpty) {
+            $output .= '<h3>' . $countPosts . ' ' . __('Posts with no fields with empty value.', 'oes') . '</h3>';
         }
 
-        $output .= '</tr>';
-    }
+        $output .= '<table class="wp-list-table widefat fixed striped table-view-list">';
+        $output .= '<thead><tr>';
+        $output .= '<th>Post</th>';
 
-    $output .= '</tbody></table><br>';
+        foreach ($fields as $field) {
+            $output .= '<th>' . esc_html($fieldObjects[$field] ?? $field) . '</th>';
+        }
+
+        $output .= '</tr></thead>';
+        $output .= '<tbody>';
+
+        foreach ($dataPerCount as $postID => $postData) {
+
+            $output .= '<tr>';
+
+            $postObj = get_post((int)$postID);
+            $postTitle = $postObj->post_title ?: __('(Title missing)', 'oes');
+            $postLink = $postObj ? '<a href="' . esc_url(get_edit_post_link($postID)) . '">' . $postTitle . '</a>' : 'Post ID ' . intval($postID);
+            $output .= '<td>' . $postLink . '</td>';
+
+            foreach ($fields as $field) {
+                $output .= '<td>' . ($postData[$field] ?? __('(Information missing)', 'oes')) . '</td>';
+            }
+
+            $output .= '</tr>';
+        }
+
+        $output .= '</tbody></table><br>';
+    }
 
     return $output;
 }
