@@ -272,7 +272,7 @@ function data_model_factory(): void
 function formula_functions(): void
 {
     include_once __DIR__ . '/functions-formulas.php';
-    add_action('acf/save_post', '\OES\Formula\calculate_post_args_from_formula');
+    add_action('acf/save_post', '\OES\Formula\calculate_post_args_from_formula', 10, 3);
     add_filter('acf/update_value', '\OES\Formula\calculate_field_value_from_formula', 10, 3);
 }
 

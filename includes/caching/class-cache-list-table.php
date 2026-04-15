@@ -26,7 +26,6 @@ class Cache_List_Table extends OES_List_Table
         $cacheType = $item['type'] ?? 'default';
 
         $name  = esc_html($item['name'] ?? __('Unknown', 'oes'));
-        $lang  = esc_html($item['cache_language'] ?? '');
         $class = esc_html($item['class'] ?? '');
 
         if ($cacheType === 'archive') {
@@ -36,18 +35,16 @@ class Cache_List_Table extends OES_List_Table
                 $view = esc_html($additionalDecoded['view']);
 
                 $label = sprintf(
-                    '<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div>',
+                    '<strong>%s</strong><div><i>%s</i></div>',
                     "{$name}, {$view}",
-                    $lang,
                     $class
                 );
 
             } else {
 
                 $label = sprintf(
-                    '<strong>%s</strong> <span>(%s)</span><div><i>%s</i></div><div>%s</div>',
+                    '<strong>%s</strong><div><i>%s</i></div><div>%s</div>',
                     $name,
-                    $lang,
                     $class,
                     esc_html($additional)
                 );
@@ -180,7 +177,7 @@ class Cache_List_Table extends OES_List_Table
                     $oes->post_types[$objectType]['label'] ??
                     __('Unknown Post Type', 'oes');
 
-                $language = $oes->languages[$languageKey ?? 'none']['label'] ?? __('Unknown Language', 'oes');
+                $language = $oes->languages[$languageKey ?? 'none']['label'] ?? ($languageKey ?? '-');
 
                 $data[$name] = [
                     'id' => $name,

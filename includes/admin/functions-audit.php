@@ -241,19 +241,127 @@ function display_audit(array $args): string {
  *  - B links back to A, but via fieldB2 (not the expected fieldB1)
  *  => flagged as "linked back via different field" (possible mismatch).
  */
-function display_audit_relations(array $args = []): string
+function display_audit_field_value(array $args = []): string
 {
-    $postType   = $args['post_type'] ?? false;
-    $fieldsRaw  = $args['fields'] ?? false;
-    $fields     = $fieldsRaw ? array_filter(array_map('trim', explode(';', $fieldsRaw))) : [];
-    $displayOk  = $args['include_ok'] ?? false;
+    $postType      = $args['post_type'] ?? false;
+    $fieldsRaw     = $args['fields'] ?? false;
+    $fields        = $fieldsRaw ? array_filter(array_map('trim', explode(';', $fieldsRaw))) : [];
+    $orderby       = $args['orderby'] ?? 'date';
+    $order         = $args['order'] ?? 'DESC';
 
     if (!$postType || empty($fields)) {
         return '<p style="color:red;"><strong>' . __('Error:', 'oes') .'</strong> ' .
             __('Missing parameters. Provide post_type and fields.', 'oes') . '</p>';
     }
 
-    // helper: normalize ACF relationship values into an array of integer post IDs
+    $fieldObjects = [];
+    foreach($fields as $field) {
+        if($prepareFieldObject = get_field_object($field)) {
+            $fieldObjects[$field] = $prepareFieldObject['label'];
+        }
+    }
+
+    $posts = get_posts([
+        'post_status'    => 'publish',
+        'post_type'      => $postType,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+        'orderby'        => $orderby,
+        'order'          => $order,
+    ]);
+
+    $data = [];
+    $countEmpty = 0;
+    $count = 0;
+
+    foreach ($posts as $postID) {
+        if (!($postID instanceof \WP_Post)) {
+            $postObj = get_post($postID);
+        } else {
+            $postObj = $postID;
+        }
+        if (!$postObj) {
+            continue;
+        }
+        $postID = (int)$postObj->ID;
+
+        foreach($fields as $field) {
+            $raw = oes_get_field($field, $postID);
+            $display = oes_get_field_display_value($field, $postID, ['status' => 'all']);
+
+            if(empty($raw)) {
+                $data[$postID][$field] = __('(empty)', 'oes');
+                $countEmpty++;
+            }
+            else {
+                $data[$postID][$field] = $display;
+                $count++;
+            }
+        }
+    }
+
+    $output = '<div style="margin-bottom:18px;"><strong>' .
+        __('Audit Report: Field values', 'oes') . '</strong></div>';
+
+    $output .= '<p>' . sprintf(
+            __('%d fields with empty value; %d fields with value.', 'oes'),
+            $countEmpty,
+            $count
+        ) . '</p>';
+
+    $output .= '<table class="wp-list-table widefat fixed striped table-view-list">';
+    $output .= '<thead><tr>';
+    $output .= '<th>Post</th>';
+
+    foreach ($fields as $field) {
+        $output .= '<th>' . esc_html($fieldObjects[$field] ?? $field) . '</th>';
+    }
+
+    $output .= '</tr></thead>';
+    $output .= '<tbody>';
+
+    foreach ($data as $postID => $postData) {
+
+        $output .= '<tr>';
+
+        $postObj = get_post((int)$postID);
+        $postTitle = $postObj->post_title ?: __('(Title missing)', 'oes');
+        $postLink = $postObj ? '<a href="' . esc_url(get_edit_post_link($postID)) . '">' . $postTitle . '</a>' : 'Post ID ' . intval($postID);
+        $output .= '<td>' . $postLink . '</td>';
+
+        foreach($fields as $field) {
+            $output .= '<td>' . ($postData[$field] ?? __('(Information missing)', 'oes')) . '</td>';
+        }
+
+        $output .= '</tr>';
+    }
+
+    $output .= '</tbody></table><br>';
+
+    return $output;
+}
+
+/**
+ * Audit bidirectional ACF relationship fields for a given post type.
+ *
+ * This version detects the case:
+ *  - A -> B via fieldA1
+ *  - B links back to A, but via fieldB2 (not the expected fieldB1)
+ *  => flagged as "linked back via different field" (possible mismatch).
+ */
+function display_audit_relations(array $args = []): string
+{
+    $postType      = $args['post_type'] ?? false;
+    $fieldsRaw     = $args['fields'] ?? false;
+    $fields        = $fieldsRaw ? array_filter(array_map('trim', explode(';', $fieldsRaw))) : [];
+    $displayOk     = $args['include_ok'] ?? false;
+    $displayEmpty  = $args['include_empty'] ?? false;
+
+    if (!$postType || empty($fields)) {
+        return '<p style="color:red;"><strong>' . __('Error:', 'oes') .'</strong> ' .
+            __('Missing parameters. Provide post_type and fields.', 'oes') . '</p>';
+    }
+
     $normalizeToIDs = function ($value): array {
         $ids = [];
         if ($value === null || $value === false) {
@@ -305,16 +413,16 @@ function display_audit_relations(array $args = []): string
     $allTargetFieldNames = array_values(array_unique($allTargetFieldNames));
     $fieldCache = [];
 
-    $get_field_cached = function ($fieldName, $postId) use (&$fieldCache, $normalizeToIDs) {
-        if (!isset($fieldCache[$postId])) {
-            $fieldCache[$postId] = [];
+    $get_field_cached = function ($fieldName, $postID) use (&$fieldCache, $normalizeToIDs) {
+        if (!isset($fieldCache[$postID])) {
+            $fieldCache[$postID] = [];
         }
-        if (array_key_exists($fieldName, $fieldCache[$postId])) {
-            return $fieldCache[$postId][$fieldName];
+        if (array_key_exists($fieldName, $fieldCache[$postID])) {
+            return $fieldCache[$postID][$fieldName];
         }
-        $raw = oes_get_field($fieldName, $postId);
+        $raw = oes_get_field($fieldName, $postID);
         $normalized = $normalizeToIDs($raw);
-        $fieldCache[$postId][$fieldName] = $normalized;
+        $fieldCache[$postID][$fieldName] = $normalized;
         return $normalized;
     };
 
@@ -323,24 +431,31 @@ function display_audit_relations(array $args = []): string
         'wrong_field'   => [],
         'missing_posts' => [],
         'ok'            => [],
+        'empty'         => []
     ];
 
-    foreach ($posts as $postId) {
-        if (!($postId instanceof WP_Post)) {
-            $postObj = get_post($postId);
+    foreach ($posts as $postID) {
+        if (!($postID instanceof \WP_Post)) {
+            $postObj = get_post($postID);
         } else {
-            $postObj = $postId;
+            $postObj = $postID;
         }
         if (!$postObj) {
             continue;
         }
-        $postId = (int)$postObj->ID;
+        $postID = (int)$postObj->ID;
 
         foreach ($expectedTargetsPerSource as $sourceField => $expectedTargetFields) {
-            $connectedIds = $get_field_cached($sourceField, $postId);
+            $connectedIds = $get_field_cached($sourceField, $postID);
 
             if (empty($connectedIds)) {
-                // nothing connected via this source field — skip
+
+                if($displayEmpty){
+                    $status['empty'][$postID][] = sprintf(
+                        __('Field <code>%s</code> is empty.', 'oes'),
+                        esc_html($sourceField)
+                    );
+                }
                 continue;
             }
 
@@ -353,7 +468,7 @@ function display_audit_relations(array $args = []): string
                     : 'Post ID ' . intval($connectedId);
 
                 if (!$connectedPostObj) {
-                    $status['missing_posts'][$postId][] = sprintf(
+                    $status['missing_posts'][$postID][] = sprintf(
                         __('Field <code>%s</code> links to %s but that post does not exist (maybe deleted).', 'oes'),
                         esc_html($sourceField),
                         esc_html('ID ' . $connectedId)
@@ -365,14 +480,14 @@ function display_audit_relations(array $args = []): string
                 $reciprocalFound = false;
                 foreach ($expectedTargetFields as $expectedTargetField) {
                     $vals = $get_field_cached($expectedTargetField, $connectedId);
-                    if (in_array($postId, $vals, true)) {
+                    if (in_array($postID, $vals, true)) {
                         $reciprocalFound = true;
                         break;
                     }
                 }
 
                 if ($reciprocalFound) {
-                    $status['ok'][$postId][] = sprintf(
+                    $status['ok'][$postID][] = sprintf(
                         __('Field <code>%s</code> -> %s (reciprocal in expected field).', 'oes'),
                         esc_html($sourceField),
                         $titleB
@@ -384,13 +499,13 @@ function display_audit_relations(array $args = []): string
                 $otherFieldsThatContainA = [];
                 foreach ($allTargetFieldNames as $targetFieldName) {
                     $vals = $get_field_cached($targetFieldName, $connectedId);
-                    if (in_array($postId, $vals, true)) {
+                    if (in_array($postID, $vals, true)) {
                         $otherFieldsThatContainA[] = $targetFieldName;
                     }
                 }
 
                 if (!empty($otherFieldsThatContainA)) {
-                    $status['wrong_field'][$postId][] = sprintf(
+                    $status['wrong_field'][$postID][] = sprintf(
                         __('Field <code>%s</code> is linked to %s, but that post links back to this post via field(s): <code>%s</code> instead of expected field(s): <code>%s</code>.', 'oes'),
                         esc_html($sourceField),
                         $titleB,
@@ -398,7 +513,7 @@ function display_audit_relations(array $args = []): string
                         esc_html(implode(', ', $expectedTargetFields ?: ['(none configured)']))
                     );
                 } else {
-                    $status['mismatch'][$postId][] = sprintf(
+                    $status['mismatch'][$postID][] = sprintf(
                         __('<strong>Mismatch</strong>: Field <code>%s</code> is linked to %s, but there is no reciprocal connection in expected field(s): <code>%s</code>.', 'oes'),
                         esc_html($sourceField),
                         $titleB,
@@ -409,7 +524,6 @@ function display_audit_relations(array $args = []): string
         }
     }
 
-    // Build output HTML
     $output = '<div style="margin-bottom:18px;"><strong>' .
         __('Audit Report: Bidirectional Relationships', 'oes') . '</strong></div>';
 
@@ -417,22 +531,24 @@ function display_audit_relations(array $args = []): string
     $countWrongField  = count(array_filter($status['wrong_field']));
     $countMissing     = count(array_filter($status['missing_posts']));
     $countOk          = count(array_filter($status['ok']));
+    $countEmpty       = count(array_filter($status['empty']));
 
     $output .= '<p>' . sprintf(
-            __('%d posts with mismatches; %d posts linked back via different field(s); %d posts linked to missing posts; %d posts with reciprocal links.', 'oes'),
+            __('%d posts with mismatches; %d posts linked back via different field(s); %d posts linked to missing posts; %d posts with no links; %d posts with reciprocal links.', 'oes'),
             $countMismatch,
             $countWrongField,
             $countMissing,
+            $countEmpty,
             $countOk
         ) . '</p>';
 
     $renderSection = function ($title, $items) {
         $html = '<h2>' . esc_html($title) . '</h2>';
         $html .= '<table class="wp-list-table widefat fixed striped table-view-list"><thead><tr><th>Post</th><th>Findings</th></tr></thead><tbody>';
-        foreach ($items as $postId => $messages) {
+        foreach ($items as $postID => $messages) {
             $unique = array_values(array_unique($messages));
-            $postObj = get_post((int)$postId);
-            $postTitle = $postObj ? '<a href="' . esc_url(get_edit_post_link($postId)) . '">' . esc_html($postObj->post_title) . '</a>' : 'Post ID ' . intval($postId);
+            $postObj = get_post((int)$postID);
+            $postTitle = $postObj ? '<a href="' . esc_url(get_edit_post_link($postID)) . '">' . esc_html($postObj->post_title) . '</a>' : 'Post ID ' . intval($postID);
             $html .= '<tr><td style="vertical-align:top;">' . $postTitle . '</td><td>' . implode('<br>', $unique) . '</td></tr>';
         }
         $html .= '</tbody></table><br>';
@@ -450,6 +566,9 @@ function display_audit_relations(array $args = []): string
     }
     if (!empty($status['ok']) && $displayOk) {
         $output .= $renderSection(__('Reciprocal links (expected field)', 'oes'), $status['ok']);
+    }
+    if (!empty($status['empty']) && $displayEmpty) {
+        $output .= $renderSection(__('Empty fields', 'oes'), $status['empty']);
     }
 
     return $output;

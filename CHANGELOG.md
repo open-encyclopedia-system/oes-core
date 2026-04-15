@@ -22,6 +22,7 @@
 - Re-do operations and feature display
 - New page icons and re-designed icons
 - New block "Context Link"
+- Introduce new shortcode: audit field value
 
 ### Improvements
 - Improve internal page generation

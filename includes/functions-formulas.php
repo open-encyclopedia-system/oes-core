@@ -21,24 +21,33 @@ use function OES\Versioning\get_parent_id;
  */
 function calculate_post_args_from_formula($postID): void
 {
-
-    /* check for post type */
     $currentPostType = get_post_type($postID);
     $oes = OES();
     $args = [];
 
-    /* set new title */
-    if ($patternTitle = ($oes->post_types[$currentPostType]['pattern_title'] ?? []))
-        if ($newTitle = calculate_post_title_from_formula($patternTitle, $postID))
-            if (!empty($newTitle)) $args['post_title'] = $newTitle;
+    $patternTitle = $oes->post_types[$currentPostType]['pattern_title'] ?? null;
 
-    /* set new name (slug) */
-    if ($patternName = ($oes->post_types[$currentPostType]['pattern_name'] ?? []))
-        if ($newName = calculate_post_name_from_formula($patternName, $postID))
-            if (!empty($newTitle)) $args['post_title'] = $newName;
+    if ($patternTitle) {
+        $newTitle = calculate_post_title_from_formula($patternTitle, $postID);
 
-    /* get new args and update */
-    if ($args) wp_update_post(array_merge(['ID' => $postID], $args));
+        if (!empty($newTitle)) {
+            $args['post_title'] = $newTitle;
+        }
+    }
+
+    $patternName = $oes->post_types[$currentPostType]['pattern_name'] ?? null;
+
+    if ($patternName) {
+        $newName = calculate_post_title_from_formula($patternName, $postID);
+
+        if (!empty($newName)) {
+            $args['post_name'] = $newName;
+        }
+    }
+
+    if ($args) {
+        wp_update_post(array_merge(['ID' => $postID], $args));
+    }
 }
 
 
@@ -89,7 +98,7 @@ function calculate_post_name_from_formula(
 
         /* check if update required, then set new argument */
         $currentName = get_post($postID)->post_name;
-        if (empty($currentName) || $overwrite) {
+        if (empty($currentName) || ((string)$postID == $currentName) || $overwrite) {
             $newName = calculate_value($parts, $postID, $separator);
             if ($newName != $currentName) return $newName;
         }

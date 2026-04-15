@@ -5,7 +5,7 @@ namespace OES\Export;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 //TODO documentation
-
+//TODO add schema to json
 function register_rest_routes(): void {
 
     register_rest_route('oes/v1', '/export/json/(?P<id>\d+)', [

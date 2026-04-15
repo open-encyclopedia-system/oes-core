@@ -284,10 +284,23 @@ if (!class_exists('OES_Post')) {
                 }
 
             /* add archive data */
-            foreach (OES()->post_types[$this->post_type]['archive'] ?? [] as $fieldKey)
-                $this->archive_data[$fieldKey] = $this->get_meta_or_archive_field_data($fieldKey, 'archive');
+            foreach (OES()->post_types[$this->post_type]['archive'] ?? [] as $fieldKey) {
+                $this->add_archive_data($fieldKey);
+            }
         }
 
+        /**
+         * Add archive data.
+         *
+         * @param string $fieldKey
+         * @return void
+         */
+        protected function add_archive_data(string $fieldKey): void {
+            $data = $this->get_meta_or_archive_field_data($fieldKey, 'archive');
+            if(!empty($data)){
+                $this->archive_data[$fieldKey] = $data;
+            }
+        }
 
         /**
          * Set additional data (for theme display).

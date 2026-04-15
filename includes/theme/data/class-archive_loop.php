@@ -307,6 +307,10 @@ HTML;
      */
     protected function render_row(array $row): string
     {
+        if(!$this->check_if_row_is_rendered($row)){
+            return '';
+        }
+
         $title = $this->prepare_row_title($row);
         $previewTable = $this->prepare_preview_table($row['data'] ?? []);
         $readMore = ($this->mode === 'search') ? $this->prepare_read_more_link($row['permalink']) : '';
@@ -322,6 +326,15 @@ HTML;
         }
 
         return $this->render_default_row($row, $title, $previewTable, $readMore);
+    }
+
+    /**
+     * Check if row is to be rendered.
+     * @param $row
+     * @return bool
+     */
+    protected function check_if_row_is_rendered($row): bool {
+        return true;
     }
 
     /**
