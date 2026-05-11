@@ -90,9 +90,14 @@ function update_config_post(int $postID, array $updateValues = []): string {
     $updateValues = wp_unslash($updateValues);
 
     $mergeCallback = function($current, $new) {
+
         foreach ($new as $key => $value) {
 
-            if (is_array($value)) {
+            //TODO
+            if(in_array($key, ['admin_columns', 'metadata', 'archive', 'archive_filter', 'authors', 'creators', 'literature', 'terms', 'external', 'lod'])){
+                $current[$key] = normalize_option_value($value, $current[$key] ?? []);
+            }
+            elseif (is_array($value)) {
                 foreach ($value as $subKey => $subValue) {
                     $currentValue = $current[$key][$subKey] ?? null;
 

@@ -6,6 +6,7 @@ jQuery(".oes-lodlink").on("click", function (event) {
     const api = $link.data("api");
     const id = $link.data("lod_id");
     const boxID = $link.data("box_id");
+    const additional = $link.data("additional");
 
     const $box = jQuery("#oes-lod-box-" + boxID);
 
@@ -20,7 +21,8 @@ jQuery(".oes-lodlink").on("click", function (event) {
     const params = {
         api: api,
         lod_id: id,
-        box_id: boxID
+        box_id: boxID,
+        additional: additional,
     };
 
     jQuery(".oes-spinner").show();

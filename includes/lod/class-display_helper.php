@@ -11,6 +11,8 @@ if (!class_exists('\OES\API\Display_Helper')) {
      */
     class Display_Helper
     {
+        /** @var string The API identifier. */
+        public string $identifier = 'lod';
 
         /** @var string|mixed The displayed language. */
         public string $language = 'german';
@@ -20,6 +22,7 @@ if (!class_exists('\OES\API\Display_Helper')) {
          */
         public function __construct(array $args = []) {
             $this->language = $this->get_language($args['date_locale']);
+            $this->identifier = $args['identifier'] ?? 'lod';
         }
 
         /**
@@ -44,6 +47,7 @@ if (!class_exists('\OES\API\Display_Helper')) {
             $title =  $this->get_title($entry);
 
             $tableData = $this->get_table($entry);
+            $this->modify_table_data($tableData, $entry);
 
             $table = '<table class="is-style-oes-simple">';
             foreach ($tableData as $row) {
@@ -84,8 +88,29 @@ if (!class_exists('\OES\API\Display_Helper')) {
          * @return mixed Return the modified entry data.
          */
         protected function get_table($entry){
-            return $entry['entry'] ?? [];
+
+            $popupOptions = get_option('oes_api-' . $this->identifier . '_popup_include', []);
+
+            if (empty($popupOptions) || !is_array($popupOptions)) {
+                return $entry['entry'] ?? [];
+            }
+
+            $entryData = $entry['entry'] ?? [];
+
+            return array_intersect_key(
+                $entryData,
+                array_flip($popupOptions)
+            );
         }
+
+        /**
+         * Modify table data.
+         *
+         * @param array $tableData
+         * @return void
+         */
+        protected function modify_table_data(array &$tableData, array $entry): void
+        {}
 
         /**
          * Prepare the HTML for the preview box.

@@ -61,21 +61,60 @@ if (!class_exists('LOD')) {
                     );
                 }
             }
+
+            $popup = get_option($prefixOption . '_popup');
+            $this->add_table_row(
+                [
+                    'title' => __('Render Shortcode as Popup', 'oes'),
+                    'key' => $prefixOption . '_popup',
+                    'value' => get_option($prefixOption . '_popup'),
+                    'type' => 'checkbox'
+                ]
+            );
+
+            //TODO: make this a general API option? Instead of multiple one
+            if($popup){
+
+                $apiInterface = '\\OES\\API\\' . $this->api_key . '_Interface';
+                $properties = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
+
+                $options = [];
+                foreach($properties as $propertyKey => $propertyData){
+                    $options[$propertyKey] = implode(' / ', ($propertyData['label'] ?? [])) . ' (' . $propertyKey . ')';
+                }
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Include in Popup', 'oes'),
+                        'key' => $prefixOption . '_popup_include',
+                        'value' => get_option($prefixOption . '_popup_include'),
+                        'type' => 'select',
+                        'args' => [
+                            'options' => $options,
+                            'multiple' => true,
+                            'reorder' => true,
+                            'hidden' => true,
+                        ],
+                    ]
+                );
+            }
         }
 
         /** @inheritdoc */
         function admin_post_tool_action(): void
         {
-            //@oesDevelopment Store password not in clear text
-            $options = [
-                'oes_api-' . $this->api_key . '_login',
-                'oes_api-' . $this->api_key . '_password'
-            ];
-            foreach ($options as $option) {
-                if (!oes_option_exists($option)) {
-                    add_option($option, $_POST[$option]);
-                } else {
-                    update_option($option, $_POST[$option]);
+            $prefixOption = 'oes_api-' . $this->api_key;
+
+            $options = array_merge([$prefixOption . '_popup' => false], $_POST);
+
+            foreach($options as $option => $value){
+                //@oesDevelopment Store password not in clear text
+                if(str_starts_with($option, $prefixOption)){
+                    if (!oes_option_exists($option)) {
+                        add_option($option, $value);
+                    } else {
+                        update_option($option, $value);
+                    }
                 }
             }
         }

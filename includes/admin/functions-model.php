@@ -1416,7 +1416,7 @@ function get_versioning_tab_version(string $versionPostType = '', array $parentP
 function get_schema_types(): array
 {
     $schemaTypes = [
-        'single-article' => __('Content', 'oes'),
+        'single-article' => __('Publication', 'oes'),
         'single-contributor' => __('Contributor', 'oes'),
         'single-index' => __('Index Object', 'oes'),
         'single-internal' => __('Internal Object', 'oes'),

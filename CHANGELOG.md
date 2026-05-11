@@ -8,6 +8,8 @@
 - Rename OES_LIVEMODE → OES_LIVE_MODE
 - Rename Project → Application
 - Move Modules Setting in new section
+- Rename Schema Properties (Excerpt -> Abstract, Literature -> Bibliography, Terms -> Subjects)
+- Rename Schema Types (Content -> Publication)
 
 ### Features / New Components
 - Introduce new rights model 
@@ -17,8 +19,11 @@
 - Introduce cache database table
 - Introduce new LOD API: ROR
 - Introduce new LOD API: ORCID
+- Introduce new LOD API: HMML
 - Introduce Display_Helper for LOD APIs
 - Introduce new block: Context Link
+- Introduce update function for OES database tables
+- Introduce site health feature
 - Re-do operations and feature display
 - New page icons and re-designed icons
 - New block "Context Link"
@@ -32,6 +37,8 @@
 - Fix encoding issues when editing settings
 - LOD query via react
 - make language switch block available outside of navigation
+- Improve admin page icons, container icons
+- LOD Preview optional & metadata configurable
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)

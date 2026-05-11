@@ -215,7 +215,8 @@
 
         const handleSelectResult = (entry) => {
 
-            const sc = `[${selectedApi}link id="${entry.id}" label="${entry.name.replace(/,/g, ';')}"]`;
+            const additional = entry.additional ? ` additional="${entry.additional}"` : '';
+            const sc = `[${selectedApi}link id="${entry.id}" label="${entry.name.replace(/,/g, ';')}"${additional}]`;
             setShortcode(sc);
 
             setCopyOptions((prev) => {

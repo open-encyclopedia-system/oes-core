@@ -68,9 +68,10 @@ function lod_initialize(): void
 
     include_once __DIR__ . '/gnd/class-gnd_interface.php';
     include_once __DIR__ . '/geonames/class-geonames_interface.php';
-    include_once __DIR__ . '/ror/class-ror_interface.php';
     include_once __DIR__ . '/orcid/class-orcid_interface.php';
+    include_once __DIR__ . '/ror/class-ror_interface.php';
     include_once __DIR__ . '/loc/class-loc_interface.php';
+    include_once __DIR__ . '/hmml/class-hmml_interface.php';
 
     include_once __DIR__ . '/class-lod_config.php';
     include_once __DIR__ . '/class-lod_schema.php';
@@ -454,6 +455,7 @@ function lod_box(): void
     $apiKey = sanitize_key($params['api'] ?? '');
     $id = sanitize_text_field($params['lod_id'] ?? '');
     $boxID = sanitize_text_field($params['box_id'] ?? '');
+    $additional = sanitize_text_field($params['additional'] ?? '');
 
     $dateLocale = $_POST['date_locale'] ?? 'en_BE';
 
@@ -475,13 +477,14 @@ function lod_box(): void
     $restAPI = new $apiClass('', $apiArgs);
 
     $data = $restAPI->get_data([
-        'lod_id' => $id
+        'lod_id' => $id,
+        'additional' => $additional
     ]);
 
     $firstEntry = !empty($data[0]) ? (array)$data[0] : [];
 
     $displayClass = "\\OES\\API\\{$apiKey}_Display_Helper";
-    $displayArgs = ['date_locale' => $dateLocale];
+    $displayArgs = ['date_locale' => $dateLocale, 'identifier' => $apiKey];
     $displayHelper = class_exists($displayClass) ? new $displayClass($displayArgs) : new Display_Helper($displayArgs);
 
     $html = $displayHelper->html($firstEntry);

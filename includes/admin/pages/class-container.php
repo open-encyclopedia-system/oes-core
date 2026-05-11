@@ -59,7 +59,8 @@ if (!class_exists('Container')) :
                 'position' => 26,
                 'menu_slug' => 'container_' . $this->key,
                 'generated' => true,
-                'hide' => false
+                'hide' => false,
+                'icon_url' => 'container'
             ];
         }
 

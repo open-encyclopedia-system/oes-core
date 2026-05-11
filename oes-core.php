@@ -56,6 +56,7 @@ if (!function_exists('OES')) {
         if (!isset($oes)) {
             $oes = new OES_Core($args);
             if ($oes->initialized) {
+                $oes->maybe_upgrade();
                 $oes->initialize_core();
             }
         }
@@ -254,7 +255,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function initialize_core(): void
+        public function initialize_core(): void
         {
             /**
              * Include core plugin functionalities.
@@ -263,7 +264,6 @@ if (!class_exists('OES_Core')) :
              */
             require(OES_CORE_PLUGIN . '/includes/functions-utility.php');
             require(OES_CORE_PLUGIN . '/includes/functions-features.php');
-
 
             // Initialize OES Features
             \OES\Features\utility_functions();
@@ -277,6 +277,7 @@ if (!class_exists('OES_Core')) :
             $is_enabled = fn($key) => !$features || ($features[$key] ?? false);
 
             \OES\Features\dashboard();
+            \OES\Features\site_health();
             \OES\Features\admin_pages();
             \OES\Features\assets();
             \OES\Features\columns();
@@ -302,7 +303,7 @@ if (!class_exists('OES_Core')) :
             \OES\Features\figures();
             \OES\Features\filter();
             \OES\Features\labels();
-            \OES\Features\language_switch(!$this->block_theme);
+            \OES\Features\navigation(!$this->block_theme);
             \OES\Features\search();
             \OES\Features\export();
             \OES\Features\shortcodes();
@@ -322,7 +323,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function initialize_application(string $applicationPath = ''): void
+        public function initialize_application(string $applicationPath = ''): void
         {
             $this->define_application_constants($applicationPath);
             $this->application_initialized = true;
@@ -337,7 +338,7 @@ if (!class_exists('OES_Core')) :
         /**
          * @oesLegacy: moved
          */
-        function initialize_project(string $applicationPath = ''): void
+        public function initialize_project(string $applicationPath = ''): void
         {
             $this->initialize_application($applicationPath);
         }
@@ -349,7 +350,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function initialize_data_model(): void
+        public function initialize_data_model(): void
         {
             $generalConfigPost = get_posts([
                     'post_type' => 'oes_object',
@@ -396,7 +397,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function data_model_registered(): void
+        public function data_model_registered(): void
         {
             \OES\Block\register_block_styles();
             \OES\Block\register();
@@ -428,21 +429,9 @@ if (!class_exists('OES_Core')) :
          *
          * @return string|null Returns the version or null.
          */
-        function get_version(): ?string
+        public function get_version(): ?string
         {
             return $this->version ?? null;
-        }
-
-        /**
-         * Set the config post ID linking the OES object post storing the general configuration to the OES instance.
-         *
-         * @param mixed $postID The OES object post ID storing the general configuration.
-         *
-         * @return void
-         */
-        function set_config_post($postID): void
-        {
-            $this->config_post = $postID;
         }
 
         /**
@@ -453,7 +442,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_general_parameters(array $config, $postID = null): void
+        public function set_general_parameters(array $config, $postID = null): void
         {
             if ($postID) {
                 $this->set_config_post($postID);
@@ -471,6 +460,18 @@ if (!class_exists('OES_Core')) :
         }
 
         /**
+         * Set the config post ID linking the OES object post storing the general configuration to the OES instance.
+         *
+         * @param mixed $postID The OES object post ID storing the general configuration.
+         *
+         * @return void
+         */
+        public function set_config_post($postID): void
+        {
+            $this->config_post = $postID;
+        }
+
+        /**
          * Set media parameters.
          *
          * @param array $oesArgs The media OES arguments.
@@ -478,7 +479,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_media_parameters(array $oesArgs, $postID = null): void
+        public function set_media_parameters(array $oesArgs, $postID = null): void
         {
             $this->media_groups = $oesArgs;
 
@@ -495,7 +496,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_taxonomy_parameters(string $taxonomyKey, array $oesArgs): void
+        public function set_taxonomy_parameters(string $taxonomyKey, array $oesArgs): void
         {
             foreach (\OES\Model\get_taxonomy_oes_args_defaults() as $configKey => $default) {
                 $this->taxonomies[$taxonomyKey][$configKey] = $oesArgs[$configKey] ?? $default;
@@ -515,7 +516,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_post_type_parameters(string $postTypeKey, array $oesArgs, array $registerArgs = []): void
+        public function set_post_type_parameters(string $postTypeKey, array $oesArgs, array $registerArgs = []): void
         {
             foreach (\OES\Model\get_post_type_oes_args_defaults() as $configKey => $default) {
                 $this->post_types[$postTypeKey][$configKey] = $oesArgs[$configKey] ?? $default;
@@ -586,7 +587,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_field_options(string $component, string $key, array $fields, $postID): void
+        public function set_field_options(string $component, string $key, array $fields, $postID): void
         {
             if ($component == 'taxonomy') $component = 'taxonomies';
             elseif ($component == 'post_type') $component = 'post_types';
@@ -636,7 +637,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function set_media_field_options(array $fields): void
+        public function set_media_field_options(array $fields): void
         {
             foreach ($fields as $field) {
                 $this->media_groups['fields'][$field['key']]['label'] = $field['label'];
@@ -659,6 +660,38 @@ if (!class_exists('OES_Core')) :
                 }
             }
         }
+
+        /**
+         * Check plugin version and run upgrade routines if needed.
+         *
+         * @return void
+         */
+        public function maybe_upgrade(): void
+        {
+            $installedVersion = get_option('oes_db_version');
+
+            if (!$installedVersion) {
+                $this->install_db();
+                return;
+            }
+
+            if (version_compare($installedVersion, $this->db_version, '<')) {
+                $this->install_db();
+            }
+        }
+
+        /**
+         * Perform database installation.
+         *
+         * @return void
+         */
+        public function install_db(): void
+        {
+            \OES\DB\install_operation_table();
+            \OES\DB\install_cache_table();
+
+            update_option('oes_db_version', $this->db_version);
+        }
     }
 endif;
 
@@ -669,6 +702,5 @@ endif;
 require_once __DIR__ . '/includes/admin/initialize-db.php';
 
 register_activation_hook(__FILE__, function () {
-    \OES\DB\install_operation_table();
-    \OES\DB\install_cache_table();
+    OES()->maybe_upgrade();
 });

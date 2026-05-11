@@ -244,7 +244,7 @@ class Schema_OES_Single extends Schema
                 'creators' => ['label' => __('Creators', 'oes'), 'multiple' => true],
                 'subtitle' => ['label' => __('Subtitle', 'oes'), 'pattern' => true],
                 'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
-                'excerpt' => ['label' => __('Excerpt', 'oes')],
+                'excerpt' => ['label' => __('Abstract', 'oes')],
                 'featured_image' => ['label' => __('Featured Image', 'oes')],
                 'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
                 'doi' => ['label' => __('DOI', 'oes')],
@@ -252,14 +252,16 @@ class Schema_OES_Single extends Schema
                 'edit_date' => ['label' => __('Edit Date', 'oes')],
                 'language' => ['label' => __('Language', 'oes')],
                 'version_field' => ['label' => __('Version', 'oes')],
-                'literature' => ['label' => __('Literature', 'oes'), 'multiple' => true],
-                'terms' => ['label' => __('Terms', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
+                'literature' => ['label' => __('Bibliography', 'oes'), 'multiple' => true],
+                'terms' => ['label' => __('Subjects', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
                 'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true]
+                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
+                'status' => ['label' => __('Publication Status', 'oes')],
             ],
             'single-contributor' => [
                 'vita' => ['label' => __('Vita', 'oes')],
                 'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
+                'orcid' => ['label' => __('ORCID', 'oes')],
                 'language' => ['label' => __('Language', 'oes')],
                 'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true]
             ],

@@ -15,7 +15,6 @@ if (!class_exists('GND_Interface')) {
         public string $label = 'GND';
         public string $database_link = 'https://www.dnb.de/';
         public string $url = 'https://d-nb.info/gnd/';
-        public bool $preview_box = true;
 
         const PROPERTIES = [
             'gndIdentifier' => [

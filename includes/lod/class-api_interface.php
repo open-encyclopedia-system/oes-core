@@ -36,9 +36,6 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
         /** @var string Rest API schema version (if existing). */
         public string $schema_version = '';
 
-        /** @var bool Include a preview box. */
-        public bool $preview_box = false;
-
         /** @var string Direct record link prefix. */
         public string $url = '';
 
@@ -105,10 +102,19 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
                 ? apply_filters('oes/api_label_modify', $label, $this->identifier, $id)
                 : str_replace(';', ',', $label);
 
-            if($this->preview_box) {
+            $previewOption = get_option('oes_api-' . $this->identifier . '_popup');
+
+            $preview = rest_sanitize_boolean($previewOption);
+            if(isset($args['preview']) ){
+                $preview = filter_var($args['preview'], FILTER_VALIDATE_BOOLEAN);
+            }
+
+            $additional = $args['additional'] ?? '';
+
+            if($preview) {
                 return sprintf(
                     '<span class="oes-lod-popup oes-popup" data-fn="popup_lod%s">
-            <a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lod_id="%s" data-box_id="%s">
+            <a href="javascript:void(0)" class="oes-lodlink" data-api="%s" data-lod_id="%s" data-box_id="%s" data-additional="%s">
                 %s&nbsp;%s
             </a>
         </span>
@@ -119,6 +125,7 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
                     esc_attr($this->identifier),
                     esc_attr($id),
                     esc_attr($apiBoxCounter),
+                    esc_attr($additional),
                     esc_html($label),
                     oes_get_html_img($iconUrl, 'oes-' . $this->identifier . '-icon'),
                     esc_attr($apiBoxCounter),
@@ -178,8 +185,7 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
             $properties = [];
 
             foreach (static::PROPERTIES as $key => $property) {
-                $properties[$key] = ($property['label']['german'] ?? '[Label missing]') . '/' .
-                    ($property['label']['english'] ?? '[Label missing]') . ' (' . $key . ')';
+                $properties[$key] = implode(' / ', $property['label']  ?? []) . ' (' . $key . ')';
             }
 
             asort($properties);

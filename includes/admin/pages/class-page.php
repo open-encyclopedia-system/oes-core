@@ -110,7 +110,7 @@ if (!class_exists('Page')) :
                 $this->page_parameters['page_title'] = $this->page_parameters['menu_title'];
             }
 
-            $this->set_icon_path($args['icon_url'] ?? 'default');
+            $this->set_icon_path($this->page_parameters['icon_url'] ?? 'default');
         }
 
         /**

@@ -117,6 +117,19 @@ function dashboard(bool $enabled = true): void
 }
 
 /**
+ * Includes the site health class.
+ *
+ * @return void
+ */
+function site_health(): void
+{
+    include_once __DIR__ . '/admin/health/class-site_health.php';
+    include_once __DIR__ . '/admin/health/functions-health.php';
+    add_action('debug_information', '\OES\Admin\Health\debug_information');
+    //TODO add_action('rest_api_init', '\OES\Admin\Health\register_rest_routes');
+}
+
+/**
  * Include admin pages inside the editorial layer.
  *
  * This enables the "Admin Pages" feature, allowing for admin pages within the editorial layer
@@ -490,17 +503,15 @@ function labels(): void
 }
 
 /**
- * Include language switch.
- *
- * This enables the "Language Switch" feature, which is used in applications that include two or more languages.
- * The switch allows users to change the website's language.
+ * Include theme navigation.
  *
  * @oesDevelopment Is this needed outside of frontend?
+ * TODO: move to theme?
  *
  * @param bool $blockTheme
  * @return void
  */
-function language_switch(bool $blockTheme = true): void
+function navigation(bool $blockTheme = true): void
 {
     include_once __DIR__ . '/theme/navigation/class-language_switch.php';
     include_once __DIR__ . '/theme/navigation/functions-navigation.php';

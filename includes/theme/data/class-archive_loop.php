@@ -57,7 +57,7 @@ class OES_Archive_Loop
 
         $defaults = [
             'alphabet' => true,
-            'exclude-preview' => false,
+            'archive_data' => true,
             'skip-empty' => true,
             'className' => 'is-style-oes-default',
             'display_content' => false,
@@ -401,7 +401,7 @@ HTML;
      */
     protected function prepare_preview_table(array $data): string
     {
-        if (($this->options['exclude-preview'] ?? false) || empty($data)) {
+        if (!($this->options['archive_data'] ?? true) || empty($data)) {
             return '';
         }
 

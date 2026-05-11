@@ -7,53 +7,50 @@ if (!class_exists('\OES\API\GND_Display_Helper')) {
     {
 
         /** @inheritdoc */
-        protected function get_table($entry)
+        protected function modify_table_data(array &$tableData, array $entry): void
         {
-
-            $entryData = $entry['entry'];
             $types = $entry['types'] ?? [];
 
             if (has_filter('oes/api_gnd_display_table')) {
-                return apply_filters('oes/api_gnd_display_table', $entryData, $types);
+                 $tableData = apply_filters('oes/api_gnd_display_table', $tableData, $types);
+                 return;
             }
 
-            if (!empty($entryData['variantName']['raw'])) {
-                $variantNames = array_slice($entryData['variantName']['raw'], 0, 10);
+            if (!empty($tableData['variantName']['raw'])) {
+                $variantNames = array_slice($tableData['variantName']['raw'], 0, 10);
 
-                $amount = count($entryData['variantName']['raw']);
+                $amount = count($tableData['variantName']['raw']);
                 $limit = 10;
                 if ($amount > $limit) {
                     $variantNames[] = '... +' . ($amount - 10);
                 }
 
-                $entryData['variantName']['value'] =
+                $tableData['variantName']['value'] =
                     '<ul class="oes-field-value-list"><li>' .
                     implode('</li><li>', $variantNames) .
                     '</li></ul>';
             }
 
             $this->combine_date_and_place(
-                $entryData,
+                $tableData,
                 'dateOfBirth',
                 'placeOfBirth',
                 $this->language === 'german' ? 'Geboren' : 'Birth'
             );
 
             $this->combine_date_and_place(
-                $entryData,
+                $tableData,
                 'dateOfDeath',
                 'placeOfDeath',
                 $this->language === 'german' ? 'Verstorben' : 'Death'
             );
 
             $this->combine_date_and_place(
-                $entryData,
+                $tableData,
                 'dateOfConferenceOrEvent',
                 'placeOfConferenceOrEvent',
                 $this->language === 'german' ? 'Datum' : 'Date'
             );
-
-            return $entryData;
         }
 
         /**

@@ -462,12 +462,13 @@ if (!class_exists('Rest_API')) {
         protected function transform_data_entry($entry, $item): array
         {
             return [
-                'entry' => $entry,
-                'id' => $this->get_entry_id($entry, $item),
-                'name' => $this->get_entry_name($entry, $item),
-                'type' => $this->get_entry_type($entry, $item),
-                'link' => $this->get_entry_link($entry, $item),
-                'text' => $this->get_entry_link_text($entry, $item)
+                'entry'         => $entry,
+                'id'            => $this->get_entry_id($entry, $item),
+                'name'          => $this->get_entry_name($entry, $item),
+                'type'          => $this->get_entry_type($entry, $item),
+                'link'          => $this->get_entry_link($entry, $item),
+                'text'          => $this->get_entry_link_text($entry, $item),
+                'additional'    => $this->get_entry_additional($entry, $item),
             ];
         }
 
@@ -544,6 +545,18 @@ if (!class_exists('Rest_API')) {
         protected function get_entry_link_text($entry, $item): string
         {
             return $this->get_entry_name($entry, $item);
+        }
+
+        /**
+         * Get entry additional info for shortcode.
+         *
+         * @param $entry
+         * @param $item
+         * @return string
+         */
+        protected function get_entry_additional($entry, $item): string
+        {
+            return '';
         }
     }
 }

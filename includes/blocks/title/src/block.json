@@ -7,25 +7,43 @@
   "category": "oes-schema",
   "description": "Display the OES display title which may differ from the WordPress title.",
   "supports": {
+    "align": true,
+    "alignWide": true,
+    "anchor": true,
+    "ariaLabel": true,
+    "className": true,
+    "customClassName": true,
+    "html": true,
+    "inserter": true,
+    "lock": true,
+    "multiple": true,
+    "reusable": true,
+    "renaming": true,
     "spacing": {
       "margin": true,
-      "padding": true,
-      "blockGap": true
+      "padding": true
     },
     "typography": {
       "fontSize": true,
-      "lineHeight": true
+      "lineHeight": true,
+      "fontFamily": true,
+      "fontWeight": true,
+      "fontStyle": true,
+      "textTransform": true,
+      "textDecoration": true,
+      "letterSpacing": true,
+      "writingMode": true
     },
-    "align": true,
-    "anchor": true,
-    "alignContent": true,
     "color": {
-      "text": true,
       "background": true,
-      "link": true
+      "heading": true
     },
-    "alignText": true,
-    "fullHeight": true
+    "border": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    }
   },
   "editorScript": "file:./index.js",
   "render": "file:./render.php"

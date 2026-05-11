@@ -16,7 +16,6 @@ if (!class_exists('Geonames_Interface')) {
         public string $database_link = 'https://www.geonames.org/';
         public string $url = 'https://www.geonames.org/';
         public bool $credentials = true;
-        public bool $preview_box = true;
 
         const PROPERTIES = [
             'geonameId' => [

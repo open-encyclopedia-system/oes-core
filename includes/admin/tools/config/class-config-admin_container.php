@@ -181,7 +181,7 @@ class Admin_Container extends Config
                 'page_parameters' => [
                     'menu_title' => 'New Container Title',
                     'position' => 20,
-                    'icon_url' => 'default'
+                    'icon_url' => 'container'
                 ],
                 'subpages' => [],
                 'info_page' => [
