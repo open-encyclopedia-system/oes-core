@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/field",
+  "version": "0.1.0",
+  "title": "Field",
+  "category": "theme",
+  "description": "Display a field of an OES post.",
+  "keywords": [
+    "data"
+  ],
+  "attributes": {
+    "field": {
+      "type": "string"
+    },
+    "header": {
+      "type": "object"
+    },
+    "prefix": {
+      "type": "object"
+    },
+    "relation": {
+      "type": "string"
+    },
+    "listClass": {
+      "type": "string"
+    },
+    "listID": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}

@@ -54,7 +54,6 @@ if (!class_exists('OES_Archive')) {
         /** @var array $query_parameters Additional parameters for WP_Query */
         public array $query_parameters = [];
 
-
         /**
          * OES_Archive constructor.
          *
@@ -69,7 +68,6 @@ if (!class_exists('OES_Archive')) {
              */
             $args = apply_filters('oes/theme_archive_args', $args);
 
-            /* set considered language */
             global $oes_language;
             $this->filtered_language = $args['language'] ?? ($oes_language ?? 'language0');
 
@@ -81,7 +79,6 @@ if (!class_exists('OES_Archive')) {
             $this->loop();
         }
 
-
         /**
          * Set parameters
          *
@@ -91,7 +88,6 @@ if (!class_exists('OES_Archive')) {
         public function set_parameters(array $args = []): void
         {
         }
-
 
         /**
          * Set query parameters
@@ -104,7 +100,6 @@ if (!class_exists('OES_Archive')) {
             $this->query_parameters = $args['query_parameters'] ?? [];
         }
 
-
         /**
          * Set additional parameters.
          *
@@ -115,7 +110,6 @@ if (!class_exists('OES_Archive')) {
         {
         }
 
-
         /**
          * Set archive label.
          *
@@ -123,22 +117,86 @@ if (!class_exists('OES_Archive')) {
          */
         public function set_label(): void
         {
-            $this->label = $this->get_object_label();
+            $label = $this->get_object_label();
 
-            /* check if archive is part of index */
+            $this->label = $label;
+            $this->page_title = $label;
+
+            if (!$this->is_index_archive()) {
+                return;
+            }
+
             global $oes, $oes_is_index, $oes_language;
-            if ($oes_is_index && $oes->theme_index_pages[$oes_is_index]['slug'] !== 'hidden') {
-                $pageTitle = $oes->theme_index_pages[$oes_is_index]['label'][$oes_language] ?? __('Index', 'oes');
-                $this->page_title = trim($pageTitle . (empty($this->label) ? '' : ' | ' . $this->label));
-                $this->label = '<div class="oes-index-archive-title">' .
-                    '<span class="oes-index-archive-title-index">' . $pageTitle . '</span>' .
-                    (empty($this->label) ?
-                        '' :
-                        '<span class="oes-index-archive-title-post-type">' . $this->label . '</span>') .
-                    '</div>';
-            } else $this->page_title = $this->label;
+
+            $pageTitle = (
+                $oes->theme_index_pages[$oes_is_index]['label'][$oes_language]
+                ?? __('Index', 'oes')
+            );
+
+            $this->page_title = $this->build_page_title(
+                $pageTitle,
+                $label
+            );
+
+            $this->label = $this->build_archive_label(
+                $pageTitle,
+                $label
+            );
         }
 
+        /**
+         * Check whether archive belongs to index.
+         */
+        protected function is_index_archive(): bool
+        {
+            global $oes, $oes_is_index;
+
+            return (
+                !empty($oes_is_index) &&
+                ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '')
+                !== 'hidden'
+            );
+        }
+
+        /**
+         * Build page title.
+         */
+        protected function build_page_title(
+            string $pageTitle,
+            string $label
+        ): string {
+
+            return empty($label)
+                ? $pageTitle
+                : $pageTitle . ' | ' . $label;
+        }
+
+        /**
+         * Build archive label HTML.
+         */
+        protected function build_archive_label(
+            string $pageTitle,
+            string $label
+        ): string {
+
+            $html = '<div class="oes-index-archive-title">';
+
+            $html .= sprintf(
+                '<span class="oes-index-archive-title-index">%s</span>',
+                esc_html($pageTitle)
+            );
+
+            if (!empty($label)) {
+                $html .= sprintf(
+                    '<span class="oes-index-archive-title-post-type">%s</span>',
+                    esc_html($label)
+                );
+            }
+
+            $html .= '</div>';
+
+            return $html;
+        }
 
         /**
          * Prepare facet filter.
@@ -151,7 +209,6 @@ if (!class_exists('OES_Archive')) {
             return [];
         }
 
-
         /**
          * Get the object label, e.g. post type label.
          *
@@ -161,7 +218,6 @@ if (!class_exists('OES_Archive')) {
         {
             return '';
         }
-
 
         /**
          * Prepare results
@@ -175,7 +231,6 @@ if (!class_exists('OES_Archive')) {
             $this->after_loop();
         }
 
-
         /**
          * Optional additional action before loop.
          *
@@ -184,7 +239,6 @@ if (!class_exists('OES_Archive')) {
         public function before_loop(): void
         {
         }
-
 
         /**
          * Loop through results and prepare for display.
@@ -195,7 +249,6 @@ if (!class_exists('OES_Archive')) {
         {
         }
 
-
         /**
          * Optional additional action after loop.
          *
@@ -205,7 +258,6 @@ if (!class_exists('OES_Archive')) {
         {
         }
 
-
         /**
          * Prepare post data to be displayed.
          *
@@ -214,53 +266,83 @@ if (!class_exists('OES_Archive')) {
          */
         public function loop_results_post(WP_Post $post): void
         {
-            /* skip if status is not 'publish' */
-            if ('publish' == $post->post_status) {
-
-                /* check for current version and return early if more current version exists */
-                $parentID = Versioning\get_parent_id($post->ID);
-                if ($parentID &&
-                    ((Versioning\get_current_version_id($parentID) ?? false) != $post->ID)) return;
-
-                /* check for language and return early if it does not match criteria */
-                if ($this->filtered_language !== 'all' && !empty($this->filtered_language)) {
-                    $postLanguage = oes_get_post_language($parentID ?: $post->ID);
-                    if ($postLanguage &&
-                        $postLanguage !== 'all' &&
-                        $this->filtered_language !== $postLanguage) return;
-                }
-
-                /* prepare title */
-                $titleDisplay = oes_get_display_title_archive($post);
-
-                /* get first character of displayed title for character array */
-                $titleForSorting = oes_get_display_title_sorting($post);
-                $key = $this->get_key_for_alphabet_filter($titleForSorting);
-                if (!in_array($key, $this->characters)) $this->characters[] = $key;
-
-                /* check for filter */
-                if (!empty($this->filter)) $this->add_filter($post->ID, $parentID);
-
-                /* add information */
-                $this->prepared_posts[$key][strtolower($titleForSorting . $post->ID)][] = [
-                    'postID' => $post->ID,
-                    'title' => oes_get_display_title($post->ID),
-                    'titleForDisplay' => $titleDisplay,
-                    'permalink' => get_permalink()
-                ];
-                $this->prepared_ids[] = $post->ID;
-                $this->count++;
-
-
-                /**
-                 * Additional processing.
-                 *
-                 * @param int $post- >ID The post ID.
-                 */
-                do_action('oes/theme_archive_loop_results_post', $post->ID);
+            if ('publish' != $post->post_status) {
+                return;
             }
+
+            $parentID = Versioning\get_parent_id($post->ID);
+
+            if (!$this->is_current_version($post->ID, $parentID)) {
+                return;
+            }
+
+            if (!$this->matches_language($post->ID, $parentID)) {
+                return;
+            }
+
+            $titleDisplay = oes_get_display_title_archive($post);
+            $titleForSorting = oes_get_display_title_sorting($post);
+
+            $alphabetKey = $this->get_key_for_alphabet_filter($titleForSorting);
+            $this->add_character($alphabetKey);
+
+            if (!empty($this->filter)) {
+                $this->add_filter($post->ID, $parentID);
+            }
+
+            $this->add_prepared_post(
+                $alphabetKey,
+                $titleForSorting,
+                $titleDisplay,
+                $post
+            );
+
+            $this->prepared_ids[] = $post->ID;
+
+            $this->count++;
+
+            /**
+             * Additional processing.
+             *
+             * @param int $post - >ID The post ID.
+             */
+            do_action('oes/theme_archive_loop_results_post', $post->ID);
         }
 
+        /**
+         * Check whether this is the current version.
+         */
+        protected function is_current_version(int $postID, $parentID): bool
+        {
+
+            if (!$parentID) {
+                return true;
+            }
+
+            return (
+                (Versioning\get_current_version_id($parentID) ?? false)
+                === $postID
+            );
+        }
+
+        /**
+         * Check language filter.
+         */
+        protected function matches_language(int $postID, $parentID): bool
+        {
+
+            if ($this->filtered_language === 'all' || empty($this->filtered_language)) {
+                return true;
+            }
+
+            $postLanguage = oes_get_post_language($parentID ?: $postID);
+
+            if (!$postLanguage || $postLanguage === 'all') {
+                return true;
+            }
+
+            return $this->filtered_language === $postLanguage;
+        }
 
         /**
          * Get first character from title, collecting for alphabet filter.
@@ -268,13 +350,70 @@ if (!class_exists('OES_Archive')) {
          * @param string $title The post title.
          * @return string Return the alphabet key.
          */
-        function get_key_for_alphabet_filter(string $title): string
+        protected function get_key_for_alphabet_filter(string $title): string
         {
             $key = strtoupper(substr(remove_accents($title), 0, 1));
-            if (!in_array($key, range('A', 'Z'))) $key = 'other';
+            if (!in_array($key, range('A', 'Z'))) {
+                $key = 'other';
+            }
             return $key;
         }
 
+        /**
+         * Add character to character list.
+         */
+        protected function add_character(string $key): void
+        {
+            if (!in_array($key, $this->characters, true)) {
+                $this->characters[] = $key;
+            }
+        }
+
+        /**
+         * Add prepared post data.
+         */
+        protected function add_prepared_post(
+            string $alphabetKey,
+            string $titleForSorting,
+            string $titleDisplay,
+            WP_Post $post
+        ): void {
+
+            $sortingKey = strtolower(
+                $titleForSorting . $post->ID
+            );
+
+            $this->prepared_posts[$alphabetKey][$sortingKey][] = [
+                'postID'          => $post->ID,
+                'title'           => oes_get_display_title($post->ID),
+                'titleForDisplay' => $titleDisplay,
+                'permalink'       => get_permalink($post)
+            ];
+        }
+
+        /**
+         * Add prepared post data.
+         */
+        protected function add_prepared_term(
+            string $alphabetKey,
+            string $titleForSorting,
+            string $titleDisplay,
+            WP_Term $term
+        ): void {
+
+            $sortingKey = strtolower(
+                $titleForSorting . $term->term_taxonomy_id
+            );
+
+            $this->prepared_posts[$alphabetKey][$sortingKey][] = [
+                'termID' => $term->term_id,
+                'postID' => $term->term_id,
+                'termTaxonomyID' => $term->term_taxonomy_id,
+                'title' => $titleDisplay,
+                'titleForDisplay' => $titleDisplay,
+                'permalink' => get_term_link($term)
+            ];
+        }
 
         /**
          * Add filter.
@@ -285,129 +424,382 @@ if (!class_exists('OES_Archive')) {
          */
         public function add_filter(int $postID, $parentID = false): void
         {
+            foreach ($this->filter as $filter => $params) {
 
-            /* loop through the filter */
-            foreach ($this->filter as $filter => $filterParams) {
+                if ($this->check_if_skip_filter($filter, $params)) {
+                    continue;
+                }
 
-                /* skip alphabet filter */
-                if ($filter === 'alphabet') continue;
+                $relevantPost = $this->get_relevant_post($postID, $parentID, $params);
 
-                /* check if parent post is source */
-                $relevantPost = ($parentID && $filterParams['parent']) ? $parentID : $postID;
+                switch ($params['type']) {
 
-                /* check if taxonomy */
-                if (isset($filterParams['type'])) {
-                    if ($filterParams['type'] === 'taxonomy') {
-                        $termList = get_the_terms($relevantPost, $filter);
-                        if (!empty($termList)) foreach ($termList as $term)
-                            if (!isset($this->filter_array['json'][$filter][$term->term_id]) ||
-                                !in_array($postID, $this->filter_array['json'][$filter][$term->term_id])) {
+                    case 'taxonomy':
+                        $this->handle_taxonomy_filter(
+                            $filter,
+                            $relevantPost,
+                            $postID
+                        );
+                        break;
 
-                                /* check for other languages */
-                                $termName = '';
-                                if ($this->filtered_language !== 'language0')
-                                    $termName = get_term_meta(
-                                        $term->term_id,
-                                        'name_' . $this->filtered_language,
-                                        true);
+                    case 'post_type':
+                        $this->handle_post_type_filter(
+                            $filter,
+                            $relevantPost,
+                            $postID
+                        );
+                        break;
 
-                                $this->filter_array['list'][$filter]['items'][$term->term_id] = empty($termName) ?
-                                    $term->name :
-                                    $termName;
-                                $this->filter_array['json'][$filter][$term->term_id][] = $postID;
-                            }
-                    }/* check if taxonomy */
-                    elseif ($filterParams['type'] === 'post_type') {
-
-                        /* get relationship fields */
-                        $relationshipFields = oes_get_all_object_fields(
-                            get_post_type($postID),
-                            ['relationship', 'post_object']);
-                        if (!empty($relationshipFields))
-                            foreach ($relationshipFields as $relationshipFieldKey => $relationshipField)
-                                if (in_array($filter, $relationshipField['post_type'] ?? [])) {
-
-                                    $fieldValue = oes_get_field($relationshipFieldKey, $relevantPost);
-                                    if (!empty($fieldValue))
-                                        foreach ($fieldValue as $singleFieldValue)
-                                            if (!isset($this->filter_array['json'][$filter][$singleFieldValue->ID]) ||
-                                                !in_array($postID,
-                                                    $this->filter_array['json'][$filter][$singleFieldValue->ID])) {
-                                                $this->filter_array['list'][$filter]['items'][$singleFieldValue->ID] =
-                                                    oes_get_display_title_archive($singleFieldValue->ID);
-                                                $this->filter_array['json'][$filter][$singleFieldValue->ID][] = $postID;
-                                            }
-                                }
-                    } /* check if field */
-                    elseif ($filterParams['type'] === 'field' && $field = oes_get_field($filter, $relevantPost))
-                        if (!empty($field)) {
-
-                            switch ($filterParams['field-type'] ?? 'default') {
-
-                                case 'relationship':
-                                    foreach ($field as $singlePost) {
-                                        $singlePostID = $singlePost->ID ?? $singlePost;
-                                        if (!isset($this->filter_array['json'][$filter][$singlePostID]) ||
-                                            !in_array($postID, $this->filter_array['json'][$filter][$singlePostID])) {
-                                            $this->filter_array['list'][$filter]['items'][$singlePostID] =
-                                                oes_get_display_title_archive($singlePostID);
-                                            $this->filter_array['json'][$filter][$singlePostID][] = $postID;
-                                        }
-                                    }
-                                    break;
-
-                                case 'taxonomy' :
-                                    $field = is_array($field) ? $field : [$field];
-                                    foreach ($field as $termID)
-                                        if (!isset($this->filter_array['json'][$filter][$termID]) ||
-                                            !in_array($postID, $this->filter_array['json'][$filter][$termID])) {
-                                            $this->filter_array['list'][$filter]['items'][$termID] =
-                                                oes_get_display_title(
-                                                    get_term($termID, get_field_object($filter)['taxonomy']));
-                                            $this->filter_array['json'][$filter][$termID][] = $postID;
-                                        }
-
-                                    break;
-
-                                case 'radio':
-                                case 'select':
-                                    if (is_string($field)) $field = [$field];
-                                    if (is_array($field)) {
-                                        foreach ($field as $singleField) {
-                                            if (!isset($this->filter_array['json'][$filter][$singleField]) ||
-                                                !in_array($postID, $this->filter_array['json'][$filter][$singleField])) {
-                                                $this->filter_array['list'][$filter]['items'][$singleField] =
-                                                    oes_get_field_object($filter)['choices'][$singleField] ?? $singleField;
-                                                $this->filter_array['json'][$filter][$singleField][] = $postID;
-                                            }
-                                        }
-                                    }
-                                    break;
-
-                                case 'default' :
-                                default:
-                                    if (!isset($this->filter_array['json'][$filter][$field]) ||
-                                        !in_array($postID, $this->filter_array['json'][$filter][$field])) {
-
-                                        $multipleValues = explode(';', $field);
-                                        foreach ($multipleValues ?? [] as $singleValue) {
-
-                                            /* make sure the key is javascript compatible */
-                                            $cleanValue = trim((string)$singleValue);
-                                            $cleanKey = (is_numeric($cleanValue) && (string)(int)$cleanValue === $cleanValue)
-                                                ? (int)$cleanValue
-                                                : md5($cleanValue);
-
-                                            $this->filter_array['list'][$filter]['items'][$cleanKey] = $cleanValue;
-                                            $this->filter_array['json'][$filter][$cleanKey][] = $postID;
-                                        }
-                                    }
-                            }
-                        }
+                    case 'field':
+                        $this->handle_field_filter(
+                            $filter,
+                            $params,
+                            $relevantPost,
+                            $postID
+                        );
+                        break;
                 }
             }
         }
 
+        /**
+         * Skip invalid filters.
+         */
+        protected function check_if_skip_filter(string $filter, $filterParams): bool
+        {
+
+            if ($filter === 'alphabet') {
+                return true;
+            }
+
+            if (!is_array($filterParams) || empty($filterParams['type'] ?? null)) {
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Get relevant post ID.
+         */
+        protected function get_relevant_post(int $postID, int $parentID, array $filterParams): int
+        {
+            return ($parentID && $filterParams['parent']) ? $parentID : $postID;
+        }
+
+        /**
+         * Handle taxonomy filter.
+         */
+        protected function handle_taxonomy_filter(
+            string $filter,
+            int    $relevantPost,
+            int    $postID
+        ): void
+        {
+
+            $termList = get_the_terms($relevantPost, $filter);
+
+            if (empty($termList)) {
+                return;
+            }
+
+            foreach ($termList as $term) {
+
+                $termName = '';
+
+                if ($this->filtered_language !== 'language0') {
+                    $termName = get_term_meta(
+                        $term->term_id,
+                        'name_' . $this->filtered_language,
+                        true
+                    );
+                }
+
+                $this->add_filter_item(
+                    $filter,
+                    $term->term_id,
+                    $termName ?: $term->name,
+                    $postID
+                );
+            }
+        }
+
+        /**
+         * Handle post type filter.
+         */
+        protected function handle_post_type_filter(
+            string $filter,
+            int    $relevantPost,
+            int    $postID
+        ): void
+        {
+
+            $relationshipFields = oes_get_all_object_fields(
+                get_post_type($postID),
+                ['relationship', 'post_object']
+            );
+
+            if (empty($relationshipFields)) {
+                return;
+            }
+
+            foreach ($relationshipFields as $relationshipFieldKey => $relationshipField) {
+
+                if (!in_array($filter, $relationshipField['post_type'] ?? [])) {
+                    continue;
+                }
+
+                $fieldValue = oes_get_field(
+                    $relationshipFieldKey,
+                    $relevantPost
+                );
+
+                if (empty($fieldValue)) {
+                    continue;
+                }
+
+                foreach ($fieldValue as $singleFieldValue) {
+
+                    $this->add_filter_item(
+                        $filter,
+                        $singleFieldValue->ID,
+                        oes_get_display_title_archive($singleFieldValue->ID),
+                        $postID
+                    );
+                }
+            }
+        }
+
+        /**
+         * Handle field filter.
+         */
+        protected function handle_field_filter(
+            string $filter,
+            array  $filterParams,
+            int    $relevantPost,
+            int    $postID
+        ): void
+        {
+
+            $field = oes_get_field($filter, $relevantPost, false);
+
+            if (empty($field)) {
+                return;
+            }
+
+            switch ($filterParams['field-type'] ?? 'default') {
+
+                case 'relationship':
+                    $this->handle_relationship_field(
+                        $filter,
+                        $field,
+                        $postID
+                    );
+                    break;
+
+                case 'taxonomy':
+                    $this->handle_taxonomy_field(
+                        $filter,
+                        $field,
+                        $postID
+                    );
+                    break;
+
+                case 'radio':
+                case 'select':
+                    $this->handle_select_field(
+                        $filter,
+                        $field,
+                        $postID
+                    );
+                    break;
+
+                case 'date_picker':
+                    $this->handle_date_picker_field(
+                        $filter,
+                        $field,
+                        $postID
+                    );
+                    break;
+
+                default:
+                    $this->handle_default_field(
+                        $filter,
+                        $field,
+                        $postID
+                    );
+            }
+        }
+
+        /**
+         * Handle relationship field.
+         */
+        protected function handle_relationship_field(
+            string $filter,
+                   $field,
+            int    $postID
+        ): void
+        {
+
+            foreach ($this->normalize_array($field) as $singlePost) {
+
+                $singlePostID = $singlePost->ID ?? $singlePost;
+
+                $this->add_filter_item(
+                    $filter,
+                    $singlePostID,
+                    oes_get_display_title_archive($singlePostID),
+                    $postID
+                );
+            }
+        }
+
+        /**
+         * Handle taxonomy field.
+         */
+        protected function handle_taxonomy_field(
+            string $filter,
+                   $field,
+            int    $postID
+        ): void
+        {
+
+            $fieldObject = oes_get_field_object($filter);
+            $taxonomy = $fieldObject['taxonomy'] ?? '';
+
+            foreach ($this->normalize_array($field) as $termID) {
+
+                $term = get_term($termID, $taxonomy);
+
+                $this->add_filter_item(
+                    $filter,
+                    $termID,
+                    oes_get_display_title($term),
+                    $postID
+                );
+            }
+        }
+
+        /**
+         * Handle select/radio field.
+         */
+        protected function handle_select_field(
+            string $filter,
+                   $field,
+            int    $postID
+        ): void
+        {
+
+            $fieldObject = oes_get_field_object($filter);
+            $choices = $fieldObject['choices'] ?? [];
+
+            foreach ($this->normalize_array($field) as $singleField) {
+
+                $this->add_filter_item(
+                    $filter,
+                    $singleField,
+                    $choices[$singleField] ?: $singleField,
+                    $postID
+                );
+            }
+        }
+
+        /**
+         * Handle date picker field.
+         */
+        protected function handle_date_picker_field(
+            string $filter,
+                   $field,
+            int    $postID
+        ): void
+        {
+
+            $year = date('Y', strtotime($field));;
+
+            $this->add_filter_item(
+                $filter,
+                $year,
+                $year,
+                $postID
+            );
+        }
+
+        /**
+         * Handle default field.
+         */
+        protected function handle_default_field(
+            string $filter,
+                   $field,
+            int    $postID
+        ): void
+        {
+
+            $multipleValues = explode(';', (string)$field);
+
+            foreach ($multipleValues as $singleValue) {
+
+                $cleanValue = trim((string)$singleValue);
+
+                if ($cleanValue === '') {
+                    continue;
+                }
+
+                $cleanKey = (
+                    is_numeric($cleanValue) &&
+                    (string)(int)$cleanValue === $cleanValue
+                )
+                    ? (int)$cleanValue
+                    : md5($cleanValue);
+
+                $this->add_filter_item(
+                    $filter,
+                    $cleanKey,
+                    $cleanValue,
+                    $postID
+                );
+            }
+        }
+
+        /**
+         * Normalize value to array.
+         */
+        protected function normalize_array($value): array
+        {
+            if (empty($value)) {
+                return [];
+            }
+
+            return is_array($value)
+                ? $value
+                : [$value];
+        }
+
+        /**
+         * Add filter item.
+         */
+        protected function add_filter_item(
+            string $filter,
+                   $key,
+            string $label,
+            int    $postID
+        ): void
+        {
+
+            if (!isset($this->filter_array['json'][$filter][$key])) {
+                $this->filter_array['json'][$filter][$key] = [];
+            }
+
+            if (!in_array(
+                $postID,
+                $this->filter_array['json'][$filter][$key],
+                true
+            )) {
+
+                $this->filter_array['list'][$filter]['items'][$key] = $label;
+
+                $this->filter_array['json'][$filter][$key][] = $postID;
+            }
+        }
 
         /**
          * Prepare term to be displayed.
@@ -417,27 +809,21 @@ if (!class_exists('OES_Archive')) {
          */
         public function loop_results_term(WP_Term $term): void
         {
-
-            /* get first character */
             $titleDisplay = oes_get_display_title_archive($term);
-
-            /* get first character of displayed title for character array */
             $titleForSorting = oes_get_display_title_sorting($term);
-            $key = $this->get_key_for_alphabet_filter($titleForSorting);
-            if (!in_array($key, $this->characters)) $this->characters[] = $key;
 
-            /* add information */
-            $this->prepared_posts[$key][strtolower($titleForSorting . $term->term_taxonomy_id)][] = [
-                'termID' => $term->term_id,
-                'postID' => $term->term_id,
-                'termTaxonomyID' => $term->term_taxonomy_id,
-                'title' => $titleDisplay,
-                'titleForDisplay' => $titleDisplay,
-                'permalink' => get_term_link($term)
-            ];
+            $alphabetKey = $this->get_key_for_alphabet_filter($titleForSorting);
+            $this->add_character($alphabetKey);
+
+            $this->add_prepared_term(
+                $alphabetKey,
+                $titleForSorting,
+                $titleDisplay,
+                $term
+            );
+
             $this->count++;
         }
-
 
         /**
          * Get archive data as table to be displayed.
@@ -536,10 +922,9 @@ if (!class_exists('OES_Archive')) {
                         /* add information to table */
                         if (!$hidePost && $versionExists) {
 
-                            if($isTerm){
+                            if ($isTerm) {
                                 $postLanguage = 'all';
-                            }
-                            else {
+                            } else {
                                 $postLanguage = oes_get_post_language($postID);
                                 if (empty($postLanguage)) {
                                     $postLanguage = 'all';

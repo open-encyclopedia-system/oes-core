@@ -37,4 +37,4 @@ add_shortcode('oes_audit_relations', '\OES\Admin\display_audit_relations');
 add_shortcode('oes_audit_field_value', '\OES\Admin\display_audit_field_value');
 
 //@oesDevelopment export in development
-add_shortcode('oes_export_button', '\OES\Export\button_html');
+add_shortcode('oes_export_button', '\OES\Rest\export_button_html');

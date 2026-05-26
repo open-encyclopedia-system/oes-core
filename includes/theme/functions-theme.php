@@ -305,7 +305,7 @@ function oes_post_terms_html(array $args): string
 
 
 /**
- * Get the HTML representation of connected terms.
+ * Get the HTML representation of a field.
  *
  * @param array $args Shortcode attributes.
  *
@@ -313,65 +313,7 @@ function oes_post_terms_html(array $args): string
  */
 function oes_field_html(array $args): string
 {
-    /* check for tags */
-    global $oes_post, $oes_term, $oes_language;
-    if ((empty($oes_post) && empty($oes_term)) || empty($args['field'])) return '';
-
-
-    /* check for value */
-    if (empty($oes_post))
-        $value = oes_get_field($args['field'], $oes_term->taxonomy . '_' . $oes_term->object_ID);
-    else {
-        ;
-
-        if($args['parent'] ?? false) $value = oes_get_field_display_value($args['field'], $oes_post->parent_ID);
-        elseif($args['version'] ?? false) {
-            $currentVersion = \OES\Versioning\get_current_version_id($oes_post->object_ID);
-            if($currentVersion) $value = oes_get_field_display_value($args['field'], $currentVersion);
-        }
-        else {
-            if($args['relation'] ?? false) {
-
-                $rawValue = oes_get_field($args['field'], $oes_post->object_ID);
-                $fieldObject = oes_get_field_object($args['field'], $oes_post->object_ID);
-
-                /* modify value for return format 'id' */
-                $replaceValue = [];
-                if (isset($fieldObject['return_format']) &&
-                    $fieldObject['return_format'] === 'id' &&
-                    is_array($rawValue)) {
-                    foreach ($rawValue as $singleValue) {
-                        $replaceValue[] = ($args['relation'] == 'version') ?
-                            get_post(\OES\Versioning\get_current_version_id($singleValue)):
-                            get_post(\OES\Versioning\get_parent_id($singleValue));
-                    }
-                }
-
-                if(isset($args['list-class'])) $args['class'] = $args['list-class'];
-                $value = oes_display_post_array_as_list($replaceValue, $args['list-id'] ?? false, $args);
-            }
-            else
-                $value = ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
-        }
-    }
-    if (empty($value)) return '';
-
-    /* check for header */
-    $headerText = '';
-    if (!empty($args['header'] ?? '')) $headerText = $args['header'];
-    elseif ($oes_language && !empty($args['header_' . $oes_language] ?? ''))
-        $headerText = $args['header_' . $oes_language];
-
-    $header = '';
-    if (!empty($headerText))
-        $header = empty($oes_post) ?
-            $oes_term->generate_table_of_contents_header($headerText) :
-            $oes_post->generate_table_of_contents_header($headerText);
-
-    /* check for prefix */
-    $prefix = $args['prefix_' . $oes_language] ?? ($args['prefix'] ?? '');
-
-    return $header . '<div class="' . ($args['class'] ?? '') . '">' . $prefix . $value . '</div>';
+    return \OES\Field\render($args);
 }
 
 

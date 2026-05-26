@@ -165,11 +165,10 @@ if (!class_exists('OES_Post')) {
             global $oes;
 
             $fields = [];
-            if(!$this->skip_single_processing){
+            if (!$this->skip_single_processing) {
                 $fields = $oes->post_types[$this->post_type]['field_options'] ?? [];
-            }
-            else {
-                foreach ($oes->post_types[$this->post_type]['archive'] ?? [] as $fieldKey){
+            } else {
+                foreach ($oes->post_types[$this->post_type]['archive'] ?? [] as $fieldKey) {
                     $fields[$fieldKey] = $oes->post_types[$this->post_type]['field_options'][$fieldKey] ?? [];
                 }
             }
@@ -295,9 +294,10 @@ if (!class_exists('OES_Post')) {
          * @param string $fieldKey
          * @return void
          */
-        protected function add_archive_data(string $fieldKey): void {
+        protected function add_archive_data(string $fieldKey): void
+        {
             $data = $this->get_meta_or_archive_field_data($fieldKey, 'archive');
-            if(!empty($data)){
+            if (!empty($data)) {
                 $this->archive_data[$fieldKey] = $data;
             }
         }
@@ -685,7 +685,8 @@ if (!class_exists('OES_Post')) {
         function collect_version_info(
             string $publicationDateFieldKey = '',
             string $editDateFieldKey = '',
-            array  $args = []): array {
+            array  $args = []): array
+        {
 
             global $oes, $oes_language;
             $dateLocale = $args['date-locale'] ?? ($oes->languages[$oes_language]['locale'] ?? 'en_BE');
@@ -871,7 +872,14 @@ if (!class_exists('OES_Post')) {
             }
 
             /* check for pattern */
-            $pattern = $this->modify_citation_pattern($oes->post_types[$this->post_type]['citation']['pattern'] ?? []);
+            $patternValue = $oes->post_types[$this->post_type]['citation']['pattern'] ?? [];
+
+            if (!is_array($patternValue)) {
+                $patternValue = [];
+            }
+            //TODO
+
+            $pattern = $this->modify_citation_pattern($patternValue);
             if ((empty($citation) || trim(strip_tags($citation)) == 'generate') && !empty($pattern))
                 $citation = calculate_value($pattern,
                     $this->object_ID,
@@ -1238,35 +1246,59 @@ if (!class_exists('OES_Post')) {
         /** @inheritdoc */
         public function get_index_connected_posts(string $consideredPostType, string $postRelationship = ''): array
         {
-            /* prepare data */
+            if (!$consideredPostType) {
+                return [];
+            }
+
             $connectedPosts = [];
 
-            /* get considered post type */
-            if ($consideredPostType) {
+            foreach ($this->fields as $fieldKey => $field) {
 
-                /* loop through fields and check for relationship fields with the post type */
-                foreach ($this->fields as $fieldKey => $field)
-                    if ($field['type'] === 'relationship' && $field['relationships'] &&
-                        in_array($consideredPostType, $field['relationships']) &&
-                        isset($field['value'])) {
+                $fieldType = $field['type'] ?? false;
 
-                        /* check for post relationship */
-                        $versionPosts = [];
-                        if ($postRelationship === 'child_version') {
-                            if (is_array($field['value']))
-                                foreach ($field['value'] as $post) {
-                                    $versionID = get_current_version_id($post->ID ?? $post);
-                                    if ($versionID) $versionPosts[] = get_post($versionID);
-                                }
-                        } elseif ($postRelationship === 'parent')
-                            foreach ($field['value'] as $post) {
-                                $versionID = oes_get_parent_id($post->ID ?? $post);
-                                if ($versionID) $versionPosts[] = get_post($versionID);
+                if ($fieldType !== 'relationship') {
+                    continue;
+                }
+
+                if (!$field['relationships']) {
+                    continue;
+                }
+
+                if (!($field['value'] ?? false)) {
+                    continue;
+                }
+
+                if (!in_array($consideredPostType, $field['relationships'])) {
+                    continue;
+                }
+
+                $versionPosts = [];
+                if ($postRelationship === 'child_version') {
+
+                    if (is_array($field['value'])) {
+                        foreach ($field['value'] as $post) {
+
+                            $versionID = get_current_version_id($post->ID ?? $post);
+                            if ($versionID) {
+                                $versionPosts[] = get_post($versionID);
                             }
-                        else $versionPosts = !empty($field['value'] ?? '') ? $field['value'] : [];
-
-                        $connectedPosts[$fieldKey] = $versionPosts;
+                        }
                     }
+
+                } elseif ($postRelationship === 'parent') {
+
+                    foreach ($field['value'] as $post) {
+                        $versionID = oes_get_parent_id($post->ID ?? $post);
+                        if ($versionID) {
+                            $versionPosts[] = get_post($versionID);
+                        }
+                    }
+                }
+                else {
+                    $versionPosts = !empty($field['value'] ?? '') ? $field['value'] : [];
+                }
+
+                $connectedPosts[$fieldKey] = $versionPosts;
             }
 
             return $connectedPosts;

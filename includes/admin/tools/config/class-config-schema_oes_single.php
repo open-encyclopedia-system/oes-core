@@ -170,7 +170,14 @@ class Schema_OES_Single extends Schema
 
         if ($hasPattern) {
             $jsonValue = is_array($value) ? $value : [];
-            $triggerText = $this->get_pattern_text($jsonValue['pattern'] ?? [], $allOptions);
+
+            //TODO
+            $triggerTextArray = $jsonValue['pattern'] ?? [];
+            if(!is_array($triggerTextArray)) {
+                $triggerTextArray = [];
+            }
+
+            $triggerText = $this->get_pattern_text($triggerTextArray, $allOptions);
             $patternID = str_replace(['[', ']'], ['-', ''], "$keyPrefix-$paramKey");
             $patternButton = $this->get_pattern_button($patternID, $triggerText);
             $patternValue = isset($jsonValue['pattern']) ? esc_attr(wp_json_encode($jsonValue['pattern'])) : '';

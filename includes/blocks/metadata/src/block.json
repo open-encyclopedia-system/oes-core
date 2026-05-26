@@ -12,13 +12,12 @@
     "meta data"
   ],
   "attributes": {
-    "label": {
-      "type": "string",
-      "default": "Änderungen am Projekt melden"
+    "include_toc": {
+      "type": "boolean",
+      "default": true
     },
-    "link": {
-      "type": "string",
-      "default": "#"
+    "labels": {
+      "type": "object"
     }
   },
   "styles": [

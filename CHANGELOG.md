@@ -28,6 +28,8 @@
 - New page icons and re-designed icons
 - New block "Context Link"
 - Introduce new shortcode: audit field value
+- Introduce new block: Field (use shortcode oes_field)
+- Introduce REST API, export
 
 ### Improvements
 - Improve internal page generation

@@ -100,6 +100,22 @@ function admin_functions(): void
 }
 
 /**
+ * Includes rest api registration.
+ *
+ * @return void
+ */
+function rest(): void
+{
+    include_once __DIR__ . '/rest/register.php';
+    include_once __DIR__ . '/rest/class-export.php';
+    include_once __DIR__ . '/rest/class-json_export.php';
+    include_once __DIR__ . '/rest/class-oes_export.php';
+    include_once __DIR__ . '/rest/class-tei_export.php';
+
+    add_action('rest_api_init', '\OES\Rest\fields');
+}
+
+/**
  * Sets up the dashboard in the editorial layer for OES purposes.
  * This feature customizes the admin dashboard by adding elements like a welcome message specific to OES.
  *
@@ -126,7 +142,7 @@ function site_health(): void
     include_once __DIR__ . '/admin/health/class-site_health.php';
     include_once __DIR__ . '/admin/health/functions-health.php';
     add_action('debug_information', '\OES\Admin\Health\debug_information');
-    //TODO add_action('rest_api_init', '\OES\Admin\Health\register_rest_routes');
+    //TODO add_action('rest_api_init', '\OES\Rest\health');
 }
 
 /**
@@ -391,6 +407,7 @@ function blocks(): void
 function theme_classes(): void
 {
     include_once __DIR__ . '/theme/functions-theme.php';
+    include_once __DIR__ . '/theme/functions-field-rendering.php';
     include_once __DIR__ . '/theme/data/functions-data.php';
     include_once __DIR__ . '/theme/data/functions-parts.php';
     include_once __DIR__ . '/theme/data/class-object.php';
@@ -560,8 +577,8 @@ function search(): void
  */
 function export(): void
 {
-    include_once __DIR__ . '/export/functions-export.php';
-    add_action('rest_api_init', '\OES\Export\register_rest_routes');
+    include_once __DIR__ . '/rest/functions-export.php';
+    add_action('rest_api_init', '\OES\Rest\export');
 }
 
 /**
@@ -584,7 +601,7 @@ function lod_apis(bool $enabled = true): void
         add_action('oes/initialized', '\OES\API\lod_initialize');
         add_action('wp_ajax_oes_lod_box', '\OES\API\lod_box');
         add_action('wp_ajax_nopriv_oes_lod_box', '\OES\API\lod_box');
-        add_action('rest_api_init', '\OES\API\lod_register_rest_routes');
+        add_action('rest_api_init', '\OES\Rest\lod');
 
         if (is_admin()) {
             add_action('admin_enqueue_scripts', '\OES\API\lod_admin_scripts');

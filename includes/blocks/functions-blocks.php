@@ -51,6 +51,7 @@ function register(): void
         'empty-result',
         'featured-image',
         'featured-post',
+        'field',
         'filter',
         'filter-active',
         'filter-alphabet',

@@ -126,7 +126,7 @@
         const [loading, setLoading] = useState(false);
 
         useEffect(() => {
-            apiFetch({path: '/oes/v1/apis'}).then((data) => {
+            apiFetch({path: '/oes/v1/lod-apis'}).then((data) => {
                 setApis(data);
 
                 if (data.length > 0) {
