@@ -147,6 +147,7 @@ function assets(): void
     oes_add_style('oes-theme', '/assets/css/theme.css');
     if (is_admin()) {
         add_action('admin_enqueue_scripts', 'oes_load_assets');
+        add_action('wp_print_styles', 'oes_load_assets');
         oes_add_style_admin('oes-admin', '/assets/css/admin.css');
         oes_add_script_admin('oes-admin', '/assets/js/admin.js');
     }

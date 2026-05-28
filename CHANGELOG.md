@@ -11,6 +11,7 @@
 
 ### Improvements
 - Improved filter items: clean name and key when splitting text fields
+- Prepare editor styles for WordPress 7.0.0
 
 ### New
 - Added new filter css classes for classic theme
