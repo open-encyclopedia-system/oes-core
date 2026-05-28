@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
+if (!class_exists(__NAMESPACE__ . 'API_Interface', false)) {
 
     /**
      * API Interface

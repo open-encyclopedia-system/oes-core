@@ -10,7 +10,7 @@ use WP_Term;
 use function OES\Admin\Operations\insert_operation;
 use function OES\Admin\Operations\get_max_temp;
 
-if (!class_exists('Import')) :
+if (!class_exists('Import', false)) :
 
     /**
      * Class Import

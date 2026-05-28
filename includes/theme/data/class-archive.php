@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use OES\Versioning as Versioning;
 
-if (!class_exists('OES_Archive')) {
+if (!class_exists('OES_Archive', false)) {
 
 
     /**

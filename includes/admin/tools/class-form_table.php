@@ -7,7 +7,7 @@
 
 namespace OES\Admin\Tools;
 
-if (class_exists('Form_Table')) exit;
+if (class_exists('Form_Table', false)) exit;
 
 /**
  * Class Form_Table

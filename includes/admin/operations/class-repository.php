@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('Repository')) :
+if (!class_exists('Repository', false)) :
 
     /**
      * Class Repository

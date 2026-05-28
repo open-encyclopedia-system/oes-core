@@ -11,9 +11,9 @@ use function OES\Model\get_oes_object_option;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Tools')) oes_include('admin/tools/class-tool.php');
+if (!class_exists('Tools', false)) oes_include('admin/tools/class-tool.php');
 
-if (class_exists('Config')) exit;
+if (class_exists('Config', false)) exit;
 
 /**
  * Class Config

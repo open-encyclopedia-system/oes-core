@@ -5,7 +5,7 @@ namespace OES\Admin\Health;
 if (!defined('ABSPATH')) exit;
 
 
-if (!class_exists('\OES\Admin\Health\Site_Health')) {
+if (!class_exists('\OES\Admin\Health\Site_Health', false)) {
 
     /**
      * The OES Site Health class responsible for populating OES debug information in WordPress Site Health.

@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Versioning\get_version_field;
 
-if (!class_exists('OES_Object')) {
+if (!class_exists('OES_Object', false)) {
 
     /**
      * Class OES_Object

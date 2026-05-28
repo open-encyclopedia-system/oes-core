@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Template_Redirect')):
+if (!class_exists('OES_Template_Redirect', false)):
 
     /**
      * Handles data preparation and customization of the template redirect phase in WordPress.

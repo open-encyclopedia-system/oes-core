@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Versioning\get_parent_id;
 
-if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
+if (!class_exists('OES_Search', false) && class_exists('OES_Archive', false)) {
 
     /**
      * Class OES_Search
