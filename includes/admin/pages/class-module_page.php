@@ -9,7 +9,7 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Module_Page')) :
+if (!class_exists('Module_Page', false)) :
 
     /**
      * Class Module_Page

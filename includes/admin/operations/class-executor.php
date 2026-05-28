@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
 
 use WP_Error;
 
-if (!class_exists('Executor')) :
+if (!class_exists('Executor', false)) :
 
     /**
      * Class Executor

@@ -9,9 +9,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
+if (!class_exists('Config', false)) oes_include('admin/tools/config/class-config.php');
 
-if (class_exists('Theme_Labels')) exit;
+if (class_exists('Theme_Labels', false)) exit;
 
 /**
  * Class Theme_Labels

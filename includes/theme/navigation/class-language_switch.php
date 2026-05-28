@@ -5,7 +5,7 @@ namespace OES\Navigation;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-if (!class_exists('Language_Switch')) {
+if (!class_exists('Language_Switch', false)) {
 
     /**
      * Class Language_Switch

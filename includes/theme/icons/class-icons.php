@@ -10,7 +10,7 @@ namespace OES\Icon;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-if (!class_exists('\OES\Icon\Icons')) {
+if (!class_exists('\OES\Icon\Icons', false)) {
 
     /**
      * Concrete icon set for use in the theme or plugin.

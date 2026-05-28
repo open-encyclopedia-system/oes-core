@@ -12,7 +12,7 @@ use function OES\Model\import_model_from_json;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Model')) :
+if (!class_exists('Model', false)) :
 
     /**
      * Class Model

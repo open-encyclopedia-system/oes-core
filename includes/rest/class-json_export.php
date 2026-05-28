@@ -4,7 +4,7 @@ namespace OES\Export;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Export\JSON_Export') && class_exists('\OES\Export\Export')) {
+if (!class_exists('\OES\Export\JSON_Export', false) && class_exists('\OES\Export\Export', false)) {
 
 
     /**

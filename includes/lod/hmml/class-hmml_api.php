@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('HMML_API')) {
+if (!class_exists('HMML_API', false)) {
 
     /**
      * HMML API integration

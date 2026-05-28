@@ -13,7 +13,7 @@ use WP_Query;
 use WP_Term;
 use WP_Post;
 
-if (class_exists('Export')) exit;
+if (class_exists('Export', false)) exit;
 
 /**
  * Class Export

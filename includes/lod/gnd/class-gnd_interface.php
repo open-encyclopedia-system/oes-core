@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('GND_Interface')) {
+if (!class_exists('GND_Interface', false)) {
 
     /**
      * GND Interface

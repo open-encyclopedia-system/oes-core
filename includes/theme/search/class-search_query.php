@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Search_Query')) {
+if (!class_exists('OES_Search_Query', false)) {
 
     /**
      * Class OES_Search_Query

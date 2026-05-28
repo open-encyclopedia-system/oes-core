@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Admin\Tools\Config')) oes_include('admin/tools/config/class-config.php');
+if (!class_exists('\OES\Admin\Tools\Config', false)) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('Shortcode')) :
+if (!class_exists('Shortcode', false)) :
 
     /**
      * Class Shortcode

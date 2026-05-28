@@ -7,7 +7,7 @@ use function OES\Versioning\get_translation_id;
 use function OES\Versioning\get_all_version_ids;
 use function OES\Versioning\get_current_version_id;
 
-if (!class_exists('OES_Post')) {
+if (!class_exists('OES_Post', false)) {
 
     /**
      * Class OES_Post

@@ -12,7 +12,7 @@ use function OES\Factory\get_factory_posts;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (class_exists('Factory')) exit;
+if (class_exists('Factory', false)) exit;
 
 /**
  * Class Factory
