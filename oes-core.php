@@ -597,6 +597,11 @@ if (!class_exists('OES_Core')) :
             $target[$key]['acf_ids'][$postID] = $postID;
 
             foreach ($fields as $field) {
+
+                if($field['endpoint'] ?? false) {
+                    continue;
+                }
+
                 $target[$key]['field_options'][$field['key']]['label'] = $field['label'];
                 $target[$key]['field_options'][$field['key']]['type'] = $field['type'];
 

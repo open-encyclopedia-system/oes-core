@@ -41,6 +41,8 @@
 - make language switch block available outside of navigation
 - Improve admin page icons, container icons
 - LOD Preview optional & metadata configurable
+- language dependent index templates
+- clean up version information notice
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
@@ -52,6 +54,7 @@
 
 ### Fix
 - fix warning on custom post archive page
+- editor style for iframe (since WP 7.0.0)
 
 ## 2.4.4 (in development)
 ### New Filters / Functions

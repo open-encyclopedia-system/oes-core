@@ -61,12 +61,20 @@ function redirect_page(array $templates): array
         $localized = [];
 
         foreach (array_slice($templates, 0, 2) as $template) {
-            $localized[] = str_replace('.php', "-{$oes_language}.php", $template);
+
+            if(sizeof($templates) > 1 && $template == '404.php') {
+                continue;
+            }
+
+            $localized[] = str_ends_with($template, '.php')
+                ? str_replace('.php', "-{$oes_language}.php", $template)
+                : "{$template}-{$oes_language}";
         }
 
-        array_unshift($templates, ...array_reverse($localized));
+        if ($localized) {
+            array_unshift($templates, ...array_reverse($localized));
+        }
     }
-
 
     return $templates;
 }

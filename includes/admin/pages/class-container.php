@@ -163,6 +163,10 @@ if (!class_exists('Container')) :
         {
             $position = 1;
 
+            if($this->page_parameters['subpages'] == 'hidden') {
+                return;
+            }
+
             foreach ($this->page_parameters['subpages'] ?? [] as $page) {
 
                 // Determine if it's a post type

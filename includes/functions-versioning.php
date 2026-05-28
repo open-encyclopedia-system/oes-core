@@ -281,44 +281,32 @@ function display_version_table(array $postIDs, $currentVersionID): void
     </table><?php
 }
 
-
 /**
  * Get the notice string with versioning information for the post.
  */
-function get_notice_string(): string
-{
+function get_notice_string(): string {
     global $post;
 
-    /* get parent post */
-    if ($parentID = get_parent_id($post->ID)) {
+    if (!$parentID = get_parent_id($post->ID)) {
+        return __('This post is not version controlled and will not be displayed on the website. Create a parent post first.', 'oes');
+    }
 
-        /* get information about parent post */
-        $parentPost = get_post($parentID);
+    $parentPost  = get_post($parentID);
+    $currentPost = get_post(get_current_version_id($parentID));
+    $typeName    = get_post_type_object($parentPost->post_type)->labels->singular_name ?? $parentPost->post_type;
+    $isCurrent   = $currentPost?->ID && $currentPost->ID != $post->ID;
 
-        /* get current version from parent post */
-        $currentPost = get_post(get_current_version_id($parentID));
-
-        $noticeString = '<span>' . __('This post is version controlled. ', 'oes') . '</span>' .
-            '<div><strong>' .
-            (get_post_type_object($parentPost->post_type)->labels->singular_name ?? $parentPost->post_type) .
-            ': </strong>' .
-            sprintf('<a href="%s">%s</a>', get_edit_post_link($parentID), $parentPost->post_title) .
-            '</div>';
-
-        /* check for most current version */
-        if ($currentPost && $currentPost->ID && $currentPost->ID != $post->ID)
-            $noticeString .= '<div><strong>' .
-                __('Currently Displayed Version: ', 'oes') .
-                '</strong>' .
-                sprintf('<a href="%s">%s</a>', get_edit_post_link($currentPost), $currentPost->post_title) .
-                '</div>';
-        else $noticeString .= '<div>' . __('This is the currently displayed version.', 'oes') . '</div>';
-    } else $noticeString = '<div>' . __('This post is not version controlled and will not be displayed on the ' .
-            'website. Create a parent post first.', 'oes') . '</div>';
-
-    return $noticeString;
+    return sprintf(
+            '<strong>%s</strong> %s: <a href="%s">%s</a> &mdash; %s',
+            __('Version controlled.', 'oes'),
+            $typeName,
+            get_edit_post_link($parentID),
+            $parentPost->post_title,
+            $isCurrent
+                    ? sprintf(__('Current version: <a href="%s">%s</a>', 'oes'), get_edit_post_link($currentPost), $currentPost->post_title)
+                    : __('This is the currently displayed version.', 'oes')
+    );
 }
-
 
 /**
  * Callback function for the meta box of "parent" post types.
@@ -491,7 +479,7 @@ function add_meta_boxes(string $post_type): void
                                     'warning',
                                     '<?php echo str_replace('\'', '\\\'', $noticeString);?>',
                                     {
-                                        isDismissible: false,
+                                        isDismissible: true,
                                         __unstableHTML: true,
                                     }
                                 );
@@ -507,7 +495,7 @@ function add_meta_boxes(string $post_type): void
              */
                 'admin_notices',
                 function () {
-                    echo '<div class="notice notice-warning"><p>' . \OES\Versioning\get_notice_string() . '</p></div>';
+                    echo '<div class="notice notice-warning is-dismissible"><p>' . \OES\Versioning\get_notice_string() . '</p></div>';
                 }
             );
     }
