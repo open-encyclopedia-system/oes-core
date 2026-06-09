@@ -31,6 +31,7 @@
 - Introduce new block: Field (use shortcode oes_field)
 - Introduce REST API, export
 - Introduce filter "oes/template_redirect_index_additional_objects" for object filtering on index pages
+- Introduce filter block styles "Details" and "Classic"
 
 ### Improvements
 - Improve internal page generation

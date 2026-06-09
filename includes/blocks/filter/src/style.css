@@ -1,25 +1,32 @@
-ul.oes-filter-list-container .wp-block-details.active,
-ul.oes-filter-list-container li.active a {
+.wp-block-oes-filter .wp-block-details.active,
+.wp-block-oes-filter li.active a {
   color: var(--wp--preset--color--secondary);
 }
-ul.oes-filter-list-container .oes-archive-filter-item a {
+.wp-block-oes-filter .oes-archive-filter-item a {
   display: flex;
   justify-content: space-between;
   word-break: break-word;
   text-decoration: none;
 }
-ul.oes-filter-list-container .oes-filter-item-count {
+.wp-block-oes-filter .oes-filter-item-count {
   padding: 0 5px;
   margin-right: 5px;
   word-break: keep-all;
 }
-ul.oes-filter-list-container .inactive .oes-filter-item-count {
+.wp-block-oes-filter .inactive .oes-filter-item-count {
   display: none;
 }
-ul.oes-filter-list-container .oes-filter-list {
-  padding-left: 14px;
+.wp-block-oes-filter .oes-filter-list {
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+.wp-block-oes-filter.is-style-oes-default .oes-filter-list {
+  padding-left: 1rem;
+}
+
+.wp-block-oes-filter.is-style-oes-datalist label {
+  display: block;
 }
 
 /*# sourceMappingURL=style.css.map */

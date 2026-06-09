@@ -1,4 +1,4 @@
-ul.oes-filter-list-container {
+.wp-block-oes-filter {
 
 	.wp-block-details.active,
 	li.active a {
@@ -23,8 +23,21 @@ ul.oes-filter-list-container {
 	}
 
 	.oes-filter-list {
-		padding-left: 14px;
 		padding-top: 1rem;
 		padding-bottom: 1rem;
+	}
+}
+
+.wp-block-oes-filter.is-style-oes-default {
+
+	.oes-filter-list {
+		padding-left: 1rem;
+	}
+}
+
+.wp-block-oes-filter.is-style-oes-datalist {
+
+	label {
+		display:block;
 	}
 }

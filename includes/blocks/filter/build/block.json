@@ -32,6 +32,17 @@
     "alignText": true,
     "fullHeight": true
   },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Details",
+      "isDefault": true
+    },
+    {
+      "name": "oes-classic",
+      "label": "Classic"
+    }
+  ],
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",
   "style": "file:./style-index.css"
