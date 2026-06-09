@@ -36,7 +36,6 @@ function oes_prepare_ui_fields(array $fields): array {
     return [$count ?? 0, $tableFields];
 }
 
-//TODO styling
 function oes_render_object_rows(array $objects): void
 {
     ksort($objects);
@@ -50,8 +49,8 @@ function oes_render_object_rows(array $objects): void
                     ' <code class="oes-object-identifier">' . esc_html($key) . '</code>' .
                     ($count ? ' <span class="oes-config-data-model-field-count">' . intval($count) . ' ' . __('Fields', 'oes') . '</span>' : '') .
                     '</summary>
-<div class="oes-config-data-model-fields" style="margin: 1rem">
-<table class="table-view-list">
+<div class="oes-config-data-model-fields" style="margin-bottom: 1rem;">
+<table class="oes-config-table wp-list-table fixed table-view-list widefat striped">
 <thead>
 <tr>
 <th>' . __('Field Name', 'oes') . '</th>

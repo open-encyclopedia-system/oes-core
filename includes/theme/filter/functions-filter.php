@@ -141,66 +141,64 @@ function oes_index_filter_html(array $args = []): string
 {
     global $oes, $oes_language, $oes_is_index;
 
+    if (
+        !$oes_is_index ||
+        ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '') == 'hidden' ||
+        empty($oes->theme_index_pages[$oes_is_index]['objects'] ?? [])
+    ) {
+        return '';
+    }
+
     $listItems = [];
 
-    // Check that index is defined and not hidden
-    if (
-        $oes_is_index &&
-        ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '') !== 'hidden' &&
-        !empty($oes->theme_index_pages[$oes_is_index]['objects'] ?? [])
-    ) {
-        // Add "All" button if enabled
-        if ($args['include_all'] ?? true) {
-            $listItems[] = oes_get_html_anchor(
-                oes_get_label('archive__filter__all_button', 'All'),
-                home_url(($oes->theme_index_pages[$oes_is_index]['slug'] ?? 'index') . '/'),
-                false,
-                'oes-index-archive-filter-all oes-index-filter-anchor'
-            );
+    if ($args['include_all'] ?? true) {
+        $listItems[] = oes_get_html_anchor(
+            oes_get_label('archive__filter__all_button', 'All'),
+            home_url(($oes->theme_index_pages[$oes_is_index]['slug'] ?? 'index') . '/'),
+            false,
+            'oes-index-archive-filter-all oes-index-filter-anchor'
+        );
+    }
+
+
+    $objects = apply_filters('oes/template_redirect_index_additional_objects', $oes->theme_index_pages[$oes_is_index]['objects']);
+
+    foreach ($objects as $object) {
+        $link = $name = false;
+
+        if ($postTypeObject = get_post_type_object($object)) {
+            $name = $oes->post_types[$object]['label_translations_plural'][$oes_language]
+                ?? $oes->post_types[$object]['theme_labels']['archive__header'][$oes_language]
+                ?? $oes->post_types[$object]['label']
+                ?? $postTypeObject->label;
+
+            if (empty($name)) {
+                $name = $postTypeObject->label;
+            }
+            $link = home_url(($postTypeObject->rewrite['slug'] ?? $object) . '/');
+
+        } elseif ($taxonomyObject = get_taxonomy($object)) {
+            $name = $oes->taxonomies[$object]['label_translations_plural'][$oes_language]
+                ?? $oes->taxonomies[$object]['label_translations'][$oes_language]
+                ?? $oes->taxonomies[$object]['label']
+                ?? $taxonomyObject->label;
+
+            if (empty($name)) {
+                $name = $taxonomyObject->label;
+            }
+            $link = home_url(($taxonomyObject->rewrite['slug'] ?? $object) . '/');
         }
 
-        // Loop over configured objects (post types or taxonomies)
-        foreach ($oes->theme_index_pages[$oes_is_index]['objects'] as $object) {
-            $link = $name = false;
-
-            // Post type link and label
-            if ($postTypeObject = get_post_type_object($object)) {
-                $name = $oes->post_types[$object]['label_translations_plural'][$oes_language]
-                    ?? $oes->post_types[$object]['theme_labels']['archive__header'][$oes_language]
-                    ?? $oes->post_types[$object]['label']
-                    ?? $postTypeObject->label;
-
-                if (empty($name)) {
-                    $name = $postTypeObject->label;
-                }
-                $link = home_url(($postTypeObject->rewrite['slug'] ?? $object) . '/');
-
-                // Taxonomy link and label
-            } elseif ($taxonomyObject = get_taxonomy($object)) {
-                $name = $oes->taxonomies[$object]['label_translations_plural'][$oes_language]
-                    ?? $oes->taxonomies[$object]['label_translations'][$oes_language]
-                    ?? $oes->taxonomies[$object]['label']
-                    ?? $taxonomyObject->label;
-
-                if (empty($name)) {
-                    $name = $taxonomyObject->label;
-                }
-                $link = home_url(($taxonomyObject->rewrite['slug'] ?? $object) . '/');
-            }
-
-            // Add item if both label and URL are found
-            if ($name && $link) {
-                $listItems[] = oes_get_html_anchor(
-                    $name,
-                    $link,
-                    false,
-                    'oes-index-filter-anchor'
-                );
-            }
+        if ($name && $link) {
+            $listItems[] = oes_get_html_anchor(
+                $name,
+                $link,
+                false,
+                'oes-index-filter-anchor'
+            );
         }
     }
 
-    // Build final list markup
     $class = $args['className'] ?? 'oes-vertical-list';
     if (str_starts_with($class, 'is-style-')) {
         $class = substr($class, 9);

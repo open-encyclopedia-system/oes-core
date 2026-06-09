@@ -835,128 +835,168 @@ if (!class_exists('OES_Archive')) {
          */
         public function get_data_as_table(bool $archiveData = true, array $args = []): array
         {
-
-            /* prepare table */
             $tableArray = [];
 
             $this->sort_prepared_posts();
+
             foreach ($this->prepared_posts as $firstCharacter => $objectContainer) {
 
-                /* loop through single object */
-                $table = [];
                 ksort($objectContainer);
-                foreach ($objectContainer as $objects)
+
+                $table = [];
+
+                foreach ($objectContainer as $objects) {
                     foreach ($objects as $object) {
 
-                        /* gather information */
-                        $tableData = [];
-                        $title = 'Title missing';
-                        $permalink = $object['permalink'];
-                        $hidePost = false;
-                        $versionExists = true;
-                        $isTerm = false;
-                        $additionalInformation = '';
+                        $row = $this->prepare_table_row($object, $archiveData);
 
-                        /* differentiate between post and term */
-                        if ($postID = $object['termID'] ?? false) {
-                            $title = $object['titleForDisplay'] ?: $object['title'];
-                            $isTerm = true;
-
-                            if ($archiveData) {
-                                $termWP = get_term($postID);
-                                $taxonomy = $termWP ? $termWP->taxonomy : false;
-                                $term = $taxonomy && class_exists($taxonomy) ?
-                                    new $taxonomy($postID) :
-                                    new OES_Term($postID);
-                                $tableData = $term->get_archive_data();
-                            }
-                        } elseif ($postID = $object['postID'] ?? false) {
-
-                            /* check if parent post type */
-                            $versionPost = false;
-                            $postType = get_post($postID) ? get_post_type($postID) : false;
-                            if ($versionPostType = Versioning\get_version_post_type($postType)) {
-
-                                /* get current version */
-                                if ($versionID = Versioning\get_current_version_id($postID)) {
-
-                                    $title = oes_get_display_title($versionID);
-                                    $permalink = get_permalink($versionID);
-
-                                    /* check for OES Post action */
-                                    if ($archiveData) {
-
-                                        /* get post */
-                                        $versionPost = class_exists($versionPostType) ?
-                                            new $versionPostType($versionID, '', ['skip' => true]) :
-                                            new OES_Post($versionID, '', ['skip' => true]);
-                                        $additionalInformation = $versionPost->additional_archive_data;
-                                    }
-                                } else $versionExists = false;
-                            } else {
-
-                                $title = $object['titleForDisplay'] ?: $object['title'];
-
-                                /* check for OES Post action */
-                                if ($archiveData) {
-
-                                    $versionPost = $postType && class_exists($postType) ?
-                                        new $postType($postID, '', ['skip' => true]) :
-                                        new OES_Post($postID, '', ['skip' => true]);
-                                    $additionalInformation = $versionPost->additional_archive_data;
-                                }
-                            }
-
-                            if ($versionExists) {
-
-                                /* check if post is hidden */
-                                if ($versionPost && method_exists($versionPost, 'check_if_post_is_hidden'))
-                                    $hidePost = $versionPost->check_if_post_is_hidden();
-
-                                /* get data to be displayed in dropdown table */
-                                $tableData = $archiveData ? $versionPost->get_archive_data() : [];
-                            }
-
+                        if ($row === null) {
+                            continue;
                         }
 
-                        /* add information to table */
-                        if (!$hidePost && $versionExists) {
-
-                            if ($isTerm) {
-                                $postLanguage = 'all';
-                            } else {
-                                $postLanguage = oes_get_post_language($postID);
-                                if (empty($postLanguage)) {
-                                    $postLanguage = 'all';
-                                }
-                            }
-
-                            $prepareRowData = $this->modify_prepared_row_data([
-                                'id' => $postID,
-                                'title' => $title,
-                                'permalink' => $permalink,
-                                'data' => $tableData,
-                                'additional' => $additionalInformation,
-                                'language' => $postLanguage
-                            ]);
-
-                            /* check if content should be added */
-                            if ($this->display_content)
-                                $prepareRowData['content'] = get_post($postID)->post_content ?? '';
-
-                            /* modify prepared row */
-                            $table[] = $this->modify_prepare_row($prepareRowData, $object);
+                        if ($this->display_content) {
+                            $row['content'] = get_post($row['id'])->post_content ?? '';
                         }
+
+                        $table[] = $this->modify_prepare_row($row, $object);
                     }
+                }
 
-                /* add table to array */
-                if ($firstCharacter == 'other') $firstCharacter = '#';
-                if (!empty($table)) $tableArray[] = ['character' => $firstCharacter, 'table' => $table];
+                if (!empty($table)) {
+
+                    $tableArray[] = [
+                        'character' => $firstCharacter === 'other' ? '#' : $firstCharacter,
+                        'table'     => $table
+                    ];
+                }
             }
 
             return $tableArray;
         }
 
+        /**
+         * Prepare a single table row.
+         */
+        protected function prepare_table_row(array $object, bool $archiveData): ?array
+        {
+            $permalink = $object['permalink'] ?? '';
+            $tableData = [];
+            $additionalInformation = '';
+
+            /*
+             * Handle taxonomy term
+             */
+            if (!empty($object['termID'])) {
+
+                $termID = (int) $object['termID'];
+
+                $title = $object['titleForDisplay'] ?: $object['title'];
+
+                if ($archiveData) {
+
+                    $termWP = get_term($termID);
+
+                    $taxonomy = $termWP->taxonomy ?? null;
+
+                    $term = ($taxonomy && class_exists($taxonomy))
+                        ? new $taxonomy($termID)
+                        : new OES_Term($termID);
+
+                    $tableData = $term->get_archive_data();
+                }
+
+                return $this->modify_prepared_row_data([
+                    'id'         => $termID,
+                    'title'      => $title,
+                    'permalink'  => $permalink,
+                    'data'       => $tableData,
+                    'additional' => '',
+                    'language'   => 'all'
+                ]);
+            }
+
+            /*
+             * Handle post
+             */
+            if (empty($object['postID'])) {
+                return null;
+            }
+
+            $postID = (int) $object['postID'];
+
+            $wpPost = get_post($postID);
+
+            if (!$wpPost) {
+                return null;
+            }
+
+            $postType = get_post_type($postID);
+
+            $versionPost = null;
+
+            /*
+             * Versioned post
+             */
+            if ($versionPostType = Versioning\get_version_post_type($postType)) {
+
+                $versionID = Versioning\get_current_version_id($postID);
+
+                if (!$versionID) {
+                    return null;
+                }
+
+                $title = oes_get_display_title($versionID);
+                $permalink = get_permalink($versionID);
+
+                if ($archiveData) {
+
+                    $versionPost = class_exists($versionPostType)
+                        ? new $versionPostType($versionID, '', ['skip' => true])
+                        : new OES_Post($versionID, '', ['skip' => true]);
+
+                    $additionalInformation = $versionPost->additional_archive_data;
+                }
+
+            } else {
+
+                $title = $object['titleForDisplay'] ?: $object['title'];
+
+                if ($archiveData) {
+
+                    $versionPost = ($postType && class_exists($postType))
+                        ? new $postType($postID, '', ['skip' => true])
+                        : new OES_Post($postID, '', ['skip' => true]);
+
+                    $additionalInformation = $versionPost->additional_archive_data;
+                }
+            }
+
+            /*
+             * Hidden post
+             */
+            if (
+                $versionPost &&
+                method_exists($versionPost, 'check_if_post_is_hidden') &&
+                $versionPost->check_if_post_is_hidden()
+            ) {
+                return null;
+            }
+
+            $tableData = ($archiveData && $versionPost)
+                ? $versionPost->get_archive_data()
+                : [];
+
+            $language = oes_get_post_language($postID) ?: 'all';
+
+            return $this->modify_prepared_row_data([
+                'id'         => $postID,
+                'title'      => $title,
+                'permalink'  => $permalink,
+                'data'       => $tableData,
+                'additional' => $additionalInformation,
+                'language'   => $language
+            ]);
+        }
 
         /**
          * Modify the prepared row data.
@@ -968,8 +1008,7 @@ if (!class_exists('OES_Archive')) {
         {
             return $args;
         }
-
-
+        
         /**
          * Sort the prepared posts.
          *
@@ -979,7 +1018,6 @@ if (!class_exists('OES_Archive')) {
         {
             ksort($this->prepared_posts);
         }
-
 
         /**
          * Modify prepared data row.
