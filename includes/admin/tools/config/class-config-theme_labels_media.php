@@ -9,9 +9,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Theme_Labels')) oes_include('admin/tools/config/class-config-theme_labels.php');
+if (!class_exists('Theme_Labels', false)) oes_include('admin/tools/config/class-config-theme_labels.php');
 
-if (class_exists('Theme_Labels_Media')) exit;
+if (class_exists('Theme_Labels_Media', false)) exit;
 
 /**
  * Class Theme_Labels_Media

@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 use function OES\Admin\add_oes_notice_after_refresh;
 use function OES\Admin\get_admin_note_html;
 
-if (!class_exists('\OES\Admin\Tools\Tool')) {
+if (!class_exists('\OES\Admin\Tools\Tool', false)) {
 
     /**
      * Class Tool

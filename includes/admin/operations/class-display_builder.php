@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('Display_Builder')) :
+if (!class_exists('Display_Builder', false)) :
 
     /**
      * Class Display_Builder

@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Geonames_Interface')) {
+if (!class_exists('Geonames_Interface', false)) {
 
     /**
      * Geonames Interface.

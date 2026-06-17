@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use WP_Query;
 
-if (class_exists('Batch')) exit;
+if (class_exists('Batch', false)) exit;
 
 /**
  * Class Batch

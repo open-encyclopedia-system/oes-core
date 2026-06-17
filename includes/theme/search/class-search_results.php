@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 use function \OES\Versioning\get_parent_id;
 use function \OES\Versioning\get_version_field;
 
-if (!class_exists('OES_Search_Results')) {
+if (!class_exists('OES_Search_Results', false)) {
 
     /**
      * Class OES_Search_Results

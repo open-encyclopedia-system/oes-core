@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Filter_Renderer')) {
+if (!class_exists('OES_Filter_Renderer', false)) {
 
     /**
      * Class OES_Filter_Renderer

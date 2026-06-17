@@ -10,7 +10,7 @@ namespace OES\Icon;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-if (!class_exists('\OES\Icon\Manager')) {
+if (!class_exists('\OES\Icon\Manager', false)) {
 
     /**
      * Abstract base class for managing inline SVG icons.

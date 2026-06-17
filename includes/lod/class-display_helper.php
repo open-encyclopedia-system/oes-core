@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\API\Display_Helper')) {
+if (!class_exists('\OES\API\Display_Helper', false)) {
 
     /**
      * API Interface

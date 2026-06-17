@@ -2,7 +2,7 @@
 
 namespace OES\API;
 
-if (!class_exists('\OES\API\GND_Display_Helper')) {
+if (!class_exists('\OES\API\GND_Display_Helper', false)) {
     class GND_Display_Helper extends Display_Helper
     {
 

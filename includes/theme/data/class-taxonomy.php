@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Taxonomy')) {
+if (!class_exists('OES_Taxonomy', false)) {
 
     /**
      * Class OES_Taxonomy

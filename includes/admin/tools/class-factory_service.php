@@ -12,7 +12,7 @@ use Throwable;
 use function OES\ACF\is_acf_generated_key;
 use function OES\Factory\get_factory_posts;
 
-if (class_exists('Factory_Service')) exit;
+if (class_exists('Factory_Service', false)) exit;
 
 /**
  * Class Service

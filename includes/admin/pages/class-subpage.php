@@ -9,9 +9,9 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Page')) oes_include('admin/pages/class-page.php');
+if (!class_exists('Page', false)) oes_include('admin/pages/class-page.php');
 
-if (!class_exists('Subpage')) :
+if (!class_exists('Subpage', false)) :
 
     /**
      * Class Subpage

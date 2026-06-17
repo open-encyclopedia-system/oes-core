@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
+if (!class_exists('Schema', false)) oes_include('admin/tools/config/class-config-schema.php');
 
-if (!class_exists('LOD_Schema')) {
+if (!class_exists('LOD_Schema', false)) {
 
     /**
      * Class LOD_Schema

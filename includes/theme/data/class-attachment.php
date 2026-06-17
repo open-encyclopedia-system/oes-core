@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Attachment')) {
+if (!class_exists('OES_Attachment', false)) {
 
     /**
      * Class OES_Attachment

@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
+if (!class_exists('LOD', false)) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('ROR')) {
+if (!class_exists('ROR', false)) {
 
     /**
      * Class ROR

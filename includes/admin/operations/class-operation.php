@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('Operation')) :
+if (!class_exists('Operation', false)) :
 
     /**
      * Class Operation
