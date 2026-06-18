@@ -1,0 +1,15 @@
+message: "If you use this software, please cite it using these metadata."
+authors:
+    - family-names: Welterlich-Strobl
+      given-names: Maren
+      orcid: "https://orcid.org/0000-0002-3690-2992"
+
+title: OES Core
+abstract: "The Open Encyclopedia System (OES) is a modular and configurable software for creating, publishing and maintaining online encyclopedias in the humanities and social sciences that are accessible worldwide via Open Access. OES adds a web-based open source software for article-based publication formats to already available options for electronic publishing."
+type: software
+date-released: "2026-06"
+version: 3.0.0
+repository-code: "https://github.com/open-encyclopedia-system/oes-core"
+license: "GPL-3.0"
+url: "https://www.open-encyclopedia-system.org/"
+cff-version: 1.2.0

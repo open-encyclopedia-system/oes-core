@@ -26,6 +26,10 @@ Developed between 2016–2020 with funding from the **German Research Foundation
 
 For more information, visit the [official website](https://open-encyclopedia-system.org/).
 
+## Cite this software
+
+If you use this software, please cite it using the metadata in the file CITATION.CFF (for more information about CFF see https://citation-file-format.github.io/).
+
 ## Features
 
 - Publish versioned and citable articles
