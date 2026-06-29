@@ -152,9 +152,12 @@ function oes_get_application_view(string $path = '', array $args = [], string $r
     oes_get_view($path, $args, $root);
 }
 
-//@oesLegacy
+/**
+ * @deprecated 3.0.0 Use oes_get_application_view instead
+*/
 function oes_get_project_view(string $path = '', array $args = [], string $root = ''): void
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_get_application_view()');
     oes_get_application_view($path, $args, $root);
 }
 
@@ -454,9 +457,12 @@ function oes_get_application_class_name(string $defaultClass, string $cleanedCla
     return class_exists($className) ? $className : $defaultClass;
 }
 
-//@oesLegacy
+/**
+ * @deprecated 3.0.0 Use oes_get_application_class_name instead
+ */
 function oes_get_project_class_name(string $defaultClass, string $cleanedClass = ''): string
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_get_application_class_name()');
     return oes_get_application_class_name($defaultClass, $cleanedClass);
 }
 
@@ -482,9 +488,12 @@ function oes_get_application_name($default = null, bool $replaceHyphen = true): 
     return $name;
 }
 
-//@oesLegacy
+/**
+ * @deprecated 3.0.0 Use oes_get_application_name instead
+ */
 function oes_get_project_name($default = null, bool $replaceHyphen = true): string
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_get_application_name()');
     return oes_get_application_name($default, $replaceHyphen);
 }
 

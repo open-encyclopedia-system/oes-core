@@ -77,14 +77,15 @@ function display(string $name): void
 }
 
 /**
- * Display a tool.
+ * @deprecated 2.3.0 Use display instead
  *
- * @oesLegacy Renaming for 2.3
+ * Display a tool.
  * @param string $name
  * @return void
  */
 function display_tool(string $name): void
 {
+    _deprecated_function(__FUNCTION__, '2.3.0', 'display()');
     display($name);
 }
 

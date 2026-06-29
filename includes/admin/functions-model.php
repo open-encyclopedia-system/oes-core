@@ -932,9 +932,12 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
     return ['all' => $fieldGroup, 'language' => $languageFieldGroupArgs];
 }
 
-// @oesLegacy:
+/**
+ * @deprecated 3.0.0 Use read_data_from_application_json_file instead
+ */
 function read_data_from_project_json_file(): array
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'read_data_from_application_json_file()');
     return read_data_from_application_json_file();
 }
 

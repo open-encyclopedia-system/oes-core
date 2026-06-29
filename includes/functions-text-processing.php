@@ -2,8 +2,42 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
+/**
+ * @deprecated 3.0.0 Use php8.0 str_start_with instead
+ *
+ * Returns true if given string starts with needle.
+ *
+ * @param string $string The input string.
+ * @param string $needle The needle.
+ * @param int $offset The offset. Default is 0.
+ * @return bool Returns true if the input string does start with needle.
+ *
+ */
+function oes_starts_with(string $string, string $needle, int $offset = 0): bool
+{
+    _deprecated_function(__FUNCTION__, '3.0.0', 'str_starts_with()');
 
+    $length = strlen($needle);
+    return (substr($string, $offset, $length) === $needle);
+}
 
+/**
+ * @deprecated 3.0.0 Use php8.0 str_ends_with instead
+ *
+ * Returns true if given string ends with needle.
+ *
+ * @param string $string A string containing the input string.
+ * @param string $needle A string containing the needle.
+ * @return bool Returns true if the input string does end with needle.
+ */
+function oes_ends_with(string $string, string $needle): bool
+{
+    _deprecated_function(__FUNCTION__, '3.0.0', 'str_ends_with()');
+
+    $length = strlen($needle);
+    if (!$length) return true;
+    return substr($string, -$length) === $needle;
+}
 
 /**
  * Cast input into string. This function can be used to turn database values into strings for output formats.
@@ -257,9 +291,9 @@ function oes_accordion(
     } else return $returnString;
 }
 
-
 /**
- * @legacy replaced by class-search_results.php
+ * @deprecated 2.3.0 Use OES_Search_Results instead
+ *
  * Scan string for search term and return string with highlighted search term for html display.
  *
  * @param string $needle A string containing the search term.
@@ -271,6 +305,7 @@ function oes_accordion(
  */
 function oes_get_highlighted_search(string $needle, string $content, array $args = []): array
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'OES_Search_Results');
 
     /* set default values */
     $args = array_merge(['case-sensitive' => false], $args);

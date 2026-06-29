@@ -79,7 +79,7 @@ function enqueue_select2(): void
 
 
 /**
- * @oesLegacy Main function to get acf field values.
+ * @deprecated 3.0.0 Use oes_get_field instead
  *
  * @param string $fieldName The field name or key
  * @param mixed $postID The post_id of which the value is saved against
@@ -89,12 +89,12 @@ function enqueue_select2(): void
  */
 function oes_get_field(string $fieldName, $postID = false, bool $formatValue = true)
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_get_field()');
     return \oes_get_field($fieldName, $postID, $formatValue);
 }
 
-
 /**
- * @oesLegacy Get value for frontend display of an acf field.
+ * @deprecated 3.0.0 Use oes_get_field_display_value instead
  *
  * @param string $fieldName The field name.
  * @param int|boolean $postID An int containing the post ID.
@@ -105,6 +105,7 @@ function oes_get_field(string $fieldName, $postID = false, bool $formatValue = t
  */
 function get_field_display_value(string $fieldName, $postID = false, array $args = [])
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_get_field_display_value()');
     return \oes_get_field_display_value($fieldName, $postID, $args);
 }
 

@@ -337,10 +337,11 @@ if (!class_exists('OES_Core')) :
         }
 
         /**
-         * @oesLegacy: moved
+         * @deprecated 3.0.0 Use OES::initialize_application() instead.
          */
         public function initialize_project(string $applicationPath = ''): void
         {
+            _deprecated_function( __CLASS__ . '::' . __FUNCTION__, '3.0.0', 'OES::initialize_application()' );
             $this->initialize_application($applicationPath);
         }
 

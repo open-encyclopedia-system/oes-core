@@ -1,20 +1,19 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('OES_Taxonomy')) {
 
     /**
-     * Class OES_Taxonomy
-     *
-     * @Legacy This class prepares a taxonomy term for display in the frontend theme. Replaced by OES_Term.
+     * @deprecated 3.0.0 Use OES_Term instead.
      */
     class OES_Taxonomy extends OES_Term
     {
+        public function __construct(int $objectID, string $language = '', array $args = [])
+        {
+            _deprecated_class( __CLASS__, '3.0.0', 'OES_Term' );
+            parent::__construct($objectID, $language, $args);
+        }
     }
+
 }
