@@ -24,9 +24,6 @@
     "alignText": false,
     "fullHeight": false
   },
-  "parent": [
-    "core/navigation"
-  ],
   "description": "Display the search panel and its trigger.",
   "editorScript": "file:./index.js",
   "render": "file:./render.php",

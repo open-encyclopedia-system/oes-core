@@ -39,7 +39,7 @@ function get_parent_post_type(string $postType)
  */
 function get_current_version_id($postID)
 {
-    return oes_get_field('field_oes_versioning_current_post', $postID);
+    return get_post_meta($postID, 'field_oes_versioning_current_post', true);
 }
 
 
@@ -64,7 +64,7 @@ function set_current_version_id($parentID, $currentPostID): void
  */
 function get_version_field($postID)
 {
-    return oes_get_field('field_oes_post_version', $postID);
+    return get_post_meta($postID, 'field_oes_post_version', true);
 }
 
 
@@ -88,7 +88,7 @@ function set_version_field($postID, $version)
  */
 function get_parent_id($postID)
 {
-    return oes_get_field('field_oes_versioning_parent_post', $postID);
+    return get_post_meta($postID, 'field_oes_versioning_parent_post', true);
 }
 
 
@@ -499,28 +499,6 @@ function add_meta_boxes(string $post_type): void
                 }
             );
     }
-
-
-    /* show version control tab according to option */
-    if (get_option('oes_admin-hide_version_tab'))
-        add_action(
-        /**
-         * Notice for "version" post types with block editor. For post types that are controlled by a parent
-         * post type display a link to the parent post and current version after the title.
-         */
-            'admin_footer',
-            function () {
-                ?>
-                <script>
-                    let tabs = document.querySelectorAll("[data-key = 'oes_versioning_tab']");
-                    let i = 0, n = tabs.length;
-                    for (; i < n; i++) {
-                        tabs[i].style.display = "none";
-                    }
-                </script>
-                <?php
-            }
-        );
 }
 
 

@@ -768,7 +768,7 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
 
     return sprintf('<%s class="oes-archive-filter-item %s">' .
         '<a href="#" data-filter="%s" data-name="%s" data-type="%s" data-additional="%s" class="oes-archive-filter">' .
-        '<span>%s</span>' .
+        '<span class="oes-archive-filter-text">%s</span>' .
         '%s</a>' .
         '</%s>',
         $args['element'],

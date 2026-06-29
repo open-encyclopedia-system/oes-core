@@ -1416,7 +1416,7 @@ function get_versioning_tab_version(string $versionPostType = '', array $parentP
 function get_schema_types(): array
 {
     $schemaTypes = [
-        'single-article' => __('Publication', 'oes'),
+        'single-article' => __('Article', 'oes'),
         'single-contributor' => __('Contributor', 'oes'),
         'single-index' => __('Index Object', 'oes'),
         'single-internal' => __('Internal Object', 'oes'),
@@ -1591,7 +1591,6 @@ function term_save_fields_for_multilingualism(int $term_id): void
 function set_default_options(): void
 {
     $options = [
-        'oes_admin-hide_version_tab' => false,
         'oes_features' => json_encode([
             'remarks' => true,
             'task' => false,

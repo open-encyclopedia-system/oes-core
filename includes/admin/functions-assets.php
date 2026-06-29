@@ -214,6 +214,7 @@ function oes_register_scripts_and_styles(): void
 
 
 /**
+ * TODO these are now all part of editor and iframe ... maybe cleanup
  * Load js scripts.
  * @return void
  */

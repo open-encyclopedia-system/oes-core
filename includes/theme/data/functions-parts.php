@@ -352,7 +352,7 @@ function oes_get_terms_html(array $args = []): string
         if (!empty($termsPerTaxonomy)) {
 
             /* prepare header */
-            $header = $args['labels'] ? oes_language_label_html($args['labels']) : '';
+            $header = isset($args['labels']) ? oes_language_label_html($args['labels']) : '';
             $content = '<ul class="' .
                 ($args['className'] ?? 'is-style-oes-default') .
                 ' oes-post-term-list oes-field-value-list oes-horizontal-list"><li>' .

@@ -430,7 +430,7 @@ if (!class_exists('OES_Archive')) {
                     continue;
                 }
 
-                $relevantPost = $this->get_relevant_post($postID, $parentID, $params);
+                $relevantPost = $this->get_relevant_post($postID, (int)$parentID, $params);
 
                 switch ($params['type']) {
 

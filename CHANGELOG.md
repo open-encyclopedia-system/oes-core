@@ -9,7 +9,6 @@
 - Rename Project → Application
 - Move Modules Setting in new section
 - Rename Schema Properties (Excerpt -> Abstract, Literature -> Bibliography, Terms -> Subjects)
-- Rename Schema Types (Content -> Publication)
 
 ### Features / New Components
 - Introduce new rights model 
@@ -53,6 +52,8 @@
 - Remove obsolete CSS
 - Remove filter 'oes/set_archive_data_caching_enabled'
 - Remove parameters 3 and 5 from filter 'oes/api_gnd_display_entry'
+- Remove unused function 'copy_post_meta'
+- Remove legacy option 'oes_admin-hide_version-tab'
 
 ### Fix
 - fix warning on custom post archive page

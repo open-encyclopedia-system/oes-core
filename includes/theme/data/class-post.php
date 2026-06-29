@@ -863,7 +863,14 @@ if (!class_exists('OES_Post')) {
             /* check if field is set */
             $citation = '';
             if ($fieldKey) {
-                $fieldValue = $this->fields[$fieldKey]['value-display'] ?? false;
+
+                if(isset($this->fields[$fieldKey])) {
+                    $fieldValue = $this->fields[$fieldKey]['value-display'] ?? false;
+                }
+                else{
+                    $fieldValue = oes_get_field_display_value($fieldKey, $this->object_ID);
+                }
+
                 if (!empty($fieldValue)) {
                     if ($fieldValue === 'empty') return '';
                     elseif ($fieldValue !== 'generate' &&

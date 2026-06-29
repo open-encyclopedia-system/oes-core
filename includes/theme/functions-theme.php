@@ -422,7 +422,7 @@ function oes_post_method_html(array $args = []): string
 
     return isset($args['args'])
         ? $oes_post->$method($args['args'])
-        : $oes_post->$method();
+        : $oes_post->$method($args);
 }
 
 
