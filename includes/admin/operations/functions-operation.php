@@ -135,18 +135,21 @@ function delete_operations(): void
         wp_die(__('Invalid nonce.'));
     }
 
-    if (\OES\Rights\user_can_manage_content()) {
-
-        $operationIDs = (array)$_GET['list_ids'];
-
-        foreach ($operationIDs as $operationID) {
-            delete_operation($operationID);
-            $updated = 1;
-        }
+    if (!\OES\Rights\user_can_manage_content()) {
+        wp_die(__('You do not have permission to perform this action.', 'oes'));
     }
 
-    $redirectURL = admin_url('admin.php?page=oes_tools_import&operations_deleted=' . $updated);
-    wp_redirect($redirectURL);
+    $operationIDs = array_filter(
+        array_map('absint', (array)($_GET['list_ids'] ?? [])),
+        fn(int $id): bool => $id > 0
+    );
+
+    foreach ($operationIDs as $operationID) {
+        delete_operation($operationID);
+        $updated = 1;
+    }
+
+    wp_redirect(admin_url('admin.php?page=oes_tools_import&operations_deleted=' . $updated));
     exit;
 }
 
@@ -159,13 +162,19 @@ function import_operations(): void
         wp_die(__('Invalid nonce.'));
     }
 
-    if (\OES\Rights\user_can_manage_content()) {
-        $operationIDs = (array)$_GET['list_ids'];
-        $updated = import_operations_from_array($operationIDs);
+    if (!\OES\Rights\user_can_manage_content()) {
+        wp_die(__('You do not have permission to perform this action.', 'oes'));
     }
 
-    $redirectURL = admin_url('admin.php?page=oes_tools_import&operations_imported=' . $updated);
-    wp_redirect($redirectURL);
+    // Sanitize: alle IDs auf positive Integer erzwingen
+    $operationIDs = array_filter(
+        array_map('absint', (array)($_GET['list_ids'] ?? [])),
+        fn(int $id): bool => $id > 0
+    );
+
+    $updated = import_operations_from_array($operationIDs);
+
+    wp_redirect(admin_url('admin.php?page=oes_tools_import&operations_imported=' . $updated));
     exit;
 }
 

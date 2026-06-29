@@ -61,18 +61,27 @@ class Operations_List_Table extends OES_List_Table
      */
     public function process_bulk_action(): void
     {
-        if (!user_can_manage_content()) {
+
+        $action = $this->current_action();
+
+        if (empty($action)) {
             return;
         }
 
-        $action = $this->current_action();
-        $operationIDs = $_POST['list_ids'] ?? [];
-
-        if (empty($operationIDs) || empty($action)) {
-            return;
+        if (!user_can_manage_content()) {
+            wp_die(__('You do not have permission to perform this action.', 'oes'));
         }
 
         check_admin_referer('oes_operation_bulk_action');
+
+        $operationIDs = array_filter(
+            array_map('absint', (array)($_POST['list_ids'] ?? [])),
+            fn(int $id): bool => $id > 0
+        );
+
+        if (empty($operationIDs)) {
+            return;
+        }
 
         foreach ($operationIDs as $operationID) {
             delete_operation($operationID);

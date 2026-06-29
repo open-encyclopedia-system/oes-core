@@ -3,36 +3,6 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-/**
- * Returns true if given string starts with needle.
- * This is replaced by str_starts_with by php8.0.
- *
- * @param string $string The input string.
- * @param string $needle The needle.
- * @param int $offset The offset. Default is 0.
- * @return bool Returns true if the input string does start with needle.
- */
-function oes_starts_with(string $string, string $needle, int $offset = 0): bool
-{
-    $length = strlen($needle);
-    return (substr($string, $offset, $length) === $needle);
-}
-
-
-/**
- * Returns true if given string ends with needle.
- * This is replaced by str_ends_with by php8.0.
- *
- * @param string $string A string containing the input string.
- * @param string $needle A string containing the needle.
- * @return bool Returns true if the input string does end with needle.
- */
-function oes_ends_with(string $string, string $needle): bool
-{
-    $length = strlen($needle);
-    if (!$length) return true;
-    return substr($string, -$length) === $needle;
-}
 
 
 /**
