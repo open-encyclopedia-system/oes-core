@@ -1,15 +1,10 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Module_Page')) :
+if (!class_exists('\OES\Admin\Module_Page')) :
 
     /**
      * Class Module_Page
@@ -35,6 +30,12 @@ if (!class_exists('Module_Page')) :
          * Human-readable title of the module, shown in the admin page.
          */
         public string $title = '';
+
+        /**
+         * @var string $description
+         * Human-readable description of the module, shown in the dashboard admin page.
+         */
+        public string $description = '';
 
         /**
          * @var string $setting
@@ -84,6 +85,9 @@ if (!class_exists('Module_Page')) :
          */
         public array $types = [];
 
+        /** @var array<string, string> Navigation tabs: key => label. */
+        public array $tabs = [];
+
         /**
          * Module_Page constructor.
          *
@@ -104,6 +108,14 @@ if (!class_exists('Module_Page')) :
                 add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
                 add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
             }
+
+            if($this->admin_page){
+                OES()->module_pages[$this->key] = [
+                    'label' => $this->name,
+                    'description' => $this->description,
+                    'link' =>admin_url('admin.php?page=' . $this->setting)
+                ];
+            }
         }
 
         /**
@@ -123,7 +135,10 @@ if (!class_exists('Module_Page')) :
             $this->file             = $this->param($args, 'file', $this->file ?: '');
             $this->components       = $this->param($args, 'components', $this->components ?: ['post_types']);
             $this->types            = $this->param($args, 'types', $this->types ?: ['single-article']);
-            $this->parent_slug      = $this->param($args, 'parent_slug', $this->parent_slug ?: 'oes_modules');
+            $this->parent_slug      = $this->param($args, 'parent_slug', $this->parent_slug ?: 'oes_settings');
+            $this->tabs             = $this->param($args, 'tabs', $this->tabs ?: []);
+
+            $this->description      = $this->get_description($args['description'] ?? '');
         }
 
         /**
@@ -139,6 +154,17 @@ if (!class_exists('Module_Page')) :
             if (array_key_exists($key, $args)) {
                 return ($allowEmpty || !empty($args[$key])) ? $args[$key] : $default;
             }
+            return $default;
+        }
+
+        /**
+         * Sets description.
+         *
+         * @param string $default
+         * @return string
+         */
+        public function get_description(string $default = ''): string
+        {
             return $default;
         }
 
@@ -159,7 +185,8 @@ if (!class_exists('Module_Page')) :
                     'position' => $this->position,
                     'parent_slug' => $this->parent_slug
                 ],
-                'tool' => $this->key
+                'tool' => $this->key,
+                'tabs' => $this->tabs
             ];
 
             if (!empty($this->file)) {

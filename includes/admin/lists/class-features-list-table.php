@@ -19,7 +19,7 @@ class Features_List_Table extends OES_List_Table
 
     protected function get_data(): array
     {
-        $features = \OES\Dashboard\get_features();
+        $features = \OES\Dashboard\get_feature_catalog();
         $enabledFeatures = \OES\Admin\get_features();
 
         $data = [];
@@ -93,7 +93,7 @@ class Features_List_Table extends OES_List_Table
 
     protected function column_description($item): string
     {
-        return '<div class="oes-grey-out">' . $item['group'] . '</div><p>' . $item['description'] . '</p>';
+        return '<p>' . $item['description'] . '</p>';
     }
 
     protected function column_actions($item): string
@@ -156,6 +156,14 @@ class Features_List_Table extends OES_List_Table
                     }
                 }
             }
+        }
+
+        if(!empty($item['manual'] ?? '')) {
+            $actions[] = sprintf(
+                '<a href="%s" target="_blank">%s</a>',
+                esc_url($item['manual']),
+                __('Manual', 'oes')
+            );
         }
 
         return $statusText . implode(' | ', $actions);

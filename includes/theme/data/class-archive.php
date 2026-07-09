@@ -321,7 +321,7 @@ if (!class_exists('OES_Archive')) {
 
             return (
                 (Versioning\get_current_version_id($parentID) ?? false)
-                === $postID
+                == $postID
             );
         }
 

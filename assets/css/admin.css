@@ -340,11 +340,11 @@ span.oes-column-post a.oes-admin-link:after {
 /* ---------------------------------------------------------------------------------------------------------------------
 -- MENU PAGE : TODO sort according to where it is (e.g. class-page.php...) ------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------*/
-.oes-page-header-wrapper ul.subsubsub li:after {
+.oes-page-navigation ul.subsubsub li:after {
   content: "|";
   padding: 0 5px;
 }
-.oes-page-header-wrapper ul.subsubsub li:last-child:after {
+.oes-page-navigation ul.subsubsub li:last-child:after {
   content: "";
 }
 

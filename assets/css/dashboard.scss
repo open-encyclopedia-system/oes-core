@@ -1,0 +1,127 @@
+.oes-dashboard-hero {
+  margin: 16px 0;
+}
+
+.oes-dashboard-hero__header {
+  background: linear-gradient(135deg, #1E2A44, #004589);
+  padding: 40px;
+  border-radius: 8px 8px 0 0;
+}
+
+.oes-dashboard-hero__title {
+  color: #ffffff;
+  font-size: 48px;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.oes-hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+
+  .oes-hero-badge {
+    font-size: 12px;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    padding: 7px 13px;
+    border-radius: 100px;
+    background: rgba(255, 253, 248, .12);
+    color: #EDEBE3;
+    border: 1px solid rgba(255, 253, 248, .18);
+
+    a {
+      color: #EDEBE3;
+      text-decoration: underline;
+    }
+  }
+
+  .oes-hero-badge--warning {
+    background: rgba(220, 145, 60, .25);
+    border-color: rgba(220, 145, 60, .4);
+    color: #FBEFD9;
+  }
+}
+
+.oes-dashboard-hero__nav {
+  display: flex;
+  gap: 22px;
+  padding: 10px 40px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+
+  a {
+    text-decoration: none;
+  }
+}
+
+.oes-content-status-list {
+  columns: 2;
+  column-gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    break-inside: avoid;
+    margin-bottom: 0;
+  }
+}
+
+.oes-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  li .oes-link-sub {
+    display: block;
+    font-size: 12px;
+    margin-top: 2px;
+    color: #646970;
+  }
+}
+
+.oes-manual-icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+
+.oes-feature-group-heading {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  color: #646970;
+}
+
+.oes-feature-group-heading:first-child {
+  margin-top: 0;
+}
+
+.oes-feature-group-list {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.oes-button-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

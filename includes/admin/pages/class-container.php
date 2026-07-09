@@ -254,10 +254,9 @@ if (!class_exists('Container')) :
             <!-- dummy for admin notices -->
             <h2 class="oes-display-none"></h2>
             <h1 class="wp-heading-inline"><?php echo $this->page_parameters['menu_title']; ?></h1>
-            <hr class="wp-header-end"><?php
-            echo $this->html_tabs();
-            $this->display_page_content();
-            ?>
+            <hr class="wp-header-end">
+                <?php echo $this->html_tabs();
+                $this->display_page_content(); ?>
             </div><?php
         }
 
@@ -452,29 +451,39 @@ if (!class_exists('Container')) :
         {
             $activeTab = $_GET['taxonomy'] ?? $_GET['post_type'] ?? false;
 
-            $tabString = '<h2 class="nav-tab-wrapper">';
+            $tabString = '<ul class="subsubsub">';
 
             // Info tab
             if (!empty($this->info_page['elements']) && $this->info_page['elements'] !== 'hidden') {
-                $label = esc_html($this->info_page['label'] ?? 'Title missing');
-                $url = esc_url('admin.php?page=' . $this->page_parameters['menu_slug']);
-                $classes = ($activeTab ? '' : 'nav-tab-active ') . 'nav-tab';
+                $classes = 'oes-tab' . (!$activeTab ? ' current' : '');
 
-                $tabString .= oes_get_html_anchor($label, $url, false, $classes);
+                $tabString .= sprintf(
+                        '<li class="info"><a href="%s" class="%s">%s</a></li>',
+                        esc_url('admin.php?page=' . $this->page_parameters['menu_slug']),
+                        esc_attr($classes),
+                        esc_html($this->info_page['label'] ?? 'Title missing')
+                );
             }
 
             // Subpage tabs
             foreach ($this->subpage_data as $key => $page) {
-                $label = esc_html($page['label'] ?? $key);
-                $url = esc_url($page['href'] ?? '#');
-                $classes = ($activeTab === $key ? 'nav-tab-active ' : '') . 'nav-tab';
+                $isActive = ($activeTab === $key);
+                $classes = 'oes-tab' . ($isActive ? ' current' : '');
 
-                $tabString .= oes_get_html_anchor($label, $url, false, $classes);
+                $tabString .= sprintf(
+                        '<li class="%s"><a href="%s" class="%s">%s</a></li>',
+                        esc_html($key),
+                        esc_url($page['href'] ?? '#'),
+                        esc_attr($classes),
+                        esc_html($page['label'] ?? $key)
+                );
             }
 
-            $tabString .= '</h2>';
+            $tabString .= '</ul>';
+            $tabString .= '<div style="clear: both;"></div>';
+            $tabString .= '<hr>';
 
-            return $tabString;
+            return '<div class="oes-page-navigation">' . $tabString . '</div>';
         }
 
         /**

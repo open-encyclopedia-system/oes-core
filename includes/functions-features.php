@@ -172,7 +172,7 @@ function admin_pages(): void
         add_action('oes/data_model_registered', '\OES\Admin\initialize_container_pages');
         add_action('admin_head', '\OES\Admin\help_tab');
         add_filter('admin_menu', '\OES\Admin\sort_submenus_alphabetically', 999);
-        add_action('load-toplevel_page_oes_settings','\OES\Dashboard\settings_dashboard');
+        add_action('load-toplevel_page_oes_settings','\OES\Dashboard\add_meta_boxes');
     }
 
     add_action('admin_action_oes_toggle_feature', '\OES\Admin\toggle_feature');
@@ -194,6 +194,7 @@ function assets(): void
     oes_add_style('oes-theme', '/assets/css/theme.css');
     if (is_admin()) {
         add_action('admin_enqueue_scripts', 'oes_load_assets');
+        add_action('admin_enqueue_scripts', 'oes_load_assets_new'); //TODO redone
         add_action('wp_print_styles', 'oes_load_assets');
         oes_add_style_admin('oes-admin', '/assets/css/admin.css');
         oes_add_script_admin('oes-admin', '/assets/js/admin.js');

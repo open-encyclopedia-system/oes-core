@@ -144,10 +144,11 @@ function oes_get_archive_link(string $object = '', bool $taxonomy = false): stri
  * Get the alphabet filter (list of all characters with filter functions).
  *
  * @param array $characters All starting characters of archive items.
+ * @param bool $displayEmpty Include characters with no entries. //TODO
  *
  * @return array The alphabet list
  */
-function oes_archive_get_alphabet_filter(array $characters): array
+function oes_archive_get_alphabet_filter(array $characters, bool $displayEmpty = true): array
 {
     /* first entry */
     $alphabetArray[] = '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="all" ' .
@@ -167,17 +168,22 @@ function oes_archive_get_alphabet_filter(array $characters): array
     foreach ($alphabet as $letter) {
 
         /* check if not part of alphabet */
-        if ($letter == 'other') $letterDisplay = '#';
+        if ($letter == 'other') {
+            $letterDisplay = '#';
+        }
         else {
             $letterDisplay = $letter;
             $letter = strtoupper($letter);
         }
 
         /* add link if in list */
-        if (in_array($letter, $characters))
+        if (in_array($letter, $characters)) {
             $alphabetArray[] = '<a href="javascript:void(0)" class="oes-filter-abc" data-filter="' .
                 strtolower($letter) . '" onClick="oesFilter.applyAlphabet(this)">' . $letterDisplay . '</a>';
-        else $alphabetArray[] = '<span class="inactive">' . $letterDisplay . '</span>';
+        }
+        elseif($displayEmpty) {
+            $alphabetArray[] = '<span class="inactive">' . $letterDisplay . '</span>';
+        }
     }
     return $alphabetArray;
 }
@@ -597,7 +603,6 @@ function oes_get_metadata_html(array $args = []): string
     return '';
 }
 
-
 /**
  * Get the html representation of the empty table of contents that will be filled by js.
  *
@@ -611,15 +616,40 @@ function oes_get_prepared_table_of_contents_html(array $args = []): string
         (empty($args['post_types']) || in_array($oes_post->post_type, $args['post_types'])) &&
         (!is_page() || (oes_get_field('field_oes_page_include_toc', $oes_post->object_ID) ?? false))) {
 
+        $className = $args['className'] ?? 'is-style-oes-default';
+        $sticky = ($className === 'is-style-oes-sticky');
+
         $header = '';
-        if ($args['labels'] ?? false)
-            $header = '<h2 class="oes-exclude-heading-from-toc oes-content-table-header" id="oes-toc-header">' .
-                (isset($args['labels']) ? (oes_language_label_html($args['labels'])) : '') . '</h2>';
-        return $header . '<ul class="oes-table-of-contents oes-vertical-list"></ul>';
+        if ($args['labels'] ?? false) {
+            $tag = $args['htmlTag'] ?? 'h2';
+            $header = sprintf(
+                '<%s class="oes-exclude-heading-from-toc oes-content-table-header" id="oes-toc-header">%s</%s>',
+                $tag,
+                (isset($args['labels']) ? oes_language_label_html($args['labels']) : ''),
+                $tag
+            );
+        }
+
+        if (!$sticky) {
+            return $header . '<ul class="oes-table-of-contents oes-vertical-list"></ul>';
+        }
+
+        // Wichtig: die Klasse is-style-oes-sticky muss hier (oder auf dem
+        // Block-Wrapper via render.php) vorhanden sein, damit die CSS-Variable
+        // --oes-header-height aus view.js greift.
+        // Der Host-Div bekommt dieselbe max-width + margin:auto Zentrierung
+        // wie body, damit der Button relativ dazu links ausgerichtet werden kann.
+        $toggle = '<div id="oes-toc-toggle-host"><button id="oes-toc-toggle" '
+            . 'aria-expanded="false" aria-controls="oes-toc-wrapper" '
+            . 'aria-label="Inhaltsverzeichnis öffnen"></button></div>';
+
+        $wrapper = '<div id="oes-toc-wrapper">' . $header
+            . '<ul class="oes-table-of-contents oes-vertical-list"></ul></div>';
+
+        return $toggle . $wrapper;
     }
     return '';
 }
-
 
 /**
  * Get the html representation of terms matching the search criteria.

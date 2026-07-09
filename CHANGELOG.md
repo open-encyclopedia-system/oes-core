@@ -3,11 +3,9 @@
 
 ## 3.3.0 (in development)
 ### Renaming / Branding
-- Rename OES Core → OES Framework 
 - Rename OES Manual → Guidelines 
 - Rename OES_LIVEMODE → OES_LIVE_MODE
 - Rename Project → Application
-- Move Modules Setting in new section
 - Rename Schema Properties (Excerpt -> Abstract, Literature -> Bibliography, Terms -> Subjects)
 
 ### Features / New Components
@@ -44,6 +42,7 @@
 - LOD Preview optional & metadata configurable
 - language dependent index templates
 - clean up version information notice
+- Redesign and Reorganize the OES dashboard
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)

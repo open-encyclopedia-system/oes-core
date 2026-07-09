@@ -116,7 +116,7 @@ function add_page_scripts(string $hook): void
         wp_enqueue_script('oes-admin_' . $hook);
     }
 
-    if (str_contains($hook, 'oes_settings') || str_contains($hook, 'oes-modules')) {
+    if (str_contains($hook, 'oes_settings')) {
         \OES\ACF\enqueue_select2();
     }
 }
@@ -151,7 +151,7 @@ function initialize_admin_menu_pages(): void
             'oes_settings_dashboard' => [
                 'title' => __('Dashboard', 'oes'),
                 'menu_slug'  => 'oes_settings',
-                'view_file_name' => 'view-settings-information'
+                'view_file_name' => 'view-settings-dashboard'
             ],
             'oes_settings_features' => [
                 'title' => __('Features', 'oes'),
@@ -221,25 +221,6 @@ function initialize_admin_menu_pages(): void
             ];
         }
 
-        $adminMenuPages['oes_modules'] = [
-            'page_parameters' => [
-                'page_title' => __('OES Modules', 'oes'),
-                'menu_title' => __('OES Modules', 'oes'),
-                'position'   => 56,
-                'menu_slug'  => 'oes_modules',
-                'icon_url'   => 'oes',
-            ],
-            'is_core_page' => true
-        ];
-
-        $modulesSubpages = [
-            'oes_modules_dashboard' => [
-                'title' => __('Modules', 'oes'),
-                'menu_slug'  => 'oes_modules',
-                'view_file_name' => 'view-modules'
-            ],
-        ];
-
         $adminMenuPages['oes_tools'] = [
             'page_parameters' => [
                 'page_title' => __('OES Tools', 'oes'),
@@ -281,7 +262,7 @@ function initialize_admin_menu_pages(): void
             ]
         ];
 
-        foreach(['oes_settings' => $settingsSubpages, 'oes_modules' => $modulesSubpages, 'oes_tools' => $toolsSubpages] as $slug => $subpages) {
+        foreach(['oes_settings' => $settingsSubpages, 'oes_tools' => $toolsSubpages] as $slug => $subpages) {
             foreach ($subpages as $pageSlug => $subpage) {
 
                 $pageParameters = [

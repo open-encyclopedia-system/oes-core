@@ -15,7 +15,7 @@ function oes_minify(): string {
  * Includes a file relative to the plugin path.
  *
  * @param string $file     Relative file path from the root or includes directory.
- * @param string $root     Optional. Absolute base path. Defaults to OES Framework Plugin path.
+ * @param string $root     Optional. Absolute base path. Defaults to OES Core Plugin path.
  * @param bool   $includes Optional. Whether to prepend the 'includes/' directory. Default true.
  * @return void
  */
@@ -71,12 +71,56 @@ function oes_get_path(string $path = '', string $root = ''): string
     return $base . '/' . $path;
 }
 
-
 /**
  * Normalize a plugin-relative path.
  *
- * Removes a leading '/oes' prefix (optionally only on localhost),
- * ensures proper slashes, and trims extra slashes.
+ * Ensures forward slashes, trims leading/trailing whitespace and trailing slashes.
+ * This is a pure string operation with no side effects.
+ *
+ * @param string $path Relative path to normalize.
+ * @return string Normalized path.
+ */
+function oes_normalize_path(string $path = ''): string
+{
+    $path = trim($path);
+    $path = str_replace('\\', '/', $path);
+    return untrailingslashit($path);
+}
+
+/**
+ * Strip a known path prefix from a plugin-relative path.
+ *
+ * Useful when the plugin is installed under a sub-path (e.g. /oes/) in local
+ * development environments and URLs need to be resolved without that prefix.
+ * The prefix to strip is read from the constant OES_PATH_PREFIX, which should
+ * be defined in wp-config.php for local setups and left undefined (or empty)
+ * in production.
+ *
+ * Example wp-config.php for a local /oes sub-path install:
+ *   define('OES_PATH_PREFIX', '/oes');
+ *
+ * @param string $path Relative path from the plugin root.
+ * @param string $prefix Alternative to OES_PATH_PREFIX.
+ *
+ * @return string Path with the configured prefix removed, normalized.
+ */
+function oes_strip_path_prefix(string $path = '', string $prefix = ''): string
+{
+    $path   = oes_normalize_path($path);
+
+    if(empty($prefix)) {
+        $prefix = defined('OES_PATH_PREFIX') ? trim((string) constant('OES_PATH_PREFIX')) : '';
+    }
+
+    if ($prefix !== '' && str_starts_with($path, $prefix)) {
+        $path = substr($path, strlen($prefix));
+    }
+
+    return oes_normalize_path($path);
+}
+
+/**
+ * @deprecated 3.0.0 Use oes_strip_path_prefix instead.
  *
  * @param string $path Relative path from the plugin root.
  * @param bool $strip Whether to remove '/oes' only on localhost. Default true.
@@ -84,19 +128,9 @@ function oes_get_path(string $path = '', string $root = ''): string
  */
 function oes_normalize_path_for_localhost(string $path = '', bool $strip = true): string
 {
-    $path = trim($path);
-    $path = str_replace('\\', '/', $path);
-
-    if ($strip) {
-        $isLocalhost = in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'], true);
-        if ($isLocalhost) {
-            $path = preg_replace('#^/oes#', '', $path);
-        }
-    }
-
-    return untrailingslashit($path);
+    _deprecated_function(__FUNCTION__, '3.1.0', 'oes_strip_path_prefix()');
+    return $strip ? oes_strip_path_prefix($path) : oes_normalize_path($path);
 }
-
 
 /**
  * Get the OES plugin version.

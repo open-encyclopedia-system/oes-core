@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Open Encyclopedia System Framework
+ * Open Encyclopedia System Core
  *
  * @wordpress-plugin
- * Plugin Name:       OES Framework
+ * Plugin Name:       OES Core
  * Plugin URI:        https://www.open-encyclopedia-system.org/
- * Description:       Tools for building and maintaining online encyclopedias.
+ * Description:       A framework for scholarly reference works
  * Version:           3.0.0
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT
  * Author URI:        https://www.it.fu-berlin.de/die-fub-it/mitarbeitende/mstrobl.html
@@ -72,7 +72,7 @@ if (!function_exists('OES')) {
                 if(is_admin()) {
                     add_action('admin_notices', function () use ($e) {
                         echo '<div class="notice notice-warning is-dismissible"><p>' .
-                            __('The OES Framework Plugin could not be initialized for this application.', 'oes') . '</p>' .
+                            __('The OES Core Plugin could not be initialized for this application.', 'oes') . '</p>' .
                             $e->getMessage() .
                             '</div>';
                     });
@@ -152,6 +152,9 @@ if (!class_exists('OES_Core')) :
 
         /** @var array Admin pages for OES Core and application plugins. See class 'Menu_Page'. */
         public array $admin_pages = [];
+
+        /** @var array Admin pages for OES Module plugins. See class 'Module_Page'. */
+        public array $module_pages = [];
 
         /** @var array Supported languages for multilingual posts. Default is English. */
         public array $languages = [

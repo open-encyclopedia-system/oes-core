@@ -178,7 +178,7 @@ class OES_List_Table extends WP_List_Table
         $this->_column_headers = [$columns, $hidden, $sortable];
 
         $itemsPerPage = get_user_meta(get_current_user_id(), $this->items_per_page_option, true);
-        if (empty($itemsPerPage) || $itemsPerPage < 1) $itemsPerPage = 10;
+        if (empty($itemsPerPage) || $itemsPerPage < 1) $itemsPerPage = 20;
 
         $currentPage = $this->get_pagenum();
         $data = $this->get_data();

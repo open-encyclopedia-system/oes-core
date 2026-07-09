@@ -282,15 +282,18 @@ if (!class_exists('Page')) :
          */
         protected function tool_html(): void
         {
+            $currentTool = $_GET['tab'] ?? $this->tool;
             ?>
             <div class="wrap">
                 <div class="oes-page-header-wrapper">
                     <h1><?php echo esc_html($this->page_parameters['page_title']); ?></h1>
                     <h2 class="oes-display-none"></h2>
-                    <div class="oes-page-navigation"><?php $this->nav_html(); ?></div>
+                    <div class="oes-page-navigation"><?php
+                        $this->nav_html();
+                        ?></div>
                 </div>
                 <div class="oes-page-body" style="clear:both">
-                    <?php \OES\Admin\Tools\display($this->tool); ?>
+                    <?php \OES\Admin\Tools\display($currentTool); ?>
                 </div>
             </div>
             <?php
@@ -307,7 +310,6 @@ if (!class_exists('Page')) :
             $urlBase = admin_url('admin.php?page=' . urlencode($menuSlug) . '&tab=');
             $activeTab = $_GET['tab'] ?? $this->tool;
 
-            //Todo remove oes-tabs-wrapper?
             echo '<ul class="subsubsub">';
 
             foreach ($this->tabs as $tab => $label) {
@@ -325,34 +327,6 @@ if (!class_exists('Page')) :
             echo '</ul>';
             echo '<div style="clear: both;"></div>';
             echo '<hr>';
-        }
-
-        /**
-         * TODO method until OES 2.4.3
-         * Renders the navigation tabs if defined.
-         */
-        public function nav_html_2_4_3(): void
-        {
-            if (empty($this->tabs)) return;
-
-            $menuSlug = $this->page_parameters['menu_slug'] ?? 'oes_settings';
-            $urlBase = admin_url('admin.php?page=' . urlencode($menuSlug) . '&tab=');
-            $activeTab = $_GET['tab'] ?? $this->tool;
-
-            echo '<nav class="oes-tabs-wrapper hide-if-no-js tab-count-' . esc_attr(count($this->tabs)) . '" aria-label="Secondary menu">';
-
-            foreach ($this->tabs as $tab => $label) {
-                $isActive = ($activeTab === $tab);
-                $classes = 'oes-tab' . ($isActive ? ' active' : '');
-                echo sprintf(
-                    '<a href="%s" class="%s">%s</a>',
-                    esc_url($urlBase . urlencode($tab)),
-                    esc_attr($classes),
-                    esc_html($label)
-                );
-            }
-
-            echo '</nav>';
         }
 
         /**

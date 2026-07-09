@@ -11,15 +11,8 @@ function toplevel_page_oes_settings_help_tabs($screen): void
         'id' => 'oes_general_intro',
         'title' => 'OES',
         'content' => '<p>' .
-            __('The Open Encyclopedia System (OES) is an open source online platform for building and maintaining ' .
-                'online encyclopaedias in the fields of humanities and social sciences that provide readers with ' .
-                'free and unrestricted online access to scientific content (Open Access). ' .
-                'OES is a digital framework that hosts a collection of customisable workflow management and ' .
-                'editing tools to create, publish and maintain academic reference works. Our claim is to create a ' .
-                'system for the users, in which collaboration and editorial workflow management is easy and ' .
-                'web-based. The OES software is customisable, flexible and adaptable to context applications as ' .
-                'well as simple to operate. Ultimately, we aim to set a standard for a sustainable framework for ' .
-                'this publication type.', 'oes') .
+            __('The Open Encyclopedia System (OES) is an open-source framework for building and maintaining online encyclopaedias in the humanities and social sciences. It provides editing and publishing tools so that editorial teams can create, publish and maintain academic reference works collaboratively and entirely web-based — with free, unrestricted access for readers (Open Access).
+OES is designed to be simple to operate while remaining adaptable to different project contexts, without requiring you to touch the underlying source code. Our goal is to set a lasting standard for this kind of publication.', 'oes') .
             '</p>',
     ]);
 
@@ -27,17 +20,18 @@ function toplevel_page_oes_settings_help_tabs($screen): void
         'id' => 'oes_general_support',
         'title' => 'Support',
         'content' => '<p>' .
-            sprintf(__('OES is a free and open source software. You can download the sources from our %swebsite%s. ' .
-                'The sources include an installation guide.', 'oes'),
-                '<a href="http://www.open-encyclopedia-system.org/about-OES/using_oes/index.html" target="_blank">',
+            sprintf(__('OES is a free and open source software. You can download the sources, along with an installation guide, from %sGitHub%s.', 'oes'),
+                '<a href="https://github.com/open-encyclopedia-system" target="_blank">',
                 '</a>') .
             '</p>' .
             '<p>' .
-            sprintf(__('Support is currently provided via our email help desk %s. We answer questions related to ' .
-                'the OES plugin and its usage. For further information about online encyclopaedias and possible ' .
-                'customisations please visit our %swebsite%s.', 'oes'),
-                '<a href="mailto:info@open-encyclopedia-system.org">info@open-encyclopedia-system.org</a>',
-                '<a href="http://www.open-encyclopedia-system.org/" target="_blank">',
+            sprintf(__('The full user manual is available at %smanual.open-encyclopedia-system.org%s and covers configuration, post types, and best practices.', 'oes'),
+                '<a href="http://manual.open-encyclopedia-system.org/" target="_blank">',
+                '</a>') .
+            '</p>' .
+            '<p>' .
+            sprintf(__('For questions about the OES plugin and its usage, reach us at our support desk: %sinfo@open-encyclopedia-system.org%s.', 'oes'),
+                '<a href="mailto:info@open-encyclopedia-system.org">',
                 '</a>') .
             '</p>',
     ]);
@@ -52,8 +46,13 @@ function toplevel_page_oes_settings_help_tabs($screen): void
                 'but in some circumstances you might prefer a configuration via the editorial layer, for instance ' .
                 'if you want to enable OES features; design, test or export configurations without editing the source code itself. ' .
                 'No programming skills are required to do this. You might, however, need some understanding of ' .
-                'WordPress and post types (or do it the old trial-and-error way). A complete user guide is coming soon.',
+                'WordPress and post types (or do it the old trial-and-error way).',
                 'oes') .
+            '</p>' .
+            '<p>' .
+            sprintf(__('See the manual handbook %sOES Settings%s for step-by-step guidance (in German).', 'oes'),
+                '<a href="https://manual.open-encyclopedia-system.org/book/settings/" target="_blank">',
+                '</a>') .
             '</p>',
     ]);
 
@@ -111,7 +110,7 @@ function oes_page_oes_settings_index_help_tabs($screen): void
  * @param $screen
  * @return void
  */
-function oes_page_oes_settings_language_help_tabs($screen): void
+function oes_page_oes_settings_languages_help_tabs($screen): void
 {
     $screen->add_help_tab([
         'id' => 'oes_languages',

@@ -231,3 +231,20 @@ function oes_load_assets(): void
         wp_enqueue_style($style['handle']);
     }
 }
+
+
+function oes_load_assets_new(string $hook): void
+{
+
+    if ( 'toplevel_page_oes_settings' !== $hook ) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'oes-dashboard',
+                plugins_url(OES_BASENAME . '/assets/css/dashboard.css'),
+        [],
+        '1.0.0'
+    );
+
+}

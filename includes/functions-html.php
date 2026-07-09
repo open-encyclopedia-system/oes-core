@@ -819,3 +819,17 @@ function oes_get_translated_string(string $rawString, string $languageKey = ''):
 
     return esc_html($rawString);
 }
+
+/**
+ * Render a single button-styled link. Centralises escaping so every
+ * button in this file is guaranteed to be built the same way.
+ */
+function oes_render_button(string $url, string $label, string $variant = 'secondary'): void
+{
+    printf(
+        '<a href="%s" class="button button-%s">%s</a>',
+        esc_url($url),
+        esc_attr($variant),
+        esc_html($label)
+    );
+}

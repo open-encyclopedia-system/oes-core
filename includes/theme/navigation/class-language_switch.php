@@ -318,17 +318,11 @@ if (!class_exists('Language_Switch')) {
          */
         public function html(string $style = 'is-style-oes-default'): string
         {
-            switch ($style) {
-                case 'is-style-oes-popup':
-                    return $this->get_popup_links_html();
-
-                case 'is-style-oes-two':
-                    return $this->get_single_link_html();
-
-                case 'is-style-oes-default':
-                default:
-                    return $this->get_all_links_html();
-            }
+            return match (true) {
+                str_contains($style, 'is-style-oes-popup') => $this->get_popup_links_html(),
+                str_contains($style, 'is-style-oes-two') => $this->get_single_link_html(),
+                default => $this->get_all_links_html(),
+            };
         }
 
 
