@@ -19,6 +19,7 @@
 - Introduce new LOD API: HMML
 - Introduce Display_Helper for LOD APIs
 - Introduce new block: Context Link
+- Introduce new block: Archive Toggle All
 - Introduce update function for OES database tables
 - Introduce site health feature
 - Re-do operations and feature display

@@ -36,9 +36,7 @@ a.oes-panel-header:hover {
 
 .oes-panel-title {
   flex: 1;
-}
-.oes-panel-title label {
-  padding: 0.5rem;
+  padding: 0 0.5rem;
 }
 .oes-panel-title .oes-caption-title {
   padding: 0.5rem 2px;

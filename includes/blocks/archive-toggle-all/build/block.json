@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "oes/archive-toggle-all",
+  "version": "0.1.0",
+  "title": "Archive Toggle All Button",
+  "category": "widgets",
+  "description": "Adds a button that expands or collapses all detail entries in the archive loop at once. Automatically switches between an \"expand all\" and \"collapse all\" state",
+  "supports": {
+    "spacing": {
+      "margin": true,
+      "padding": true,
+      "blockGap": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    },
+    "align": true,
+    "anchor": true,
+    "alignContent": true,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true,
+      "gradients": true
+    },
+    "alignText": true,
+    "fullHeight": true
+  },
+  "styles": [
+    {
+      "name": "oes-archive-toggle-all-default",
+      "label": "Two Buttons",
+      "isDefault": true
+    },
+    {
+      "name": "oes-archive-toggle-all-single",
+      "label": "Single Button"
+    }
+  ],
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

@@ -412,7 +412,7 @@ HTML;
                 $label = $entry['label'] ?? '';
                 $preview .= $label
                     ? sprintf('<tr><th>%s</th><td>%s</td></tr>', $label, $value)
-                    : sprintf('<tr><th colspan="2">%s</th></tr>', $value);
+                    : sprintf('<tr><td colspan="2">%s</td></tr>', $value);
             }
         }
 
@@ -502,7 +502,7 @@ HTML;
         return <<<HTML
 <tr>
     <td colspan="2">
-        <div class="wp-block-buttons">
+        <div class="wp-block-buttons oes-read-more-button">
             <div class="wp-block-button">
                 <a href="{$permalink}" class="wp-block-button__link wp-element-button">{$label}</a>
             </div>

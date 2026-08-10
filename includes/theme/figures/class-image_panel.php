@@ -114,13 +114,17 @@ if (!class_exists('OES_Image_Panel')) {
         /** @inheritdoc */
         protected function get_html_caption_prefix(): string
         {
+            if (!$this->add_number) {
+                return '';
+            }
+
             if ($this->number === 'none') {
                 return '';
             }
 
-            return '<span class="oes-panel-caption-text"><label>' .
+            return '<span class="oes-panel-caption-text"><span class="oes-panel-title-label">' .
                 esc_html($this->number_prefix . $this->number) .
-                '</label></span>';
+                '</span></span>';
         }
 
         /** @inheritdoc */

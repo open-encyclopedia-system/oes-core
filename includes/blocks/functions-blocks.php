@@ -42,6 +42,7 @@ function register(): void
     $blocks = [
         'archive-count',
         'archive-loop',
+        'archive-toggle-all',
         'author-byline',
         'author-vita',
         'back-to-top',
