@@ -50,9 +50,14 @@ function redirect_page(array $templates): array
         foreach ($templates as $template) {
 
             // TODO include legacy underscore? article_language1.
-            $localized[] = str_ends_with($template, '.php')
-                ? str_replace('.php', "-{$oes_language}.php", $template)
-                : "{$template}-{$oes_language}";
+            if (str_ends_with($template, '.php')) {
+                $base = str_replace('.php', '', $template);
+                $localized[] = "{$base}-{$oes_language}.html";
+                $localized[] = "{$base}-{$oes_language}.php";
+                $localized[] = "{$base}";
+            } else {
+                $localized[] = "{$template}-{$oes_language}";
+            }
 
             $localized[] = $template;
         }
