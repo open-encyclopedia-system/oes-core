@@ -30,6 +30,7 @@
 - Introduce REST API, export
 - Introduce filter "oes/template_redirect_index_additional_objects" for object filtering on index pages
 - Introduce filter block styles "Details" and "Classic"
+- Introduce language dependent templates for terms
 
 ### Improvements
 - Improve internal page generation
