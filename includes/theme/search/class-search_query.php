@@ -55,7 +55,6 @@ if (!class_exists('OES_Search_Query')) {
                     add_filter('posts_join', [$this, 'extend_join']);
                     add_filter('posts_distinct', [$this, 'make_distinct']);
                     add_filter('posts_search', [$this, 'posts_search'], 10, 2);
-
                 }
             });
         }

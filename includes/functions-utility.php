@@ -128,7 +128,7 @@ function oes_strip_path_prefix(string $path = '', string $prefix = ''): string
  */
 function oes_normalize_path_for_localhost(string $path = '', bool $strip = true): string
 {
-    _deprecated_function(__FUNCTION__, '3.1.0', 'oes_strip_path_prefix()');
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_strip_path_prefix()');
     return $strip ? oes_strip_path_prefix($path) : oes_normalize_path($path);
 }
 

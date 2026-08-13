@@ -1,50 +1,47 @@
 
 # Changelog
 
-## 3.3.0 (in development)
-### Renaming / Branding
-- Rename OES Manual → Guidelines 
+## 3.3.0 (in development) - 2026-09-01
+### Renaming
+- Rename OES Manual → Guidelines
 - Rename OES_LIVEMODE → OES_LIVE_MODE
 - Rename Project → Application
-- Rename Schema Properties (Excerpt -> Abstract, Literature -> Bibliography, Terms -> Subjects)
+- Rename schema properties (Excerpt → Abstract, Literature → Bibliography, Terms → Subjects)
 
 ### Features / New Components
-- Introduce new rights model 
+- Introduce new rights model
 - Introduce new application plugin initialization logic
 - Introduce OES_List_Table (extends WP_List_Table)
-- Introduce factory_service and improved data model factory 
+- Introduce factory service and improved data model factory
 - Introduce cache database table
 - Introduce new LOD API: ROR
 - Introduce new LOD API: ORCID
 - Introduce new LOD API: HMML
 - Introduce Display_Helper for LOD APIs
-- Introduce new block: Context Link
-- Introduce new block: Archive Toggle All
+- Introduce new block: "Context Link"
+- Introduce new block: "Archive Toggle All"
+- Introduce new block: "Field" (uses shortcode `oes_field`)
 - Introduce update function for OES database tables
 - Introduce site health feature
-- Re-do operations and feature display
-- New page icons and re-designed icons
-- New block "Context Link"
 - Introduce new shortcode: audit field value
-- Introduce new block: Field (use shortcode oes_field)
-- Introduce REST API, export
-- Introduce filter "oes/template_redirect_index_additional_objects" for object filtering on index pages
+- Introduce REST API export
+- Introduce filter `oes/template_redirect_index_additional_objects` for object filtering on index pages
 - Introduce filter block styles "Details" and "Classic"
-- Introduce language dependent templates for terms
+- Introduce language-dependent templates for terms and index pages
 
 ### Improvements
 - Improve internal page generation
 - Re-organize settings and tools pages
-- Stabilize config tools and redesign GUI administration of settings and tools
-- Improve caching
-- Fix encoding issues when editing settings
-- LOD query via react
-- make language switch block available outside of navigation
-- Improve admin page icons, container icons
-- LOD Preview optional & metadata configurable
-- language dependent index templates
-- clean up version information notice
-- Redesign and Reorganize the OES dashboard
+- Stabilize config tools and redesign settings/tools GUI administration
+- Improve caching via new cache database table
+- Add LOD query support via React
+- Make LOD preview optional and metadata configurable
+- Make language switch block available outside of navigation
+- Clean up version information notice
+- Redesign and reorganize the OES dashboard
+- Redesign operations and feature display
+- Redesign page and container icons
+- Add options for "author byline" block to include ORCID information and skip sorting
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)

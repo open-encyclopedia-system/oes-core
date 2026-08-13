@@ -567,6 +567,7 @@ if (!class_exists('OES_Core')) :
                     'vita' => 'none',
                     'publications' => 'none',
                     'language' => 'none',
+                    'orcid' => 'none',
                     'external' => [],
                     'lod' => false
                 ];

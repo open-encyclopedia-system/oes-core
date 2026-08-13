@@ -556,7 +556,19 @@ if (!class_exists('OES_Post')) {
                     else unset($args[$param]);
                 }
 
-            if (isset($args['authors'])) $returnString = $this->get_author_info($args['authors']);
+            if (isset($args['authors'])) {
+
+                $authorArgs = false;
+                if (is_string($args['authors'])) {
+                    $authorArgs = ['authors' => [$args['authors']]];
+                } elseif (is_array($args['authors'])) {
+                    $authorArgs = ['authors' => $args['authors']];
+                }
+
+                if (is_array($authorArgs)) {
+                    $returnString = $this->get_author_info($authorArgs);
+                }
+            }
 
             if (isset($args['pub_date']) || isset($args['edit_date'])) {
                 if (isset($args['version']) && !$args['version']) $args['version-parameter']['skip-version'] = true;
@@ -572,44 +584,188 @@ if (!class_exists('OES_Post')) {
             return empty($returnString) ? '' : '<div class="oes-cover-info">' . $returnString . '</div>';
         }
 
-
         /**
          * Get author info (e.g. for cover info).
          *
-         * @param string|array $args Additional arguments like author field keys.
+         * @param array $args Additional arguments like author field keys.
          * @return string The author info.
+         *
+         * @oesDevelopment: sort alphabetically with multiple fields
          */
-        public function get_author_info($args = []): string
+        public function get_author_info(array $args = []): string
         {
-            $authorsArray = [];
-            if (is_string($args)) $authorsArray[] = $this->fields[$args]['value-display'] ?? '';
-            foreach ($args['authors'] ?? [] as $authorFieldKey) {
-                if (str_starts_with($authorFieldKey, 'parent__')) {
-                    $fieldValue = oes_get_field_display_value(
-                        substr($authorFieldKey, 8),
-                        $this->parent_ID,
-                        ['list-class' => 'oes-field-value-list']);
-                    if (!empty($fieldValue)) $authorsArray[] = $fieldValue;
-                } else
-                    $authorsArray[] = $this->check_if_field_not_empty($authorFieldKey) ?
-                        $this->fields[$authorFieldKey]['value-display'] :
-                        '';
+            $authorFields = $args['authors'] ?? [];
+            if (empty($authorFields)) {
+                return '';
             }
 
-            /* return early on empty data */
-            if (empty($authorsArray)) return '';
-            $authorsString = implode(', ', $authorsArray);
-            if (empty($authorsString)) return '';
+            $sorted = (bool)($args['sorting'] ?? false);
+            $includeOrcid = (bool)($args['orcid'] ?? false);
+            $labels = $args['labels'] ?? false;
 
-            /* prepare prefix */
-            $prefix = $this->get_label($args['labels'] ?? [], 'single__sub_line__author_by', '');
+            foreach ($authorFields as $authorFieldKey) {
 
-            return '<div class="' . ($args['className'] ?? '') . ' oes-author-byline">' .
-                ($prefix ? '<span class="oes-author-byline-by">' . $prefix . '</span>' : '') .
-                $authorsString .
+                if (!$includeOrcid) {
+
+                    if (str_starts_with($authorFieldKey, 'parent__')) {
+                        $authorList = oes_get_field_display_value(
+                            substr($authorFieldKey, 8),
+                            $this->parent_ID,
+                            ['list-class' => 'oes-field-value-list', 'sort' => $sorted],
+                        );
+
+                    } elseif (is_array($this->fields[$authorFieldKey]['value'] ?? []) && !$sorted) {
+                        $authorList = oes_get_field_display_value(
+                            $authorFieldKey,
+                            $this->object_ID,
+                            ['list-class' => 'oes-field-value-list', 'sort' => false]
+                        );
+                    } else {
+                        $authorList = $this->fields[$authorFieldKey]['value-display'];
+                    }
+                } else {
+
+                    if (str_starts_with($authorFieldKey, 'parent__')) {
+                        $authorIDs = oes_get_field($authorFieldKey, $this->object_ID);
+                    } else {
+                        $authorIDs = $this->fields[$authorFieldKey]['value'] ?? [];
+                    }
+
+                    if (empty($authorIDs)) {
+                        continue;
+                    }
+
+                    if(is_array($authorIDs)) {
+                        $authorList = $this->get_author_list_with_orcid($authorIDs, $sorted);
+                    }
+                    elseif (is_string($authorIDs)) {
+                        $authorList = $authorIDs;
+                    }
+                    else {
+                        $authorList = '<span class="oes-author-byline__link">' . $this->fields[$authorFieldKey]['value-display'] . '</span>';
+                    }
+                }
+
+                if (!empty($authorList)) {
+                    $authorsArray[] = $authorList;
+                }
+            }
+
+
+            if (empty($authorsArray)) {
+                return '';
+            }
+
+            $authorsString = implode('</div><div class="oes-author-byline__group">', $authorsArray);
+            if (empty($authorsString)) {
+                return '';
+            }
+
+            $prefix = '';
+            if($labels) {
+
+                $prefixString = $this->get_label($labels, 'single__sub_line__author_by');
+
+                if(!empty($prefixString)) {
+                    $prefix = '<span class="oes-author-byline__by">' . esc_html($prefixString) . '</span>';
+                }
+            }
+
+            $classes[] = 'oes-author-byline';
+            if($includeOrcid){
+                $classes[] = 'oes-author-byline-include-orcid';
+            }
+
+            return '<div class="' . esc_attr(implode(' ', $classes)) . '">' .
+                $prefix .
+                '<div class="oes-author-byline__container">' .
+                '<div class="oes-author-byline__group">' . $authorsString . '</div>' .
+                '</div>' .
                 '</div>';
         }
 
+        /**
+         * Build a sorted <ul> of authors with ORCID info where available.
+         *
+         * @param array $authorIDs Array of author post IDs or WP_Post objects.
+         * @param bool $sorted Whether to sort by sorting title.
+         * @return string The rendered list, or empty string if no valid authors.
+         */
+        private function get_author_list_with_orcid(array $authorIDs, bool $sorted): string
+        {
+            global $oes;
+
+            $collectSingleAuthors = [];
+            $orcidField = false;
+
+            foreach ($authorIDs as $authorID) {
+
+                if (!$orcidField) {
+                    $postType = $authorID instanceof WP_Post
+                        ? $authorID->post_type
+                        : get_post_type($authorID);
+
+                    if ($postType) {
+                        $orcidField = $oes->post_types[$postType]['orcid'] ?? '';
+                    }
+                }
+
+                if (!$orcidField) {
+                    continue;
+                }
+
+                $orcidID = oes_get_field($orcidField, $authorID);
+                $sortingTitle = oes_get_display_title_sorting($authorID);
+
+                $collectSingleAuthors[$sortingTitle . $authorID] = [
+                    'permalink' => get_permalink($authorID),
+                    'title' => oes_get_display_title($authorID),
+                    'orcidID' => $orcidID,
+                ];
+            }
+
+            if (empty($collectSingleAuthors)) {
+                return '';
+            }
+
+            if ($sorted) {
+                ksort($collectSingleAuthors);
+            }
+
+            $singleAuthors = '';
+            foreach ($collectSingleAuthors as $author) {
+                $singleAuthors .= $this->format_author_entry($author);
+            }
+
+            return '<ul class="oes-field-value-list">' . $singleAuthors . '</ul>';
+        }
+
+        /**
+         * Render a single author's list item, with ORCID link if available.
+         *
+         * @param array $author Associative array with 'permalink', 'title', 'orcidID'.
+         * @return string
+         */
+        private function format_author_entry(array $author): string
+        {
+            $permalink = esc_url($author['permalink']);
+            $title = esc_html($author['title']);
+            $orcidID = $author['orcidID'];
+
+            if (!empty($orcidID) && is_string($orcidID)) {
+                $orcidUrl = esc_url('https://orcid.org/' . $orcidID);
+                $orcidLabel = esc_html('https://orcid.org/' . $orcidID);
+                return sprintf(
+                    '<li><a href="%s" class="oes-author-byline__link">%s</a><a href="%s" class="oes-author-byline__orcid">%s</a></li>',
+                    $permalink,
+                    $title,
+                    $orcidUrl,
+                    $orcidLabel
+                );
+            }
+
+            return sprintf('<li><a href="%s" class="oes-author-byline__link">%s</a></li>', $permalink, $title);
+        }
 
         /**
          * Get version info (e.g. for cover info).
@@ -864,10 +1020,9 @@ if (!class_exists('OES_Post')) {
             $citation = '';
             if ($fieldKey) {
 
-                if(isset($this->fields[$fieldKey])) {
+                if (isset($this->fields[$fieldKey])) {
                     $fieldValue = $this->fields[$fieldKey]['value-display'] ?? false;
-                }
-                else{
+                } else {
                     $fieldValue = oes_get_field_display_value($fieldKey, $this->object_ID);
                 }
 
@@ -1300,8 +1455,7 @@ if (!class_exists('OES_Post')) {
                             $versionPosts[] = get_post($versionID);
                         }
                     }
-                }
-                else {
+                } else {
                     $versionPosts = !empty($field['value'] ?? '') ? $field['value'] : [];
                 }
 

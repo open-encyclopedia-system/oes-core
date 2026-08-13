@@ -13,8 +13,26 @@
   "attributes": {
     "labels": {
       "type": "object"
+    },
+    "sorting": {
+      "type": "boolean",
+      "default": true
+    },
+    "orcid": {
+      "type": "boolean"
     }
   },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Inline",
+      "isDefault": true
+    },
+    {
+      "name": "oes-list",
+      "label": "List"
+    }
+  ],
   "supports": {
     "spacing": {
       "margin": true,
