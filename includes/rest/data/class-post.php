@@ -822,6 +822,10 @@ if (!class_exists('\OES\Rest\Post')) {
 
         protected function prepare_text($value): string
         {
+            if(!is_string($value)) {
+                return '';
+            }
+
             return $this->convert_html ? oes_convert_html_to_plain_text($value) : $value;
         }
 
