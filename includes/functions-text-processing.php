@@ -3,14 +3,14 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
- * @deprecated 3.0.0 Use php8.0 str_start_with instead
- *
- * Returns true if given string starts with needle.
- *
  * @param string $string The input string.
  * @param string $needle The needle.
  * @param int $offset The offset. Default is 0.
  * @return bool Returns true if the input string does start with needle.
+ *
+ * @deprecated 3.0.0 Use php8.0 str_start_with instead
+ *
+ * Returns true if given string starts with needle.
  *
  */
 function oes_starts_with(string $string, string $needle, int $offset = 0): bool
@@ -22,13 +22,13 @@ function oes_starts_with(string $string, string $needle, int $offset = 0): bool
 }
 
 /**
+ * @param string $string A string containing the input string.
+ * @param string $needle A string containing the needle.
+ * @return bool Returns true if the input string does end with needle.
  * @deprecated 3.0.0 Use php8.0 str_ends_with instead
  *
  * Returns true if given string ends with needle.
  *
- * @param string $string A string containing the input string.
- * @param string $needle A string containing the needle.
- * @return bool Returns true if the input string does end with needle.
  */
 function oes_ends_with(string $string, string $needle): bool
 {
@@ -162,7 +162,7 @@ function oes_get_apostrophe_variants(bool $default = false): array
         "́",  // U+0301 Combining acute accent
     ];
 
-    if($default){
+    if ($default) {
         $apostrophes[] = "'";
     }
     return $apostrophes;
@@ -227,13 +227,13 @@ function oes_replace_string_for_anchor(string $inputString): string
  */
 function oes_get_language_label_from_string(string $input, string $language = ''): string
 {
-    if(empty($language)) {
+    if (empty($language)) {
         global $oes_language;
         $language = $oes_language;
     }
     $inputArray = explode(';', $input);
-    if(sizeof($inputArray) < 2 || $language === 'language0') return $inputArray[0] ?? '';
-    elseif($languageInt = (int)substr($language, 8)) return $inputArray[$languageInt] ?? '';
+    if (sizeof($inputArray) < 2 || $language === 'language0') return $inputArray[0] ?? '';
+    elseif ($languageInt = (int)substr($language, 8)) return $inputArray[$languageInt] ?? '';
     return '';
 }
 
@@ -292,16 +292,16 @@ function oes_accordion(
 }
 
 /**
- * @deprecated 2.3.0 Use OES_Search_Results instead
- *
- * Scan string for search term and return string with highlighted search term for html display.
- *
  * @param string $needle A string containing the search term.
  * @param string $content A string containing the content to be searched.
  * @param array $args An array containing additional search parameter. Valid parameter are:
  *  'case-sensitive'        : A boolean identifying if the search is case-sensitive.
  *
  * @return array Returns an array with highlighted search results.
+ * @deprecated 2.3.0 Use OES_Search_Results instead
+ *
+ * Scan string for search term and return string with highlighted search term for html display.
+ *
  */
 function oes_get_highlighted_search(string $needle, string $content, array $args = []): array
 {
@@ -435,14 +435,14 @@ function oes_convert_date_to_formatted_string(
         $timestamp = strtotime(str_replace('/', '-', $date));
 
         /* Usually php intl is installed and included as extension. If not, use deprecated function strftotime. */
-        if(class_exists('IntlDateFormatter')) {
+        if (class_exists('IntlDateFormatter')) {
 
             if (empty($locale)) {
                 global $oes_language;
                 $locale = $args['date-locale'] ?? (OES()->languages[$oes_language ?? 'language0']['locale'] ?? 'en_BE');
             }
 
-            if($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
+            if ($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;
 
 
             /**
@@ -452,8 +452,7 @@ function oes_convert_date_to_formatted_string(
              */
             $formatter = apply_filters('oes\intl_date_formatter', new IntlDateFormatter($locale, $dateType, $timeType));
             $formattedString = $formatter->format($timestamp);
-        }
-        else {
+        } else {
 
 
             /**
@@ -531,4 +530,59 @@ function oes_generate_header_for_table_of_contents(string $headerText, int $leve
 
     return '<h' . $level . ' class="' . implode(' ', $headingClass) . '" id="' . $id . '">' .
         $headerText . '</h' . $level . '>';
+}
+
+/**
+ * Converts an HTML string into normalized plain text.
+ *
+ * Strips all HTML tags, decodes HTML entities (e.g. &amp; -> &, &#8217; -> ’),
+ * and collapses three or more consecutive newlines down to two.
+ *
+ * @param string $html The HTML markup to convert.
+ * @return string The resulting plain text, trimmed of leading/trailing whitespace.
+ */
+function oes_convert_html_to_plain_text(string $html): string
+{
+    $text = wp_strip_all_tags($html);
+    $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+    $text = preg_replace("/\n{3,}/", "\n\n", $text);
+    return trim($text);
+}
+
+/**
+ * De-duplicates a list of associative arrays by a given key, keeping the first occurrence. Items missing the key
+ * are dropped.
+ */
+function oes_dedupe_by_key(array $items, string $key): array
+{
+    $seen = [];
+    return array_values(array_filter($items, function ($item) use ($key, &$seen) {
+        $value = $item[$key] ?? null;
+        if ($value === null || isset($seen[$value])) {
+            return false;
+        }
+        $seen[$value] = true;
+        return true;
+    }));
+}
+
+/**
+ * Recursively strips null/empty values so the array only contains properties that actually have data.
+ */
+function oes_remove_empty_from_array(array $data): array
+{
+    foreach ($data as $key => $value) {
+        if (is_array($value)) {
+            $value = oes_remove_empty_from_array($value);
+            if (empty($value)) {
+                unset($data[$key]);
+                continue;
+            }
+            $data[$key] = $value;
+        } elseif ($value === null || $value === '') {
+            unset($data[$key]);
+        }
+    }
+
+    return $data;
 }

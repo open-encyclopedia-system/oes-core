@@ -274,7 +274,6 @@ if (!class_exists('OES_Core')) :
             \OES\Features\tools();
             \OES\Features\admin_messages();
             \OES\Features\admin_functions();
-            \OES\Features\rest();
 
             // Retrieve feature options to check which features are enabled
             $features = \OES\Admin\get_features();

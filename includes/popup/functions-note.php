@@ -18,7 +18,11 @@ function render_single_note(array $args, string $content = ""): string
 {
     /* get post id */
     global $oes_post, $oesNotes;
-    $postID = $oes_post ? $oes_post->object_ID : $GLOBALS['post']->ID;
+    $postID = $oes_post ? $oes_post->object_ID : ($GLOBALS['post'] ? $GLOBALS['post']->ID : null);
+
+    if(!$postID) {
+        return '';
+    }
 
     /* get note number */
     $number = (!isset($oesNotes[$postID]) || count($oesNotes[$postID]['used_reference_numbers']) == 0) ?

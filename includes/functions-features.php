@@ -100,22 +100,6 @@ function admin_functions(): void
 }
 
 /**
- * Includes rest api registration.
- *
- * @return void
- */
-function rest(): void
-{
-    include_once __DIR__ . '/rest/register.php';
-    include_once __DIR__ . '/rest/class-export.php';
-    include_once __DIR__ . '/rest/class-json_export.php';
-    include_once __DIR__ . '/rest/class-oes_export.php';
-    include_once __DIR__ . '/rest/class-tei_export.php';
-
-    add_action('rest_api_init', '\OES\Rest\fields');
-}
-
-/**
  * Sets up the dashboard in the editorial layer for OES purposes.
  * This feature customizes the admin dashboard by adding elements like a welcome message specific to OES.
  *
@@ -542,6 +526,8 @@ function navigation(bool $blockTheme = true): void
                  'frontpage_template_hierarchy',
                  'single_template_hierarchy',
                  'archive_template_hierarchy',
+                 'tag_template_hierarchy',
+                 'taxonomy_template_hierarchy'
              ] as $hook) {
         add_filter($hook, '\OES\Navigation\redirect_page');
     }
@@ -579,8 +565,16 @@ function search(): void
  */
 function export(): void
 {
-    include_once __DIR__ . '/rest/functions-export.php';
-    add_action('rest_api_init', '\OES\Rest\export');
+    include_once __DIR__ . '/rest/class-export.php';
+
+    include_once __DIR__ . '/rest/register.php';
+
+    include_once __DIR__ . '/rest/data/class-post.php';
+    include_once __DIR__ . '/rest/data/class-post_jsonld.php';
+    include_once __DIR__ . '/rest/data/class-post_txt.php';
+    include_once __DIR__ . '/rest/data/class-post_tei.php';
+
+    add_action('rest_api_init', '\OES\Rest\apis');
 }
 
 /**

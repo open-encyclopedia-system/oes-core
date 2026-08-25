@@ -6,35 +6,51 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 //TODO documentation
 //TODO add schema to json
-function export(): void
+function apis(): void
 {
+
+    register_rest_route('oes/v1', '/vocab', [
+        'methods' => 'GET',
+        'permission_callback' => '__return_true',
+        'callback' => '\OES\Rest\serve_vocab',
+    ]);
+
+    //TODO
+    register_rest_route('oes/v1', '/export/raw/(?P<id>\d+)', [
+        'methods' => 'GET',
+        'permission_callback' => '__return_true',
+        'callback' => function ($request) {
+
+            $exporter = new \OES\Rest\Export('raw');
+            $exporter->prepare_post_data($request['id']);
+            $exporter->export_json();
+
+            exit;
+        }
+    ]);
 
     register_rest_route('oes/v1', '/export/json/(?P<id>\d+)', [
         'methods' => 'GET',
         'permission_callback' => '__return_true',
         'callback' => function ($request) {
 
-            $exporter = new \OES\Export\JSON_Export($request['id']);
-            $json = $exporter->export_post();
+            $exporter = new \OES\Rest\Export('jsonld');
+            $exporter->prepare_post_data($request['id']);
+            $exporter->export_json();
 
-            header('Content-Type: application/json; charset=utf-8');
-
-            echo $json;
             exit;
         }
     ]);
 
-    register_rest_route('oes/v1', '/export/oes/(?P<id>\d+)', [
+    register_rest_route('oes/v1', '/export/txt/(?P<id>\d+)', [
         'methods' => 'GET',
         'permission_callback' => '__return_true',
         'callback' => function ($request) {
 
-            $exporter = new \OES\Export\OES_Export($request['id']);
-            $json = $exporter->export_post();
+            $exporter = new \OES\Rest\Export('txt');
+            $exporter->prepare_post_data($request['id']);
+            $exporter->export_txt();
 
-            header('Content-Type: application/json; charset=utf-8');
-
-            echo $json;
             exit;
         }
     ]);
@@ -44,19 +60,12 @@ function export(): void
         'permission_callback' => '__return_true',
         'callback' => function ($request) {
 
-            $exporter = new \OES\Export\TEI_Export($request['id']);
-            $json = $exporter->export_post();
-
-            header('Content-Type: application/json; charset=utf-8');
-
-            echo $json;
+            $exporter = new \OES\Rest\Export('tei');
+            $exporter->export_tei($request['id']);
             exit;
         }
     ]);
-}
 
-function fields(): void
-{
     register_rest_route('oes/v1', '/fields', [
         'methods' => 'GET',
         'callback' => function () {
@@ -101,6 +110,20 @@ function fields(): void
             return current_user_can('edit_posts');
         }
     ]);
+}
+
+function serve_vocab(\WP_REST_Request $request)
+{
+
+    $path = OES_CORE_PLUGIN . '/includes/rest/vocab.jsonld';
+    $vocab = json_decode(file_get_contents($path), true);
+
+    $vocab['@context']['oes'] = rest_url('oes/v1/vocab#');
+    $vocab['@id'] = rest_url('oes/v1/vocab');
+
+    $response = new \WP_REST_Response($vocab);
+    $response->header('Content-Type', 'application/ld+json');
+    return $response;
 }
 
 function health(): void
@@ -189,4 +212,23 @@ function lod(): void
             ],
         ],
     ]);
+}
+
+//TODO documentation, add as block?
+function export_button_html(array $args = [], string $content = null): string
+{
+    global $post;
+
+    $format = $args['format'] ?? 'json';
+
+    $url = esc_url(
+        site_url('/wp-json/oes/v1/export/' . $format . '/' . $post->ID)
+    );
+
+    $label = $args['label'] ?? __('Export', 'oes');
+
+    return sprintf('<span class="oes-export-button"><a href="%s" class="button" target="_blank">%s</a></span>',
+        $url,
+        esc_html($label)
+    );
 }

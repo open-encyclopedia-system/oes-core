@@ -92,15 +92,19 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
             $id = $args['id'] ?? null;
             if (!$id) return $content;
 
-            $iconPath = OES_CORE_PLUGIN . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png";
-            $iconUrl = file_exists($iconPath)
-                ? plugins_url(OES_BASENAME . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png")
-                : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
-
             $label = $args['label'] ?? $id;
             $label = has_filter('oes/api_label_modify')
                 ? apply_filters('oes/api_label_modify', $label, $this->identifier, $id)
                 : str_replace(';', ',', $label);
+
+            if(has_filter('oes/lod_render_shortcode')) {
+                return apply_filters('oes/lod_render_shortcode', $label, $id, $this->url, $this->identifier);
+            }
+
+            $iconPath = OES_CORE_PLUGIN . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png";
+            $iconUrl = file_exists($iconPath)
+                ? plugins_url(OES_BASENAME . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png")
+                : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
 
             $previewOption = get_option('oes_api-' . $this->identifier . '_popup');
 

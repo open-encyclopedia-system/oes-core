@@ -417,6 +417,33 @@ function oes_get_all_object_fields(string $objectKey, array $fieldTypes = [], bo
     return $objectFields;
 }
 
+//TODO
+function oes_get_all_object_fields_from_global(string $objectKey, array $fieldTypes = [], bool $skipTabs = false): array
+{
+    global $oes;
+
+    $fields = $oes->post_types[$objectKey]['field_options'] ?? ($oes->taxonomies[$objectKey]['field_options'] ?? []);
+
+    if(empty($fields)){
+        return oes_get_all_object_fields($objectKey, $fieldTypes, $skipTabs);
+    }
+
+    if(empty($fieldTypes) && !$skipTabs){
+        return $fields;
+    }
+
+    $collectFields = [];
+    foreach($fields as $fieldKey => $field){
+
+        if (!empty($fieldTypes) && !in_array($field['type'], $fieldTypes)) {
+            continue;
+        }
+
+        $collectFields[$fieldKey] = $field;
+    }
+
+    return $collectFields;
+}
 
 /**
  * Get object select options, including field options, connected taxonomies, parent fields, etc.
@@ -573,7 +600,7 @@ function oes_resolve_field_context($object, string $fieldKey, bool $isPost = tru
         $fieldKey = substr($fieldKey, 8);
     }
 
-    return [$objectID, $fieldKey, $isPost];
+    return [(int)$objectID, $fieldKey, $isPost];
 }
 
 

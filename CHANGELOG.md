@@ -31,6 +31,7 @@
 - Introduce optional schema tabs for module pages
 - Introduce general schema options: publisher
 - Introduce schema.org types for OES schema
+- Introduce filter `oes/lod_render_shortcode` to modify lod shortcode while e.g. exporting
 
 ### Improvements
 - Improve internal page generation
