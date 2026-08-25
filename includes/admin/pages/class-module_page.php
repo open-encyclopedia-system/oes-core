@@ -68,6 +68,18 @@ if (!class_exists('\OES\Admin\Module_Page')) :
         public bool $schema_enabled = true;
 
         /**
+         * @var bool $schema_tabs
+         * Whether this module should add a module tab to the enabled schema.
+         */
+        public bool $schema_tabs = true;
+
+        /**
+         * @var bool $schema_enabled_single
+         * Whether this module adds a button for the single schema.
+         */
+        public bool $schema_enabled_single = true;
+
+        /**
          * @var string $file
          * Optional file path to include as a view or handler for the module’s settings page.
          */
@@ -105,8 +117,14 @@ if (!class_exists('\OES\Admin\Module_Page')) :
 
             if ($this->schema_enabled) {
                 add_filter('oes/schema_general', [$this, 'schema_enable'], 10, 4);
-                add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
-                add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
+
+                if($this->schema_tabs) {
+                    add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
+                }
+
+                if($this->schema_enabled_single) {
+                    add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
+                }
             }
 
             if($this->admin_page){
@@ -237,6 +255,8 @@ if (!class_exists('\OES\Admin\Module_Page')) :
         public function schema_options_single(array $configs, string $type = '', string $objectKey = '', string $component = ''): array
         {
             if (in_array($type, $this->types) && in_array($component, $this->components)) {
+
+                //TODO replaces other configs with this key... e.g. DOI
                 $configs[$this->key] = [
                     'label' => $this->name,
                     'option_name' => 'oes_' . $this->key . '-buttons-' . $objectKey

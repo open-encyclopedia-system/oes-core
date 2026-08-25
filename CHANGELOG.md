@@ -28,6 +28,7 @@
 - Introduce filter `oes/template_redirect_index_additional_objects` for object filtering on index pages
 - Introduce filter block styles "Details" and "Classic"
 - Introduce language-dependent templates for terms and index pages
+- Introduce optional schema tabs for module pages
 
 ### Improvements
 - Improve internal page generation
