@@ -77,7 +77,7 @@ if (!class_exists('Rest_API')) {
          * @return void
          */
         protected function set_additional_parameters(array $args = []): void
-        { /* override if needed */
+        {
         }
 
         /**
@@ -85,7 +85,7 @@ if (!class_exists('Rest_API')) {
          * @return void
          */
         protected function set_credentials(): void
-        { /* override in child if needed */
+        {
         }
 
         /**
@@ -108,7 +108,7 @@ if (!class_exists('Rest_API')) {
                 $this->request_error = $response->get_error_message();
             } else {
                 $statusCode = wp_remote_retrieve_response_code($response);
-                if ($statusCode !== 200) {
+                if ($statusCode !== 200 && $statusCode !== 201) {
                     $this->request_error = wp_remote_retrieve_response_message($response) ?: "HTTP $statusCode";
                 } else {
                     $this->response = wp_remote_retrieve_body($response);
