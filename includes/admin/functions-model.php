@@ -1696,7 +1696,13 @@ function get_schema_links(): array
 
 function get_publisher(): array
 {
-    return get_option('oes_publisher');
+    $option = get_option('oes_publisher');
+
+    if(!is_array($option)) {
+        return [];
+    }
+
+    return $option;
 }
 
 function get_post_type_schema_type(string $postType): string
