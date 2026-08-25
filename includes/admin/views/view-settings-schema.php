@@ -32,7 +32,7 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
 
         $headerHTML = esc_html__('Schema', 'oes') . ' ';
         $headerHTML .= '<select id="schema-links" onchange="oesGoToAdminPage(this)">' . $optionsHTML . '</select>';
-        if ($object) {
+        if ($object && $object != 'general') {
             $headerHTML .= ' <code class="oes-object-identifier">' . esc_html($object) . '</code>';
         }
         ?>
@@ -44,17 +44,24 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
             <ul class="subsubsub">
                 <?php
 
-                $tabs = [
-                        'oes' => __('General', 'oes'),
-                        'oes_single' => __('Single', 'oes'),
-                        'oes_archive' => __('Archive', 'oes'),
-                ];
+                if($object == 'general') {
+                    $tabs = [
+                            'oes' => __('Publisher', 'oes')
+                    ];
+                }
+                else{
+                    $tabs = [
+                            'oes' => __('General', 'oes'),
+                            'oes_single' => __('Single', 'oes'),
+                            'oes_archive' => __('Archive', 'oes'),
+                    ];
 
-                // Add LoD tabs if present @oesDevelopment call this from API classes?
-                if ($oes->post_types[$object]['lod'] ?? false) {
-                    foreach ($oes->apis as $apiKey => $api) {
-                        if (!empty($api->config_options['properties']['options'])) {
-                            $tabs[$apiKey] = $api->label;
+                    // Add LoD tabs if present @oesDevelopment call this from API classes?
+                    if ($oes->post_types[$object]['lod'] ?? false) {
+                        foreach ($oes->apis as $apiKey => $api) {
+                            if (!empty($api->config_options['properties']['options'])) {
+                                $tabs[$apiKey] = $api->label;
+                            }
                         }
                     }
                 }
@@ -85,6 +92,8 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                             esc_html($label)
                     );
                 }
+
+
                 ?>
             </ul>
         </div>
@@ -100,30 +109,40 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
         \OES\Admin\Tools\display('schema-' . $type);
     else: ?>
         <?php
+
         foreach ($schemaLinks ?? [] as $type => $schemaLinksType) {
 
             if (empty($schemaLinksType['data'] ?? '')) {
                 continue;
             }
 
-            $label = $schemaLinksType['label'] ?? $type;
-            echo '<h2>' . esc_html($type === 'other' ? '[Default]' : $label) . '</h2>';
+            $label = $schemaLinksType['label'] ?? null;
+            if($label) {
+                printf(
+                        '<h2>%s</h2>',
+                        esc_html($type === 'other' ? '[Default]' : $label)
+                );
+            }
 
             foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
                 $label = $objectData['label'] ?? $objectDataKey;
                 $url = admin_url($objectData['url'] ?? '');
-                $key = $objectData['key'] ?? '';
+                $key = $objectData['key'] ?? null;
 
                 $link = oes_get_html_anchor(
                         esc_html($label),
                         esc_url($url)
                 );
 
-                printf(
-                        '<p>%s <code class="oes-object-identifier">%s</code></p>',
-                        $link,
-                        esc_html($key)
-                );
+                if($key == 'general') {
+                    $link = '<h2>' . $link . '</h2>';
+                    $code = '';
+                }
+                else {
+                    $code = ' <code class="oes-object-identifier">' . $key . '</code>';
+                }
+
+                echo '<p>' . $link . $code . '</p>';
             }
         }
         ?>

@@ -29,6 +29,8 @@
 - Introduce filter block styles "Details" and "Classic"
 - Introduce language-dependent templates for terms and index pages
 - Introduce optional schema tabs for module pages
+- Introduce general schema options: publisher
+- Introduce schema.org types for OES schema
 
 ### Improvements
 - Improve internal page generation

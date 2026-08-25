@@ -36,25 +36,25 @@ function register_oes_object_post_type(): void
 {
     if (!post_type_exists('oes_object'))
         register_post_type(
-            'oes_object',
-            [
-                'label' => 'OES Objects',
-                'description' => 'internal use only',
-                'public' => false,
-                'show_ui' => true,
-                'show_in_menu' => 'oes_tools',
-                'capabilities' => [
-                    'publish_posts' => 'manage_options',
-                    'edit_posts' => 'manage_options',
-                    'edit_others_posts' => 'manage_options',
-                    'read_private_posts' => 'manage_options',
-                    'edit_post' => 'manage_options',
-                    'delete_post' => 'manage_options',
-                    'read_post' => 'manage_options'
-                ],
-                'hierarchical' => true,
-                'supports' => ['title', 'page-attributes', 'editor', 'excerpt']
-            ]
+                'oes_object',
+                [
+                        'label' => 'OES Objects',
+                        'description' => 'internal use only',
+                        'public' => false,
+                        'show_ui' => true,
+                        'show_in_menu' => 'oes_tools',
+                        'capabilities' => [
+                                'publish_posts' => 'manage_options',
+                                'edit_posts' => 'manage_options',
+                                'edit_others_posts' => 'manage_options',
+                                'read_private_posts' => 'manage_options',
+                                'edit_post' => 'manage_options',
+                                'delete_post' => 'manage_options',
+                                'read_post' => 'manage_options'
+                        ],
+                        'hierarchical' => true,
+                        'supports' => ['title', 'page-attributes', 'editor', 'excerpt']
+                ]
         );
 }
 
@@ -74,25 +74,24 @@ function register_oes_objects(bool $factoryMode = false): void
 
             global $oes;
 
-            if($oes->application_initialized){
+            if ($oes->application_initialized) {
                 echo '<div class="notice notice-warning"><p>' .
-                    __('There is no OES data model registered. Navigate to ', 'oes') .
-                    oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
-                        admin_url('admin.php?page=oes_tools_model&tab=model')) .
-                    __(' and use ' .
-                        'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
-                        'application plugin (this will only work if you have admin rights). After that you should see the ' .
-                        'list of registered post types and taxonomies.<br>' .
-                        'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
-                        'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
-                        '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
-                    '</p></div>';
-            }
-            else {
+                        __('There is no OES data model registered. Navigate to ', 'oes') .
+                        oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
+                                admin_url('admin.php?page=oes_tools_model&tab=model')) .
+                        __(' and use ' .
+                                'the button "Reload from Plugin Config" to import the post types and the ACF fields from your ' .
+                                'application plugin (this will only work if you have admin rights). After that you should see the ' .
+                                'list of registered post types and taxonomies.<br>' .
+                                'If you are using an OES theme you might also need to refresh the permalink structure. Navigate ' .
+                                'to the WordPress settings via "Settings" / "Permalinks", choose a permalink structure ' .
+                                '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
+                        '</p></div>';
+            } else {
                 //TODO
                 echo '<div class="notice notice-warning"><p>' .
-                    __('There is no OES data model registered and no application plugin activated.', 'oes') .
-                    '</p></div>';
+                        __('There is no OES data model registered and no application plugin activated.', 'oes') .
+                        '</p></div>';
             }
         });
         return;
@@ -119,9 +118,9 @@ function register_oes_objects(bool $factoryMode = false): void
             $taxonomyKey = $post->post_title;
             $argsAll = json_decode($post->post_content, true) ?? [];
             if ($factoryMode || register_taxonomy_and_evaluate(
-                    $taxonomyKey,
-                    (is_array($argsAll['object_type'] ?? false) ? $argsAll['object_type'] : []),
-                    $argsAll)) {
+                            $taxonomyKey,
+                            (is_array($argsAll['object_type'] ?? false) ? $argsAll['object_type'] : []),
+                            $argsAll)) {
 
                 $oesArgs = json_decode($post->post_excerpt, true) ?? [];
 
@@ -142,7 +141,7 @@ function register_oes_objects(bool $factoryMode = false): void
             $menuIcon = $registerArgs['menu_icon'] ?? 'default';
             if (in_array($menuIcon, ['default', 'parent', 'second', 'admin'])) {
 
-                if($menuIcon == 'default'){
+                if ($menuIcon == 'default') {
                     $oesArgs = json_decode($post->post_excerpt, true) ?? [];
                     $menuIcon = $oesArgs['type'] ?? 'default';
                 }
@@ -150,7 +149,7 @@ function register_oes_objects(bool $factoryMode = false): void
                 $registerArgs['menu_icon'] = oes_get_menu_icon_path($menuIcon);
             }
 
-            if(is_null($registerArgs['menu_position'])) {
+            if (is_null($registerArgs['menu_position'])) {
                 $registerArgs['menu_position'] = 30;
             }
 
@@ -175,11 +174,11 @@ function register_oes_objects(bool $factoryMode = false): void
 function get_oes_objects(bool $onlyParents = true, array $args = []): array
 {
     $args = array_merge([
-        'post_type' => 'oes_object',
-        'posts_per_page' => -1,
-        'post_status' => 'publish',
-        'order' => 'ASC',
-        'orderby' => 'title'
+            'post_type' => 'oes_object',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'order' => 'ASC',
+            'orderby' => 'title'
     ], $args);
     if ($onlyParents) $args['post_parent'] = 0;
     return get_posts($args);
@@ -194,9 +193,9 @@ function get_oes_objects(bool $onlyParents = true, array $args = []): array
 function delete_oes_objects(): void
 {
     foreach (get_posts([
-        'post_type' => 'oes_object',
-        'posts_per_page' => -1,
-        'post_status' => 'publish'
+            'post_type' => 'oes_object',
+            'posts_per_page' => -1,
+            'post_status' => 'publish'
     ]) as $post) delete_oes_object_and_option($post);
 }
 
@@ -321,7 +320,7 @@ function export_model_to_json(): bool
     $name = oes_get_application_name();
 
     return !empty($exportData) &&
-        oes_export_json_data('model_' . $name . '_' . date('Y-m-d') . '.json', $exportData);
+            oes_export_json_data('model_' . $name . '_' . date('Y-m-d') . '.json', $exportData);
 }
 
 
@@ -353,23 +352,23 @@ function update_oes_object_post(string $postID = '', array $content = [], $excer
  * @return false|int Return the post ID on success.
  */
 function insert_oes_object_post(
-    string $name,
-    string $title,
-    array  $content = [],
-           $excerpt = false,
-    string $parentID = '',
-    string $postID = '')
+        string $name,
+        string $title,
+        array  $content = [],
+               $excerpt = false,
+        string $parentID = '',
+        string $postID = '')
 {
 
     /* set parameters */
     $args = empty($postID) ? false : get_post($postID, ARRAY_A);
     if (!$args)
         $args = [
-            'post_type' => 'oes_object',
-            'post_title' => $title,
-            'post_name' => $name,
-            'post_status' => 'publish',
-            'post_parent' => $parentID
+                'post_type' => 'oes_object',
+                'post_title' => $title,
+                'post_name' => $name,
+                'post_status' => 'publish',
+                'post_parent' => $parentID
         ];
     $args['post_content'] = json_encode($content, JSON_UNESCAPED_UNICODE);
     if ($excerpt) $args['post_excerpt'] = empty($excerpt) ? '' : json_encode($excerpt, JSON_UNESCAPED_UNICODE);
@@ -379,12 +378,12 @@ function insert_oes_object_post(
     /* process result */
     if (is_wp_error($insert))
         return oes_write_log(sprintf(__('Failed to insert or update post for post ID %s.%s', 'oes'),
-            $postID ?? 'not set',
-            '<br>' . implode(' ', $insert->get_error_messages())
+                $postID ?? 'not set',
+                '<br>' . implode(' ', $insert->get_error_messages())
         ));
     elseif (!$insert)
         return oes_write_log(sprintf(__('Failed to insert or update post for post ID %s.', 'oes'),
-            $postID ?? 'not set'
+                $postID ?? 'not set'
         ));
 
     /* add option if post was created */
@@ -422,12 +421,12 @@ function update_oes_object_post_field_group(string $postID = '', array $data = [
  * @return false|int Return the post ID on success.
  */
 function insert_oes_object_post_field_group(
-    string $objectKey,
-    string $objectLabel,
-    array  $data = [],
-    string $parentID = '',
-    string $fieldGroupType = '',
-    string $postID = '')
+        string $objectKey,
+        string $objectLabel,
+        array  $data = [],
+        string $parentID = '',
+        string $fieldGroupType = '',
+        string $postID = '')
 {
     $name = 'group_' . $objectKey;
     $title = $objectLabel . ' Field Group';
@@ -460,8 +459,8 @@ function register_post_type_and_evaluate(string $postTypeKey, array $args = []):
     $registered = register_post_type($postTypeKey, $args);
     if (is_wp_error($registered))
         return oes_write_log(sprintf(__('Failed register_post_type for %s.%s', 'oes'),
-            $postTypeKey,
-            '<br>' . implode(' ', $registered->get_error_messages())
+                $postTypeKey,
+                '<br>' . implode(' ', $registered->get_error_messages())
         ), 'Data Model');
     return true;
 }
@@ -487,8 +486,8 @@ function register_taxonomy_and_evaluate(string $taxonomyKey, array $objectType =
     $registered = register_taxonomy($taxonomyKey, $objectType, $args);
     if (is_wp_error($registered))
         return oes_write_log(sprintf(__('Failed register_taxonomy for %s.%s', 'oes'),
-            $taxonomyKey,
-            '<br>' . implode(' ', $registered->get_error_messages())
+                $taxonomyKey,
+                '<br>' . implode(' ', $registered->get_error_messages())
         ), 'Data Model');
     return true;
 }
@@ -514,18 +513,18 @@ function register_local_field_group($postID, string $objectKey, bool $factoryMod
             if (!$factoryMode || str_ends_with($childPost->post_name, 'language'))
                 if (!acf_add_local_field_group($acfGroup))
                     oes_write_log(
-                        sprintf(__('Error while adding acf local field group for %s.', 'oes'),
-                            $childPost->ID));
+                            sprintf(__('Error while adding acf local field group for %s.', 'oes'),
+                                    $childPost->ID));
 
 
             /* store additional parameter for fields in cache */
             if ($objectKey == 'media') $oes->set_media_field_options($acfGroup['fields'] ?? []);
             else
                 $oes->set_field_options(
-                    ($isTaxonomy ? 'taxonomies' : 'post_types'),
-                    $objectKey,
-                    $acfGroup['fields'] ?? [],
-                    $childPost->ID);
+                        ($isTaxonomy ? 'taxonomies' : 'post_types'),
+                        $objectKey,
+                        $acfGroup['fields'] ?? [],
+                        $childPost->ID);
         }
 }
 
@@ -544,24 +543,24 @@ function validate_general_config(array $args): array
     if (isset($args['languages']))
         foreach ($args['languages'] as $languageKey => $language)
             $languages[(str_starts_with($languageKey, 'language') ?
-                '' :
-                'language') . $languageKey] = $language;
+                    '' :
+                    'language') . $languageKey] = $language;
     $args['languages'] = $languages;
 
 
     $themeLabels = array_merge([
-        'button__read_more' => [
-            'language0' => 'Read More',
-            'name' => 'Read More Button',
-            'location' => '-'
-        ],
-        'button__print' => [
-            'language0' => 'Print',
-            'name' => 'Print Button',
-            'location' => '-'
-        ]
+            'button__read_more' => [
+                    'language0' => 'Read More',
+                    'name' => 'Read More Button',
+                    'location' => '-'
+            ],
+            'button__print' => [
+                    'language0' => 'Print',
+                    'name' => 'Print Button',
+                    'location' => '-'
+            ]
     ],
-        $args['theme_labels'] ?? []
+            $args['theme_labels'] ?? []
     );
 
 
@@ -601,9 +600,9 @@ function validate_register_post_type(string $postType, array $args = []): array
 {
     /* merge defaults */
     $args = array_merge([
-        'public' => true,
-        'menu_icon' => 'default',
-        'has_archive' => true
+            'public' => true,
+            'menu_icon' => 'default',
+            'has_archive' => true
     ], $args);
 
     /* validate that label is set */
@@ -631,10 +630,10 @@ function validate_register_taxonomy(string $taxonomy, array $args = []): array
 
     /* set default capabilities */
     $args['capabilities'] = array_merge([
-        'manage_terms' => 'manage_categories',
-        'edit_terms' => 'manage_categories',
-        'delete_terms' => 'manage_categories',
-        'assign_terms' => 'edit_posts'
+            'manage_terms' => 'manage_categories',
+            'edit_terms' => 'manage_categories',
+            'delete_terms' => 'manage_categories',
+            'assign_terms' => 'edit_posts'
     ], $args['capabilities'] ?? []);
 
     /* merge with defaults */
@@ -674,21 +673,22 @@ function validate_post_type_oes_args(array $oesArgs = []): array
 function get_post_type_oes_args_defaults(): array
 {
     return [
-        'pattern_title' => [],
-        'pattern_name' => [],
-        'admin_columns' => [],
-        'label_translations' => [],
-        'label_translations_plural' => [],
-        'display_titles' => [],
-        'metadata' => [],
-        'archive_on_single_page' => false,
-        'archive' => [],
-        'archive_filter' => [],
-        'lod' => false,
-        'editorial_tab' => false,
-        'label' => '',
-        'theme_labels' => [],
-        'type' => 'other'
+            'pattern_title' => [],
+            'pattern_name' => [],
+            'admin_columns' => [],
+            'label_translations' => [],
+            'label_translations_plural' => [],
+            'display_titles' => [],
+            'metadata' => [],
+            'archive_on_single_page' => false,
+            'archive' => [],
+            'archive_filter' => [],
+            'lod' => false,
+            'editorial_tab' => false,
+            'label' => '',
+            'theme_labels' => [],
+            'type' => 'other',
+            'schema_type' => 'none'
     ];
 }
 
@@ -718,23 +718,24 @@ function validate_taxonomy_oes_args(array $oesArgs = []): array
 function get_taxonomy_oes_args_defaults(): array
 {
     return [
-        'pattern_title' => [],
-        'pattern_name' => [],
-        'admin_columns' => [],
-        'label_translations' => [],
-        'label_translations_plural' => [],
-        'display_titles' => [],
-        'metadata' => [],
-        'archive_on_single_page' => false,
-        'archive' => [],
-        'archive_filter' => [],
-        'lod' => false,
-        'editorial_tab' => false,
-        'label' => '',
-        'theme_labels' => [],
-        'type' => 'other',
-        'language_dependent' => false,
-        'redirect' => 'none'
+            'pattern_title' => [],
+            'pattern_name' => [],
+            'admin_columns' => [],
+            'label_translations' => [],
+            'label_translations_plural' => [],
+            'display_titles' => [],
+            'metadata' => [],
+            'archive_on_single_page' => false,
+            'archive' => [],
+            'archive_filter' => [],
+            'lod' => false,
+            'editorial_tab' => false,
+            'label' => '',
+            'theme_labels' => [],
+            'type' => 'other',
+            'language_dependent' => false,
+            'redirect' => 'none',
+            'schema_type' => 'none'
     ];
 }
 
@@ -797,17 +798,17 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
             $newPattern = [];
             foreach ($field['pattern']['parts'] as $patternPart) {
                 $newPattern[] = [
-                    'string_value' => $patternPart['default'] ?? '',
-                    'required' => $patternPart['required'] ?? '',
-                    'prefix' => $patternPart['prefix'] ?? '',
-                    'suffix' => $patternPart['suffix'] ?? '',
-                    'separator' => $patternPart['separator'] ?? '',
-                    'field_key' => $patternPart['key'] ?
-                        ($patternPart['key'] === 'no_field_key' ? 'none' : $patternPart['key']) :
-                        'none',
-                    'fallback' => $patternPart['fallback_field_key'] ?
-                        ($patternPart['fallback_field_key'] === 'no_field_key' ? 'none' : $patternPart['fallback_field_key']) :
-                        'none'
+                        'string_value' => $patternPart['default'] ?? '',
+                        'required' => $patternPart['required'] ?? '',
+                        'prefix' => $patternPart['prefix'] ?? '',
+                        'suffix' => $patternPart['suffix'] ?? '',
+                        'separator' => $patternPart['separator'] ?? '',
+                        'field_key' => $patternPart['key'] ?
+                                ($patternPart['key'] === 'no_field_key' ? 'none' : $patternPart['key']) :
+                                'none',
+                        'fallback' => $patternPart['fallback_field_key'] ?
+                                ($patternPart['fallback_field_key'] === 'no_field_key' ? 'none' : $patternPart['fallback_field_key']) :
+                                'none'
                 ];
             }
             $fieldGroup['fields'][$fieldKey]['pattern'] = $newPattern;
@@ -872,11 +873,11 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
 
     /* add editorial tab */
     if (isset($options['editorial_tab']) &&
-        $options['editorial_tab'] &&
-        !in_array('editorial_tab', $specificFields))
+            $options['editorial_tab'] &&
+            !in_array('editorial_tab', $specificFields))
         $fieldGroup['fields'] = array_merge(
-            array_values(get_editorial_tab()),
-            array_values($fieldGroup['fields'] ?? []));
+                array_values(get_editorial_tab()),
+                array_values($fieldGroup['fields'] ?? []));
 
     /* add version tab for version controlling post */
     if (isset($options['version']) && !in_array('version', $specificFields)) {
@@ -902,11 +903,11 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
 
     foreach ($languageFieldGroup as $languageKey => $fields) {
         if (isset(OES()->post_types[$objectKey])) $languageDependentFields = array_merge(['0_1' => [
-            'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
-            'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
-            'type' => 'tab',
-            'label' => $languages[$languageKey]['label'] ?? $languageKey,
-            'placement' => 'left'
+                'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
+                'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
+                'type' => 'tab',
+                'label' => $languages[$languageKey]['label'] ?? $languageKey,
+                'placement' => 'left'
         ]], $fields);
         else $languageDependentFields = $fields;
         $languageFieldGroupTitles[] = $languages[$languageKey]['label'] ?? $languageKey;
@@ -914,19 +915,19 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
 
     if (isset(OES()->post_types[$objectKey])) {
         $languageDependentFields = array_merge(['0_0' => [
-            'name' => 'field_language_group_message',
-            'key' => 'field_language_group_message',
-            'type' => 'message',
-            'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
-            'label' => ''
+                'name' => 'field_language_group_message',
+                'key' => 'field_language_group_message',
+                'type' => 'message',
+                'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
+                'label' => ''
         ]], $languageDependentFields);
     }
 
     $languageFieldGroupArgs = [
-        'key' => $fieldGroup['key'] . '_language_labels',
-        'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
-        'location' => $fieldGroup['location'],
-        'fields' => $languageDependentFields
+            'key' => $fieldGroup['key'] . '_language_labels',
+            'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
+            'location' => $fieldGroup['location'],
+            'fields' => $languageDependentFields
     ];
 
     return ['all' => $fieldGroup, 'language' => $languageFieldGroupArgs];
@@ -996,7 +997,7 @@ function insert_data_model_as_an_oes_objects(array $dataModel = []): void
             /* check if taxonomy or post type */
             if (isset($oesObject['taxonomy']) && $oesObject['taxonomy']) insert_taxonomy_as_an_oes_object($oesObject);
             else {
-                if(isset($oesObject['register_args']['post_type'])){
+                if (isset($oesObject['register_args']['post_type'])) {
                     unset($oesObject['register_args']['post_type']); //@oesLegacy
                 }
                 insert_post_type_as_an_oes_object($oesObject, $key);
@@ -1033,21 +1034,21 @@ function insert_general_config_as_an_oes_object(array $args = []): void
  * @param array $data The object data.
  * @return bool Return true on success.
  */
-function insert_post_type_as_an_oes_object(array $data = [], string $postTypeKey  = ''): bool
+function insert_post_type_as_an_oes_object(array $data = [], string $postTypeKey = ''): bool
 {
     /* prepare name and args, skip if post type key is longer than 20 characters. */
     if (!$postTypeKey || strlen($postTypeKey) > 20)
         return oes_write_log(sprintf(__('The post type key must have at least 3 characters and not exceed 20 ' .
-            'characters. Skip registration of: %s'), $postTypeKey));
+                'characters. Skip registration of: %s'), $postTypeKey));
 
     /* prepare arguments */
     $oesArgs = validate_post_type_oes_args($data['oes_args'] ?? []);
     $args = validate_register_post_type($postTypeKey, $data['register_args'] ?? []);
     $fieldGroups = validate_acf_field_group(
-        $postTypeKey,
-        $data['acf_add_local_field_group'] ?? [],
-        $args['labels']['singular_label'] ?? '',
-        $oesArgs);
+            $postTypeKey,
+            $data['acf_add_local_field_group'] ?? [],
+            $args['labels']['singular_label'] ?? '',
+            $oesArgs);
 
 
     /**
@@ -1066,8 +1067,8 @@ function insert_post_type_as_an_oes_object(array $data = [], string $postTypeKey
      */
     if (has_filter('oes/prepare_theme_labels_post_type'))
         $oesArgs['theme_labels'] = apply_filters('oes/prepare_theme_labels_post_type',
-            $oesArgs['theme_labels'] ?? [],
-            $postTypeKey);
+                $oesArgs['theme_labels'] ?? [],
+                $postTypeKey);
 
 
     /* insert objects */
@@ -1095,24 +1096,24 @@ function insert_taxonomy_as_an_oes_object(array $data = []): bool
     if (!str_starts_with($taxonomyKey, 't_')) {
         $taxonomyKey = 't_' . $taxonomyKey;
         oes_write_log(sprintf(
-            __('The taxonomy key must start with t_ for OES processing. Change taxonomy to: %s', 'oes'),
-            $taxonomyKey));
+                __('The taxonomy key must start with t_ for OES processing. Change taxonomy to: %s', 'oes'),
+                $taxonomyKey));
     }
 
     /* skip if taxonomy key is longer than 32 characters. */
     if (strlen($taxonomyKey) > 32)
         return oes_write_log(sprintf(
-            __('The taxonomy key must not exceed 32 characters. Skip registration of: %s', 'oes'),
-            $taxonomyKey));
+                __('The taxonomy key must not exceed 32 characters. Skip registration of: %s', 'oes'),
+                $taxonomyKey));
 
     /* prepare registration */
     $oesArgs = validate_taxonomy_oes_args($data['oes_args'] ?? []);
     $args = validate_register_taxonomy($taxonomyKey, $data['register_args'] ?? []);
     $fieldGroups = validate_acf_field_group(
-        $taxonomyKey,
-        $data['acf_add_local_field_group'] ?? [],
-        $args['labels']['singular_label'] ?? '',
-        $oesArgs);
+            $taxonomyKey,
+            $data['acf_add_local_field_group'] ?? [],
+            $args['labels']['singular_label'] ?? '',
+            $oesArgs);
 
 
     /**
@@ -1131,8 +1132,8 @@ function insert_taxonomy_as_an_oes_object(array $data = []): bool
      */
     if (has_filter('oes/prepare_theme_labels_taxonomy'))
         $oesArgs['theme_labels'] = apply_filters('oes/prepare_theme_labels_taxonomy',
-            $oesArgs['theme_labels'] ?? [],
-            $taxonomyKey);
+                $oesArgs['theme_labels'] ?? [],
+                $taxonomyKey);
 
 
     /* insert object and field group object if needed */
@@ -1162,8 +1163,8 @@ function insert_media_as_an_oes_object(array $data = []): bool
     $args = $data['acf_add_local_field_group'] ?? [];
     if (!isset($args['location']))
         $args['location'][] = [['param' => 'attachment',
-            'operator' => '==',
-            'value' => 'all'
+                'operator' => '==',
+                'value' => 'all'
         ]];
     $fieldGroups = validate_acf_field_group('media', $args);
 
@@ -1171,11 +1172,11 @@ function insert_media_as_an_oes_object(array $data = []): bool
     if ($objectID = insert_oes_object_post('media', 'Media', [], $oesArgs))
         foreach ($fieldGroups as $fieldGroupKey => $fieldGroup)
             insert_oes_object_post_field_group(
-                'media',
-                'Media',
-                $fieldGroup,
-                $objectID,
-                $fieldGroupKey);
+                    'media',
+                    'Media',
+                    $fieldGroup,
+                    $objectID,
+                    $fieldGroupKey);
 
     return true;
 }
@@ -1195,38 +1196,38 @@ function get_post_type_labels(string $postType, array $labels): array
     $plural = $labels['name'] ?? $postType;
 
     return array_merge([
-        'add_new' => 'Add New ' . $singular,
-        'add_new_item' => 'Add New ' . $singular,
-        'edit_item' => 'Edit ' . $singular,
-        'new_item' => 'New ' . $singular,
-        'view_item' => 'View ' . $singular,
-        'view_items' => 'View ' . $plural,
-        'search_items' => 'Search ' . $plural,
-        'not_found' => 'No ' . $plural . ' found',
-        'not_found_in_trash' => 'No ' . $plural . ' found in Trash',
-        'parent_item_colon' => 'Parent ' . $singular . ':',
-        'all_items' => 'All ' . $plural,
-        'archives' => $singular . ' Archives',
-        'attributes' => $singular . ' Attributes',
-        'insert_into_item' => 'Insert into ' . strtolower($singular),
-        'uploaded_to_this_item' => 'Uploaded to this ' . strtolower($singular),
-        'featured_image' => 'Featured image',
-        'set_featured_image' => 'Set featured image',
-        'remove_featured_image' => 'Remove featured image',
-        'use_featured_image' => 'Use as featured image',
-        'menu_name' => $plural,
-        'filter_items_list' => 'Filter ' . $plural . ' list',
-        'filter_by_date' => 'Filter by date',
-        'items_list_navigation' => $plural . ' list navigation',
-        'items_list' => $plural . ' list',
-        'item_published' => $singular . ' published.',
-        'item_published_privately' => $singular . ' published privately.',
-        'item_reverted_to_draft' => $singular . ' reverted to draft.',
-        'item_trashed' => $singular . ' trashed.',
-        'item_scheduled' => $singular . ' scheduled.',
-        'item_updated' => $singular . ' updated.',
-        'item_link' => $singular . ' Link',
-        'item_link_description' => 'A link to a ' . strtolower($singular) . '.',
+            'add_new' => 'Add New ' . $singular,
+            'add_new_item' => 'Add New ' . $singular,
+            'edit_item' => 'Edit ' . $singular,
+            'new_item' => 'New ' . $singular,
+            'view_item' => 'View ' . $singular,
+            'view_items' => 'View ' . $plural,
+            'search_items' => 'Search ' . $plural,
+            'not_found' => 'No ' . $plural . ' found',
+            'not_found_in_trash' => 'No ' . $plural . ' found in Trash',
+            'parent_item_colon' => 'Parent ' . $singular . ':',
+            'all_items' => 'All ' . $plural,
+            'archives' => $singular . ' Archives',
+            'attributes' => $singular . ' Attributes',
+            'insert_into_item' => 'Insert into ' . strtolower($singular),
+            'uploaded_to_this_item' => 'Uploaded to this ' . strtolower($singular),
+            'featured_image' => 'Featured image',
+            'set_featured_image' => 'Set featured image',
+            'remove_featured_image' => 'Remove featured image',
+            'use_featured_image' => 'Use as featured image',
+            'menu_name' => $plural,
+            'filter_items_list' => 'Filter ' . $plural . ' list',
+            'filter_by_date' => 'Filter by date',
+            'items_list_navigation' => $plural . ' list navigation',
+            'items_list' => $plural . ' list',
+            'item_published' => $singular . ' published.',
+            'item_published_privately' => $singular . ' published privately.',
+            'item_reverted_to_draft' => $singular . ' reverted to draft.',
+            'item_trashed' => $singular . ' trashed.',
+            'item_scheduled' => $singular . ' scheduled.',
+            'item_updated' => $singular . ' updated.',
+            'item_link' => $singular . ' Link',
+            'item_link_description' => 'A link to a ' . strtolower($singular) . '.',
     ], $labels);
 }
 
@@ -1245,35 +1246,35 @@ function get_taxonomy_labels(string $taxonomy, array $labels): array
     $plural = $labels['name'] ?? $taxonomy;
 
     return array_merge([
-        'menu_name' => $plural,
-        'search_items' => 'Search ' . $plural,
-        'popular_items' => 'Popular ' . $plural,
-        'all_items' => 'All ' . $plural,
-        'parent_item' => 'Parent ' . $singular,
-        'parent_item_colon' => 'Parent ' . $singular . ':',
-        'name_field_description' => 'The name is how it appears on your site',
-        'slug_field_description' => 'The “slug” is the URL-friendly version of the name. It is usually all lowercase ' .
-            'and contains only letters, numbers, and hyphens',
-        'parent_field_description' => 'Assign a parent term to create a hierarchy. The term Jazz, for example, would ' .
-            'be the parent of Bebop and Big Band',
-        'desc_field_description' => 'The description is not prominent by default; however, some themes may show it',
-        'edit_item' => 'Edit ' . $singular,
-        'view_item' => 'View ' . $singular,
-        'update_item' => 'Update ' . $singular,
-        'add_new_item' => 'Add New ' . $singular,
-        'new_item_name' => 'New ' . $singular . ' Name',
-        'separate_items_with_commas' => 'Separate ' . strtolower($plural) . ' with commas',
-        'add_or_remove_items' => 'Add or remove ' . strtolower($plural),
-        'choose_from_most_used' => 'Choose from the most used ' . strtolower($plural),
-        'not_found' => 'No ' . strtolower($plural) . ' found',
-        'no_terms' => 'No ' . strtolower($plural),
-        'filter_by_item' => 'Filter by ' . strtolower($singular),
-        'items_list_navigation' => $plural . ' list navigation',
-        'items_list' => $plural . ' List',
-        'most_used' => 'Most Used',
-        'back_to_items' => 'Go to ' . strtolower($plural),
-        'item_link' => $singular . ' Link',
-        'item_link_description' => 'A link to a ' . strtolower($singular),
+            'menu_name' => $plural,
+            'search_items' => 'Search ' . $plural,
+            'popular_items' => 'Popular ' . $plural,
+            'all_items' => 'All ' . $plural,
+            'parent_item' => 'Parent ' . $singular,
+            'parent_item_colon' => 'Parent ' . $singular . ':',
+            'name_field_description' => 'The name is how it appears on your site',
+            'slug_field_description' => 'The “slug” is the URL-friendly version of the name. It is usually all lowercase ' .
+                    'and contains only letters, numbers, and hyphens',
+            'parent_field_description' => 'Assign a parent term to create a hierarchy. The term Jazz, for example, would ' .
+                    'be the parent of Bebop and Big Band',
+            'desc_field_description' => 'The description is not prominent by default; however, some themes may show it',
+            'edit_item' => 'Edit ' . $singular,
+            'view_item' => 'View ' . $singular,
+            'update_item' => 'Update ' . $singular,
+            'add_new_item' => 'Add New ' . $singular,
+            'new_item_name' => 'New ' . $singular . ' Name',
+            'separate_items_with_commas' => 'Separate ' . strtolower($plural) . ' with commas',
+            'add_or_remove_items' => 'Add or remove ' . strtolower($plural),
+            'choose_from_most_used' => 'Choose from the most used ' . strtolower($plural),
+            'not_found' => 'No ' . strtolower($plural) . ' found',
+            'no_terms' => 'No ' . strtolower($plural),
+            'filter_by_item' => 'Filter by ' . strtolower($singular),
+            'items_list_navigation' => $plural . ' list navigation',
+            'items_list' => $plural . ' List',
+            'most_used' => 'Most Used',
+            'back_to_items' => 'Go to ' . strtolower($plural),
+            'item_link' => $singular . ' Link',
+            'item_link_description' => 'A link to a ' . strtolower($singular),
     ], $labels);
 }
 
@@ -1286,35 +1287,35 @@ function get_taxonomy_labels(string $taxonomy, array $labels): array
 function get_editorial_tab(): array
 {
     $editorialTab = [
-        [
-            'name' => 'field_oes_tab_editorial',
-            'label' => 'Editorial',
-            'type' => 'tab',
-            'key' => 'field_oes_tab_editorial',
-            'placement' => 'left'
-        ],
-        [
-            'name' => 'field_oes_status',
-            'label' => 'Status',
-            'type' => 'select',
-            'key' => 'field_oes_status',
-            'choices' => [
-                'new' => 'New',
-                'progress' => 'In Progress',
-                'ready' => 'Ready for Publication',
-                'published' => 'Published',
-                'deleted' => 'To be Deleted',
-                'admin_mode' => 'Admin Mode'
+            [
+                    'name' => 'field_oes_tab_editorial',
+                    'label' => 'Editorial',
+                    'type' => 'tab',
+                    'key' => 'field_oes_tab_editorial',
+                    'placement' => 'left'
             ],
-            'default_value' => 'new'
-        ],
-        [
-            'name' => 'field_oes_comment',
-            'label' => 'Remarks',
-            'instructions' => '',
-            'type' => 'textarea',
-            'key' => 'field_oes_comment'
-        ]
+            [
+                    'name' => 'field_oes_status',
+                    'label' => 'Status',
+                    'type' => 'select',
+                    'key' => 'field_oes_status',
+                    'choices' => [
+                            'new' => 'New',
+                            'progress' => 'In Progress',
+                            'ready' => 'Ready for Publication',
+                            'published' => 'Published',
+                            'deleted' => 'To be Deleted',
+                            'admin_mode' => 'Admin Mode'
+                    ],
+                    'default_value' => 'new'
+            ],
+            [
+                    'name' => 'field_oes_comment',
+                    'label' => 'Remarks',
+                    'instructions' => '',
+                    'type' => 'textarea',
+                    'key' => 'field_oes_comment'
+            ]
     ];
 
 
@@ -1335,48 +1336,48 @@ function get_editorial_tab(): array
 function get_versioning_tab_parent(string $parentPostType = '', array $versionPostType = []): array
 {
     return [
-        'oes_versioning_tab' => [
-            'name' => 'oes_versioning_tab',
-            'label' => 'Version Control',
-            'type' => 'tab',
-            'key' => 'oes_versioning_tab'
-        ],
-        'current_version' => [
-            'name' => 'field_oes_versioning_current_post',
-            'label' => 'Current Post',
-            'type' => 'post_object',
-            'key' => 'field_oes_versioning_current_post_' . $parentPostType,
-            'post_type' => $versionPostType,
-            'return_format' => 'id',
-            'allow_null' => true,
-            'wrapper' => [
-                'class' => 'oes-acf-hidden-field'
+            'oes_versioning_tab' => [
+                    'name' => 'oes_versioning_tab',
+                    'label' => 'Version Control',
+                    'type' => 'tab',
+                    'key' => 'oes_versioning_tab'
+            ],
+            'current_version' => [
+                    'name' => 'field_oes_versioning_current_post',
+                    'label' => 'Current Post',
+                    'type' => 'post_object',
+                    'key' => 'field_oes_versioning_current_post_' . $parentPostType,
+                    'post_type' => $versionPostType,
+                    'return_format' => 'id',
+                    'allow_null' => true,
+                    'wrapper' => [
+                            'class' => 'oes-acf-hidden-field'
+                    ]
+            ],
+            'versions' => [
+                    'name' => 'field_oes_versioning_posts',
+                    'label' => 'Versions',
+                    'type' => 'relationship',
+                    'key' => 'field_oes_versioning_posts_' . $parentPostType,
+                    'filters' => ['search'],
+                    'post_type' => $versionPostType,
+                    'return_format' => 'id',
+                    'wrapper' => [
+                            'class' => 'oes-acf-hidden-field'
+                    ]
+            ],
+            'connected_parents' => [
+                    'name' => 'field_connected_parent',
+                    'label' => 'Connected Parent',
+                    'type' => 'post_object',
+                    'key' => 'field_connected_parent_' . $parentPostType,
+                    'post_type' => [$parentPostType],
+                    'return_format' => 'id',
+                    'allow_null' => true,
+                    'wrapper' => [
+                            'class' => 'oes-acf-hidden-field'
+                    ]
             ]
-        ],
-        'versions' => [
-            'name' => 'field_oes_versioning_posts',
-            'label' => 'Versions',
-            'type' => 'relationship',
-            'key' => 'field_oes_versioning_posts_' . $parentPostType,
-            'filters' => ['search'],
-            'post_type' => $versionPostType,
-            'return_format' => 'id',
-            'wrapper' => [
-                'class' => 'oes-acf-hidden-field'
-            ]
-        ],
-        'connected_parents' => [
-            'name' => 'field_connected_parent',
-            'label' => 'Connected Parent',
-            'type' => 'post_object',
-            'key' => 'field_connected_parent_' . $parentPostType,
-            'post_type' => [$parentPostType],
-            'return_format' => 'id',
-            'allow_null' => true,
-            'wrapper' => [
-                'class' => 'oes-acf-hidden-field'
-            ]
-        ]
     ];
 }
 
@@ -1389,24 +1390,24 @@ function get_versioning_tab_parent(string $parentPostType = '', array $versionPo
 function get_versioning_tab_version(string $versionPostType = '', array $parentPostType = []): array
 {
     return [
-        'oes_versioning_tab' => [
-            'name' => 'oes_versioning_tab',
-            'label' => 'Version Control',
-            'type' => 'tab',
-            'key' => 'oes_versioning_tab'
-        ],
-        'parent_post' => [
-            'name' => 'field_oes_versioning_parent_post',
-            'label' => 'Parent Post',
-            'type' => 'post_object',
-            'key' => 'field_oes_versioning_parent_post_' . $versionPostType,
-            'post_type' => $parentPostType,
-            'return_format' => 'id',
-            'allow_null' => true,
-            'wrapper' => [
-                'class' => 'oes-acf-hidden-field'
+            'oes_versioning_tab' => [
+                    'name' => 'oes_versioning_tab',
+                    'label' => 'Version Control',
+                    'type' => 'tab',
+                    'key' => 'oes_versioning_tab'
+            ],
+            'parent_post' => [
+                    'name' => 'field_oes_versioning_parent_post',
+                    'label' => 'Parent Post',
+                    'type' => 'post_object',
+                    'key' => 'field_oes_versioning_parent_post_' . $versionPostType,
+                    'post_type' => $parentPostType,
+                    'return_format' => 'id',
+                    'allow_null' => true,
+                    'wrapper' => [
+                            'class' => 'oes-acf-hidden-field'
+                    ]
             ]
-        ]
     ];
 }
 
@@ -1419,20 +1420,37 @@ function get_versioning_tab_version(string $versionPostType = '', array $parentP
 function get_schema_types(): array
 {
     $schemaTypes = [
-        'single-article' => __('Article', 'oes'),
-        'single-contributor' => __('Contributor', 'oes'),
-        'single-index' => __('Index Object', 'oes'),
-        'single-internal' => __('Internal Object', 'oes'),
-        'other' => __('-', 'oes'),
+            'single-article' => __('Article', 'oes'),
+            'single-contributor' => __('Contributor', 'oes'),
+            'single-index' => __('Index Object', 'oes'),
+            'single-internal' => __('Internal Object', 'oes'),
+            'other' => __('-', 'oes'),
     ];
 
-
-    /**
-     * Filters if archive loop uses arguments.
-     *
-     * @param array $args The arguments.
-     */
     return apply_filters('oes/schema_types', $schemaTypes);
+}
+
+/**
+ * Get schema.org object types (selection).
+ * https://schema.org/docs/full.html
+ *
+ * @return array The schema.org object types.
+ */
+function get_schema_org_types(): array
+{
+    $schemaTypes = [
+            'none' => '-',
+            'CreativeWork' => 'CreativeWork',
+            'Article' => 'Article',
+            'ScholarlyArticle' => 'ScholarlyArticle',
+            'Person' => 'Person',
+            'Organization' => 'Organization',
+            'Place' => 'Place',
+            'Event' => 'Event',
+            'DefinedTerm' => 'DefinedTerm'
+    ];
+
+    return apply_filters('oes/schema_org_types', $schemaTypes);
 }
 
 
@@ -1465,9 +1483,9 @@ function add_fields_to_page(array $fieldTypes = []): void
     }, $oes->languages ?? []);
     $multilingual = count($languages) > 1;
 
-    if($multilingual){
+    if ($multilingual) {
 
-        if (empty($fieldTypes) || in_array('language', $fieldTypes) ) {
+        if (empty($fieldTypes) || in_array('language', $fieldTypes)) {
             $fields[] = [
                     'key' => 'field_oes_post_language',
                     'label' => 'Language',
@@ -1513,14 +1531,14 @@ function add_fields_to_page(array $fieldTypes = []): void
 
     if (!empty($fields) && function_exists('acf_add_local_field_group'))
         acf_add_local_field_group([
-            'key' => 'group_oes_page',
-            'title' => 'Page',
-            'fields' => $fields,
-            'location' => [[[
-                'param' => 'post_type',
-                'operator' => '==',
-                'value' => 'page'
-            ]]]
+                'key' => 'group_oes_page',
+                'title' => 'Page',
+                'fields' => $fields,
+                'location' => [[[
+                        'param' => 'post_type',
+                        'operator' => '==',
+                        'value' => 'page'
+                ]]]
         ]);
 }
 
@@ -1594,14 +1612,14 @@ function term_save_fields_for_multilingualism(int $term_id): void
 function set_default_options(): void
 {
     $options = [
-        'oes_features' => json_encode([
-            'remarks' => true,
-            'task' => false,
-            'manual' => false,
-            'cache' => false,
-            'factory' => true,
-            'lod_apis' => true
-        ])
+            'oes_features' => json_encode([
+                    'remarks' => true,
+                    'task' => false,
+                    'manual' => false,
+                    'cache' => false,
+                    'factory' => true,
+                    'lod_apis' => true
+            ])
     ];
     foreach ($options as $optionKey => $option)
         if (!oes_option_exists($optionKey)) add_option($optionKey, $option);
@@ -1637,32 +1655,78 @@ function get_schema_links(): array
             $objectLabel = $objectData['label'] ?? $objectKey;
 
             $url = 'admin.php?page=oes_settings_schema&tab=schema&type=oes' .
-                '&component=' . $component .
-                '&object=' . $objectKey;
+                    '&component=' . $component .
+                    '&object=' . $objectKey;
 
             $uniqueKey = $objectLabel . $objectKey;
 
             $schemaLinks[$type]['data'][$uniqueKey] = [
-                'key' => $objectKey,
-                'label' => $objectLabel,
-                'component' => $component,
-                'url' => $url
+                    'key' => $objectKey,
+                    'label' => $objectLabel,
+                    'component' => $component,
+                    'url' => $url
             ];
         }
     }
 
-    $sanitizedSchemaLinks = [];
+    $sanitizedSchemaLinks = ['general' => [
+            'data' => [[
+                    'label' => __('General', 'oes'),
+                    'url' => 'admin.php?page=oes_settings_schema&tab=schema&type=oes&component=general&object=general',
+                    'key' => 'general',
+            ]]
+    ]];
     foreach ($schemaLinks as $schemaType => $schemaData) {
         if (!empty($schemaData['data'])) {
             $schemaDataSorted = $schemaData['data'];
             ksort($schemaDataSorted);
 
             $sanitizedSchemaLinks[$schemaType] = [
-                'label' => $schemaData['label'] ?? $schemaType,
-                'data' => $schemaDataSorted,
+                    'label' => $schemaData['label'] ?? $schemaType,
+                    'data' => $schemaDataSorted,
             ];
         }
     }
 
     return $sanitizedSchemaLinks;
+}
+
+
+//TODO other file?
+
+function get_publisher(): array
+{
+    return get_option('oes_publisher');
+}
+
+function get_post_type_schema_type(string $postType): string
+{
+    global $oes;
+    return $oes->post_types[$postType]['schema_type'] ?? '';
+}
+
+function get_taxonomy_schema_type(string $taxonomy): string
+{
+    global $oes;
+    return $oes->taxonomies[$taxonomy]['schema_type'] ?? '';
+}
+
+function get_all_schema_type(): array
+{
+    global $oes;
+
+    $mappedTypes = array_map(function ($postTypeData) {
+        return normalize_schema_type($postTypeData['schema_type'] ?? '');
+    }, $oes->post_types ?? []);
+
+    foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
+        $mappedTypes[$taxonomy] = normalize_schema_type($taxonomyData['schema_type'] ?? '');
+    }
+
+    return $mappedTypes;
+}
+
+function normalize_schema_type(string $schemaType): string
+{
+    return $schemaType === 'none' ? '' : $schemaType;
 }
