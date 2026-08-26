@@ -88,6 +88,8 @@ if (!class_exists('\OES\Rest\Post')) {
             remove_filter( 'the_content', '\OES\Popup\render_for_frontend' );
             add_filter('oes/lod_render_shortcode', [$this, 'lod_render_shortcode'], 10, 4);
 
+            add_filter('oes/render_panel_html', [$this, 'render_panel_html'], 10, 2);
+
             $this->set_parameters();
             $this->prepare_data();
         }
@@ -102,6 +104,44 @@ if (!class_exists('\OES\Rest\Post')) {
                 $identifier,
                 esc_html($label),
             );
+        }
+
+        public function render_panel_html(array $figures, string $content = ''): string
+        {
+            if(empty($figures)) {
+                return $content;
+            }
+
+            $figuresMarkup = [];
+            foreach ($figures as $image) {
+                $figuresMarkup[] = $this->build_figure_markup($image);
+            }
+            return implode('', $figuresMarkup);
+        }
+
+        /**
+         * Convert an image data array into an intermediate HTML `<figure>` marker
+         */
+        protected function build_figure_markup(array $image): string
+        {
+            $id = $image['id'] ?? null;
+
+            if(!$id){
+                return '';
+            }
+
+            $preparedValue = $this->prepare_image_object($image);
+            $this->data['images'][$id] = $preparedValue;
+
+            $attrs = ['class="oes-converted-figure"'];
+
+            foreach (['id', 'url', 'name', 'alt'] as $param) {
+                if (isset($image[$param]) && $image[$param] !== '') {
+                    $attrs[] = 'data-figure-' . $param . '="' . htmlspecialchars((string) $image[$param], ENT_QUOTES) . '"';
+                }
+            }
+
+            return '<figure ' . implode(' ', $attrs) . '></figure>';
         }
 
         /**
@@ -445,6 +485,10 @@ if (!class_exists('\OES\Rest\Post')) {
                 preg_match( '/data-type=["\']([^"\']*)["\']/i', $attrString, $type );
                 preg_match( '/data-id=["\']([^"\']*)["\']/i', $attrString, $id );
                 preg_match( '/data-lod=["\']([^"\']*)["\']/i', $attrString, $lod );
+
+                if(!isset($href[1])){
+                    continue;
+                }
 
                 $href = html_entity_decode($href[1], ENT_QUOTES, 'UTF-8');
                 $text = $this->prepare_text($linkText);

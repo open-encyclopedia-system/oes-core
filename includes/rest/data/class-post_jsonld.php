@@ -34,7 +34,8 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
                 'authors' => $this->data['authors'] ?? null,
                 //TODO add to schema: contributors and translators
                 'about' => $this->data['terms'] ?? null,
-                'image' => $this->data['featured_image'] ?? null,
+                'image' => $this->data['featured_image'][0] ?? null,
+                'associatedMedia' => array_values($this->data['images'] ?? []),
                 'workExample' => $this->data['versions'] ?? null,
                 'workTranslation' => $this->data['translations'] ?? null,
                 'mentions' => array_values(array_merge(...array_values($this->data['relations'] ?? []))),
@@ -54,7 +55,8 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
             ]);
         }
 
-        protected function map_schema_value_doi($preparedValue) {
+        protected function map_schema_value_doi($preparedValue): array
+        {
             if(is_string($preparedValue)) {
                 return [
                     '@type' => 'PropertyValue',

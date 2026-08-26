@@ -153,6 +153,10 @@ function initialize_admin_menu_pages(): void
                 'menu_slug'  => 'oes_settings',
                 'view_file_name' => 'view-settings-dashboard'
             ],
+            'oes_settings_export' => [
+                'title' => __('Export Formats', 'oes'),
+                'view_file_name' => 'view-settings-export'
+            ],
             'oes_settings_features' => [
                 'title' => __('Features', 'oes'),
                 'view_file_name' => 'view-settings-features'

@@ -2,6 +2,11 @@
 
 namespace OES\Rest;
 
+use DOMDocument;
+use DOMElement;
+use DOMException;
+use DOMNode;
+
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
@@ -35,6 +40,11 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                 'element'  => 'placeName',
                 'attr'     => 'ref',
                 'index'    => ['type' => 'place', 'subtype' => 'places', 'listType' => 'listPlace', 'nameType' => 'placeName', 'head' => 'Places mentioned'],
+            ],
+            'Event' => [
+                'element'  => 'eventName',
+                'attr'     => 'ref',
+                'index'    => ['type' => 'event', 'subtype' => 'events', 'listType' => 'listEvent', 'nameType' => 'eventName', 'head' => 'Events mentioned'],
             ],
             'ScholarlyArticle' => [
                 'element'    => 'title',
@@ -124,6 +134,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             return $this->convert_html ? oes_convert_html_to_plain_text($value) : $value;
         }
 
+        /**
+         * @throws DOMException
+         */
         public function echo_dom(): void
         {
             header('Content-Type: application/xml; charset=utf-8');
@@ -131,11 +144,11 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        public function build_dom(): \DOMDocument
+        public function build_dom(): DOMDocument
         {
-            $dom = new \DOMDocument(self::VERSION, 'UTF-8');
+            $dom = new DOMDocument(self::VERSION, 'UTF-8');
             $dom->formatOutput = true;
 
             $tei = $dom->createElementNS(self::NAMESPACE, 'TEI');
@@ -208,7 +221,10 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             return $dom;
         }
 
-        protected function build_title_stmt(\DOMDocument $dom): \DOMElement
+        /**
+         * @throws DOMException
+         */
+        protected function build_title_stmt(DOMDocument $dom): DOMElement
         {
             $titleStmt = $dom->createElement('titleStmt');
             $titleStmt->appendChild(
@@ -243,9 +259,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_publication_stmt(\DOMDocument $dom): \DOMElement
+        protected function build_publication_stmt(DOMDocument $dom): DOMElement
         {
             $publicationStmt = $dom->createElement('publicationStmt');
 
@@ -280,7 +296,10 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             return $publicationStmt;
         }
 
-        protected function append_idno(\DOMDocument $dom, \DOMElement $parent, ?string $value, string $type): void
+        /**
+         * @throws DOMException
+         */
+        protected function append_idno(DOMDocument $dom, DOMElement $parent, ?string $value, string $type): void
         {
             if (!$value) {
                 return;
@@ -291,7 +310,10 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             $parent->appendChild($idno);
         }
 
-        protected function append_date(\DOMDocument $dom, \DOMElement $parent, ?string $value, string $type): void
+        /**
+         * @throws DOMException
+         */
+        protected function append_date(DOMDocument $dom, DOMElement $parent, ?string $value, string $type): void
         {
             if (!$value) {
                 return;
@@ -304,9 +326,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_edition_stmt(\DOMDocument $dom): \DOMElement
+        protected function build_edition_stmt(DOMDocument $dom): DOMElement
         {
             $editionStmt = $dom->createElement('editionStmt');
 
@@ -320,9 +342,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_source_desc(\DOMDocument $dom): \DOMElement
+        protected function build_source_desc(DOMDocument $dom): DOMElement
         {
             $sourceDesc = $dom->createElement('sourceDesc');
             $sourceDesc->appendChild(
@@ -333,9 +355,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_revision(\DOMDocument $dom): \DOMElement
+        protected function build_revision(DOMDocument $dom): DOMElement
         {
             $revisionDesc = $dom->createElement('revisionDesc');
             $editDate = $this->data['edit_date'] ?? null;
@@ -346,9 +368,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_language(\DOMDocument $dom): \DOMElement
+        protected function build_language(DOMDocument $dom): DOMElement
         {
             $languageValue = $this->data['language'] ?? null;
             $languageElement = $dom->createElement('langUsage');
@@ -359,9 +381,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_terms(\DOMDocument $dom): \DOMElement
+        protected function build_terms(DOMDocument $dom): DOMElement
         {
             $values = $this->data['terms'] ?? null;
             $keywords = $dom->createElement('keywords');
@@ -386,36 +408,48 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_excerpt(\DOMDocument $dom): \DOMElement
+        protected function build_excerpt(DOMDocument $dom): DOMElement
         {
             $value = $this->data['excerpt'] ?? null;
             return $dom->createElement('abstract', $value);
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_front(\DOMDocument $dom): \DOMElement
+        protected function build_figure(DOMDocument $dom, array $image): DOMElement
+        {
+            $figure = $dom->createElement('figure');
+
+            if(is_string($image['url'] ?? null) && !empty($image['url'])) {
+                $graphic = $dom->createElement('graphic');
+                $graphic->setAttribute('url', $image['url']);
+                $figure->appendChild($graphic);
+            }
+
+            if(is_string($image['name'] ?? null) && !empty($image['name'])){
+                $imageHead = $dom->createElement('head', $image['name'] );
+                $figure->appendChild($imageHead);
+            }
+
+            if(is_string($image['alt'] ?? null) && !empty($image['alt'])){
+                $alt = $dom->createElement('figDesc', $image['alt'] );
+                $figure->appendChild($alt);
+            }
+
+            return $figure;
+        }
+        /**
+         * @throws DOMException
+         */
+        protected function build_front(DOMDocument $dom): DOMElement
         {
             $front = $dom->createElement('front');
 
             foreach($this->data['featured_image'] ?? [] as $image){
-                $imageElement = $dom->createElement('figure');
-                $imageURL = $dom->createElement('graphic');
-
-                if(is_string($image['url'] ?? null)) {
-                    $imageURL->setAttribute('url', $image['url']);
-                    $imageElement->appendChild($imageURL);
-                }
-
-                if(is_string($image['name'] ?? null)){
-                    $imageHead = $dom->createElement('head', $image['name'] );
-                    $imageElement->appendChild($imageHead);
-                }
-
-                $front->appendChild($imageElement);
+                $front->appendChild($this->build_figure($dom, $image));
             }
 
             $list = $dom->createElement('list');
@@ -490,9 +524,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_text(\DOMDocument $dom): \DOMElement
+        protected function build_text(DOMDocument $dom): DOMElement
         {
             $body = $dom->createElement('body');
 
@@ -510,7 +544,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                 }
 
                 // Parse this record's HTML fragment and convert it straight into $div
-                $source = new \DOMDocument('1.0', 'UTF-8');
+                $source = new DOMDocument('1.0', 'UTF-8');
                 libxml_use_internal_errors(true);
                 $source->loadHTML(
                     '<?xml encoding="UTF-8"?><div id="__root__">' . $html . '</div>',
@@ -528,9 +562,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * @throws \DOMException
+         * @throws DOMException
          */
-        protected function build_back(\DOMDocument $dom): \DOMElement
+        protected function build_back(DOMDocument $dom): DOMElement
         {
             $back = $dom->createElement('back');
 
@@ -547,7 +581,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             if(!empty($this->data['relations'] ?? null)){
                 foreach($this->data['relations'] as $relationType => $relationGroup){
 
-                    if(!in_array($relationType, ['Person', 'CreativeWork', 'ScholarlyArticle', 'Organization', 'Place', 'DefinedTerm'])){
+                    if(!in_array($relationType, ['Person', 'Event', 'CreativeWork', 'ScholarlyArticle', 'Organization', 'Place', 'DefinedTerm'])){
                         continue;
                     }
 
@@ -565,7 +599,10 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             return $back;
         }
 
-        protected function build_index_relation(string $relationType, array $data, \DOMDocument $dom): \DOMElement
+        /**
+         * @throws DOMException
+         */
+        protected function build_index_relation(string $relationType, array $data, DOMDocument $dom): DOMElement
         {
             $relationType = self::TYPE_ALIASES[$relationType] ?? $relationType;
             $config = self::TYPE_CONFIG[$relationType]['index'] ?? [];
@@ -610,14 +647,15 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         /**
          * Builds a single index entry (e.g. one <person>, <bibl>, or <item>).
          * Returns null when there's no usable name, so the caller can just skip it.
+         * @throws DOMException
          */
         private function build_index_item(
-            \DOMDocument $dom,
+            DOMDocument $dom,
             array $singleData,
             string $type,
             string $nameType,
             string $nameParameter
-        ): ?\DOMElement {
+        ): ?DOMElement {
             $name = $singleData[$nameParameter] ?? null;
 
             if (!$name) {
@@ -656,8 +694,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
 
         /**
          * Recursively convert a DOMNode (and its children) into TEI markup
+         * @throws DOMException
          */
-        protected function convert_node(\DOMNode $node, \DOMNode $teiParent, \DOMDocument $teiDoc): void
+        protected function convert_node(DOMNode $node, DOMNode $teiParent, DOMDocument $teiDoc): void
         {
             foreach ($node->childNodes as $child) {
 
@@ -732,6 +771,17 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                         $teiParent->appendChild($item);
                         break;
 
+                    case 'figure':
+                        $image = [
+                            'id'   => $child->getAttribute('data-figure-id'),
+                            'url'  => $child->getAttribute('data-figure-url'),
+                            'name' => $child->getAttribute('data-figure-name'),
+                            'alt'  => $child->getAttribute('data-figure-alt'),
+                        ];
+                        $figure = $this->build_figure($teiDoc, $image);
+                        $teiParent->appendChild($figure);
+                        break;
+
                     default:
                         $this->convert_node($child, $teiParent, $teiDoc);
                         break;
@@ -742,7 +792,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         /**
          * Decide which TEI element a given <a> tag should become, based on its data-type attribute.
          */
-        function classify_link(\DOMElement $a): array
+        function classify_link(DOMElement $a): array
         {
             $href = trim($a->getAttribute('href'));
             $dataType = trim($a->getAttribute('data-type'));

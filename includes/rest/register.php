@@ -214,21 +214,69 @@ function lod(): void
     ]);
 }
 
-//TODO documentation, add as block?
+/**
+ * @oesDevelopment Add as a block.
+ *
+ * Renders the [oes_export_button] shortcode.
+ *
+ * Displays a button linking to the machine-readable export of the current post (resolved via parameter or the global
+ * $post object) in a given export format.
+ * Produces no output if $post is not a valid singular post context.
+ *
+ * Label resolution order: enclosed shortcode content,
+ * then a language-specific `label_{$oes_language}` attribute,
+ * then the generic `label` attribute,
+ * then the default translated "Export" string.
+ *
+ * @param array{
+ *     format?: string,
+ *     label?: string,
+ *     ...<string, string>
+ * } $args Shortcode attributes. Recognized keys: 'post_id', 'format' (one of 'json',
+ *         'tei', 'txt', 'rdf', 'raw'; invalid values fall back to 'json'),
+ *         'label', and 'label_{language}' (e.g. 'label_language0', 'label_language1').
+ * @param string|null $content Enclosed shortcode content, used as the
+ *         button label when present.
+ *
+ * @return string The rendered `<span class="oes-export-button">` HTML,
+ *         or an empty string if there is no valid current post.
+ */
 function export_button_html(array $args = [], string $content = null): string
 {
-    global $post;
+    $postID = null;
+
+    if(isset($args['post_id'])){
+        $postID = $args['post_id'];
+    }
+    else {
+        global $post;
+        if (!$post instanceof \WP_Post) {
+            $postID = $args['post_id'] ?? null;
+        }
+    }
+
+    if(!$postID) {
+        return '';
+    }
+
 
     $format = $args['format'] ?? 'json';
 
+    if(!in_array($format, ['json', 'tei', 'txt', 'rdf', 'raw'])) {
+        $format = 'json';
+    }
+
     $url = esc_url(
-        site_url('/wp-json/oes/v1/export/' . $format . '/' . $post->ID)
+        site_url('/wp-json/oes/v1/export/' . $format . '/' . $postID)
     );
 
-    $label = $args['label'] ?? __('Export', 'oes');
+    if(empty($content)) {
+        global $oes_language;
+        $content =  $args['label_' . $oes_language] ?? ($args['label'] ?? __('Export', 'oes'));
+    }
 
     return sprintf('<span class="oes-export-button"><a href="%s" class="button" target="_blank">%s</a></span>',
         $url,
-        esc_html($label)
+        esc_html($content)
     );
 }
