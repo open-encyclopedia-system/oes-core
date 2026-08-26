@@ -14,7 +14,7 @@
   word-break: keep-all;
 }
 .wp-block-oes-filter .inactive .oes-filter-item-count {
-  display: none;
+  visibility: hidden;
 }
 .wp-block-oes-filter .oes-filter-list {
   padding-top: 1rem;
