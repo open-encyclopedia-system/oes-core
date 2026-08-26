@@ -101,6 +101,12 @@ if (!class_exists('OES_Gallery_Panel')) {
                 '</span></span>';
         }
 
+        /** @inheritdoc */
+        protected function get_export_panel_data(): array
+        {
+            return $this->figures;
+        }
+
         /**
          * Prepare data by validating figures and gathering additional information for each figure.
          *
@@ -158,6 +164,10 @@ if (!class_exists('OES_Gallery_Panel')) {
         protected function get_single_figure_number(array $figure): int
         {
             global $oesListOfFigures, $post;
+
+            if(!$post){
+                return 0;
+            }
 
             $number = isset($oesListOfFigures[$post->ID]['number']) ?
                 $oesListOfFigures[$post->ID]['number'] + 1 :

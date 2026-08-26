@@ -72,6 +72,12 @@ if (!class_exists('OES_Image_Panel')) {
             }
         }
 
+        /** @inheritdoc */
+        protected function get_export_panel_data(): array
+        {
+            return [$this->figure];
+        }
+
         /**
          * If caption is empty, try to get figure title. If caption is "none", set it to empty.
          */

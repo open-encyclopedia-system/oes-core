@@ -76,6 +76,15 @@ if (!class_exists('OES_Panel')) {
         }
 
         /**
+         * Get data for an export (xml, json, etc.).
+         * @return array
+         */
+        protected function get_export_panel_data(): array
+        {
+            return [];
+        }
+
+        /**
          * Allows subclasses to handle custom arguments.
          *
          * @param array $args Panel arguments.
@@ -106,6 +115,11 @@ if (!class_exists('OES_Panel')) {
          */
         protected function get_html(string $content = ''): string
         {
+            if(has_filter('oes/render_panel_html')) {
+                $data = $this->get_export_panel_data();
+                return apply_filters('oes/render_panel_html', $data, $content);
+            }
+
             $header = $this->get_html_header();
             $expanded = empty($header) || $this->is_expanded;
 
