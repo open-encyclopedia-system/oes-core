@@ -32,7 +32,7 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
 
         $headerHTML = esc_html__('Schema', 'oes') . ' ';
         $headerHTML .= '<select id="schema-links" onchange="oesGoToAdminPage(this)">' . $optionsHTML . '</select>';
-        if ($object && $object != 'general') {
+        if ($object && $object != 'global') {
             $headerHTML .= ' <code class="oes-object-identifier">' . esc_html($object) . '</code>';
         }
         ?>
@@ -44,7 +44,7 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
             <ul class="subsubsub">
                 <?php
 
-                if($object == 'general') {
+                if($object == 'global') {
                     $tabs = [
                             'oes' => __('Publisher', 'oes')
                     ];
@@ -52,8 +52,8 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                 else{
                     $tabs = [
                             'oes' => __('General', 'oes'),
-                            'oes_single' => __('Single', 'oes'),
-                            'oes_archive' => __('Archive', 'oes'),
+                            'mapping' => __('Schema Mapping', 'oes'),
+                            'display' => __('Display', 'oes'),
                     ];
 
                     // Add LoD tabs if present @oesDevelopment call this from API classes?
@@ -134,7 +134,7 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                         esc_url($url)
                 );
 
-                if($key == 'general') {
+                if($key == 'global') {
                     $link = '<h2>' . $link . '</h2>';
                     $code = '';
                 }

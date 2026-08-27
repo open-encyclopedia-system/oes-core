@@ -32,8 +32,8 @@ class Schema_OES extends Schema
         $objects = $oes->{$this->component} ?? [];
         $configs = [];
 
-        if($this->object == 'general'){
-            $this->prepare_general_options($configs);
+        if($this->object == 'global'){
+            $this->prepare_global_options($configs);
         }
         else {
             $this->prepare_type_options($objects, $configs);
@@ -43,41 +43,14 @@ class Schema_OES extends Schema
             $this->prepare_post_type_options($objects, $configs);
         }
 
-        /**
-         * Filters the general config options for the OES schema.
-         *
-         * @param array $configs The general config options for the OES schema.
-         * @param string $object The post type or taxonomy.
-         * @param string $oesType The OES type of the object.
-         * @param string $component . The component. Valid parameters are 'general', 'post_types' or 'taxonomies'.
-         */
-        $configs = apply_filters('oes/schema_general',
-            $configs,
-            $this->object,
-            $this->oes_type,
-            $this->component);
+        $this->add_config_rows($configs);
 
-        foreach ($configs as $key => $option) {
+        $this->add_table_header('Enable Integration Tabs', 'oes');
 
-            $optionKey = $this->resolve_option_key($key, $option);
-
-            $this->add_table_row(
-                [
-                    'title' => ($option['label'] ?? $optionKey),
-                    'key' => $optionKey,
-                    'value' => $option['value'] ?? '',
-                    'type' => $option['type'] ?? 'select',
-                    'args' => $option['options'] ?? []
-                ],
-                [
-                    'subtitle' => ($option['info'] ?? '')
-                ]
-            );
-        }
+        $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
     }
 
-    //TODO introducing publisher
-    protected function prepare_general_options(array &$configs): void
+    protected function prepare_global_options(array &$configs): void
     {
         $value = \OES\Model\get_publisher();
 
@@ -156,14 +129,17 @@ class Schema_OES extends Schema
                 'value' => $objectData[$versionKey] ?? 'none'
             ];
         }
+    }
 
+    protected function prepare_integration_options(array $objects): array {
         $configs['lod'] = [
-            'label' => __('Enable Linked Open Data', 'oes'),
+            'label' => __('Linked Open Data', 'oes'),
             'type' => 'checkbox',
-            'info' => __('Enable copy to post option for this post type. Define schema in tab.', 'oes'),
-            'value' => $objectData['lod'] ?? false,
+            'value' => $objects['lod'] ?? false,
             'options' => ['hidden' => true]
         ];
+
+        return $configs;
     }
 
     protected function resolve_option_key(string $key, array $option): string
@@ -180,6 +156,33 @@ class Schema_OES extends Schema
         }
 
         return $this->component . '[' . $this->object . '][oes_args][' . $key . ']';
+    }
+
+    protected function add_config_rows(array $configs, string $filterKey = ''): void{
+
+        $configs = apply_filters('oes/schema_general' . (empty($filterKey) ? '' : ('_' . $filterKey)),
+            $configs,
+            $this->object,
+            $this->oes_type,
+            $this->component);
+
+        foreach ($configs as $key => $option) {
+
+            $optionKey = $this->resolve_option_key($key, $option);
+
+            $this->add_table_row(
+                [
+                    'title' => ($option['label'] ?? $optionKey),
+                    'key' => $optionKey,
+                    'value' => $option['value'] ?? '',
+                    'type' => $option['type'] ?? 'select',
+                    'args' => $option['options'] ?? []
+                ],
+                [
+                    'subtitle' => ($option['info'] ?? '')
+                ]
+            );
+        }
     }
 
     /** @inheritdoc */

@@ -131,6 +131,36 @@ class Schema extends Config
 
         return $option;
     }
+
+    /**
+     * Render a select row.
+     * @param string $title
+     * @param string $key
+     * @param mixed $value
+     * @param array $options
+     * @param bool $multiple
+     * @return void
+     */
+    protected function render_select_row(string $title, string $key, mixed $value, array $options, bool $multiple = false): void
+    {
+        $args = ['options' => $options];
+        if ($multiple) {
+            $args += [
+                'multiple' => true,
+                'reorder' => true,
+                'hidden' => true,
+            ];
+        }
+
+        $this->add_table_row([
+            'title' => $title,
+            'key' => $key,
+            'value' => $value,
+            'type' => 'select',
+            'args' => $args
+        ]);
+    }
+
 }
 
 // Register the schema tool

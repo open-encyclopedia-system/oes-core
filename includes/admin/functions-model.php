@@ -692,6 +692,56 @@ function get_post_type_oes_args_defaults(): array
     ];
 }
 
+/**
+ * Get schema depending on oes schema type.
+ * @return array
+ */
+function get_schema_config(string $schemaTyp): array
+{
+    //TODO deprecated filter: 'oes/schema_options_single'
+    //todo map to json-ld parameters?
+    return match ($schemaTyp) {
+        'single-article' => [
+                'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
+                'creators' => ['label' => __('Contributor', 'oes'), 'multiple' => true],
+                'translators' => ['label' => __('Translators', 'oes'), 'multiple' => true],
+                'editors' => ['label' => __('Editors', 'oes'), 'multiple' => true],
+                'subtitle' => ['label' => __('Subtitle', 'oes'), 'pattern' => true],
+                'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
+                'excerpt' => ['label' => __('Abstract', 'oes')],
+                'featured_image' => ['label' => __('Featured Image', 'oes')],
+                'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
+                'doi' => ['label' => __('DOI', 'oes')],
+                'pub_date' => ['label' => __('Publication Date', 'oes')],
+                'edit_date' => ['label' => __('Edit Date', 'oes')],
+                'language' => ['label' => __('Language', 'oes')],
+                'version_field' => ['label' => __('Version', 'oes')],
+                'literature' => ['label' => __('Bibliography', 'oes'), 'multiple' => true],
+                'terms' => ['label' => __('Subjects', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
+                'relations' => ['label' => __('Relations', 'oes'), 'multiple' => true],
+                'related_content' => ['label' => __('Related Content', 'oes'), 'multiple' => true],
+                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
+                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
+                'status' => ['label' => __('Publication Status', 'oes')],
+        ],
+        'single-contributor' => [
+                'vita' => ['label' => __('Vita', 'oes')],
+                'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
+                'orcid' => ['label' => __('ORCID', 'oes')],
+                'language' => ['label' => __('Language', 'oes')],
+                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
+                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
+        ],
+        default => [
+                'language' => ['label' => __('Language', 'oes')],
+                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
+                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
+                'startDate' => ['label' => __('Start Date', 'oes'), 'schema_types' => ['Event']],
+                'endDate' => ['label' => __('End Date', 'oes'), 'schema_types' => ['Event']],
+        ]
+    };
+}
+
 
 /**
  * Prepare OES arguments for taxonomy.
@@ -1669,11 +1719,11 @@ function get_schema_links(): array
         }
     }
 
-    $sanitizedSchemaLinks = ['general' => [
+    $sanitizedSchemaLinks = ['global' => [
             'data' => [[
-                    'label' => __('General', 'oes'),
-                    'url' => 'admin.php?page=oes_settings_schema&tab=schema&type=oes&component=general&object=general',
-                    'key' => 'general',
+                    'label' => __('Global', 'oes'),
+                    'url' => 'admin.php?page=oes_settings_schema&tab=schema&type=oes&component=global&object=global',
+                    'key' => 'global',
             ]]
     ]];
     foreach ($schemaLinks as $schemaType => $schemaData) {

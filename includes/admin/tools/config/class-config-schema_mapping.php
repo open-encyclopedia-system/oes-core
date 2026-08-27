@@ -12,14 +12,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
 
-if (class_exists('Schema_OES_Single')) exit;
+if (class_exists('Schema_Mapping')) exit;
 
 /**
- * Class Schema_OES_Single
+ * Class Schema_Mapping
  *
  * Implements the config tool for admin configurations.
  */
-class Schema_OES_Single extends Schema
+class Schema_Mapping extends Schema
 {
 
     /** @inheritdoc */
@@ -48,19 +48,18 @@ class Schema_OES_Single extends Schema
         $fieldOptions = array_merge($selects['fields'] ?? [], $selects['parent'] ?? []);
 
         $this->render_select_row(
-            __('Title for single display', 'oes'),
+            __('Title', 'oes'),
             $keyPrefix . '[display_titles][title_display]',
             $postTypeData['display_titles']['title_display'] ?? 'wp-title',
             $titleOptions);
 
-        $this->render_select_row(
-            __('Metadata', 'oes'),
-            $keyPrefix . '[metadata]',
-            $postTypeData['metadata'] ?? [],
-            $options,
-            true);
+        $schemaType = $postTypeData['schema_type'] ?? null;
+        foreach (\OES\Model\get_schema_config($this->oes_type) as $paramKey => $param) {
 
-        foreach ($this->get_schema_config() as $paramKey => $param) {
+            if(is_array($param['schema_types'] ?? null) && !in_array($schemaType, $param['schema_types'])) {
+                continue;
+            }
+
             $this->render_schema_param($paramKey, $param, $postTypeData, $keyPrefix, $selects, $fieldOptions, $options);
         }
     }
@@ -96,35 +95,6 @@ class Schema_OES_Single extends Schema
                 $taxonomyData['display_titles']['title_display'] ?? 'wp-title',
                 $titleOptions);
         }
-    }
-
-    /**
-     * Render a select row.
-     * @param string $title
-     * @param string $key
-     * @param mixed $value
-     * @param array $options
-     * @param bool $multiple
-     * @return void
-     */
-    protected function render_select_row(string $title, string $key, mixed $value, array $options, bool $multiple = false): void
-    {
-        $args = ['options' => $options];
-        if ($multiple) {
-            $args += [
-                'multiple' => true,
-                'reorder' => true,
-                'hidden' => true,
-            ];
-        }
-
-        $this->add_table_row([
-            'title' => $title,
-            'key' => $key,
-            'value' => $value,
-            'type' => 'select',
-            'args' => $args
-        ]);
     }
 
     /**
@@ -238,46 +208,6 @@ class Schema_OES_Single extends Schema
             esc_html($text)
         );
     }
-
-    /**
-     * Get schema depending on oes schema type.
-     * @return array
-     */
-    protected function get_schema_config(): array
-    {
-        return apply_filters('oes/schema_options_single', match ($this->oes_type) {
-            'single-article' => [
-                'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
-                'creators' => ['label' => __('Creators', 'oes'), 'multiple' => true],
-                'subtitle' => ['label' => __('Subtitle', 'oes'), 'pattern' => true],
-                'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
-                'excerpt' => ['label' => __('Abstract', 'oes')],
-                'featured_image' => ['label' => __('Featured Image', 'oes')],
-                'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
-                'doi' => ['label' => __('DOI', 'oes')],
-                'pub_date' => ['label' => __('Publication Date', 'oes')],
-                'edit_date' => ['label' => __('Edit Date', 'oes')],
-                'language' => ['label' => __('Language', 'oes')],
-                'version_field' => ['label' => __('Version', 'oes')],
-                'literature' => ['label' => __('Bibliography', 'oes'), 'multiple' => true],
-                'terms' => ['label' => __('Subjects', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
-                'status' => ['label' => __('Publication Status', 'oes')],
-            ],
-            'single-contributor' => [
-                'vita' => ['label' => __('Vita', 'oes')],
-                'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
-                'orcid' => ['label' => __('ORCID', 'oes')],
-                'language' => ['label' => __('Language', 'oes')],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true]
-            ],
-            default => [
-                'language' => ['label' => __('Language', 'oes')],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true]
-            ]
-        }, $this->oes_type, $this->object, $this->component);
-    }
 }
 
-register_tool('\OES\Admin\Tools\Schema_OES_Single', 'schema-oes_single');
+register_tool('\OES\Admin\Tools\Schema_Mapping', 'schema-mapping');

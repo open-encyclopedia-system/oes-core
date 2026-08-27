@@ -116,15 +116,16 @@ if (!class_exists('\OES\Admin\Module_Page')) :
             }
 
             if ($this->schema_enabled) {
-                add_filter('oes/schema_general', [$this, 'schema_enable'], 10, 4);
+                add_filter('oes/schema_general_integration', [$this, 'schema_enable'], 10, 4);
 
                 if($this->schema_tabs) {
                     add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
                 }
 
-                if($this->schema_enabled_single) {
+                //TODO rename  or move if necessary? e.g. test for zotpress?
+                /*if($this->schema_enabled_single) {
                     add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
-                }
+                }*/
             }
 
             if($this->admin_page){
@@ -279,20 +280,19 @@ if (!class_exists('\OES\Admin\Module_Page')) :
             if (in_array($component, $this->components)) {
                 $optionKey = $this->get_option_key($objectKey);
 
-                if (empty($this->types) || in_array($type, $this->types)) {
-                    $info = sprintf(__('Enable the %s configuration for this post type.', 'oes'), $this->name);
-                } else {
-                    $info = sprintf(__('Only recommended for objects of types "%s".', 'oes'), implode('", "', $this->types));
-                }
-
-                $configs[$this->key] = [
-                    'label' => __('Enable ', 'oes') . $this->name,
-                    'info' => $info,
+                $config = [
+                    'label' => $this->name,
                     'type' => 'checkbox',
                     'value' => get_option($optionKey) ?? false,
                     'options' => ['hidden' => true],
                     'option_key' => $optionKey
                 ];
+
+                if (!in_array($type, $this->types ?? [])) {
+                    $config['info'] = sprintf(__('Only recommended for objects of types "%s".', 'oes'), implode('", "', $this->types));
+                }
+
+                $configs[$this->key] = $config;
             }
 
             return $configs;

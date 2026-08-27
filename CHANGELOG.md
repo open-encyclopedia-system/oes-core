@@ -36,6 +36,7 @@
 ### Improvements
 - Improve internal page generation
 - Re-organize settings and tools pages
+- Re-organize and augment schema settings
 - Stabilize config tools and redesign settings/tools GUI administration
 - Improve caching via new cache database table
 - Add LOD query support via React
