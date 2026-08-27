@@ -536,44 +536,10 @@ if (!class_exists('OES_Core')) :
                 }
             }
 
-            $options = [
-                'language' => 'none',
-                'external' => []
-            ];
+            $options = \OES\Model\get_schema_config($this->post_types[$postTypeKey]['type'] ?? '');
 
-            if ($this->post_types[$postTypeKey]['type'] == 'single-article') {
-                $options = [
-                    'authors' => [],
-                    'creators' => [],
-                    'subtitle' => 'none',
-                    'citation' => 'none',
-                    'excerpt' => 'none',
-                    'featured_image' => 'none',
-                    'licence' => 'none',
-                    'doi' => 'none',
-                    'pub_date' => 'none',
-                    'edit_date' => 'none',
-                    'language' => 'none',
-                    'version_field' => 'none',
-                    'literature' => [],
-                    'terms' => [],
-                    'external' => [],
-                    'lod' => false
-                ];
-            }
-            elseif ($this->post_types[$postTypeKey]['type'] == 'single-contributor') {
-                $options = [
-                    'vita' => 'none',
-                    'publications' => 'none',
-                    'language' => 'none',
-                    'orcid' => 'none',
-                    'external' => [],
-                    'lod' => false
-                ];
-            }
-
-            foreach ($options as $parameter => $default) {
-                $this->post_types[$postTypeKey][$parameter] = $oesArgs[$parameter] ?? $default;
+            foreach ($options as $key => $parameter) {
+                $this->post_types[$postTypeKey][$key] = $oesArgs[$key] ?? (empty($parameter['multiple']) ? '' : []);
             }
 
             $themeLabels = array_merge([], $oesArgs['theme_labels'] ?? []);

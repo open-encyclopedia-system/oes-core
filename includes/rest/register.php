@@ -1,21 +1,24 @@
 <?php
 
+//@oesDevelopment: consider import function that maps json-ld/xml-tei to OES data model
+//@oesDevelopment: create tool that can export a specific post to format and download it.
+
 namespace OES\Rest;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-//TODO documentation
-//TODO add schema to json
+/**
+ * Register Export Rest Routes
+ * @return void
+ */
 function apis(): void
 {
-
     register_rest_route('oes/v1', '/vocab', [
         'methods' => 'GET',
         'permission_callback' => '__return_true',
         'callback' => '\OES\Rest\serve_vocab',
     ]);
 
-    //TODO
     register_rest_route('oes/v1', '/export/raw/(?P<id>\d+)', [
         'methods' => 'GET',
         'permission_callback' => '__return_true',
@@ -250,15 +253,14 @@ function export_button_html(array $args = [], string $content = null): string
     }
     else {
         global $post;
-        if (!$post instanceof \WP_Post) {
-            $postID = $args['post_id'] ?? null;
+        if ($post instanceof \WP_Post) {
+            $postID = $post->ID;
         }
     }
 
     if(!$postID) {
         return '';
     }
-
 
     $format = $args['format'] ?? 'json';
 

@@ -352,26 +352,12 @@ if (!class_exists('OES_Post')) {
             ];
 
             /* differentiate schema type */
-            switch ($this->schema_type) {
-
-                case 'single-article':
-                    $contentArray = $this->prepare_html_main_classic_article($args, $contentArray);
-                    break;
-
-                case 'single-index':
-                    $contentArray = $this->prepare_html_main_classic_index($args, $contentArray);
-                    break;
-
-                case 'single-contributor':
-                    $contentArray = $this->prepare_html_main_classic_contributor($args, $contentArray);
-                    break;
-
-                case 'other':
-                default:
-                    $contentArray = $this->prepare_html_main_classic_other($args, $contentArray);
-            }
-
-            return $contentArray;
+            return match ($this->schema_type) {
+                'single-article' => $this->prepare_html_main_classic_article($args, $contentArray),
+                'single-index' => $this->prepare_html_main_classic_index($args, $contentArray),
+                'single-contributor' => $this->prepare_html_main_classic_contributor($args, $contentArray),
+                default => $this->prepare_html_main_classic_other($args, $contentArray),
+            };
         }
 
 

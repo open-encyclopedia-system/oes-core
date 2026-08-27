@@ -25,7 +25,8 @@ if (!class_exists('\OES\Rest\Post_TXT') && class_exists('\OES\Rest\Post')) {
             'authors' => 'Authors',
             'terms' => 'Terms',
             'citation' => 'Citation',
-            'relations' => 'Relations',
+            'index' => 'Index',
+            'related_content' => 'Related Content',
             'versions' => 'Versions'
         ];
 
@@ -40,7 +41,8 @@ if (!class_exists('\OES\Rest\Post_TXT') && class_exists('\OES\Rest\Post')) {
             $this->map_parameter($lines, 'notes', 'text');
             $this->map_parameter($lines, 'citation');
             $this->map_parameter($lines, 'literature', 'name');
-            $this->map_relations($lines);
+            $this->map_index($lines);
+            $this->map_parameter($lines, 'related_content', 'name');
             $this->map_versions($lines);
             return $lines;
         }
@@ -147,8 +149,7 @@ if (!class_exists('\OES\Rest\Post_TXT') && class_exists('\OES\Rest\Post')) {
             ];
         }
 
-        //TODO: exclude literature?
-        protected function map_relations(array &$lines): void
+        protected function map_index(array &$lines): void
         {
             $relations = $this->data['relations'] ?? [];
 
@@ -156,7 +157,7 @@ if (!class_exists('\OES\Rest\Post_TXT') && class_exists('\OES\Rest\Post')) {
                 return;
             }
 
-            $this->map_headline($lines, 'relations');
+            $this->map_headline($lines, 'index');
             ksort($relations);
 
             foreach($relations as $groupKey => $items){

@@ -18,6 +18,9 @@ if (!class_exists('\OES\Rest\Post')) {
 
     /**
      * Builds a JSON/schema.org-flavoured export representation of a WP_Post.
+     *
+     * @oesDevelopment: add contributor role to schema
+     * @oesDevelopment: differentiate between "title" and "display title"?
      */
     class Post
     {
@@ -193,7 +196,6 @@ if (!class_exists('\OES\Rest\Post')) {
             $this->prepare_terms();
             $this->prepare_post_content();
             $this->prepare_versions();
-            $this->prepare_relations();
         }
 
         protected function prepare_site_info(): void
@@ -247,15 +249,18 @@ if (!class_exists('\OES\Rest\Post')) {
         protected function resolve_term_path($term): string
         {
             if($this->relative_path){
+
                 if($this->canonical_links){
-                    return '/?tax_term_id=' . $term->term_id . '&taxonomy=' . $term->taxonomy; // TODO not working
+                    return oes_term_get_canonical_link($term,false);
                 }
+
                 return wp_make_link_relative(get_term_link($term, $term->taxonomy));
             }
 
             if($this->canonical_links){
-                return get_site_url() . '/?tax_term_id=' . $term->term_id . '&taxonomy=' . $term->taxonomy; // TODO not working
+                return oes_term_get_canonical_link($term);
             }
+
             return get_term_link($term, $term->taxonomy);
         }
 
@@ -662,6 +667,8 @@ if (!class_exists('\OES\Rest\Post')) {
                 'subtitle',
                 'authors',
                 'creators',
+                'translators',
+                'editors',
                 'excerpt',
                 'licence',
                 'doi',
@@ -673,7 +680,9 @@ if (!class_exists('\OES\Rest\Post')) {
                 'featured_image',
                 'vita',
                 'orcid',
-                'citation'
+                'citation',
+                'relations',
+                'related_content'
             ] as $schemaKey) {
 
                 if(empty($postTypeData[$schemaKey] ?? '')) {
@@ -681,37 +690,6 @@ if (!class_exists('\OES\Rest\Post')) {
                 }
 
                 $this->get_value_from_schema($schemaKey, $postTypeData[$schemaKey]);
-            }
-        }
-
-        protected function prepare_relations(): void
-        {
-
-            $fields = oes_get_all_object_fields_from_global($this->post->post_type, ['relationship', 'post_object', 'taxonomy']);
-
-            if (!$fields) {
-                return;
-            }
-
-            foreach($fields as $key => $field) {
-
-                $value = oes_get_field($key, $this->postID);
-                $additional = ['source' => 'relations', 'oes:field' => $key];
-
-                if (is_array($value)) {
-                    foreach ($value as $item) {
-                        if($field['type'] === 'taxonomy') {
-                            $this->prepare_term_object($item, '', [], $additional);
-                        }
-                        else {
-                            $this->prepare_post_object($item, [], $additional);
-                        }
-                    }
-                } else {
-                    if($field['type'] === 'post_object') {
-                        $this->prepare_post_object($value, [], $additional);
-                    }
-                }
             }
         }
 
@@ -864,6 +842,14 @@ if (!class_exists('\OES\Rest\Post')) {
             return do_shortcode($preparedValue);
         }
 
+        protected function map_schema_value_relations($preparedValue)
+        {
+            return array_reduce($preparedValue, function ($carry, $item) {
+                $carry[$item['type'] ?? 'Thing'][] = $item;
+                return $carry;
+            }, []);
+        }
+
         protected function prepare_text($value): string
         {
             if(!is_string($value)) {
@@ -874,8 +860,7 @@ if (!class_exists('\OES\Rest\Post')) {
         }
 
         /**
-         * Resolves a post reference (id, WP_Post, or image array) into its stored representation, and registers
-         * it in $this->data['relations'].
+         * Resolves a post reference (id, WP_Post, or image array) into its stored representation
          */
         protected function prepare_post_object($value, array $args = [], array $additional = []): array
         {
@@ -900,6 +885,7 @@ if (!class_exists('\OES\Rest\Post')) {
             }
 
             $type = $this->map_schema_type($post->post_type);
+            $additional = $this->map_post_object_additional($type, $post, $additional);
 
             $object = array_merge([
                 'oes:id' => $id,
@@ -928,22 +914,42 @@ if (!class_exists('\OES\Rest\Post')) {
                 $object['oes:source'] = $args['source'];
             }
 
-            $mappedObject = $this->map_post_object($object);
+            return $this->map_post_object($object);
+        }
 
-            $this->add_relation($mappedObject, $object, $id, $type);
-            return $mappedObject;
+        protected function map_post_object_additional(string $type, WP_Post $post, array $additional = []): array
+        {
+            $method = 'map_post_object_additional_' . $type;
+            if(method_exists($this, $method)) {
+                return call_user_func([$this, $method], $post, $additional);
+            }
+            return $additional;
+        }
+
+        //TODO format
+        protected function map_post_object_additional_event(WP_Post $post, array $additional = []): array
+        {
+            global $oes;
+            $postTypeData = $oes->post_types[$post->post_type] ?? null;
+
+            if(empty($postTypeData)) {
+                return [];
+            }
+
+            foreach(['startDate', 'endDate'] as $key) {
+                if($dateField = ($postTypeData[$key] ?: null)){
+                    $date = oes_get_field($dateField, $post);
+                    if($date) {
+                        $additional[$key] = $this->format_date($date);
+                    }
+                }
+            }
+
+            return $additional;
         }
 
         protected function map_post_object(array $postData): array {
             return $postData;
-        }
-
-        protected function add_relation(array $mappedObject, array $object, $id, string $type = 'Thing'): void
-        {
-            $relID = ($object['oes:post_type'] ?? 'rel') . $id;
-            if(!isset($this->data['relations'][$type][$relID])) {
-                $this->data['relations'][$type][$relID] = $mappedObject;
-            }
         }
         
         protected function prepare_image_object($value): array {
@@ -987,10 +993,7 @@ if (!class_exists('\OES\Rest\Post')) {
                 $object['oes:source'] = $args['source'];
             }
 
-            $mappedObject = $this->map_term_object($object);
-
-            $this->add_relation($mappedObject, $object, $id, $type);
-            return $mappedObject;
+            return $this->map_term_object($object);
         }
 
         protected function map_term_object(array $termData): array {

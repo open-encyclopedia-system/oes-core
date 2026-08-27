@@ -14,13 +14,16 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
     {
         public function get_data(): array
         {
+            $mentions = array_values($this->data['relations'] ?? []);
+            $mentions[] = $this->data['related_content'] ?? [];
+
             return oes_remove_empty_from_array([
                 '@context' => $this->prepare_context(),
                 '@type' => $this->data['schema'] ?? null,
                 '@id' => $this->data['url'] ?? null,
                 'url' => $this->data['url'] ?? null,
                 'identifier' => $this->data['doi'] ?? null,
-                'headline' => $this->data['title'] ?? null, //TODO citing title?
+                'headline' => $this->data['title'] ?? null,
                 'name' => $this->data['name'] ?? null,
                 'inLanguage' => $this->data['language'] ?? null,
                 'datePublished' => $this->data['pub_date'] ?? null,
@@ -31,14 +34,16 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
                 'publisher' => $this->data['publisher'] ?? null,
                 'oes:status' => oes_get_field('field_oes_status', $this->post),
                 'description' => $this->data['excerpt'] ?? null,
-                'authors' => $this->data['authors'] ?? null,
-                //TODO add to schema: contributors and translators
+                'author' => $this->data['authors'] ?? null,
+                'contributor' => $this->data['creators'] ?? null,
+                'translator' => $this->data['translators'] ?? null,
+                'editor' => $this->data['editors'] ?? null,
                 'about' => $this->data['terms'] ?? null,
                 'image' => $this->data['featured_image'][0] ?? null,
                 'associatedMedia' => array_values($this->data['images'] ?? []),
                 'workExample' => $this->data['versions'] ?? null,
                 'workTranslation' => $this->data['translations'] ?? null,
-                'mentions' => array_values(array_merge(...array_values($this->data['relations'] ?? []))),
+                'mentions' => array_merge(...$mentions),
                 'hasPart' => $this->data['content'] ?? null,
                 'oes:citations' => array_values($this->data['notes'] ?? []),
                 'oes:externals' => array_values($this->data['externals'] ?? [])
@@ -82,7 +87,7 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
             return array_filter([
                 '@type' => 'WebPageElement',
                 'position' => (string)$section['nr'] ?? null,
-                'identifier' => $section['id'] ?? null, //TODO
+                'identifier' => $section['id'] ?? null,
                 'headline' => $section['headline'] ?? null,
                 'text' => $section['text'] ?? null,
                 'citation' => array_merge(oes_dedupe_by_key($section['externals'] ?? [], 'url'), $section['notes'] ?? []),
@@ -92,12 +97,12 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
 
         protected function map_note_link(string $noteText, int $count, string $marker): array
         {
-            $id = '#popup' . $count; //TODO
+            $id = '#popup' . $count;
 
             return array_filter([
                 '@id' => $id,
-                '@type' => 'WebPage', // 'note'?
-                'position' => $count, //TODO? or text position?
+                '@type' => 'WebPage',
+                'position' => $count,
                 'name' => $noteText ?: null,
             ]);
         }
@@ -124,7 +129,9 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
                 '@type' => $postData['type'] ?? null,
                 'name' => $postData['name'] ?? null,
                 'version' => $postData['version'] ?? null,
-                'inLanguage' => $this->format_language($postData['language'] ?? '')
+                'inLanguage' => $postData['language'] ?? '',
+                'startDate' => $postData['startDate'] ?? '',
+                'endDate' => $postData['endDate'] ?? '',
             ]);
         }
 

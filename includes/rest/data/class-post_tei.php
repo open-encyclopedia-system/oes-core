@@ -11,7 +11,6 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
 
-
     class Post_TEI extends \OES\Rest\Post
     {
 
@@ -47,9 +46,9 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                 'index'    => ['type' => 'event', 'subtype' => 'events', 'listType' => 'listEvent', 'nameType' => 'eventName', 'head' => 'Events mentioned'],
             ],
             'ScholarlyArticle' => [
-                'element'    => 'title',
-                'attr'       => 'ref',
-                'extraAttrs' => ['type' => 'article'],
+                'element'    => 'ref',
+                'attr'       => 'target',
+                'extraAttrs' => ['type' => 'internal'],
                 'index'      => ['type' => 'item', 'subtype' => 'relatedArticles', 'listType' => 'list', 'nameType' => '', 'head' => 'Related articles'],
             ],
             'literature' => [
@@ -85,8 +84,8 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         ];
 
         private const TYPE_ALIASES = [
-            'Article'      => 'ScholarlyArticle',
-            'CreativeWork' => 'ScholarlyArticle',
+            'Article'      => 'ScholarlyArticle', //TODO
+            'CreativeWork' => 'ScholarlyArticle', //TODO
         ];
 
         private function get_merged_data(): array {
@@ -247,12 +246,34 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                     $author->setAttribute('xml:id', $id);
                 }
 
-                //TODO @oesDevelopment add in parent class
-                if($role = $singleAuthor['role'] ?? null) {
-                    $author->setAttribute('role', $role);
-                }
-
                 $titleStmt->appendChild($author);
+            }
+
+            foreach(['translators' => 'translator', 'creators' => 'contributor', 'editors' => 'editor'] as $type => $label) {
+                foreach ($this->data[$type] ?? [] as $singleContributor) {
+
+                    if(!($singleContributor['name'] ?? null)) {
+                        continue;
+                    }
+
+                    $contributor = $dom->createElement('respStmt');
+                    $resp = $dom->createElement('resp', $label);
+                    $contributor->appendChild($resp);
+
+                    $person = $dom->createElement('persName', htmlspecialchars($singleContributor['name']));
+
+                    if($ref = $singleContributor['url'] ?? null) {
+                        $person->setAttribute('ref', $ref);
+                    }
+
+                    if($id = $singleContributor['oes:id'] ?? null) {
+                        $person->setAttribute('xml:id', $id);
+                    }
+
+                    $contributor->appendChild($person);
+
+                    $titleStmt->appendChild($contributor);
+                }
             }
 
             return $titleStmt;
@@ -441,6 +462,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
 
             return $figure;
         }
+
         /**
          * @throws DOMException
          */
@@ -448,79 +470,116 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
         {
             $front = $dom->createElement('front');
 
-            foreach($this->data['featured_image'] ?? [] as $image){
+            foreach ($this->data['featured_image'] ?? [] as $image) {
                 $front->appendChild($this->build_figure($dom, $image));
             }
 
-            $list = $dom->createElement('list');
-            foreach($this->data['content'] ?? [] as $i => $record) {
-                $headline = $record['headline'] ?? null;
-
-                if(!$headline) {
-                    continue;
-                }
-
-                $xmlId = isset($record['id']) ? ('#' . $record['id']) : ('r' . $i);
-
-                $item = $dom->createElement('item');
-                $ref = $dom->createElement('ref', $headline);
-                $ref->setAttribute('target', $xmlId);
-                $item->appendChild($ref);
-                $list->appendChild($item);
+            if ($toc = $this->build_toc($dom)) {
+                $front->appendChild($toc);
             }
 
-            if ($list->hasChildNodes()) {
-                $tocDiv = $dom->createElement('div');
-                $tocDiv->setAttribute('type', 'toc');
-                $tocHeader = $dom->createElement('head', 'Contents');
-                $tocDiv->appendChild($tocHeader);
-                $tocDiv->appendChild($list);
-                $front->appendChild($tocDiv);
-            }
-
-            $versions = $this->data['versions'] ?? [];
-
-            if(!empty($versions)) {
-                $related = $dom->createElement('div');
-                $related->setAttribute('type', 'relatedItems');
-
-                $list = $dom->createElement('list');
-                $related->appendChild($list);
-
-                $versionsPerType['workExample'] = $versions;
-
-                if(!empty($this->data['translations'] ?? null)){
-                    $versionsPerType['workTranslation'] = $this->data['translations'];
-                }
-
-                foreach($versionsPerType as $type => $versionsGroup){
-                    foreach($versionsGroup as $version){
-
-                        if(!is_string($version['name'] ?? null)){
-                            continue;
-                        }
-
-                        $item = $dom->createElement('item');
-                        $ref = $dom->createElement('ref', $version['name']);
-                        $ref->setAttribute('type', $type);
-
-                        if(is_string($version['oes:id'] ?? null)){
-                            $ref->setAttribute('xml:id', 'p' . $version['oes:id']);
-                        }
-
-                        if(is_string($version['url'] ?? null)){
-                            $ref->setAttribute('target', $version['url']);
-                        }
-
-                        $item->appendChild($ref);
-                        $list->appendChild($item);
-                    }
-                }
-
+            if ($related = $this->build_related_items($dom)) {
                 $front->appendChild($related);
             }
 
             return $front;
+        }
+
+        /**
+         * @throws DOMException
+         */
+        protected function build_toc(DOMDocument $dom): ?DOMElement
+        {
+            $list = $dom->createElement('list');
+
+            foreach ($this->data['content'] ?? [] as $i => $record) {
+                $headline = $record['headline'] ?? null;
+
+                if (!$headline) {
+                    continue;
+                }
+
+                $target = isset($record['id']) ? ('#' . $record['id']) : ('r' . $i);
+
+                $item = $dom->createElement('item');
+                $ref = $dom->createElement('ref', $headline);
+                $ref->setAttribute('target', $target);
+                $item->appendChild($ref);
+                $list->appendChild($item);
+            }
+
+            if (!$list->hasChildNodes()) {
+                return null;
+            }
+
+            $div = $dom->createElement('div');
+            $div->setAttribute('type', 'toc');
+            $div->appendChild($dom->createElement('head', 'Contents'));
+            $div->appendChild($list);
+
+            return $div;
+        }
+
+        /**
+         * @throws DOMException
+         */
+        protected function build_related_items(DOMDocument $dom): ?DOMElement
+        {
+            $list = $dom->createElement('list');
+
+            // Each key is the @type used on <ref>; each value is the source array of items.
+            $groups = [
+                'workExample'     => $this->data['versions'] ?? [],
+                'workTranslation' => $this->data['translations'] ?? [],
+                'seeAlso'         => $this->data['related_content'] ?? [],
+            ];
+
+            foreach ($groups as $type => $items) {
+                foreach ($items as $item) {
+                    $ref = $this->build_related_ref($dom, $item, $type);
+
+                    if (!$ref) {
+                        continue;
+                    }
+
+                    $li = $dom->createElement('item');
+                    $li->appendChild($ref);
+                    $list->appendChild($li);
+                }
+            }
+
+            if (!$list->hasChildNodes()) {
+                return null;
+            }
+
+            $div = $dom->createElement('div');
+            $div->setAttribute('type', 'relatedItems');
+            $div->appendChild($list);
+
+            return $div;
+        }
+
+        /**
+         * @throws DOMException
+         */
+        protected function build_related_ref(DOMDocument $dom, array $item, string $type): ?DOMElement
+        {
+            if (!is_string($item['name'] ?? null)) {
+                return null;
+            }
+
+            $ref = $dom->createElement('ref', $item['name']);
+            $ref->setAttribute('type', $type);
+
+            if (isset($item['oes:id']) && (is_int($item['oes:id']) || is_string($item['oes:id']))) {
+                $ref->setAttribute('xml:id', $item['oes:id']);
+            }
+
+            if (is_string($item['url'] ?? null)) {
+                $ref->setAttribute('target', $item['url']);
+            }
+
+            return $ref;
         }
 
         /**
@@ -648,6 +707,8 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
          * Builds a single index entry (e.g. one <person>, <bibl>, or <item>).
          * Returns null when there's no usable name, so the caller can just skip it.
          * @throws DOMException
+         *
+         * TODO add event dates
          */
         private function build_index_item(
             DOMDocument $dom,
@@ -711,6 +772,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
 
                 $tag = strtolower($child->tagName);
 
+                //@oesDevelopment: add more tag types from different blocks
                 switch ($tag) {
 
                     case 'p':
@@ -755,6 +817,13 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                         $teiParent->appendChild($quote);
                         break;
 
+                    case 'pre':
+                        //@oesDevelopment: break into lines?
+                        $verse = $teiDoc->createElement('lg');
+                        $this->convert_node($child, $verse, $teiDoc);
+                        $teiParent->appendChild($verse);
+                        break;
+
                     case 'ul':
                     case 'ol':
                         $list = $teiDoc->createElement('list');
@@ -772,6 +841,19 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                         break;
 
                     case 'figure':
+                        $class = explode(' ', $child->getAttribute('class'));
+
+                        if(in_array('wp-block-pullquote', $class)) {
+                            $item = $teiDoc->createElement('hi');
+                            $item->setAttribute('rend', 'pullquote');
+
+                            foreach ($child->childNodes as $innerChild) {
+                                $this->convert_node($innerChild, $item, $teiDoc);
+                            }
+                            $teiParent->appendChild($item);
+                            break;
+                        }
+
                         $image = [
                             'id'   => $child->getAttribute('data-figure-id'),
                             'url'  => $child->getAttribute('data-figure-url'),
@@ -815,7 +897,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             $mergedData = $this->get_merged_data();
 
             if(isset($mergedData[$dataType . $dataID])){
-                $type = $mergedData[$dataType . $dataID]['type'] ?? 'Thing';
+                $type = $mergedData[$dataType . $dataID]['type'] ?? 'external';
 
                 if(isset($mergedData[$dataType . $dataID]['url'])){
                     $href = $mergedData[$dataType . $dataID]['url'] ?? '';
@@ -837,7 +919,11 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             $config = self::TYPE_CONFIG[$type] ?? null;
 
             if ($config === null) {
-                return ['ref', ['type' => $type, 'target' => $href]];
+                $args = ['target' => $href];
+                if($type !== 'Thing'){
+                    $args['type'] = $type;
+                }
+                return ['ref', $args];
             }
 
             $attrs = [$config['attr'] => $href] + ($config['extraAttrs'] ?? []);
