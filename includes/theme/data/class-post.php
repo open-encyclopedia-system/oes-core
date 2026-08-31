@@ -96,7 +96,9 @@ if (!class_exists('OES_Post')) {
             /* if called in admin set global language */
             if (empty($language) && empty($oes_language)) $language = 'language0';
 
-            return (empty($language) || $language === 'all') ? $oes_language : $language;
+            $languageString = (empty($language) || $language === 'all') ? $oes_language : $language;
+
+            return is_string($languageString) ? $languageString : 'language0';
         }
 
 
