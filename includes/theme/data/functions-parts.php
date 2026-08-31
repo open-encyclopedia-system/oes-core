@@ -105,6 +105,8 @@ function oes_get_page_title(array $args = []): string
     /* add link */
     if ($isLink && !empty($linkObject))
         $title = '<a href="' . oes_get_archive_link($linkObject, $isTaxonomy) . '">' . $title . '</a>';
+    else
+        $title = esc_html($title);
 
     /* add style */
     $additionalClass = '';
@@ -118,8 +120,7 @@ function oes_get_page_title(array $args = []): string
      */
     $title = apply_filters('oes/theme_page_title', $title);
 
-
-    return '<span class="' . $additionalClass . 'oes-page-title">' . $title . '</span>';
+    return '<span class="' . esc_attr($additionalClass) . 'oes-page-title">' . $title . '</span>';
 }
 
 
@@ -442,6 +443,7 @@ function oes_get_featured_image_html(array $args = []): string
         $imageHTML = oes_get_image_panel_content($image);
 
         /* prepare header */
+        //TODO why oes-post-terms-container?
         $header = isset($args['labels']) ? oes_language_label_html($args['labels']) : '';
         if ($args['detail']) return '<div class="oes-post-terms-container">' .
             oes_get_details_block(
@@ -485,7 +487,9 @@ function oes_get_author_byline_html(array $args = []): string
     global $oes_post;
     if (is_single() && $oes_post) {
         $authorParam = OES()->post_types[$oes_post->post_type]['authors'] ?? '';
-        if (!empty($authorParam)) $args['authors'] = $authorParam;
+        if (!empty($authorParam)) {
+            $args['authors'] = $authorParam;
+        }
         return $oes_post->get_author_info($args);
     }
     return '';
@@ -634,11 +638,6 @@ function oes_get_prepared_table_of_contents_html(array $args = []): string
             return $header . '<ul class="oes-table-of-contents oes-vertical-list"></ul>';
         }
 
-        // Wichtig: die Klasse is-style-oes-sticky muss hier (oder auf dem
-        // Block-Wrapper via render.php) vorhanden sein, damit die CSS-Variable
-        // --oes-header-height aus view.js greift.
-        // Der Host-Div bekommt dieselbe max-width + margin:auto Zentrierung
-        // wie body, damit der Button relativ dazu links ausgerichtet werden kann.
         $toggle = '<div id="oes-toc-toggle-host"><button id="oes-toc-toggle" '
             . 'aria-expanded="false" aria-controls="oes-toc-wrapper" '
             . 'aria-label="Inhaltsverzeichnis öffnen"></button></div>';

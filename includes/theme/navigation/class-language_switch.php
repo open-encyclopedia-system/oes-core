@@ -172,7 +172,7 @@ if (!class_exists('Language_Switch')) {
         {
             foreach ($this->links as $languageKey => $languageAbb) {
                 $this->links[$languageKey]['link'] = get_site_url() . '/';
-                $this->links[$languageKey]['param']['s'] = $_GET['s'] ?? '';
+                $this->links[$languageKey]['param']['s'] = esc_html($_GET['s'] ?? '');
             }
         }
 
