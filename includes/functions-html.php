@@ -759,11 +759,11 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
     $additional = $args['additional'];
     if ($args['add-count'] ?? false) {
         global $oes_filter;
-        $additional .= '<span class="oes-filter-item-count">(' .
+        $additional .= '<span class="oes-filter-item-count">' .
             (isset($oes_filter['json'][$filter][$key]) ?
                 sizeof($oes_filter['json'][$filter][$key]) :
                 0) .
-            ')</span>';
+            '</span>';
     }
 
     return sprintf('<%s class="oes-archive-filter-item %s">' .

@@ -16,7 +16,7 @@
 - Introduce cache database table
 - Introduce new LOD API: ROR
 - Introduce new LOD API: ORCID
-- Introduce new LOD API: HMML
+- ~~Introduce new LOD API: HMML~~ (moved to separate module plugin)
 - Introduce Display_Helper for LOD APIs
 - Introduce new block: "Context Link"
 - Introduce new block: "Archive Toggle All"
@@ -46,6 +46,7 @@
 - Redesign and reorganize the OES dashboard
 - Redesign operations and feature display
 - Redesign page and container icons
+- Redesign styling of oes-filter-item-count
 - Add options for "author byline" block to include ORCID information and skip sorting
 
 ### Removals / Cleanups

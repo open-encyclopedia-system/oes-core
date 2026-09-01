@@ -177,15 +177,15 @@
             const type = $filter.data('type');
             const filter = $filter.data('filter');
 
-            // Active filter → mark as (-)
+            // Active filter → mark as (−)
             if ($filter.hasClass('active')) {
-                if ($countElem.length) $countElem.text('(-)');
+                if ($countElem.length) $countElem.text('−');
                 return;
             }
 
             // Type already selected → show (+)
             if (activeTypes.includes(type)) {
-                if ($countElem.length) $countElem.text('(+)');
+                if ($countElem.length) $countElem.text('+');
                 $filter.parent().removeClass('inactive').show();
                 return;
             }
@@ -202,7 +202,7 @@
             );
 
             // Update count + inactive state
-            if ($countElem.length) $countElem.text(`(${newCount})`);
+            if ($countElem.length) $countElem.text(`${newCount}`);
             $filter.parent().toggleClass('inactive', newCount === 0);
         });
     }
