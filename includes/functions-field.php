@@ -186,6 +186,10 @@ function oes_get_field_display_value(string $fieldName, $postID, array $args = [
 
     [$postID, $fieldName] = oes_resolve_field_context($postID, $fieldName);
 
+    if(!is_string($fieldName)){
+        return '';
+    }
+
     if(isset($args['value'])){
         $value = $args['value'];
     }

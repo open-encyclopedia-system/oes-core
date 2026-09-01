@@ -52,6 +52,13 @@ class Application extends Config
                 }
             }
 
+            if(isset($option['args']['options_object'])){
+                $param = $option['args']['options_param'] ?? 'all';
+                $option['args']['options'] = oes_get_object_select_options($option['args']['options_object'])[$param] ?? [];
+                unset($option['args']['options_object']);
+                unset($option['args']['options_param']);
+            }
+
             $this->add_table_row(
                 [
                     'title' => ($option['label'] ?? $optionKey),

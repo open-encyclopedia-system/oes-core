@@ -101,10 +101,7 @@ if (!class_exists(__NAMESPACE__ . 'API_Interface')) {
                 return apply_filters('oes/lod_render_shortcode', $label, $id, $this->url, $this->identifier);
             }
 
-            $iconPath = OES_CORE_PLUGIN . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png";
-            $iconUrl = file_exists($iconPath)
-                ? plugins_url(OES_BASENAME . "/includes/lod/{$this->identifier}/icon_{$this->identifier}.png")
-                : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
+            $iconUrl = get_icon_path($this->identifier);
 
             $previewOption = get_option('oes_api-' . $this->identifier . '_popup');
 

@@ -71,7 +71,6 @@ function lod_initialize(): void
     include_once __DIR__ . '/orcid/class-orcid_interface.php';
     include_once __DIR__ . '/ror/class-ror_interface.php';
     include_once __DIR__ . '/loc/class-loc_interface.php';
-    include_once __DIR__ . '/hmml/class-hmml_interface.php';
 
     include_once __DIR__ . '/class-lod_config.php';
     include_once __DIR__ . '/class-lod_schema.php';
@@ -160,16 +159,30 @@ function rest_lod_search($request)
         }
     }
 
-    $iconPath = '/includes/lod/' . $apiKey . '/icon_' . $apiKey . '.png';
-    $iconURL = file_exists(OES_CORE_PLUGIN . $iconPath)
-        ? plugins_url(OES_BASENAME . $iconPath)
-        : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
+    $iconURL = get_icon_path($apiKey);
 
     return [
         'response' => $responseData,
         'icon_path' => $iconURL,
         'copy_options' => $copyOptionsArray
     ];
+}
+
+/**
+ * Get api icon path
+ * @param string $apiKey
+ * @return string
+ */
+function get_icon_path(string $apiKey): string {
+
+    if(has_filter('oes/lod_get_icon_path_' . $apiKey)) {
+        return apply_filters('oes/lod_get_icon_path_' . $apiKey, '');
+    }
+
+    $iconPath = '/includes/lod/' . $apiKey . '/icon_' . $apiKey . '.png';
+    return file_exists(OES_CORE_PLUGIN . $iconPath)
+        ? plugins_url(OES_BASENAME . $iconPath)
+        : plugins_url(OES_BASENAME . '/includes/lod/assets/icon_lod_preview.png');
 }
 
 /**
