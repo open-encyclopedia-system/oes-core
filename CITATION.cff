@@ -3,6 +3,8 @@ authors:
     - family-names: Welterlich-Strobl
       given-names: Maren
       orcid: "https://orcid.org/0000-0002-3690-2992"
+      affiliation: "Freie Universität Berlin, FUB-IT"
+    - name: "Freie Universität Berlin, FUB-IT"
 
 title: OES Core
 abstract: "The Open Encyclopedia System (OES) is a modular and configurable software for creating, publishing and maintaining online encyclopedias in the humanities and social sciences that are accessible worldwide via Open Access. OES adds a web-based open source software for article-based publication formats to already available options for electronic publishing."

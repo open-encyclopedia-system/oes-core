@@ -9,7 +9,7 @@
  * Description:       A framework for scholarly reference works
  * Version:           3.0.0
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT
- * Author URI:        https://www.it.fu-berlin.de/die-fub-it/mitarbeitende/mstrobl.html
+ * Author URI:        https://www.it.fu-berlin.de/die-fub-it/
  * Requires at least: 6.5
  * Tested up to:      6.9.1
  * Requires PHP:      8.1

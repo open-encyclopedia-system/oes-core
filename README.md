@@ -18,17 +18,23 @@ Building and maintaining online encyclopedias.
 **License:** `GPLv2 or later`
 **License URI:** [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html)
 
-The **Open Encyclopedia System (OES)** is a modular and configurable open-source software framework for creating, publishing, and maintaining **online encyclopedias** in the **humanities and social sciences**. Designed to support article-based publishing and Open Access principles, OES offers a sustainable and scholarly solution for digital editorial workflows.
+The **Open Encyclopedia System (OES)** is a modular and configurable open-source software framework for creating, 
+publishing, and maintaining **online encyclopedias** in the **humanities and social sciences**. 
+Designed to support article-based publishing and Open Access principles, OES offers a sustainable and scholarly 
+solution for digital editorial workflows.
 
-OES is built on **WordPress**, an open-source content management system. WordPress handles core infrastructure such as user management, content storage, and plugin architecture.
+OES is built on **WordPress**, an open-source content management system. WordPress handles core infrastructure such 
+as user management, content storage, and plugin architecture.
 
-Developed between 2016–2020 with funding from the **German Research Foundation (DFG)**, OES emerged from the project *“From 1914-1918-online to the Open Encyclopedia System”*.
+Developed between 2016–2020 with funding from the **German Research Foundation (DFG)**, 
+OES emerged from the project *“From 1914-1918-online to the Open Encyclopedia System”*.
 
 For more information, visit the [official website](https://open-encyclopedia-system.org/).
 
 ## Cite this software
 
-If you use this software, please cite it using the metadata in the file CITATION.CFF (for more information about CFF see https://citation-file-format.github.io/).
+If you use this software, please cite it using the metadata in the file CITATION.CFF 
+(for more information about CFF see https://citation-file-format.github.io/).
 
 ## Features
 
@@ -38,6 +44,10 @@ If you use this software, please cite it using the metadata in the file CITATION
 - Define editorial workflows and access roles
 - Control article display via a configurable interface
 - Maintain long-term sustainability through version control
+
+### Shortcodes
+
+OES registers several shortcodes for use in templates. Full shortcode documentation: https://manual.open-encyclopedia-system.org/book/shortcodes/
 
 ## Installation
 
