@@ -14,7 +14,6 @@ use OES\Admin\Subpage;
  */
 function main_page(): void
 {
-
     ?>
     <div class="wrap oes-manual-wrap">
     <h1 class="wp-heading-inline"><?php echo get_manual_string(); ?></h1>
@@ -65,7 +64,7 @@ function display_entry(int $postID): void
                 <span class="dashicons dashicons-edit"></span>
             </a>
         </h1>
-        <div class="entry-content"><?php echo do_blocks(do_shortcode($post->post_content)); ?></div>
+        <div class="entry-content editor-styles-wrapper"><?php echo do_blocks(do_shortcode($post->post_content)); ?></div>
     <?php
     else : display_overview();
     endif;

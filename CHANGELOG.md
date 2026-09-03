@@ -48,6 +48,7 @@
 - Redesign page and container icons
 - Redesign styling of oes-filter-item-count
 - Add options for "author byline" block to include ORCID information and skip sorting
+- Add editor style class for Guideline admin pages
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
