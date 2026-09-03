@@ -5,10 +5,14 @@
   "version": "0.1.0",
   "title": "Author Byline",
   "category": "oes-schema",
-  "description": "Display the author byline.",
+  "description": "Displays the author(s) of the contribution, including sorting and an optional ORCID entry. The data source is defined in the OES schema settings.",
   "keywords": [
     "attribution",
-    "credit"
+    "credit",
+    "author",
+    "autor",
+    "orcid",
+    "contributor"
   ],
   "attributes": {
     "labels": {
