@@ -1,21 +1,92 @@
-ul.oes-table-of-contents {
-  .oes-toc-header2 {
-    padding-left: 0;
+ul.oes-table-of-contents .oes-toc-header2 {
+  padding-left: 0;
+}
+ul.oes-table-of-contents .oes-toc-header3 {
+  padding-left: 1em;
+}
+ul.oes-table-of-contents .oes-toc-header4 {
+  padding-left: 2em;
+}
+ul.oes-table-of-contents .oes-toc-header5 {
+  padding-left: 3em;
+}
+ul.oes-table-of-contents .oes-toc-header6 {
+  padding-left: 4em;
+}
+
+.is-style-oes-sticky {
+  --oes-header-height: 0px;
+  position: relative;
+
+  #oes-toc-toggle-host {
+    position: fixed;
+    top: var(--oes-header-height);
+    left: 0;
+    right: 0;
+    max-width: var(--wp--style--global--content-size);
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 40;
+    pointer-events: none;
   }
 
-  .oes-toc-header3 {
-    padding-left: 1em;
+  #oes-toc-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 40px;
+    left: -1rem;
+    pointer-events: auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+    background: var(--wp--preset--color--background, #fff);
+    cursor: pointer;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
   }
 
-  .oes-toc-header4 {
-    padding-left: 2em;
+  #oes-toc-toggle.oes-toc-visible {
+    display: flex;
   }
 
-  .oes-toc-header5 {
-    padding-left: 3em;
+  #oes-toc-toggle[aria-expanded="true"] {
+    background: var(--wp--preset--color--primary, #2b6cb0);
+    color: #fff;
   }
 
-  .oes-toc-header6 {
-    padding-left: 4em;
+  #oes-toc-wrapper.oes-toc-collapsed {
+    height: 0;
+    overflow: hidden;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  #oes-toc-wrapper.oes-toc-collapsed.oes-toc-force-open {
+    position: fixed;
+    top: var(--oes-header-height);
+    background-color: var(--wp--preset--color--background, #ffffff);
+    left: 0;
+    right: 0;
+    height: auto;
+    overflow: visible;
+    z-index: 39;
+    max-width: var(--wp--style--global--content-size, 650px);
+    margin: 0 auto;
+    padding: 14px 20px;
+    border: 1px solid currentColor;
+    border-radius: 8px;
+
+    h2,
+    ul.oes-vertical-list {
+      padding-left: 2rem;
+    }
   }
 }

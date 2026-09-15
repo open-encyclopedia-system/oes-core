@@ -62,6 +62,7 @@
 - Add editor style class for Guideline admin pages
 - Add parameter for block "Title" (HTML tag, link flag)
 - Add parameter for block "Filter Alphabet" (Label for "all", include empty flag)
+- Add sticky style for block "Table of Contents"
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
