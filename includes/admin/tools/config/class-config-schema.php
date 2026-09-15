@@ -41,6 +41,14 @@ class Schema extends Config
     public string $object = '';
 
     /**
+     * The schema.prg type associated with the object.
+     * Defaults to 'Thing' if not explicitly set.
+     *
+     * @var string
+     */
+    public string $schema_type = 'Thing';
+
+    /**
      * The OES type associated with the object.
      * Defaults to 'other' if not explicitly set.
      *
@@ -58,7 +66,9 @@ class Schema extends Config
         $this->object = $_GET['object'] ?? ($_POST['object'] ?? '');
 
         if (!empty($component)) {
-            $this->oes_type = OES()->$component[$this->object]['type'] ?? 'other';
+            global $oes;
+            $this->schema_type = $oes->$component[$this->object]['schema'] ?? 'other';
+            $this->oes_type = $oes->$component[$this->object]['type'] ?? 'other';
         }
     }
 
@@ -87,6 +97,7 @@ class Schema extends Config
             'object' => $this->object,
             'component' => $this->component,
             'oes_type' => $this->oes_type,
+            'schema_type' => $this->schema_type,
         ];
     }
 

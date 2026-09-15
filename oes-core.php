@@ -11,7 +11,7 @@
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT
  * Author URI:        https://www.it.fu-berlin.de/die-fub-it/
  * Requires at least: 6.5
- * Tested up to:      6.9.1
+ * Tested up to:      7.1
  * Requires PHP:      8.1
  * Tags:              encyclopedia, open-access, digital-humanities, academic, wiki, lexicon, education
  * License:           GPLv2 or later
@@ -78,6 +78,10 @@ if (!function_exists('OES')) {
                     });
                 }
             }
+        }
+
+        if($args['hide_menu'] ?? true){
+            oes_hide_obsolete_menu_structure();
         }
 
         return $oes;
@@ -536,7 +540,7 @@ if (!class_exists('OES_Core')) :
                 }
             }
 
-            $options = \OES\Model\get_schema_config($this->post_types[$postTypeKey]['type'] ?? '');
+            $options = \OES\Model\get_schema_config($this->post_types[$postTypeKey]['schema'] ?? '');
 
             foreach ($options as $key => $parameter) {
                 $this->post_types[$postTypeKey][$key] = $oesArgs[$key] ?? (empty($parameter['multiple']) ? '' : []);

@@ -280,7 +280,7 @@ function oes_get_field_display_value(string $fieldName, $postID, array $args = [
 
         case 'date_picker':
         case 'date_time_picker':
-            return empty($value) ? '' : oes_convert_date_to_formatted_string($value);
+            return empty($value) ? '' : oes_convert_date_to_formatted_string($value, '', 2);
 
         case 'color_picker':
         case 'email':

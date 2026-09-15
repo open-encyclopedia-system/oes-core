@@ -41,8 +41,11 @@ if (!class_exists('OES_Object')) {
         /** @var string $index_display Display index connection as 'list' (default), 'table'. */
         public string $index_display = 'list';
 
-        /** @var string $schema_type The schema type. Default is 'other'. */
-        public string $schema_type = 'other';
+        /** @var string $schema The schema.org type. Default is 'Thing'. */
+        public string $schema = 'Thing';
+
+        /** @var string $type The OES type. Default is 'other'. */
+        public string $type = 'other';
 
         /** @var bool Prepare data for a block theme (full site editing theme). */
         public bool $block_theme = true;

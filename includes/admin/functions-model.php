@@ -688,20 +688,22 @@ function get_post_type_oes_args_defaults(): array
             'label' => '',
             'theme_labels' => [],
             'type' => 'other',
-            'schema_type' => 'none'
+            'schema' => 'none'
     ];
 }
 
 /**
  * Get schema depending on oes schema type.
+ * @param string $schemaTyp
  * @return array
  */
 function get_schema_config(string $schemaTyp): array
 {
     //TODO deprecated filter: 'oes/schema_options_single'
     //todo map to json-ld parameters?
+
     return match ($schemaTyp) {
-        'single-article' => [
+        'CreativeWork', 'Article', 'ScholarlyArticle' => [
                 'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
                 'creators' => ['label' => __('Contributor', 'oes'), 'multiple' => true],
                 'translators' => ['label' => __('Translators', 'oes'), 'multiple' => true],
@@ -724,7 +726,7 @@ function get_schema_config(string $schemaTyp): array
                 'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
                 'status' => ['label' => __('Publication Status', 'oes')],
         ],
-        'single-contributor' => [
+        'Person' => [
                 'vita' => ['label' => __('Vita', 'oes')],
                 'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
                 'orcid' => ['label' => __('ORCID', 'oes')],
@@ -732,12 +734,17 @@ function get_schema_config(string $schemaTyp): array
                 'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
                 'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
         ],
-        default => [
+        'Event' => [
                 'language' => ['label' => __('Language', 'oes')],
                 'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
                 'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
                 'startDate' => ['label' => __('Start Date', 'oes'), 'schema_types' => ['Event']],
                 'endDate' => ['label' => __('End Date', 'oes'), 'schema_types' => ['Event']],
+        ],
+        default => [
+                'language' => ['label' => __('Language', 'oes')],
+                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
+                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true]
         ]
     };
 }
@@ -785,7 +792,7 @@ function get_taxonomy_oes_args_defaults(): array
             'type' => 'other',
             'language_dependent' => false,
             'redirect' => 'none',
-            'schema_type' => 'none'
+            'schema' => 'none'
     ];
 }
 
@@ -909,6 +916,13 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
                     $languageDependentField['key'] .= '_' . $languageKey;
                     $languageDependentField['label'] .= ' (' . $language['label'] . ')';
                     $languageDependentField['wrapper'] = [];
+
+                    /* modify pattern */
+                    foreach($languageDependentField['pattern'] ?? [] as $key => $part){
+                        if(isset($part['language_dependent']) && $part['language_dependent']) {
+                            $languageDependentField['pattern'][$key]['field_key'] .= '_' . $languageKey;
+                        }
+                    }
 
                     /* add field */
                     $languageFieldGroup[$languageKey][$languageKey . '_' . $fieldKey] = $languageDependentField;
@@ -1467,9 +1481,9 @@ function get_versioning_tab_version(string $versionPostType = '', array $parentP
  *
  * @return array The OES object types.
  */
-function get_schema_types(): array
+function get_oes_types(): array
 {
-    $schemaTypes = [
+    $oesTypes = [
             'single-article' => __('Article', 'oes'),
             'single-contributor' => __('Contributor', 'oes'),
             'single-index' => __('Index Object', 'oes'),
@@ -1477,7 +1491,7 @@ function get_schema_types(): array
             'other' => __('-', 'oes'),
     ];
 
-    return apply_filters('oes/schema_types', $schemaTypes);
+    return apply_filters('oes/oes_types', $oesTypes);
 }
 
 /**
@@ -1497,7 +1511,8 @@ function get_schema_org_types(): array
             'Organization' => 'Organization',
             'Place' => 'Place',
             'Event' => 'Event',
-            'DefinedTerm' => 'DefinedTerm'
+            'DefinedTerm' => 'DefinedTerm',
+            'Thing' => 'Thing'
     ];
 
     return apply_filters('oes/schema_org_types', $schemaTypes);
@@ -1694,8 +1709,8 @@ function get_schema_links(): array
     global $oes;
     $schemaLinks = [];
 
-    $schemaTypes = get_schema_types();
-    foreach ($schemaTypes as $schemaType => $schemaLabel) {
+    $oesTypes = get_oes_types();
+    foreach ($oesTypes as $schemaType => $schemaLabel) {
         $schemaLinks[$schemaType]['label'] = $schemaLabel;
     }
 
@@ -1748,7 +1763,7 @@ function get_publisher(): array
 {
     $option = get_option('oes_publisher');
 
-    if(!is_array($option)) {
+    if (!is_array($option)) {
         return [];
     }
 
@@ -1758,13 +1773,13 @@ function get_publisher(): array
 function get_post_type_schema_type(string $postType): string
 {
     global $oes;
-    return $oes->post_types[$postType]['schema_type'] ?? '';
+    return $oes->post_types[$postType]['schema'] ?? '';
 }
 
 function get_taxonomy_schema_type(string $taxonomy): string
 {
     global $oes;
-    return $oes->taxonomies[$taxonomy]['schema_type'] ?? '';
+    return $oes->taxonomies[$taxonomy]['schema'] ?? '';
 }
 
 function get_all_schema_type(): array
@@ -1772,11 +1787,11 @@ function get_all_schema_type(): array
     global $oes;
 
     $mappedTypes = array_map(function ($postTypeData) {
-        return normalize_schema_type($postTypeData['schema_type'] ?? '');
+        return normalize_schema_type($postTypeData['schema'] ?? '');
     }, $oes->post_types ?? []);
 
     foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
-        $mappedTypes[$taxonomy] = normalize_schema_type($taxonomyData['schema_type'] ?? '');
+        $mappedTypes[$taxonomy] = normalize_schema_type($taxonomyData['schema'] ?? '');
     }
 
     return $mappedTypes;

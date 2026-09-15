@@ -661,7 +661,7 @@ if (!class_exists('\OES\Rest\Post')) {
                 return;
             }
 
-            $this->data['schema'] = $postTypeData['schema_type'] ?? null;
+            $this->data['schema'] = $postTypeData['schema'] ?? null;
 
             foreach([
                 'subtitle',

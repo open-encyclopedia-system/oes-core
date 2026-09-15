@@ -225,7 +225,7 @@ function oes_page_oes_settings_schema_help_tabs($screen): void
             '</p>',
     ]);
     $screen->add_help_tab([
-        'id' => 'oes_schema_types',
+        'id' => 'oes_types',
         'title' => 'Types',
         'content' => '<p>' .
             __('The OES schema is divided into different object types: <b>Articles</b> are post objects with ' .

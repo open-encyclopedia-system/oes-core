@@ -40,6 +40,9 @@
 - Introduce filter `oes/lod_render_shortcode` to modify lod shortcode while e.g. exporting
 - Introduce new parameters for block "Display Title": set tags and display as link option
 - Introduce context parameters for OES Blocks (pass a certain post ID)
+- Introduce parameter "hide_menu" (can replace oes_hide_obsolete_menu_structure();)
+- Introduce "schema_type" and "oes_type" for OES objects (replace "type")
+- Introduce "Template Type" in settings
 
 ### Improvements
 - Improve internal page generation

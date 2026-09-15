@@ -32,11 +32,8 @@ class Schema_OES extends Schema
         $objects = $oes->{$this->component} ?? [];
         $configs = [];
 
-        if($this->object == 'global'){
+        if ($this->object == 'global') {
             $this->prepare_global_options($configs);
-        }
-        else {
-            $this->prepare_type_options($objects, $configs);
         }
 
         if ($this->component == 'post_types') {
@@ -45,9 +42,12 @@ class Schema_OES extends Schema
 
         $this->add_config_rows($configs);
 
-        $this->add_table_header('Enable Integration Tabs', 'oes');
+        if ($this->object != 'global') {
 
-        $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
+            $this->add_table_header('Enable Integration Tabs', 'oes');
+
+            $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
+        }
     }
 
     protected function prepare_global_options(array &$configs): void
@@ -56,7 +56,7 @@ class Schema_OES extends Schema
 
         $configs['publisher_type'] = [
             'option_key' => ['oes_publisher', 'type'],
-            'label' => __('Type (schema.org)', 'oes'),
+            'label' => __('Schema Type', 'oes'),
             'type' => 'select',
             'options' => ['options' => \OES\Model\get_schema_org_types()],
             'value' => $value['type'] ?? 'Organization'
@@ -81,23 +81,6 @@ class Schema_OES extends Schema
             'label' => __('Description', 'oes'),
             'type' => 'text',
             'value' => $value['description'] ?? '',
-        ];
-    }
-
-    protected function prepare_type_options(array $objects, array &$configs) :void
-    {
-        $configs['type'] = [
-            'label' => __('OES Type', 'oes'),
-            'type' => 'select',
-            'options' => ['options' => \OES\Model\get_schema_types()],
-            'value' => $objects[$this->object]['type'] ?? 'index'
-        ];
-
-        $configs['schema_type'] = [
-            'label' => __('schema.org Type', 'oes'),
-            'type' => 'select',
-            'options' => ['options' => \OES\Model\get_schema_org_types()],
-            'value' => $objects[$this->object]['schema_type'] ?? 'index'
         ];
     }
 
@@ -131,7 +114,8 @@ class Schema_OES extends Schema
         }
     }
 
-    protected function prepare_integration_options(array $objects): array {
+    protected function prepare_integration_options(array $objects): array
+    {
         $configs['lod'] = [
             'label' => __('Linked Open Data', 'oes'),
             'type' => 'checkbox',
@@ -158,13 +142,16 @@ class Schema_OES extends Schema
         return $this->component . '[' . $this->object . '][oes_args][' . $key . ']';
     }
 
-    protected function add_config_rows(array $configs, string $filterKey = ''): void{
+    protected function add_config_rows(array $configs, string $filterKey = ''): void
+    {
 
         $configs = apply_filters('oes/schema_general' . (empty($filterKey) ? '' : ('_' . $filterKey)),
             $configs,
             $this->object,
             $this->oes_type,
-            $this->component);
+            $this->component,
+            $this->schema_type,
+        );
 
         foreach ($configs as $key => $option) {
 
@@ -194,15 +181,13 @@ class Schema_OES extends Schema
         foreach ($_POST['oes_option'] ?? [] as $option => $value) {
             if ($value === 'hidden') {
                 $value = false;
-            }
-            elseif ($value === 'on') {
+            } elseif ($value === 'on') {
                 $value = true;
             }
 
             if (!oes_option_exists($option)) {
                 add_option($option, $value);
-            }
-            else {
+            } else {
                 update_option($option, $value);
             }
         }

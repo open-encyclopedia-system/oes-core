@@ -44,6 +44,16 @@ class Schema_Display extends Schema
 
         $keyPrefix = 'post_types[' . $this->object . '][oes_args]';
 
+        $this->add_table_row(
+            [
+                'title' => __('Template Type', 'oes'),
+                'key' => $keyPrefix . '[type]',
+                'value' => $postTypeData['type'] ?? 'index',
+                'type' => 'select',
+                'args' => ['options' => \OES\Model\get_oes_types()]
+            ]
+        );
+
         $this->add_table_header(__('Single Options', 'oes'));
 
         $this->render_select_row(

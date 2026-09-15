@@ -42,6 +42,10 @@ class Schema_Mapping extends Schema
         $postTypeData = $oes->post_types[$this->object] ?? [];
         $keyPrefix = "post_types[{$this->object}][oes_args]";
 
+        $schemaType = $postTypeData['schema'] ?? null;
+
+        $this->set_schema_type($keyPrefix, $schemaType);
+
         $selects = oes_get_object_select_options($this->object);
         $titleOptions = $selects['title'] ?? [];
         $options = $selects['all'] ?? [];
@@ -53,8 +57,7 @@ class Schema_Mapping extends Schema
             $postTypeData['display_titles']['title_display'] ?? 'wp-title',
             $titleOptions);
 
-        $schemaType = $postTypeData['schema_type'] ?? null;
-        foreach (\OES\Model\get_schema_config($this->oes_type) as $paramKey => $param) {
+        foreach (\OES\Model\get_schema_config($this->schema_type) as $paramKey => $param) {
 
             if(is_array($param['schema_types'] ?? null) && !in_array($schemaType, $param['schema_types'])) {
                 continue;
@@ -62,6 +65,19 @@ class Schema_Mapping extends Schema
 
             $this->render_schema_param($paramKey, $param, $postTypeData, $keyPrefix, $selects, $fieldOptions, $options);
         }
+    }
+
+    protected function set_schema_type(string $keyPrefix, string $schemaType): void
+    {
+        $this->add_table_row(
+            [
+                'title' => __('Schema Type', 'oes'),
+                'key' => $keyPrefix . '[schema]',
+                'value' => $schemaType ?: 'Thing',
+                'type' => 'select',
+                'args' => ['options' => \OES\Model\get_schema_org_types()]
+            ]
+        );
     }
 
     /**

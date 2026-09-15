@@ -103,13 +103,15 @@ if (!class_exists('OES_Post')) {
 
 
         /**
-         * Set the schema type for the object.
+         * Set the OES type for the object.
          *
          * @return void
          */
         public function set_schema_type(): void
         {
-            $this->schema_type = OES()->post_types[$this->post_type]['type'] ?? 'other';
+            global $oes;
+            $this->type = $oes->post_types[$this->post_type]['type'] ?? 'other';
+            $this->schema = $oes->post_types[$this->post_type]['schema'] ?? 'Thing';
         }
 
 
@@ -354,7 +356,7 @@ if (!class_exists('OES_Post')) {
             ];
 
             /* differentiate schema type */
-            return match ($this->schema_type) {
+            return match ($this->type) {
                 'single-article' => $this->prepare_html_main_classic_article($args, $contentArray),
                 'single-index' => $this->prepare_html_main_classic_index($args, $contentArray),
                 'single-contributor' => $this->prepare_html_main_classic_contributor($args, $contentArray),
@@ -1563,41 +1565,8 @@ if (!class_exists('OES_Post')) {
                 /* check if value is empty and is to be skipped if empty */
                 if (empty($field['value']) || (empty($field['value-display']))) return '';
 
-
-                /* modify list values @oesDevelopment */
-                $replaceValue = [];
-                if ($loop === 'xml' && is_array($field['value']))
-                    foreach ($field['value'] as $singleValue)
-                        if ($singleValue instanceof WP_Post) {
-                            $replaceValue[$singleValue->ID] = [
-                                'title' => oes_get_display_title($singleValue),
-                                'permalink' => get_permalink($singleValue->ID),
-                                'type' => $singleValue->post_type
-                            ];
-                        } elseif ($singleValue instanceof WP_Term) {
-                            $replaceValue[$singleValue->term_id] = [
-                                'title' => oes_get_display_title($singleValue),
-                                'permalink' => get_term_link($singleValue->term_id),
-                                'type' => $singleValue->taxonomy
-                            ];
-                        } elseif (is_int($singleValue))
-                            if ($singleValuePost = get_post($singleValue)) {
-                                $replaceValue[$singleValuePost->ID] = [
-                                    'title' => oes_get_display_title($singleValuePost),
-                                    'permalink' => get_permalink($singleValuePost->ID),
-                                    'type' => $singleValuePost->post_type
-                                ];
-                            } elseif ($singleValueTerm = get_term($singleValue)) {
-                                $replaceValue[$singleValueTerm->term_id] = [
-                                    'title' => oes_get_display_title($singleValueTerm),
-                                    'permalink' => get_term_link($singleValueTerm->term_id),
-                                    'type' => $singleValueTerm->taxonomy
-                                ];
-                            }
-
                 /* prepare value, use 'value-display' if set, else use 'value' */
-                if (empty($replaceValue))
-                    $replaceValue = (is_string($field['value-display'])) ?
+                $replaceValue = (is_string($field['value-display'])) ?
                         $field['value-display'] :
                         (is_string($field['value']) ? 'Value Display missing' : $field['value']);
 
