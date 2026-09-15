@@ -378,6 +378,8 @@ function blocks(): void
     include_once __DIR__ . '/blocks/functions-blocks.php';
     add_filter('block_categories_all', '\OES\Block\register_categories');
     add_action('enqueue_block_assets', '\OES\Block\assets', 1);
+    add_filter('render_block_context', '\OES\Block\render_block_context', 10, 2);
+    add_filter('render_block', '\OES\Block\render_block', 10, 2);
 }
 
 /**

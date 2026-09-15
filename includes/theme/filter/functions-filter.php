@@ -79,7 +79,7 @@ function oes_alphabet_filter_html($args): string
     if ($oes_archive['filter']['alphabet'] ?? false) {
         return '<ul class="' . ($args['style'] ?? 'is-style-oes-default') . ' oes-alphabet-list oes-horizontal-list">' .
             '<li>' .
-            implode('</li><li>', oes_archive_get_alphabet_filter($oes_archive['characters'])) .
+            implode('</li><li>', oes_archive_get_alphabet_filter($oes_archive['characters'], $args)) .
             '</li>' .
             '</ul>';
     }

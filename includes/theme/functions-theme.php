@@ -457,3 +457,33 @@ function oes_set_language_cookie(): void
             }
     }
 }
+
+/**
+ * @oesDevelopment Add more parameter, convert into block
+ *
+ * Display breadcrumbs for post.
+ *
+ * @param array $args
+ * @return string
+ */
+function oes_post_breadcrumbs(array $args = []): string {
+
+    $breadcrumbs[] = oes_get_page_title(['is_link' => ($args['isLink'] ?? true)]);
+
+    $taxonomies = $args['taxonomy'] ?? '';
+    if(!empty($taxonomies)){
+
+        global $oes_post;
+
+        $categories = oes_get_terms($oes_post->parent_ID, explode(',', $taxonomies));
+
+        foreach($categories as $category){
+            foreach($category as $term){
+                $breadcrumbs[] = $term;
+            }
+        }
+    }
+
+    $separator = $args['separator'] ?? '  ›  ';
+    return implode($separator, $breadcrumbs);
+}

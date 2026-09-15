@@ -4,6 +4,8 @@ namespace OES\Field;
 
 /**
  * Render a field as HTML.
+ *
+ * @oesDevelopment language dependency, fallback options
  */
 function render(array $args): string
 {
@@ -13,11 +15,39 @@ function render(array $args): string
         return '';
     }
 
-    $field = $args['field'];
+    $values = [];
+    $fields = explode(';', $args['field']);
+    $excludeValue = $args['exclude_value'] ?? null;
 
-    $value = empty($oes_post)
-        ? get_term_field_value($field, $oes_term)
-        : get_post_field_value($field, $oes_post, $args);
+    foreach ($fields as $field) {
+
+        $fieldValue = null;
+
+        $fieldType = acf_get_field($field)['type'] ?? null;
+
+        if($fieldType == 'date_picker') {
+            $fieldValue = empty($oes_post)
+                ? get_term_field_value($field . '_label', $oes_term)
+                : get_post_field_value($field . '_label', $oes_post, $args);
+        }
+
+        if(empty($fieldValue)) {
+            $fieldValue = empty($oes_post)
+                ? get_term_field_value($field, $oes_term)
+                : get_post_field_value($field, $oes_post, $args);
+        }
+
+        if(!empty($fieldValue) && $fieldValue != $excludeValue) {
+            $values[] = $fieldValue;
+        }
+    }
+
+    if(empty($values)){
+        return '';
+    }
+
+    $separator = $args['separator'] ?? ' ';
+    $value = implode($separator, $values);
 
     if (empty($value)) {
         return '';

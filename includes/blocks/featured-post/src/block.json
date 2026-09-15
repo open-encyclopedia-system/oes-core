@@ -5,39 +5,26 @@
   "version": "0.1.0",
   "title": "Featured Post",
   "category": "widgets",
-  "keywords": [
-	"preview",
-	"excerpt"
-  ],
+  "keywords": ["preview", "excerpt"],
   "description": "Display a featured post.",
   "attributes": {
-	"post_type": {
-	  "type": "string"
-	},
-	"oes_post": {
-	  "type": "string"
-	}
+    "oes_post_type": { "type": "string" },
+    "oes_post_ID": { "type": "number" }
+  },
+  "providesContext": {
+    "postType": "oes_post_type",
+    "postID": "oes_post_ID"
   },
   "supports": {
-    "spacing": {
-      "margin": true,
-      "padding": true,
-      "blockGap": true
-    },
-    "typography": {
-      "fontSize": true,
-      "lineHeight": true
-    },
+    "spacing": { "margin": true, "padding": true, "blockGap": true },
+    "typography": { "fontSize": true, "lineHeight": true },
     "align": true,
     "anchor": true,
     "alignContent": true,
-    "color": {
-      "text": true,
-      "background": true,
-      "link": true
-    },
+    "color": { "text": true, "background": true, "link": true },
     "alignText": true,
-    "fullHeight": true
+    "fullHeight": true,
+    "html": false
   },
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",

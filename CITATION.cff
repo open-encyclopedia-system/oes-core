@@ -12,6 +12,6 @@ type: software
 date-released: "2026-06"
 version: 3.0.0
 repository-code: "https://github.com/open-encyclopedia-system/oes-core"
-license: "GPL-3.0"
+license: "GPL-2.0"
 url: "https://www.open-encyclopedia-system.org/"
 cff-version: 1.2.0

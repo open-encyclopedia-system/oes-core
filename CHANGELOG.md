@@ -7,6 +7,8 @@
 - Rename OES_LIVEMODE → OES_LIVE_MODE
 - Rename Project → Application
 - Rename schema properties (Excerpt → Abstract, Literature → Bibliography, Terms → Subjects)
+- Rename get_schema_types() → get_oes_types()
+- Rename filter 'oes/schema_types' → 'oes/oes_types'
 
 ### Features / New Components
 - Introduce new rights model
@@ -21,9 +23,13 @@
 - Introduce new block: "Context Link"
 - Introduce new block: "Archive Toggle All"
 - Introduce new block: "Field" (uses shortcode `oes_field`)
+- Introduce new block: "Abstract"
+- Introduce new block: "Post Link"
+- Introduce new block: "Featured Post"
 - Introduce update function for OES database tables
 - Introduce site health feature
 - Introduce new shortcode: audit field value
+- Introduce new shortcode: breadcrumgs
 - Introduce REST API export
 - Introduce filter `oes/template_redirect_index_additional_objects` for object filtering on index pages
 - Introduce filter block styles "Details" and "Classic"
@@ -32,6 +38,8 @@
 - Introduce general schema options: publisher
 - Introduce schema.org types for OES schema
 - Introduce filter `oes/lod_render_shortcode` to modify lod shortcode while e.g. exporting
+- Introduce new parameters for block "Display Title": set tags and display as link option
+- Introduce context parameters for OES Blocks (pass a certain post ID)
 
 ### Improvements
 - Improve internal page generation
@@ -49,6 +57,8 @@
 - Redesign styling of oes-filter-item-count
 - Add options for "author byline" block to include ORCID information and skip sorting
 - Add editor style class for Guideline admin pages
+- Add parameter for block "Title" (HTML tag, link flag)
+- Add parameter for block "Filter Alphabet" (Label for "all", include empty flag)
 
 ### Removals / Cleanups
 - Remove “Show OES Objects” setting (admin-only feature)
@@ -59,6 +69,7 @@
 - Remove parameters 3 and 5 from filter 'oes/api_gnd_display_entry'
 - Remove unused function 'copy_post_meta'
 - Remove legacy option 'oes_admin-hide_version-tab'
+- Remove xml-Processing, moved to export formats
 
 ### Fix
 - fix warning on custom post archive page

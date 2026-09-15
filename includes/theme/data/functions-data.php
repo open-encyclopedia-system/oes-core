@@ -25,14 +25,22 @@ function oes_prepare_data(): void
  * Set post data for OES_Post object. (Prepare rendered content to derive table of content etc).
  *
  * @param int $postID The post id. Default is current post ID.
+ * @param string $postType The post type.
  * @return void
  */
-function oes_set_post_data(int $postID = 0): void
+function oes_set_post_data(int $postID = 0, string $postType = ''): void
 {
-    global $oes_post, $post_type;
-    if (!$postID) $postID = get_the_ID();
-    $oes_post = class_exists($post_type) ?
-        new $post_type($postID) :
+    global $oes_post;
+
+    $postID = $postID ?: (int) get_the_ID();
+    if (!$postID) {
+        return;
+    }
+
+    $consideredPostType = $postType ?: (get_post_type($postID) ?: '');
+
+    $oes_post = class_exists($consideredPostType) ?
+        new $consideredPostType($postID) :
         new OES_Post($postID);
 }
 

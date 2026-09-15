@@ -10,13 +10,15 @@
 		"list",
 		"archive"
 	],
-	"styles": [
-		{
-			"name": "oes-default",
-			"label": "Default",
-			"isDefault": true
+	"attributes": {
+		"includeEmpty": {
+			"type": "boolean",
+			"default": true
+		},
+		"labels": {
+			"type": "object"
 		}
-	],
+	},
 	"supports": {
 		"spacing": {
 			"margin": true,

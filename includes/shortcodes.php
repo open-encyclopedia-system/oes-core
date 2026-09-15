@@ -11,6 +11,7 @@ add_shortcode('oes_print_button', 'oes_print_button_html');
 add_shortcode('oes_post_terms', 'oes_post_terms_html');
 add_shortcode('oes_field', 'oes_field_html');
 add_shortcode('oes_post_method', 'oes_post_method_html');
+add_shortcode('oes_breadcrumbs', 'oes_post_breadcrumbs');
 
 // Label
 add_shortcode('oes_theme_label', 'oes_theme_label_html');

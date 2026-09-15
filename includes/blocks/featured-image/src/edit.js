@@ -5,7 +5,7 @@ import {getLanguageControls, getDisplayValueFromArray} from '../../blocks';
 
 export default function Edit({attributes, setAttributes, isSelected}) {
 
-    const {detail, labels} = attributes;
+    const {detail, labels, panel} = attributes;
 
     if (isSelected) {
         return (
@@ -23,6 +23,13 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                     />
                     <div className="oes-block-subheader">{__('Header', 'oes')}</div>
                     {getLanguageControls(labels, setAttributes)}
+                    <CheckboxControl
+                        label={__('Display as panel', 'oes')}
+                        checked={panel}
+                        onChange={(val) => setAttributes({
+                            panel: val
+                        })}
+                    />
                 </div>
             </div>
         );
@@ -33,25 +40,37 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                     (<details className="oes-post-terms-container wp-block-details" open>
                         <summary><span>{getDisplayValueFromArray(labels, '')}</span>
                         </summary>
-                        <figure className="oes-panel-figure ">
-                            <div className="oes-modal-toggle oes-modal-toggle">
-                                <div className="oes-modal-toggle-container">
-                                    <img src="" alt="The featured image"/>
-                                </div>
-                            </div>
-                            <figcaption>Caption</figcaption>
-                        </figure>
+                        {
+                            panel ?
+                                (<figure className="oes-panel-figure ">
+                                    <div className="oes-modal-toggle oes-modal-toggle">
+                                        <div className="oes-modal-toggle-container">
+                                            <img src="" alt="The featured image"/>
+                                        </div>
+                                    </div>
+                                    <figcaption>Caption</figcaption>
+                                </figure>):
+                                (<figure className="wp-block-image size-full">
+                                            <img src="" alt="The featured image"/>
+                                </figure>)
+                        }
                     </details>) :
                     (<div className="oes-post-terms-container">
                         <h5 className="oes-content-table-header">{getDisplayValueFromArray(labels, '')}</h5>
-                        <figure className="oes-panel-figure ">
-                            <div className="oes-modal-toggle oes-modal-toggle">
-                                <div className="oes-modal-toggle-container">
+                        {
+                            panel ?
+                                (<figure className="oes-panel-figure ">
+                                    <div className="oes-modal-toggle oes-modal-toggle">
+                                        <div className="oes-modal-toggle-container">
+                                            <img src="" alt="The featured image"/>
+                                        </div>
+                                    </div>
+                                    <figcaption>Caption</figcaption>
+                                </figure>):
+                                (<figure className="wp-block-image size-full">
                                     <img src="" alt="The featured image"/>
-                                </div>
-                            </div>
-                            <figcaption>Caption</figcaption>
-                        </figure>
+                                </figure>)
+                        }
                     </div>)}
             </div>
         );
