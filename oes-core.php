@@ -542,8 +542,10 @@ if (!class_exists('OES_Core')) :
 
             $options = \OES\Model\get_schema_config($this->post_types[$postTypeKey]['schema'] ?? '');
 
-            foreach ($options as $key => $parameter) {
-                $this->post_types[$postTypeKey][$key] = $oesArgs[$key] ?? (empty($parameter['multiple']) ? '' : []);
+            foreach($options as $group) {
+                foreach ($group as $key => $parameter) {
+                    $this->post_types[$postTypeKey][$key] = $oesArgs[$key] ?? (empty($parameter['multiple']) ? '' : []);
+                }
             }
 
             $themeLabels = array_merge([], $oesArgs['theme_labels'] ?? []);

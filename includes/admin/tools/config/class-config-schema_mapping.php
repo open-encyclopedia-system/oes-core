@@ -51,19 +51,30 @@ class Schema_Mapping extends Schema
         $options = $selects['all'] ?? [];
         $fieldOptions = array_merge($selects['fields'] ?? [], $selects['parent'] ?? []);
 
-        $this->render_select_row(
-            __('Title', 'oes'),
-            $keyPrefix . '[display_titles][title_display]',
-            $postTypeData['display_titles']['title_display'] ?? 'wp-title',
-            $titleOptions);
+        $paramGroup = \OES\Model\get_schema_config($this->schema_type);
+        $groupLabels = \OES\Model\get_schema_config_groups();
 
-        foreach (\OES\Model\get_schema_config($this->schema_type) as $paramKey => $param) {
+        foreach($paramGroup as $group => $params){
 
-            if(is_array($param['schema_types'] ?? null) && !in_array($schemaType, $param['schema_types'])) {
-                continue;
+            $this->add_table_header($groupLabels[$group] ?? $group, 'tag');
+
+            foreach($params as $paramKey => $param){
+
+                if(is_array($param['schema_types'] ?? null) && !in_array($schemaType, $param['schema_types'])) {
+                    continue;
+                }
+
+                if($paramKey == 'title'){
+                    $this->render_select_row(
+                        __('Title', 'oes'),
+                        $keyPrefix . '[display_titles][title_display]',
+                        $postTypeData['display_titles']['title_display'] ?? 'wp-title',
+                        $titleOptions);
+                }
+                else {
+                    $this->render_schema_param($paramKey, $param, $postTypeData, $keyPrefix, $selects, $fieldOptions, $options);
+                }
             }
-
-            $this->render_schema_param($paramKey, $param, $postTypeData, $keyPrefix, $selects, $fieldOptions, $options);
         }
     }
 
@@ -71,7 +82,7 @@ class Schema_Mapping extends Schema
     {
         $this->add_table_row(
             [
-                'title' => __('Schema Type', 'oes'),
+                'title' => __('Format', 'oes'),
                 'key' => $keyPrefix . '[schema]',
                 'value' => $schemaType ?: 'Thing',
                 'type' => 'select',

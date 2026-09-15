@@ -73,7 +73,7 @@ class Theme_Search extends Config
             );
         }
 
-        $this->add_table_header(__('Search In', 'oes'), 'tag', ['p' => __('TODO search in here', 'oes')]);
+        $this->add_table_header(__('Search In', 'oes'), 'tag');
 
         $this->add_table_row(
             [

@@ -17,6 +17,18 @@ if (class_exists('Schema_Display')) exit;
 class Schema_Display extends Schema
 {
 
+    protected bool $public = true;
+
+    /** @inheritdoc */
+    function empty(): string
+    {
+        if($this->public){
+            return parent::empty();
+        }
+
+        return __('Post type is not configured to be displayed publicly.', 'oes');
+    }
+
     /** @inheritdoc */
     function set_table_data_for_display(): void
     {
@@ -34,6 +46,11 @@ class Schema_Display extends Schema
      */
     function set_post_type(): void
     {
+        if(!is_post_publicly_viewable($this->object)){
+            $this->public = false;
+            return;
+        }
+
         global $oes;
         $postTypeData = $oes->post_types[$this->object] ?? [];
 
@@ -46,7 +63,7 @@ class Schema_Display extends Schema
 
         $this->add_table_row(
             [
-                'title' => __('Template Type', 'oes'),
+                'title' => __('Template', 'oes'),
                 'key' => $keyPrefix . '[type]',
                 'value' => $postTypeData['type'] ?? 'index',
                 'type' => 'select',
@@ -54,7 +71,7 @@ class Schema_Display extends Schema
             ]
         );
 
-        $this->add_table_header(__('Single Options', 'oes'));
+        $this->add_table_header(__('Single', 'oes'), 'tag');
 
         $this->render_select_row(
             __('Metadata', 'oes'),
@@ -63,7 +80,7 @@ class Schema_Display extends Schema
             $options,
             true);
 
-        $this->add_table_header(__('Archive Options', 'oes'));
+        $this->add_table_header(__('Archive', 'oes'), 'tag');
 
         $this->render_select_row(
             __('Title for list display', 'oes'),

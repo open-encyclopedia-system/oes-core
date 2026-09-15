@@ -704,51 +704,101 @@ function get_schema_config(string $schemaTyp): array
 
     return match ($schemaTyp) {
         'CreativeWork', 'Article', 'ScholarlyArticle' => [
-                'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
-                'creators' => ['label' => __('Contributor', 'oes'), 'multiple' => true],
-                'translators' => ['label' => __('Translators', 'oes'), 'multiple' => true],
-                'editors' => ['label' => __('Editors', 'oes'), 'multiple' => true],
-                'subtitle' => ['label' => __('Subtitle', 'oes'), 'pattern' => true],
-                'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
-                'excerpt' => ['label' => __('Abstract', 'oes')],
-                'featured_image' => ['label' => __('Featured Image', 'oes')],
-                'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
-                'doi' => ['label' => __('DOI', 'oes')],
-                'pub_date' => ['label' => __('Publication Date', 'oes')],
-                'edit_date' => ['label' => __('Edit Date', 'oes')],
-                'language' => ['label' => __('Language', 'oes')],
-                'version_field' => ['label' => __('Version', 'oes')],
-                'literature' => ['label' => __('Bibliography', 'oes'), 'multiple' => true],
-                'terms' => ['label' => __('Subjects', 'oes'), 'multiple' => true, 'options' => 'taxonomies'],
-                'relations' => ['label' => __('Relations', 'oes'), 'multiple' => true],
-                'related_content' => ['label' => __('Related Content', 'oes'), 'multiple' => true],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
-                'status' => ['label' => __('Publication Status', 'oes')],
+                'core' => [
+                        'title' => ['label' => __('Title', 'oes')],
+                        'subtitle' => ['label' => __('Subtitle', 'oes')],
+                        'version_field' => ['label' => __('Version', 'oes')],
+                        'citation' => ['label' => __('Citation', 'oes'), 'pattern' => true],
+                        'status' => ['label' => __('Publication Status', 'oes')]
+                ],
+                'people' => [
+                        'authors' => ['label' => __('Authors', 'oes'), 'multiple' => true],
+                        'creators' => ['label' => __('Contributor', 'oes'), 'multiple' => true],
+                        'translators' => ['label' => __('Translators', 'oes'), 'multiple' => true],
+                        'editors' => ['label' => __('Editors', 'oes'), 'multiple' => true],
+                ],
+                'descriptive' => [
+
+                        'excerpt' => ['label' => __('Abstract', 'oes')],
+                        'featured_image' => ['label' => __('Featured Image', 'oes')],
+                        'licence' => ['label' => __('Licence', 'oes'), 'options' => 'options'],
+                        'language' => ['label' => __('Language', 'oes')],
+                        'terms' => ['label' => __('Subjects', 'oes'), 'multiple' => true, 'options' => 'taxonomies']
+                ],
+                'dates' => [
+                        'pub_date' => ['label' => __('Publication Date', 'oes')],
+                        'edit_date' => ['label' => __('Edit Date', 'oes')]
+                ],
+                'relations' => [
+                        'literature' => ['label' => __('Cited Works', 'oes'), 'multiple' => true],
+                        'relations' => ['label' => __('Referenced Entities', 'oes'), 'multiple' => true],
+                        'related_content' => ['label' => __('Related Content', 'oes'), 'multiple' => true]
+                ],
+                'export' => [
+                        'doi' => ['label' => __('DOI', 'oes')],
+                        'external' => ['label' => __('External Links', 'oes'), 'multiple' => true],
+                        'lod' => ['label' => __('External Identifier (LoD)', 'oes'), 'multiple' => true]
+                ]
         ],
         'Person' => [
-                'vita' => ['label' => __('Vita', 'oes')],
-                'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true],
-                'orcid' => ['label' => __('ORCID', 'oes')],
-                'language' => ['label' => __('Language', 'oes')],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
+                'core' => [
+                        'title' => ['label' => __('Title', 'oes')],
+                ],
+                'descriptive' => [
+                        'vita' => ['label' => __('Vita', 'oes')],
+                        'language' => ['label' => __('Language', 'oes')],
+                ],
+                'relations' => [
+                        'publications' => ['label' => __('Publications', 'oes'), 'multiple' => true]
+                ],
+                'export' => [
+                        'external' => ['label' => __('External Links', 'oes'), 'multiple' => true],
+                        'lod' => ['label' => __('External Identifier (LoD)', 'oes'), 'multiple' => true],
+                        'orcid' => ['label' => __('ORCID', 'oes')],
+                ]
         ],
         'Event' => [
-                'language' => ['label' => __('Language', 'oes')],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true],
-                'startDate' => ['label' => __('Start Date', 'oes'), 'schema_types' => ['Event']],
-                'endDate' => ['label' => __('End Date', 'oes'), 'schema_types' => ['Event']],
+                'core' => [
+                        'title' => ['label' => __('Title', 'oes')],
+                ],
+                'descriptive' => [
+                        'language' => ['label' => __('Language', 'oes')],
+                ],
+                'dates' => [
+                        'startDate' => ['label' => __('Start Date', 'oes'), 'schema_types' => ['Event']],
+                        'endDate' => ['label' => __('End Date', 'oes'), 'schema_types' => ['Event']]
+                ],
+                'export' => [
+                        'external' => ['label' => __('External Links', 'oes'), 'multiple' => true],
+                        'lod' => ['label' => __('External Identifier (LoD)', 'oes'), 'multiple' => true]
+                ]
         ],
         default => [
-                'language' => ['label' => __('Language', 'oes')],
-                'external' => ['label' => __('Fields with external links', 'oes'), 'multiple' => true],
-                'lod' => ['label' => __('LoD Fields', 'oes'), 'multiple' => true]
+                'core' => [
+                        'title' => ['label' => __('Title', 'oes')],
+                ],
+                'descriptive' => [
+                        'language' => ['label' => __('Language', 'oes')],
+                ],
+                'export' => [
+                        'external' => ['label' => __('External Links', 'oes'), 'multiple' => true],
+                        'lod' => ['label' => __('External Identifier (LoD)', 'oes'), 'multiple' => true]
+                ]
         ]
     };
 }
 
+function get_schema_config_groups(): array
+{
+    return [
+            'core' => __('Core', 'oes'),
+            'people' => __('People', 'oes'),
+            'descriptive' => __('Descriptive', 'oes'),
+            'dates' => __('Dates', 'oes'),
+            'relations' => __('Relations', 'oes'),
+            'export' => __('Export & LOD', 'oes')
+    ];
+}
 
 /**
  * Prepare OES arguments for taxonomy.
@@ -918,8 +968,8 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
                     $languageDependentField['wrapper'] = [];
 
                     /* modify pattern */
-                    foreach($languageDependentField['pattern'] ?? [] as $key => $part){
-                        if(isset($part['language_dependent']) && $part['language_dependent']) {
+                    foreach ($languageDependentField['pattern'] ?? [] as $key => $part) {
+                        if (isset($part['language_dependent']) && $part['language_dependent']) {
                             $languageDependentField['pattern'][$key]['field_key'] .= '_' . $languageKey;
                         }
                     }
@@ -1487,7 +1537,6 @@ function get_oes_types(): array
             'single-article' => __('Article', 'oes'),
             'single-contributor' => __('Contributor', 'oes'),
             'single-index' => __('Index Object', 'oes'),
-            'single-internal' => __('Internal Object', 'oes'),
             'other' => __('-', 'oes'),
     ];
 
@@ -1707,16 +1756,16 @@ function set_default_options(): void
 function get_schema_links(): array
 {
     global $oes;
-    $schemaLinks = [];
-
-    $oesTypes = get_oes_types();
-    foreach ($oesTypes as $schemaType => $schemaLabel) {
-        $schemaLinks[$schemaType]['label'] = $schemaLabel;
-    }
+    $schemaLinks = [
+            'global' => [
+            'label' => __('Global', 'oes'),
+            'url' => 'admin.php?page=oes_settings_schema&tab=schema&type=oes&component=global&object=global',
+            'key' => 'global',
+    ]];
 
     foreach (['post_types', 'taxonomies'] as $component) {
         foreach ($oes->$component as $objectKey => $objectData) {
-            $type = $objectData['type'] ?? 'index';
+            $type = $objectData['schema'] ?? 'none';
             $objectLabel = $objectData['label'] ?? $objectKey;
 
             $url = 'admin.php?page=oes_settings_schema&tab=schema&type=oes' .
@@ -1725,35 +1774,18 @@ function get_schema_links(): array
 
             $uniqueKey = $objectLabel . $objectKey;
 
-            $schemaLinks[$type]['data'][$uniqueKey] = [
+            $schemaLinks[$uniqueKey] = [
                     'key' => $objectKey,
                     'label' => $objectLabel,
                     'component' => $component,
-                    'url' => $url
+                    'url' => $url,
+                'type' => $objectData['type'] ?? 'none',
+                'schema' => $type
             ];
         }
     }
 
-    $sanitizedSchemaLinks = ['global' => [
-            'data' => [[
-                    'label' => __('Global', 'oes'),
-                    'url' => 'admin.php?page=oes_settings_schema&tab=schema&type=oes&component=global&object=global',
-                    'key' => 'global',
-            ]]
-    ]];
-    foreach ($schemaLinks as $schemaType => $schemaData) {
-        if (!empty($schemaData['data'])) {
-            $schemaDataSorted = $schemaData['data'];
-            ksort($schemaDataSorted);
-
-            $sanitizedSchemaLinks[$schemaType] = [
-                    'label' => $schemaData['label'] ?? $schemaType,
-                    'data' => $schemaDataSorted,
-            ];
-        }
-    }
-
-    return $sanitizedSchemaLinks;
+    return $schemaLinks;
 }
 
 

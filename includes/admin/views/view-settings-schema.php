@@ -14,8 +14,7 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
         $schemaLinks = \OES\Model\get_schema_links();
 
         $optionsHTML = '<option value="admin.php?page=oes_settings_schema">' . esc_html__('Overview', 'oes') . '</option>';
-        foreach ($schemaLinks ?? [] as $schemaLinksType) {
-            foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
+        foreach ($schemaLinks ?? []  as $objectDataKey => $objectData) {
                 $key = $objectData['key'] ?? $objectDataKey;
                 $label = $objectData['label'] ?? $objectDataKey;
                 $url = $objectData['url'] ?? '';
@@ -27,7 +26,6 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                         esc_attr($selected),
                         esc_html($label)
                 );
-            }
         }
 
         $headerHTML = esc_html__('Schema', 'oes') . ' ';
@@ -66,14 +64,6 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                     }
                 }
 
-                /**
-                 * Filters the tabs for the OES schema.
-                 *
-                 * @param array $tabs The tabs for the OES schema.
-                 * @param string $object The current object.
-                 * @param string $component The current component.
-                 * @param string $oesType The type of the OES item.
-                 */
                 $tabs = apply_filters('oes/schema_tabs', $tabs, $object, $component, $oesType);
 
                 foreach ($tabs as $tabType => $label) {
@@ -105,26 +95,32 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
 <div class="oes-page-body">
     <?php
 
+    $type = isset($type) ? sanitize_key($type) : '';
+
     if ($type):
         \OES\Admin\Tools\display('schema-' . $type);
     else: ?>
-        <?php
+        <div class="oes-schema-card">
+            <a href="<?php echo esc_url(admin_url('admin.php?page=oes_settings_schema&tab=schema&type=oes&component=global&object=global')); ?>">
+                <?php _e('Global', 'oes'); ?>
+            </a><br>
+            <div><?php _e('site-wide parameter, e.g. publisher', 'oes'); ?></div>
+        </div>
+        <table class="form-table oes-form-table table-view-list">
+            <thead>
+            <tr>
+                <th><?php _e('Name', 'oes'); ?></th>
+                <th><?php _e('Format', 'oes'); ?></th>
+                <th><?php _e('Template', 'oes'); ?></th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($schemaLinks ?? [] as $objectDataKey => $objectData):
 
-        foreach ($schemaLinks ?? [] as $type => $schemaLinksType) {
+                if($objectDataKey == 'global') {
+                    continue;
+                }
 
-            if (empty($schemaLinksType['data'] ?? '')) {
-                continue;
-            }
-
-            $label = $schemaLinksType['label'] ?? null;
-            if($label) {
-                printf(
-                        '<h2>%s</h2>',
-                        esc_html($type === 'other' ? '[Default]' : $label)
-                );
-            }
-
-            foreach ($schemaLinksType['data'] ?? [] as $objectDataKey => $objectData) {
                 $label = $objectData['label'] ?? $objectDataKey;
                 $url = admin_url($objectData['url'] ?? '');
                 $key = $objectData['key'] ?? null;
@@ -134,17 +130,31 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                         esc_url($url)
                 );
 
-                if($key == 'global') {
+                if ($key === 'global') {
                     $link = '<h2>' . $link . '</h2>';
                     $code = '';
-                }
-                else {
-                    $code = ' <code class="oes-object-identifier">' . $key . '</code>';
+                } else {
+                    $code = '<br><code class="oes-object-identifier">' . esc_html($key) . '</code>';
                 }
 
-                echo '<p>' . $link . $code . '</p>';
-            }
-        }
-        ?>
+                $schema = $objectData['schema'] ?? '';
+                if (in_array($schema, ['none', 'other'], true)) {
+                    $schema = '-';
+                }
+
+                $objectType = $objectData['type'] ?? '';
+                if (in_array($objectType, ['none', 'other'], true)) {
+                    $objectType = '-';
+                }
+
+                ?>
+                <tr>
+                    <td><?php echo $link . $code; ?></td>
+                    <td><?php echo esc_html($schema); ?></td>
+                    <td><?php echo esc_html($objectType); ?></td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
     <?php endif; ?>
 </div>

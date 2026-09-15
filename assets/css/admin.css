@@ -353,11 +353,63 @@ span.oes-column-post a.oes-admin-link:after {
   content: "";
 }
 
-.oes-form-table .oes-table-header {
-  font-weight: bold;
+.oes-schema-card,
+.oes-form-table {
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 1000px;
+  padding: 20px;
+  margin: 0 0 20px;
+  overflow: hidden;
 }
-.oes-form-table th .description {
+
+.oes-form-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.oes-form-table tr {
+  border-bottom: 1px solid #f0f0f1;
+}
+.oes-form-table tbody tr:last-child {
+  border-bottom: none;
+}
+.oes-form-table th {
+  width: 160px;
+  padding: 14px 16px;
+  font-size: 13px;
   font-weight: normal;
+  color: #646970;
+  vertical-align: middle;
+  text-align: left;
+}
+.oes-form-table td {
+  padding: 10px 16px;
+  vertical-align: middle;
+}
+.oes-form-table td .description {
+  font-weight: normal;
+}
+.oes-form-table input.regular-text {
+  width: 100%;
+  max-width: 420px;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  background: #f6f7f7;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+.oes-form-table input.regular-text:hover {
+  border-color: #b9bcbf;
+}
+.oes-form-table input.regular-text:focus {
+  background: #fff;
+  border-color: #2271b1;
+  box-shadow: 0 0 0 1px #2271b1;
+  outline: none;
 }
 
 /* ---------------------------------------------------------------------------------------------------------------------

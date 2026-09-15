@@ -319,9 +319,6 @@ function oes_get_menu_icon_path(string $identifier = 'default'): string
     elseif($identifier == 'single-index'){
         return 'dashicons-editor-ul';
     }
-    elseif($identifier == 'single-internal'){
-        return 'dashicons-category';
-    }
     elseif($identifier == 'other'){
         return 'dashicons-category';
     }

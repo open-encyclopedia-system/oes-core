@@ -44,7 +44,7 @@ class Schema_OES extends Schema
 
         if ($this->object != 'global') {
 
-            $this->add_table_header('Enable Integration Tabs', 'oes');
+            $this->add_table_header('Enable Integration Tabs', 'tag');
 
             $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
         }
@@ -56,7 +56,7 @@ class Schema_OES extends Schema
 
         $configs['publisher_type'] = [
             'option_key' => ['oes_publisher', 'type'],
-            'label' => __('Schema Type', 'oes'),
+            'label' => __('Format', 'oes'),
             'type' => 'select',
             'options' => ['options' => \OES\Model\get_schema_org_types()],
             'value' => $value['type'] ?? 'Organization'

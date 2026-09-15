@@ -46,6 +46,7 @@ class Theme_Index_Pages extends Config
         }
 
         $modifiedIndexPageKey = 0;
+        $tableID = 1;
         foreach ($oes->theme_index_pages as $indexPageKey => $indexPage) {
 
             // make sure that index page key is string
@@ -70,7 +71,7 @@ class Theme_Index_Pages extends Config
             }
 
             $deleteLink = '<a href="javascript:void(0);" ' .
-                'onClick="oesConfigTableDeleteRow(this)" ' .
+                'onClick="oesRemoveElementById(\'oes-form-table-' . $tableID++ . '\')" ' .
                 'class="oes-highlighted button">' .
                 __('Delete This Index', 'oes') .
                 '</a>';

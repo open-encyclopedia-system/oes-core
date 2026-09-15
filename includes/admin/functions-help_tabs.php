@@ -210,70 +210,163 @@ function oes_page_oes_settings_media_help_tabs($screen): void
  */
 function oes_page_oes_settings_schema_help_tabs($screen): void
 {
-    if(!in_array(($_GET['type'] ?? 'oes'), ['oes', 'oes_single', 'oes_archive'])){
+    if(!in_array(($_GET['type'] ?? 'oes'), ['oes', 'mapping', 'display'])){
         return;
     }
 
     $screen->add_help_tab([
         'id' => 'oes_schema_help',
-        'title' => 'Schema',
-        'content' => '<p>' .
-            __('The OES schema defines the data schema and its representation of text objects, their properties ' .
-                'and relationships ' .
-                'between objects. The defined schema option for an object are used for the frontend representation.',
+        'title' => 'Purpose',
+        'content' =>
+            '<p>' .
+            __('The OES schema defines how the fields of a post type are translated into structured, ' .
+                'machine-readable metadata when an entry is exported or embedded on the page.',
                 'oes') .
+            '</p>' .
+            '<p>' .
+            __('Internally, OES stores data in whatever fields make sense for editing.. Externally, systems ' .
+                'that consume OES content — search engines, citation managers, harvesters using OAI-PMH, ' .
+                'linked-data crawlers — expect data in standard vocabularies such as ' .
+                'oes') .
+            '<a href="https://schema.org/" target="_blank">https://schema.org/</a>' .
+            __(' (delivered as JSON-LD). ' .
+                'The Schema Mapping settings are the bridge between the two: for every standard metadata property, ' .
+                'an editor chooses which internal field supplies that value.',
+                'oes') .
+            '</p>' .
+            '<p>' .
+            __('Nothing here changes how content is entered or displayed in the editor. It only changes what is ' .
+                'written into the exported metadata.', 'oes') .
             '</p>',
     ]);
+
     $screen->add_help_tab([
-        'id' => 'oes_types',
-        'title' => 'Types',
+        'id' => 'oes_schema_publisher',
+        'title' => 'Publisher',
         'content' => '<p>' .
-            __('The OES schema is divided into different object types: <b>Articles</b> are post objects with ' .
-                'scientific texts ' .
-                'whose text bodies are enriched and classified by metadata. <b>Contributors</b> are post object types ' .
-                'that represent the authorship of articles. <b>Index</b> elements are post objects that form the ' .
-                'index of the collected articles. Other post objects that are only used for the searchability ' .
-                'or structuring of other objects are referred to as <b>internal</b> elements.', 'oes') .
-            '</p>',
-    ]);
-    $screen->add_help_tab([
-        'id' => 'oes_schema_single',
-        'title' => 'Single',
-        'content' => '<p>' .
-            __('A single post object can be displayed as a single page.', 'oes') .
-            '</p><p>' .
-            __('You can choose the field that will be displayed as title of a post object with the OES feature ' .
-                '<b>Titles</b> (The field to be displayed as title on the single page).', 'oes') . '<br>' .
-            __('The single view of a post object includes a table of metadata. You can define which post data ' .
-                'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes') .
-            '</p><p>' .
             '<ul>' .
-            '<li><b>Title for single display</b>: ' . __('The field to be displayed as title on the single page', 'oes') . '</li>' .
-            '<li><b>Metadata</b>: ' . __('The fields to be considered for metadata', 'oes') . '</li>' .
-            '<li><b>Display archive as single page list</b>: ' . __('Display the archive as list, all posts on one page. ' .
-                'Post type has no single pages (eg. glossary)', 'oes') . '</li>' .
-            '<li><b>Archive Data</b>: ' . __('Additional information on archive list view.', 'oes') . '</li>' .
-            '<li><b>Redirect</b>: ' . __('Redirect the term to an archive page.', 'oes') . '</li>' .
+            '<li><b>Publisher</b>: ' . __('The person, organisation or institution responsible for publishing the site, used as default publisher across exported metadata.', 'oes') . '</li>' .
+            '<li><b>Format</b>: ' . __('The schema.org type for the publisher.', 'oes') . '</li>' .
+            '<li><b>Name</b>: ' . __('The name of the publisher.', 'oes') . '</li>' .
+            '<li><b>URL</b>: ' . __('', 'oes') . '</li>' . //TODO
+            '<li><b>Description</b>: ' . __('', 'oes') . '</li>' .
             '</ul>' .
-            '</p>',
+            '</p>'
     ]);
+
     $screen->add_help_tab([
-        'id' => 'oes_schema_archive',
-        'title' => 'Archive',
+        'id' => 'oes_schema_mapping_format',
+        'title' => 'Format',
         'content' => '<p>' .
+            __('The schema.org type assigned to this post type (e.g. ScholarlyArticle), determining which standard properties apply.', 'oes').
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_core',
+        'title' => 'Core',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>Title</b>: ' . __('The field mapped to the primary title of the entry.', 'oes') . '</li>' .
+            '<li><b>Subtitle</b>: ' . __('The field mapped to an additional, secondary title.', 'oes') . '</li>' .
+            '<li><b>Version</b>: ' . __('The field indicating the version of this entry, e.g. for revised encyclopedia articles.', 'oes') . '</li>' .
+            '<li><b>Citation</b>: ' . __('The pattern used to generate the recommended citation string ("Cite as") for this entry.', 'oes') . '</li>' .
+            '<li><b>Publication Status</b>: ' . __('Controls whether this entry is considered complete and public enough to be exported and harvested.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_dates',
+        'title' => 'Dates',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>Publication Date</b>: ' . __('The field mapped to the date this entry was first published.', 'oes') . '</li>' .
+            '<li><b>Edit Date</b>: ' . __('The field mapped to the date of the most recent edit.', 'oes') . '</li>' .
+            '<li><b>Start Date</b>: ' . __('The field mapped to the start date of this event.', 'oes') . '</li>' .
+            '<li><b>End Date</b>: ' . __('The field mapped to the end date of this event.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_people',
+        'title' => 'People',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>Authors</b>: ' . __('The field(s) mapped to the primary creators of this entry.', 'oes') . '</li>' .
+            '<li><b>Contributor</b>: ' . __('The field(s) mapped to secondary contributors, distinct from the primary authors.', 'oes') . '</li>' .
+            '<li><b>Translators</b>: ' . __('The field(s) mapped to the translators of this entry.', 'oes') . '</li>' .
+            '<li><b>Editors</b>: ' . __('The field(s) mapped to the editorial responsibility for this entry.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_descriptive',
+        'title' => 'Descriptive',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>Abstract</b>: ' . __('The field mapped to a short summary of this entry.', 'oes') . '</li>' .
+            '<li><b>Featured Image</b>: ' . __('The field mapped to the representative image of this entry.', 'oes') . '</li>' .
+            '<li><b>Licence</b>: ' . __('The field mapped to the rights statement for this entry.', 'oes') . '</li>' .
+            '<li><b>Language</b>: ' . __('The field mapped to the language of this entry.', 'oes') . '</li>' .
+            '<li><b>Subjects</b>: ' . __('The field(s) mapped to the topical classification of this entry.', 'oes') . '</li>' .
+            '<li><b>Vita</b>: ' . __('The field containing a short biography of this person.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_relations',
+        'title' => 'Relations',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>Bibliography</b>: ' . __('The field(s) listing the works this entry cites.', 'oes') . '</li>' .
+            '<li><b>Relations</b>: ' . __('The field(s) linking this entry to other structured entities (events, places, people, institutions) it references.', 'oes') . '</li>' .
+            '<li><b>Related Content</b>: ' . __('The field(s) linking this entry to other editorial content, such as glossary entries or articles.', 'oes') . '</li>' .
+            '<li><b>Publications</b>: ' . __('The field(s) listing this person\'s publications.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_mapping_export',
+        'title' => 'Export & LOD',
+        'content' => '<p>' .
+            '<ul>' .
+            '<li><b>DOI</b>: ' . __('The field mapped to the persistent identifier of this entry, used for DOI registration.', 'oes') . '</li>' .
+            '<li><b>ORCID</b>: ' . __('The field mapped to this person\'s ORCID identifier.', 'oes') . '</li>' .
+            '<li><b>External Links</b>: ' . __('The field(s) containing outbound links related to this person.', 'oes') . '</li>' .
+            '<li><b>External Identifier (LoD)</b>: ' . __('The field(s) holding external authority identifiers for this person.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p>'
+    ]);
+
+    $screen->add_help_tab([
+        'id' => 'oes_schema_display',
+        'title' => 'Display',
+        'content' => '<p>' .
+            __('The OES schema is divided into different <b>Template</b> types:', 'oes') .
+            '<ul>' .
+            '<li><b>Articles</b> ' .
+            __('are post objects with scientific texts whose text bodies are enriched and classified by metadata.', 'oes') .
+            '</li>' .
+            '<li><b>Contributors</b> ' .
+            __('are post object types that represent the authorship of articles', 'oes') .
+            '</li>' .
+            '<li><b>Index</b> ' .
+            __('elements are post objects that form the index of the collected articles', 'oes') .
+            '</li>' .
+            '<li>' . __('Other post objects that are only used for the searchability ' .
+                'or structuring of other objects are referred to as <b>internal</b> elements.', 'oes') . '</li>' .
+            '</ul>' .
+            '</p><p>' .
+            __('A single post object can be displayed as a single page.', 'oes') . ' ' .
             __('All post objects of an object type can be displayed as an archive on a single page.', 'oes') .
             '</p><p>' .
-            __('You can choose the field that will be displayed as title of a post object with the OES feature ' .
-                '<b>Titles</b>. You can also choose which field will be used for sorting the list of post objects ' .
-                'alphabetically.', 'oes') . '<br>' .
-            __('The post type parameter <b>Has Archive</b> enables the archive view inside the frontend layer.',
-                'oes') . '<br>' .
-            __('When the OES feature <b>Display archive as list</b> is enabled the archive will not be displayed ' .
-                'as list of posts linking to the single view but instead as list of all posts including the post ' .
-                'content without the single view option.', 'oes') . '<br>' .
-            __('You can define data to be included on the archive page in a ' .
-                'dropdown table in the OES feature <b>Archive</b>. The OES feature <b>Archive Filter</b> ' .
-                'enables considered facet filters for the archive page.', 'oes') .
+            __('The single view of a post object includes a table of metadata. You can define which post data ' .
+                'is to be considered as metadata in the OES feature <b>Metadata</b>.', 'oes') .
             '</p><p>' .
             '<ul>' .
             '<li><b>Title for list display</b>: ' . __('The field to be displayed as title on archive pages', 'oes') . '</li>' .
@@ -283,7 +376,7 @@ function oes_page_oes_settings_schema_help_tabs($screen): void
             '<li><b>Archive Data</b>: ' . __('Additional information on archive list view.', 'oes') . '</li>' .
             '<li><b>Archive Filter</b>: ' . __('Elements that will be considered for the archive filter.', 'oes') . '</li>' .
             '</ul>' .
-            '</p>',
+            '</p>'
     ]);
 }
 
