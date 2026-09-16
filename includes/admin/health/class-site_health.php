@@ -114,31 +114,23 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
         /**
          * Gets the values for all data in the OES site health section.
          *
+         * @param bool $extended
          * @return array
          */
         public function get_site_health_values(bool $extended = false): array
         {
 
             /*
+             * @oesDevelopment
              *
              * Datamodel
              * gitLab commit?
-             *Schema?
+             * Schema?
              * enabled lod?
              * enabled features?
              * available REST APIs
-             *
-             *
              * Database cache etc
              * Constants
-             *
-             *     'site_url' => get_site_url(),
-    'php_version' => phpversion(),
-    'wp_version' => get_bloginfo('version'),
-    'active_plugins' => get_option('active_plugins'),
-    'memory_usage' => memory_get_usage(),
-    'errors' => [...],
-    'timestamp' => time()
              * */
 
             $oes = OES();
@@ -158,7 +150,6 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
             $this->get_environment_values($fields, $extended);
             $this->get_theme_values($fields, $extended);
             $this->get_plugin_values($fields, $extended);
-
 
             return $fields;
         }
@@ -203,15 +194,8 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
                 'value' => memory_get_usage(),
             ];
 
-            /*$fields['memory_limit'] = [
-                'label' => __('Memory Limit', 'oes'),
-                'value' => 'TODO: read from phpinit?',
-            ];
-
-            $fields['errors'] = [
-                'label' => __('ERrors', 'oes'),
-                'value' => 'TODO: read from debug.log?',
-            ];*/
+            //@oesDevelopment: Read memory limit from phpinit?
+            //@oesDevelopment: Read error from debug.log
 
             $fields['timestamp'] = [
                 'label' => __('Timestamp', 'oes'),
@@ -277,7 +261,7 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
                     continue;
                 }
 
-                //TODO differentiate OES Module, OES Projekte, others
+                //@oesDevelopment differentiate OES Module, OES Application, others
 
                 $category = 'other';
                 $name = $plugin['Name'];

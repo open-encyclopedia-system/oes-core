@@ -195,7 +195,7 @@ class Storage implements Storage_Interface
             $args['taxonomy'] = $objectType;
         }
         else {
-            $args['index'] = '';//TODO index?
+            $args['index'] = '';//@oesDevelopment index?
         }
 
         $this->delete($key);

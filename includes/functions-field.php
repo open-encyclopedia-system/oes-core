@@ -9,14 +9,14 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  * For posts, returns the raw integer ID.
  * For terms, returns "taxonomy_termid" (e.g. "category_42").
  *
- * @param int  $id     The post or term ID.
+ * @param string|int $id The post or term ID.
  * @param bool $isPost Whether this ID belongs to a post (true) or a term (false).
  *
  * @return int|string
  */
-function oes_format_object_id(int $id, bool $isPost)
+function oes_format_object_id(string|int $id, bool $isPost)
 {
-    if ($isPost) {
+    if ($isPost || is_string($id)) {
         return $id;
     }
 
@@ -174,7 +174,7 @@ function oes_get_select_field_value(string $fieldName, $postID = false)
  *
  * @return string The display value.
  *
- * TODO redo
+ * @oesDevelopment redo
  */
 function oes_get_field_display_value(string $fieldName, $postID, array $args = [])
 {
@@ -421,34 +421,6 @@ function oes_get_all_object_fields(string $objectKey, array $fieldTypes = [], bo
     return $objectFields;
 }
 
-//TODO
-function oes_get_all_object_fields_from_global(string $objectKey, array $fieldTypes = [], bool $skipTabs = false): array
-{
-    global $oes;
-
-    $fields = $oes->post_types[$objectKey]['field_options'] ?? ($oes->taxonomies[$objectKey]['field_options'] ?? []);
-
-    if(empty($fields)){
-        return oes_get_all_object_fields($objectKey, $fieldTypes, $skipTabs);
-    }
-
-    if(empty($fieldTypes) && !$skipTabs){
-        return $fields;
-    }
-
-    $collectFields = [];
-    foreach($fields as $fieldKey => $field){
-
-        if (!empty($fieldTypes) && !in_array($field['type'], $fieldTypes)) {
-            continue;
-        }
-
-        $collectFields[$fieldKey] = $field;
-    }
-
-    return $collectFields;
-}
-
 /**
  * Get object select options, including field options, connected taxonomies, parent fields, etc.
  *
@@ -593,6 +565,7 @@ function oes_resolve_field_context($object, string $fieldKey, bool $isPost = tru
         }
     } else {
         $objectID = $object;
+        $isPost = is_int($objectID);//TODO
     }
 
     if (!$objectID) {
@@ -604,7 +577,7 @@ function oes_resolve_field_context($object, string $fieldKey, bool $isPost = tru
         $fieldKey = substr($fieldKey, 8);
     }
 
-    return [(int)$objectID, $fieldKey, $isPost];
+    return [$objectID, $fieldKey, $isPost];
 }
 
 

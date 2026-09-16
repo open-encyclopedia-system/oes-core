@@ -83,9 +83,10 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             ],
         ];
 
+        //@oesDevelopment
         private const TYPE_ALIASES = [
-            'Article'      => 'ScholarlyArticle', //TODO
-            'CreativeWork' => 'ScholarlyArticle', //TODO
+            'Article'      => 'ScholarlyArticle',
+            'CreativeWork' => 'ScholarlyArticle',
         ];
 
         private function get_merged_data(): array {
@@ -644,7 +645,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
                         continue;
                     }
 
-                    //Todo unknown and keywords?
+                    //todo unknown and keywords?
                     $index = $this->build_index_relation($relationType, $relationGroup, $dom);
                     $back->appendChild($index);
                 }
@@ -666,7 +667,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
             $relationType = self::TYPE_ALIASES[$relationType] ?? $relationType;
             $config = self::TYPE_CONFIG[$relationType]['index'] ?? [];
 
-            //TODO DefinedTerms
+            //todo DefinedTerms
             $divType = ($config['divType'] ?? '') ?: 'index';
             $type = ($config['type'] ?? '') ?: 'item';
             $subtype = $config['subtype'] ?? '';
@@ -708,7 +709,7 @@ if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
          * Returns null when there's no usable name, so the caller can just skip it.
          * @throws DOMException
          *
-         * TODO add event dates
+         * todo add event dates
          */
         private function build_index_item(
             DOMDocument $dom,

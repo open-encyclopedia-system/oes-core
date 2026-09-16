@@ -1029,7 +1029,6 @@ if (!class_exists('OES_Post')) {
             if (!is_array($patternValue)) {
                 $patternValue = [];
             }
-            //TODO
 
             $pattern = $this->modify_citation_pattern($patternValue);
             if ((empty($citation) || trim(strip_tags($citation)) == 'generate') && !empty($pattern))

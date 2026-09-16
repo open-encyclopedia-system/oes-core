@@ -233,7 +233,7 @@ function resolve_part_value(array $part, string $fieldKey, int $postID, bool $so
         return $part['string_value'] ?? '';
     }
 
-    $args = ['list-class' => 'oes-field-value-list']; //TODO overkill
+    $args = ['list-class' => 'oes-field-value-list'];
     if(!$sort){
         $args['sort'] = false;
     }

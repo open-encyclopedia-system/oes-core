@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @reviewed 3.0.0
- */
-
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -18,8 +13,6 @@ if (class_exists('Schema_OES')) exit;
  * Class Schema_OES
  *
  * Implement the config tool for admin configurations.
- *
- * TODO review
  */
 class Schema_OES extends Schema
 {
@@ -44,7 +37,7 @@ class Schema_OES extends Schema
 
         if ($this->object != 'global') {
 
-            $this->add_table_header('Enable Integration Tabs', 'tag');
+            $this->add_table_header(__('Enable Integration Tabs', 'oes'), 'tag');
 
             $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
         }
@@ -52,7 +45,7 @@ class Schema_OES extends Schema
 
     protected function prepare_global_options(array &$configs): void
     {
-        $value = \OES\Model\get_publisher();
+        $value = oes_get_publisher();
 
         $configs['publisher_type'] = [
             'option_key' => ['oes_publisher', 'type'],
@@ -144,7 +137,6 @@ class Schema_OES extends Schema
 
     protected function add_config_rows(array $configs, string $filterKey = ''): void
     {
-
         $configs = apply_filters('oes/schema_general' . (empty($filterKey) ? '' : ('_' . $filterKey)),
             $configs,
             $this->object,

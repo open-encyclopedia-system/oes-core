@@ -15,7 +15,6 @@ if (!class_exists('LOC_API')) {
      * unused: https://www.loc.gov/search/?q=baseball&fo=json
      *
      * Limitations:
-     * @oesDevelopment Validate limits
      *
      * Newspapers endpoint:
      * Burst Limit    20 requests per 1 minute, Block for 5 minutes

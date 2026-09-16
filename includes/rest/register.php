@@ -129,12 +129,13 @@ function serve_vocab(\WP_REST_Request $request)
     return $response;
 }
 
+//@oesDevelopment
 function health(): void
 {
     register_rest_route('oes/v1', '/debug/', [
         'methods' => 'GET',
         'permission_callback' => function () {
-            return true; //TODO
+            return true; //@oesDevelopment only for logged-in user?
         },
         'callback' => function () {
 

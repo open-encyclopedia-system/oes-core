@@ -260,7 +260,6 @@ function render_block_context($context, $parsed_block)
                 $loop->the_post();
                 $postID = get_post()->ID;
 
-                //TODO check language
                 $postLanguage = oes_get_post_language($postID);
                 if($postLanguage == 'all' || $postLanguage == $oes_language) {
                     break;

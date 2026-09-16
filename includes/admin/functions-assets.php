@@ -184,6 +184,7 @@ function oes_add_project_script(
     bool   $in_footer = true,
     bool   $admin = false): void
 {
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_add_application_script');
     oes_add_application_script($handle, $src, $depends, $ver, $in_footer, $admin);
 }
 
@@ -214,7 +215,8 @@ function oes_register_scripts_and_styles(): void
 
 
 /**
- * TODO these are now all part of editor and iframe ... maybe cleanup
+ * @oesDevelopment these are now all part of editor and iframe ... maybe cleanup
+ *
  * Load js scripts.
  * @return void
  */

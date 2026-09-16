@@ -146,8 +146,7 @@ if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
             return array_filter([
                 '@id' => $termData['url'] ?? null,
                 '@type' => 'DefinedTerm',
-                'name' => $termData['name'] ?? null,
-                //TODO 'inDefinedTermSet' => $group['name'] ?? null,
+                'name' => $termData['name'] ?? null
             ]);
         }
 

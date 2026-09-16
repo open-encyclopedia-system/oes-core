@@ -12,7 +12,7 @@ function toplevel_page_oes_settings_help_tabs($screen): void
         'title' => 'OES',
         'content' => '<p>' .
             __('The Open Encyclopedia System (OES) is an open-source framework for building and maintaining online encyclopaedias in the humanities and social sciences. It provides editing and publishing tools so that editorial teams can create, publish and maintain academic reference works collaboratively and entirely web-based — with free, unrestricted access for readers (Open Access).
-OES is designed to be simple to operate while remaining adaptable to different project contexts, without requiring you to touch the underlying source code. Our goal is to set a lasting standard for this kind of publication.', 'oes') .
+OES is designed to be simple to operate while remaining adaptable to different application contexts, without requiring you to touch the underlying source code. Our goal is to set a lasting standard for this kind of publication.', 'oes') .
             '</p>',
     ]);
 
@@ -63,17 +63,18 @@ OES is designed to be simple to operate while remaining adaptable to different p
 }
 
 /**
- * Create a help tab on "OES Feature" page. TODO
+ * Create a help tab on "OES Feature" page.
  * @param $screen
  * @return void
  */
 function oes_page_oes_settings_features_help_tabs($screen): void
 {
+    //@oesDevelopment
     $screen->add_help_tab([
         'id' => 'oes_features_intro',
         'title' => 'Features',
         'content' => '<p>' .
-            __('TODO.', 'oes') .
+            __('Here you have a list of OES features.', 'oes') .
             '</p>',
     ]);
 }
@@ -246,10 +247,10 @@ function oes_page_oes_settings_schema_help_tabs($screen): void
         'content' => '<p>' .
             '<ul>' .
             '<li><b>Publisher</b>: ' . __('The person, organisation or institution responsible for publishing the site, used as default publisher across exported metadata.', 'oes') . '</li>' .
-            '<li><b>Format</b>: ' . __('The schema.org type for the publisher.', 'oes') . '</li>' .
-            '<li><b>Name</b>: ' . __('The name of the publisher.', 'oes') . '</li>' .
-            '<li><b>URL</b>: ' . __('', 'oes') . '</li>' . //TODO
-            '<li><b>Description</b>: ' . __('', 'oes') . '</li>' .
+            '<li><b>Format</b>: ' . __('The schema.org type for the publisher. Most commonly "Organization"', 'oes') . '</li>' .
+            '<li><b>Name</b>: ' . __('The name of the publisher. This is the primary identifier a person or search engine sees.', 'oes') . '</li>' .
+            '<li><b>URL</b>: ' . __('The canonical URL of the publisher\'s website or homepage.', 'oes') . '</li>' .
+            '<li><b>Description</b>: ' . __('A short text description of the publisher, what the organization is or does.', 'oes') . '</li>' .
             '</ul>' .
             '</p>'
     ]);

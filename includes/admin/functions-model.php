@@ -88,7 +88,6 @@ function register_oes_objects(bool $factoryMode = false): void
                                 '(we recommend to use "post name") and save the settings, even if you have made no changes.', 'oes') .
                         '</p></div>';
             } else {
-                //TODO
                 echo '<div class="notice notice-warning"><p>' .
                         __('There is no OES data model registered and no application plugin activated.', 'oes') .
                         '</p></div>';
@@ -699,10 +698,7 @@ function get_post_type_oes_args_defaults(): array
  */
 function get_schema_config(string $schemaTyp): array
 {
-    //TODO deprecated filter: 'oes/schema_options_single'
-    //todo map to json-ld parameters?
-
-    return match ($schemaTyp) {
+    $options = match ($schemaTyp) {
         'CreativeWork', 'Article', 'ScholarlyArticle' => [
                 'core' => [
                         'title' => ['label' => __('Title', 'oes')],
@@ -786,6 +782,16 @@ function get_schema_config(string $schemaTyp): array
                 ]
         ]
     };
+
+    apply_filters_deprecated(
+            'oes/schema_options_single',
+            [$options, $schemaTyp, ''],
+            '3.0.0',
+            false,
+            __( 'This filter no longer has any effect and will be removed in a future version.', 'oes' )
+    );
+
+    return $options;
 }
 
 function get_schema_config_groups(): array
@@ -1786,50 +1792,4 @@ function get_schema_links(): array
     }
 
     return $schemaLinks;
-}
-
-
-//TODO other file?
-
-function get_publisher(): array
-{
-    $option = get_option('oes_publisher');
-
-    if (!is_array($option)) {
-        return [];
-    }
-
-    return $option;
-}
-
-function get_post_type_schema_type(string $postType): string
-{
-    global $oes;
-    return $oes->post_types[$postType]['schema'] ?? '';
-}
-
-function get_taxonomy_schema_type(string $taxonomy): string
-{
-    global $oes;
-    return $oes->taxonomies[$taxonomy]['schema'] ?? '';
-}
-
-function get_all_schema_type(): array
-{
-    global $oes;
-
-    $mappedTypes = array_map(function ($postTypeData) {
-        return normalize_schema_type($postTypeData['schema'] ?? '');
-    }, $oes->post_types ?? []);
-
-    foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
-        $mappedTypes[$taxonomy] = normalize_schema_type($taxonomyData['schema'] ?? '');
-    }
-
-    return $mappedTypes;
-}
-
-function normalize_schema_type(string $schemaType): string
-{
-    return $schemaType === 'none' ? '' : $schemaType;
 }

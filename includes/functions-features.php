@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 namespace OES\Features;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -21,6 +16,7 @@ function utility_functions(): void
     include_once __DIR__ . '/functions-field.php';
     include_once __DIR__ . '/functions-html.php';
     include_once __DIR__ . '/functions-post.php';
+    include_once __DIR__ . '/functions-term.php';
     include_once __DIR__ . '/functions-text-processing.php';
 }
 
@@ -126,7 +122,7 @@ function site_health(): void
     include_once __DIR__ . '/admin/health/class-site_health.php';
     include_once __DIR__ . '/admin/health/functions-health.php';
     add_action('debug_information', '\OES\Admin\Health\debug_information');
-    //TODO add_action('rest_api_init', '\OES\Rest\health');
+    //@oesDevelopment add_action('rest_api_init', '\OES\Rest\health');
 }
 
 /**
@@ -178,7 +174,7 @@ function assets(): void
     oes_add_style('oes-theme', '/assets/css/theme.css');
     if (is_admin()) {
         add_action('admin_enqueue_scripts', 'oes_load_assets');
-        add_action('admin_enqueue_scripts', 'oes_load_assets_new'); //TODO redone
+        add_action('admin_enqueue_scripts', 'oes_load_assets_new'); //@oesDevelopment
         add_action('wp_print_styles', 'oes_load_assets');
         oes_add_style_admin('oes-admin', '/assets/css/admin.css');
         oes_add_script_admin('oes-admin', '/assets/js/admin.js');
@@ -511,7 +507,6 @@ function labels(): void
  * Include theme navigation.
  *
  * @oesDevelopment Is this needed outside of frontend?
- * TODO: move to theme?
  *
  * @param bool $blockTheme
  * @return void

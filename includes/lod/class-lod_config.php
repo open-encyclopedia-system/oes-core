@@ -72,7 +72,6 @@ if (!class_exists('LOD')) {
                 ]
             );
 
-            //TODO: make this a general API option? Instead of multiple one
             if($popup){
 
                 $apiInterface = '\\OES\\API\\' . $this->api_key . '_Interface';

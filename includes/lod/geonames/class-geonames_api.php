@@ -19,7 +19,6 @@ if (!class_exists('Geonames_API')) {
      * https://www.geonames.org/export/ws-overview.html
      *
      * Limitations:
-     * @oesDevelopment Validate limitation
      * 20'000 credits daily limit per application (identified by the parameter 'username'), the hourly limit is 1000
      * credits. A credit is a web service request hit for most services. An exception is thrown when the limit is
      * exceeded.

@@ -405,7 +405,7 @@ function register(): void
             'menu_slug' => 'admin_manual',
             'function' => '\OES\Guidelines\main_page',
             'capability' => 'oes_read',
-            'position' => 51, //todo might be overwritten, make sure position is computed
+            'position' => 51,
             'icon_url' => 'oes'
         ]]);
 

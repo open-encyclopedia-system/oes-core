@@ -54,7 +54,6 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                             'display' => __('Display', 'oes'),
                     ];
 
-                    // Add LoD tabs if present @oesDevelopment call this from API classes?
                     if ($oes->post_types[$object]['lod'] ?? false) {
                         foreach ($oes->apis as $apiKey => $api) {
                             if (!empty($api->config_options['properties']['options'])) {

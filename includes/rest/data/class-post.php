@@ -5,8 +5,6 @@ namespace OES\Rest;
 use WP_Post;
 use DateTime;
 use function OES\Formula\calculate_value;
-use function OES\Model\get_all_schema_type;
-use function OES\Model\get_publisher;
 use function OES\Versioning\get_all_version_ids;
 use function OES\Versioning\get_current_version_id;
 use function OES\Versioning\get_translation_id;
@@ -88,7 +86,7 @@ if (!class_exists('\OES\Rest\Post')) {
             global $oes_language;
             $oes_language = $this->oes_language;
 
-            remove_filter( 'the_content', '\OES\Popup\render_for_frontend' );
+            remove_filter('the_content', '\OES\Popup\render_for_frontend');
             add_filter('oes/lod_render_shortcode', [$this, 'lod_render_shortcode'], 10, 4);
 
             add_filter('oes/render_panel_html', [$this, 'render_panel_html'], 10, 2);
@@ -178,7 +176,7 @@ if (!class_exists('\OES\Rest\Post')) {
             }
 
             if (empty($this->mapped_types)) {
-                $this->mapped_types = get_all_schema_type();
+                $this->mapped_types = oes_get_all_schema_types();
             }
             return $this->mapped_types[$type] ?: 'Thing';
         }
@@ -207,7 +205,7 @@ if (!class_exists('\OES\Rest\Post')) {
 
         protected function prepare_publisher(): void
         {
-            $publisher = get_publisher();
+            $publisher = oes_get_publisher();
             $this->data['publisher'] = $this->map_publisher($publisher);
         }
 
@@ -926,7 +924,6 @@ if (!class_exists('\OES\Rest\Post')) {
             return $additional;
         }
 
-        //TODO format
         protected function map_post_object_additional_event(WP_Post $post, array $additional = []): array
         {
             global $oes;

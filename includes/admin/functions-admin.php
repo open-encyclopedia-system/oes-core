@@ -111,8 +111,14 @@ function plugin_action_links(array $actions): array
  */
 function get_application_settings(array $options = []): array
 {
-    $options = apply_filters('oes/project_options', $options); //@oesLegacy
-    return apply_filters('oes/application_options', $options);
+    $options = apply_filters('oes/application_options', $options);
+
+    return apply_filters_deprecated(
+        'oes/project_options',
+        [$options],
+        '3.0.0',
+        'oes/application_options'
+    );
 }
 
 /**

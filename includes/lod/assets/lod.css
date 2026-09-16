@@ -4,6 +4,10 @@ body:not(.block-editor-page) .oes-lod__copy {
   padding: 16px 0;
 }
 
+.oes-lod .components-base-control__field {
+  margin: 10px 0;
+}
+
 .oes-lod__search-input[type=text] {
   box-shadow: 0 0 0 transparent;
   transition: box-shadow 0.1s linear;

@@ -766,7 +766,7 @@ function get_feature_catalog(): array
                 ],
                 'oes_objects' => [
                     'name' => __('OES Objects', 'oes'),
-                    'description' => __('todo.', 'oes'),
+                    'description' => __('The database objects that represent the application data model.', 'oes'),
                     'actions' => [
                         'oes_objects' => [
                             'post_type' => 'oes_object',
@@ -819,7 +819,7 @@ function get_feature_catalog(): array
                 ],
                 'batch' => [
                     'name' => __('Batch Processing', 'oes'),
-                    'description' => __('todo.', 'oes'),
+                    'description' => __('Execute a function for all posts of a post type.', 'oes'),
                     'actions' => [
                         'tool' => [
                             'page' => 'oes_tools_batch',

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
@@ -336,4 +331,51 @@ function oes_get_taxonomy_label(string $taxonomy, string $language = ''): string
 
     $taxonomyObject = get_taxonomy($taxonomy);
     return $taxonomyObject->label ?? $taxonomy;
+}
+
+/**
+ * Get the publisher as set in general schema settings.
+ *
+ * @return array
+ */
+function oes_get_publisher(): array
+{
+    $option = get_option('oes_publisher');
+
+    if (!is_array($option)) {
+        return [];
+    }
+
+    return $option;
+}
+
+/**
+ * Get all configured schema types.
+ *
+ * @return array
+ */
+function oes_get_all_schema_types(): array
+{
+    global $oes;
+
+    $mappedTypes = array_map(function ($postTypeData) {
+        return oes_normalize_schema_type($postTypeData['schema'] ?? '');
+    }, $oes->post_types ?? []);
+
+    foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
+        $mappedTypes[$taxonomy] = oes_normalize_schema_type($taxonomyData['schema'] ?? '');
+    }
+
+    return $mappedTypes;
+}
+
+/**
+ * Normalize a schema type from config setting tool.
+ *
+ * @param string $schemaType
+ * @return string
+ */
+function oes_normalize_schema_type(string $schemaType): string
+{
+    return $schemaType === 'none' ? '' : $schemaType;
 }

@@ -1,85 +1,74 @@
-
 # Changelog
 
-## 3.3.0 (in development) - 2026-09-01
-### Renaming
-- Rename OES Manual → Guidelines
-- Rename OES_LIVEMODE → OES_LIVE_MODE
-- Rename Project → Application
-- Rename schema properties (Excerpt → Abstract, Literature → Bibliography, Terms → Subjects)
-- Rename get_schema_types() → get_oes_types()
-- Rename filter 'oes/schema_types' → 'oes/oes_types'
+## 3.0.0 (in development) - 2026-09-01
 
-### Features / New Components
-- Introduce new rights model
-- Introduce new application plugin initialization logic
-- Introduce OES_List_Table (extends WP_List_Table)
-- Introduce factory service and improved data model factory
-- Introduce cache database table
-- Introduce new LOD API: ROR
-- Introduce new LOD API: ORCID
-- ~~Introduce new LOD API: HMML~~ (moved to separate module plugin)
-- Introduce Display_Helper for LOD APIs
-- Introduce new block: "Context Link"
-- Introduce new block: "Archive Toggle All"
-- Introduce new block: "Field" (uses shortcode `oes_field`)
-- Introduce new block: "Abstract"
-- Introduce new block: "Post Link"
-- Introduce new block: "Featured Post"
-- Introduce update function for OES database tables
-- Introduce site health feature
-- Introduce new shortcode: audit field value
-- Introduce new shortcode: breadcrumgs
-- Introduce REST API export
-- Introduce filter `oes/template_redirect_index_additional_objects` for object filtering on index pages
-- Introduce filter block styles "Details" and "Classic"
-- Introduce language-dependent templates for terms and index pages
-- Introduce optional schema tabs for module pages
-- Introduce general schema options: publisher
-- Introduce schema.org types for OES schema
-- Introduce filter `oes/lod_render_shortcode` to modify lod shortcode while e.g. exporting
-- Introduce new parameters for block "Display Title": set tags and display as link option
-- Introduce context parameters for OES Blocks (pass a certain post ID)
-- Introduce parameter "hide_menu" (can replace oes_hide_obsolete_menu_structure();)
-- Introduce "schema_type" and "oes_type" for OES objects (replace "type")
-- Introduce "Template Type" in settings
+### Added
+- New rights model
+- New application plugin initialization logic
+- `OES_List_Table` (extends `WP_List_Table`)
+- Factory service and improved data model factory
+- Cache database table
+- New blocks: Context Link, Archive Toggle All, Field (uses shortcode `oes_field`), Abstract, Post Link, Featured Post
+- New LOD APIs: ROR, ORCID
+- REST API export
+- Site health feature
+- Shortcodes: audit field value, breadcrumbs
+- Update function for OES database tables
+- Filter `oes/template_redirect_index_additional_objects` — object filtering on index pages
+- Filter `oes/lod_render_shortcode` — modify LOD shortcode output (e.g. during export)
+- Filter block styles "Details" and "Classic"
+- Language-dependent templates for terms and index pages
+- Optional schema tabs for module pages
+- General schema option: publisher
+- Schema.org types for OES schema
+- `schema_type` and `oes_type` parameters for OES objects (replace `type`)
+- "Template Type" setting
+- Parameter `hide_menu` (replaces `oes_hide_obsolete_menu_structure()`)
+- Context parameters for OES Blocks (pass a specific post ID)
+- New parameters for block "Display Title": tag selection, display-as-link option
+- New parameters for block "Title": HTML tag, link flag
+- New parameters for block "Filter Alphabet": label for "all", include-empty flag
+- New parameters for block "Author Byline": ORCID display, skip-sorting option
 
-### Improvements
-- Improve internal page generation
-- Re-organize settings and tools pages
-- Re-organize and augment schema settings
-- Stabilize config tools and redesign settings/tools GUI administration
-- Improve caching via new cache database table
-- Add LOD query support via React
-- Make LOD preview optional and metadata configurable
-- Make language switch block available outside of navigation
-- Clean up version information notice
-- Redesign and reorganize the OES dashboard
-- Redesign operations and feature display
-- Redesign page and container icons
-- Redesign styling of oes-filter-item-count
-- Add options for "author byline" block to include ORCID information and skip sorting
-- Add editor style class for Guideline admin pages
-- Add parameter for block "Title" (HTML tag, link flag)
-- Add parameter for block "Filter Alphabet" (Label for "all", include empty flag)
-- Add sticky style for block "Table of Contents"
+### Changed
+- Renamed `OES Manual` → `Guidelines`
+- Renamed `Project` → `Application` throughout
+- Renamed schema properties: Excerpt → Abstract, Literature → Bibliography, Terms → Subjects
+- Reorganized settings and tools pages
+- Reorganized and expanded schema settings
+- Redesigned settings/tools administration GUI and stabilized config tools
+- Redesigned OES dashboard, operations/feature display, page and container icons
+- Restyled `oes-filter-item-count`
+- Improved internal page generation
+- Improved caching via new cache database table
+- Added LOD query support via React
+- Made LOD preview optional; metadata now configurable
+- Made language switch block available outside the navigation
+- Added sticky style for block "Table of Contents"
+- Added editor style class for Guideline admin pages
+- Cleaned up version information notice
+- Consolidated XML processing into export formats module
 
-### Removals / Cleanups
-- Remove “Show OES Objects” setting (admin-only feature)
-- Remove hide_version_tab (now admin-only by default)
-- Remove oes_replace_for_serializing, oes_stripslashes_array, oes_replace_for_form, oes_replace_from_serializing
-- Remove obsolete CSS
-- Remove filter 'oes/set_archive_data_caching_enabled'
-- Remove parameters 3 and 5 from filter 'oes/api_gnd_display_entry'
-- Remove unused function 'copy_post_meta'
-- Remove legacy option 'oes_admin-hide_version-tab'
-- Remove xml-Processing, moved to export formats
+### Deprecated
+- Constant `OES_LIVEMODE` — use `OES_LIVE_MODE` instead
 
-### Fix
-- fix warning on custom post archive page
-- editor style for iframe (since WP 7.0.0)
+### Removed
+- "Show OES Objects" setting (admin-only feature)
+- Legacy options `hide_version_tab` and `oes_admin-hide_version-tab` (now admin-only by default)
+- Parameters 3 and 5 from filter `oes/api_gnd_display_entry`
+- Global `$oes_archive_data['archive']['post_type']` — use `$oes_archive['post_type']` instead
+- Filter `oes/schema_types` — use `oes/oes_types` instead
+- Filters `oes/set_archive_data_caching_enabled`, `oes/schema_options_single`
+- Functions `oes_replace_for_serializing()`, `oes_stripslashes_array()`, `oes_replace_for_form()`, `copy_post_meta()`
+- Obsolete CSS
+- HTML attribute `oes-post-filter-[ID]` — replace with `date=...`
+- HTML attribute `oes-post-[language]`
 
-## 2.4.4 (in development)
+### Fixed
+- Warning on custom post archive page
+- Editor style for iframe (since WP 7.0.0)
+
+## 2.4.4
 ### New Filters / Functions
 - Added filter: 'oes/get_literature_field_display_value' 
 - Added function: oes_normalize_path_for_localhost() (removes leading /oes prefix in path)

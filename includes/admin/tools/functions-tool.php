@@ -1,11 +1,5 @@
 <?php
 
-/**
- * @file
- * @todoReview Review for 2.4.x
- * @oesDevelopment Only register tools if necessary
- */
-
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly

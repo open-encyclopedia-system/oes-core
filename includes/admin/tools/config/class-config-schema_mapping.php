@@ -168,7 +168,6 @@ class Schema_Mapping extends Schema
         if ($hasPattern) {
             $jsonValue = is_array($value) ? $value : [];
 
-            //TODO
             $triggerTextArray = $jsonValue['pattern'] ?? [];
             if(!is_array($triggerTextArray)) {
                 $triggerTextArray = [];

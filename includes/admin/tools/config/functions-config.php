@@ -93,8 +93,22 @@ function update_config_post(int $postID, array $updateValues = []): string {
 
         foreach ($new as $key => $value) {
 
-            //TODO
-            if(in_array($key, ['admin_columns', 'metadata', 'archive', 'archive_filter', 'authors', 'creators', 'literature', 'terms', 'external', 'lod', 'relations', 'related_content', 'translators', 'editors'])){
+            //@oesDevelopment Improve normalization
+            if(in_array($key, [
+                'admin_columns',
+                'metadata',
+                'archive',
+                'archive_filter',
+                'authors',
+                'creators',
+                'editors',
+                'translators',
+                'literature',
+                'terms',
+                'external',
+                'lod',
+                'relations',
+                'related_content'])){
                 $current[$key] = normalize_option_value($value, $current[$key] ?? []);
             }
             elseif (is_array($value)) {

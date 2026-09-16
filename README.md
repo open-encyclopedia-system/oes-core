@@ -5,16 +5,20 @@ Building and maintaining online encyclopedias.
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/open-encyclopedia-system/OES/graphs/commit-activity)
 [![Version Requirement](https://img.shields.io/badge/WordPress-6.5.0+-blue.svg)](https://wordpress.org)
 [![PHP Requirement](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net/supported-versions.php)
+[![ACF Requirement](https://img.shields.io/badge/ACF-6.3.4%2B-blue.svg)](https://www.advancedcustomfields.com/)
 [![Topic](https://img.shields.io/badge/Topic-Digital%20Humanities-lightgrey.svg)](#)
 [![Topic](https://img.shields.io/badge/Topic-Open%20Access-lightgrey.svg)](#)
+[![Topic](https://img.shields.io/badge/Topic-Open%20Data-lightgrey.svg)](#)
+[![Topic](https://img.shields.io/badge/Topic-Open%20Source-lightgrey.svg)](#)
 [![Topic](https://img.shields.io/badge/Topic-Publishing-lightgrey.svg)](#)
 [![Topic](https://img.shields.io/badge/Topic-Linked%20Data-lightgrey.svg)](#)
 [![AI-DECLARATION: assist](https://img.shields.io/badge/䷼%20AI--DECLARATION-assist-fef9c3?labelColor=fef9c3)](./AI-DECLARATION.md)
 
-**Tags:** `publishing`, `encyclopedia`, `digital humanities`, `open access`, `academic`, `linked data`
+**Tags:** `publishing`, `encyclopedia`, `digital humanities`, `open access`, `open data`, `open source`, `academic`, `linked data`
 **Requires at least:** `WordPress 6.5.0`
 **Tested up to:** `WordPress 6.9.4`
 **Requires PHP:** `8.1 or later`
+**Requires ACF Plugin:** `6.3.4 or later`
 **License:** `GPLv2 or later`
 **License URI:** [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html)
 
@@ -75,17 +79,19 @@ To get OES running locally or on a server, follow these steps:
 
 1. **Install WordPress** (v6.5.0 or later) and PHP 8.1+ on your system.
 2. **Download and install the required plugins**:
-- [OES Core Plugin](#) → Place it in `/wp-content/plugins/`
+- [OES Core Plugin](https://github.com/open-encyclopedia-system/oes-core) → Place it in `/wp-content/plugins/`
 - [Advanced Custom Fields (ACF)](https://www.advancedcustomfields.com/) → Install via WordPress Admin
 - Optionally install:
-- [OES Project Plugin](#)
-- [OES Theme](#)
+- [OES Project Plugin](https://github.com/open-encyclopedia-system/oes-demo)
+- [OES Theme](https://github.com/open-encyclopedia-system/oes-block-theme)
 3. **Activate the plugins** in your WordPress admin dashboard.
 4. **Access the editorial interface**, configure the project settings, and start creating articles.
 
 For a guided setup, see the [OES Manual](https://manual.open-encyclopedia-system.org/).
 
 ## Documentation
+
+See [ROADMAP.md](./ROADMAP.md) for planned features and [CHANGELOG.md](./CHANGELOG.md) for release history.
 
 Comprehensive documentation is available at:
 [https://manual.open-encyclopedia-system.org/](https://manual.open-encyclopedia-system.org/)

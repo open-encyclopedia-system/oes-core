@@ -121,11 +121,6 @@ if (!class_exists('\OES\Admin\Module_Page')) :
                 if($this->schema_tabs) {
                     add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
                 }
-
-                //TODO rename  or move if necessary? e.g. test for zotpress?
-                /*if($this->schema_enabled_single) {
-                    add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
-                }*/
             }
 
             if($this->admin_page){
@@ -256,8 +251,6 @@ if (!class_exists('\OES\Admin\Module_Page')) :
         public function schema_options_single(array $configs, string $type = '', string $objectKey = '', string $component = ''): array
         {
             if (in_array($type, $this->types) && in_array($component, $this->components)) {
-
-                //TODO replaces other configs with this key... e.g. DOI
                 $configs[$this->key] = [
                     'label' => $this->name,
                     'option_name' => 'oes_' . $this->key . '-buttons-' . $objectKey

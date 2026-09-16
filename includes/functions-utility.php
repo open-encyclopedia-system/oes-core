@@ -34,6 +34,14 @@ function oes_include(string $file, string $root = '', bool $includes = true): vo
     }
 }
 
+/**
+ * @deprecated 3.0.0 Use oes_include_application instead
+ */
+function oes_include_project(string $file, string $root = '', bool $includes = true): void
+{
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_include_application()');
+    oes_include_application($file, $root, $includes);
+}
 
 /**
  * Includes a file relative to the OES Application Plugin path.
@@ -45,7 +53,7 @@ function oes_include(string $file, string $root = '', bool $includes = true): vo
  * @param bool   $includes Optional. Whether to prepend the 'includes/' directory. Default true.
  * @return void
  */
-function oes_include_project(string $file, string $root = '', bool $includes = true): void
+function oes_include_application(string $file, string $root = '', bool $includes = true): void
 {
     if (empty($root) && defined('OES_APPLICATION_PLUGIN')) {
         $root = OES_APPLICATION_PLUGIN;

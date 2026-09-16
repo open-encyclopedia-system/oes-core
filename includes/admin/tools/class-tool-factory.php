@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @todoReview Review for 2.4.x
- */
-
 namespace OES\Admin\Tools;
 
 use function OES\Admin\get_admin_user_only_message;
