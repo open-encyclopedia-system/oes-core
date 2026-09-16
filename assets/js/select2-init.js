@@ -1,6 +1,3 @@
-/* @oesDevelopment Replaced this by ACF select2 */
-
-/* initialize select2 */
 jQuery(".oes-replace-select2").each(function(){
     let $this = jQuery(this);
     if($this.attr('data-reorder')){
