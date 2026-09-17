@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0 (in development) - 2026-09-01
+## 3.0.0 (in development) - 2026-09-22
 
 ### Added
 - New rights model

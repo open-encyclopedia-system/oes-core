@@ -1,6 +1,6 @@
 <?php
 
-require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-features-list-table.php';
+require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-features_list_table.php';
 
 $listTable = new Features_List_Table([
     'singular' => __('feature', 'oes'),

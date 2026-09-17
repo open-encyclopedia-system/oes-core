@@ -6,10 +6,10 @@
  * @wordpress-plugin
  * Plugin Name:       OES Core
  * Plugin URI:        https://www.open-encyclopedia-system.org/
- * Description:       A framework for scholarly reference works
+ * Description:       A framework for scholarly reference works.
  * Version:           3.0.0
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen
- * Author URI:        https://www.it.fu-berlin.de/die-fub-it/
+ * Author URI:        https://www.fu-berlin.de/
  * Requires at least: 6.5
  * Tested up to:      7.1
  * Requires PHP:      8.1

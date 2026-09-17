@@ -3,7 +3,7 @@
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
- * Constructs a table list for OES remarks.
+ * Constructs a table list for OES features.
  */
 class Features_List_Table extends OES_List_Table
 {

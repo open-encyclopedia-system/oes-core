@@ -487,3 +487,48 @@ function oes_post_breadcrumbs(array $args = []): string {
     $separator = $args['separator'] ?? '  ›  ';
     return implode($separator, $breadcrumbs);
 }
+
+/**
+ * Redirect template parts according to language.
+ *
+ * @param array $parsed_block The block data.
+ * @return array Return the modified block data.
+ */
+function oes_redirect_template_parts(array $parsed_block): array
+{
+    if ('core/template-part' === $parsed_block['blockName'] &&
+            in_array($parsed_block['attrs']['slug'], ['header', 'footer'])) {
+        global $oes_language;
+        if ($oes_language != 'language0') {
+            $parsed_block['attrs']['slug'] .= '_' . $oes_language;
+        }
+    }
+    return $parsed_block;
+}
+
+/**
+ * Modify the document title.
+ *
+ * @oesDevelopment: pass this in classes; add document title
+ *
+ * @param string $title The document title.
+ * @return string Return the modified document title.
+ */
+function oes_document_title(string $title): string
+{
+    global $oes_post, $oes_term, $oes_archive;
+
+    if (!empty($oes_post) && isset($oes_post->title)) {
+        return wp_strip_all_tags($oes_post->title);
+    }
+
+    if (!empty($oes_term) && isset($oes_term->title)) {
+        return wp_strip_all_tags($oes_term->title);
+    }
+
+    if (!empty($oes_archive) && isset($oes_archive['page_title'])) {
+        return wp_strip_all_tags($oes_archive['page_title']);
+    }
+
+    return wp_strip_all_tags($title);
+}

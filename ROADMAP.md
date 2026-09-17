@@ -39,6 +39,7 @@ See [DEPRECATIONS.md](./DEPRECATIONS.md) for all currently deprecated and planne
 - [ ] Standardize usage of `oes_write_log()`
 - [ ] clean up oes_add_style/oes_add_script/$oes_assets
 - [ ] include admin classes on admin pages only if needed
+- [ ] clean up JavaScript: use vanilla instead of jQuery
  
 ## Under Consideration
 - Shortcode verification and preview in admin pages

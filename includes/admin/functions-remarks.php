@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 function main_page(): void
 {
     global $oesRemarksListTable;
-    require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-remarks-list-table.php';
+    require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-remarks_list_table.php';
     $oesRemarksListTable = new \Remarks_List_Table([
             'singular' => 'OES remark',
             'plural' => 'OES remarks',

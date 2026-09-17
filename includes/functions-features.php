@@ -411,6 +411,7 @@ function theme_classes(): void
     add_filter('init', 'oes_set_language_cookie', 999);
     add_filter('the_content', 'oes_the_content', 12, 1);
     add_filter('render_block_core/heading', 'oes_render_block_core_heading', 10, 2);
+    add_filter('pre_get_document_title', 'oes_document_title'); //@oesDevelopment: pass this in classes; add document title
 }
 
 /**
