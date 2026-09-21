@@ -6,15 +6,15 @@ Building and maintaining online encyclopedias.
 [![Version Requirement](https://img.shields.io/badge/WordPress-6.5.0+-blue.svg)](https://wordpress.org)
 [![PHP Requirement](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net/supported-versions.php)
 [![ACF Requirement](https://img.shields.io/badge/ACF-6.3.4%2B-blue.svg)](https://www.advancedcustomfields.com/)
-[![Topic](https://img.shields.io/badge/Topic-Digital%20Humanities-lightgrey.svg)](#)
-[![Topic](https://img.shields.io/badge/Topic-Open%20Access-lightgrey.svg)](#)
-[![Topic](https://img.shields.io/badge/Topic-Open%20Data-lightgrey.svg)](#)
-[![Topic](https://img.shields.io/badge/Topic-Open%20Source-lightgrey.svg)](#)
-[![Topic](https://img.shields.io/badge/Topic-Publishing-lightgrey.svg)](#)
-[![Topic](https://img.shields.io/badge/Topic-Linked%20Data-lightgrey.svg)](#)
+[![Topic](https://img.shields.io/badge/Topic-Digital%20Humanities-lightgrey.svg)](https://github.com/topics/digital-humanities)
+[![Topic](https://img.shields.io/badge/Topic-Open%20Access-lightgrey.svg)](https://github.com/topics/open-access)
+[![Topic](https://img.shields.io/badge/Topic-Open%20Data-lightgrey.svg)](https://github.com/topics/open-data)
+[![Topic](https://img.shields.io/badge/Topic-Open%20Source-lightgrey.svg)](https://github.com/topics/open-source)
+[![Topic](https://img.shields.io/badge/Topic-Publishing-lightgrey.svg)](https://github.com/topics/publishing)
+[![Topic](https://img.shields.io/badge/Topic-Linked%20Data-lightgrey.svg)](https://github.com/topics/linked-data)
 [![AI-DECLARATION: assist](https://img.shields.io/badge/䷼%20AI--DECLARATION-assist-fef9c3?labelColor=fef9c3)](./AI-DECLARATION.md)
 
-**Tags:** `wordpress-plugin`, `cms`, `php`, `scholarly-publishing`, `publishing`, `digital-humanities`, `social-sciences`, `reference-work`
+**Tags:** `wordpress-plugin`, `cms`, `php`, `scholarly-publishing`, `publishing`, `digital-humanities`, `social-sciences`
 **Requires at least:** `WordPress 6.5.0`
 **Tested up to:** `WordPress 7.1.0`
 **Requires PHP:** `8.1 or later`
