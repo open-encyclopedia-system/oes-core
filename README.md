@@ -1,8 +1,8 @@
 # Open Encyclopedia System (OES)
 Building and maintaining online encyclopedias.
 
-[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/open-encyclopedia-system/OES/graphs/commit-activity)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/open-encyclopedia-system/oes-core/graphs/commit-activity)
 [![Version Requirement](https://img.shields.io/badge/WordPress-6.5.0+-blue.svg)](https://wordpress.org)
 [![PHP Requirement](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://www.php.net/supported-versions.php)
 [![ACF Requirement](https://img.shields.io/badge/ACF-6.3.4%2B-blue.svg)](https://www.advancedcustomfields.com/)
@@ -186,4 +186,4 @@ This software is licensed under the **GNU General Public License (GPL v2 or late
 © 2026 Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen.
 
 For full license terms see [LICENSE.txt](./LICENSE.txt) or
-[GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html).
+[GPL 2.0](https://www.gnu.org/licenses/gpl-2.0.html).

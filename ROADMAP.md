@@ -31,7 +31,7 @@ See [DEPRECATIONS.md](./DEPRECATIONS.md) for all currently deprecated and planne
 
 ## Checks
 - [ ] Verify the removal of `oes-ignore-alphabet-filter` from `filter.js`. Potential issues with timeline, EV
-- [ ] Date model with more than two languages
+- [ ] Data model with more than two languages
 
 ## CleanUps
 - [ ] clean up and standardize namespaces

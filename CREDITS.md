@@ -1,9 +1,12 @@
 # Credits
 
-This plugin is developed and maintained by **Maren Welterlich-Strobl**, Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen.
+This plugin is developed and maintained by **Maren Welterlich-Strobl**,
+Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen.
 **Roles ([CRediT](https://credit.niso.org/)):** Software, Writing – original draft, Writing – review & editing
 
-Contributor roles below follow the [Contributor Roles Taxonomy (CRediT)](https://credit.niso.org/), a standardized vocabulary for describing individual contributions to a scholarly or software output.
+Contributor roles below follow the [Contributor Roles Taxonomy (CRediT)](https://credit.niso.org/), a 
+standardized vocabulary for
+describing individual contributions to a scholarly or software output.
 
 ## OES Today
 
@@ -35,14 +38,17 @@ A custom-built software solution for this project was developed by CeDiS
 and was later replaced, in the follow-up phase, by the standardized OES
 solution.
 
-**Prof. Oliver Janz** — Project lead
-**Roles (CRediT):** Conceptualization, Project administration, Supervision
+**Prof. Dr. Oliver Janz** — Principal Investigator
+**Roles (CRediT):** Conceptualization, Project administration, Supervision, Funding acquisition
+
+**Prof. Dr. Nicolas Apostolopoulos** — Principal Investigator
+**Roles (CRediT):** Supervision, Software, Funding acquisition
+
+**Dr. Klaus Ceynowa** — Principal Investigator
+**Roles (CRediT):** Supervision, Funding acquisition
 
 **Dr. Jennifer Willenberg** — Project coordination
 **Roles (CRediT):** Conceptualization, Project administration
-
-**Prof. Nicolas Apostolopoulos (PI)** — Software development
-**Roles (CRediT):** Software, Supervision
 
 **Ilker Egilmez** — Software development
 **Roles (CRediT):** Software
@@ -58,17 +64,23 @@ Since October 2020, the OES code has been available under a **GPLv2
 license** on [GitHub](https://github.com/open-encyclopedia-system/) for use
 and extension by third parties.
 
-**Prof. Nicolas Apostolopoulos** — Project lead
+**Prof. Dr. Nicolas Apostolopoulos** — Principal Investigator
 **Roles (CRediT):** Project administration, Supervision, Funding acquisition
 
-**Prof. Oliver Janz** — Project lead
+**Prof. Dr. Oliver Janz** — — Principal Investigator
 **Roles (CRediT):** Conceptualization, Project administration, Supervision
+
+**Prof. Dr. Miltos Pechlivanos** — Principal Investigator
+**Roles (CRediT):** Project administration, Supervision, Funding acquisition
+
+**Dr. Klaus Ceynowa** — Principal Investigator
+**Roles (CRediT):** Supervision, Funding acquisition
 
 **Dr. Jennifer Willenberg** — Project coordination
 **Roles (CRediT):** Conceptualization, Project administration
 
 **Christoph Schimmel** — Project coordination
-**Roles (CRediT):** Conceptualization, Project administration
+**Roles (CRediT):** Project administration, Conceptualization,
 
 **Ilker Egilmez** — Implementation of the OES prototype
 **Roles (CRediT):** Software
@@ -88,6 +100,7 @@ Adaptation: **Maren Welterlich-Strobl** — Software (modification)
 
 ---
 
-*Main development and authorship of this plugin belongs to Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen.
+*Main development and authorship of this plugin belongs to Maren Welterlich-Strobl, Freie Universität Berlin,
+FUB-IT, Digitale Forschungsinfrastrukturen.
 We thank all the individuals and projects named above for the conceptual and
 technical foundations this plugin builds upon.*

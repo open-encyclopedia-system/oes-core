@@ -52,6 +52,7 @@
 
 ### Deprecated
 - Constant `OES_LIVEMODE` — use `OES_LIVE_MODE` instead
+- See [DEPRECATIONS.md](./DEPRECATIONS.md) for the full list
 
 ### Removed
 - "Show OES Objects" setting (admin-only feature)
