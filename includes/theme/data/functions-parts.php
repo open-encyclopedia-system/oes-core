@@ -959,10 +959,10 @@ function oes_post_type_is_allowed(object $oes_post, array $args): bool
  * @param array $args Arguments possibly containing a 'labels' entry.
  * @return string The rendered header HTML, or an empty string if no labels were given.
  */
-function oes_get_language_label_text(array $args, bool $param = false): string
+function oes_get_language_label_text(array $args): string
 {
-    if($param){
-        return isset($args['labels']) ? oes_language_label_html($args['labels']) : '';
+    if($args['labels'] ?? null){
+        return oes_language_label_html($args['labels']);
     }
 
     return oes_language_label_html($args);

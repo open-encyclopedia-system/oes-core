@@ -811,7 +811,7 @@ if (!class_exists('OES_Object')) {
                                 '</div>';
                         }
 
-            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements);
+            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements, $args['group_fields'] ?? true);
         }
 
 
@@ -847,7 +847,7 @@ if (!class_exists('OES_Object')) {
                                 );
                         }
 
-            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements);
+            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements, false);
         }
 
 
@@ -901,7 +901,7 @@ if (!class_exists('OES_Object')) {
          * @param array $indexElements The index entries.
          * @return string Return the html representation of the list of index entries.
          */
-        public function get_index_entries_html(array $indexElements): string
+        public function get_index_entries_html(array $indexElements, bool $grouped = true): string
         {
             $collectIndexElements = [];
             foreach ($indexElements as $singleIndex)

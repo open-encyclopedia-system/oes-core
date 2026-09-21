@@ -1454,6 +1454,34 @@ if (!class_exists('OES_Post')) {
             return $connectedPosts;
         }
 
+        /** @inheritdoc */
+        public function get_index_entries_html(array $indexElements, bool $grouped = true): string
+        {
+            $collectIndexElements = [];
+            foreach ($indexElements as $fieldKey => $singleIndex) {
+                if($grouped){
+                    ksort($singleIndex);
+                    $collectIndexElements[] = '<div class="oes-archive-wrapper-header">' .
+                        '<h3 class="oes-index-grouped oes-content-table-header">' .
+                        $this->fields[$fieldKey]['further_options']['label_translation_' . $this->language] .
+                        '</h3>' .
+                        '</div>' .
+                        implode('', $singleIndex);
+                }
+                else{
+                    foreach ($singleIndex as $singleEntryKey => $singleEntry) {
+                        $collectIndexElements[$singleEntryKey] = $singleEntry;
+                    }
+                }
+            }
+
+            ksort($collectIndexElements);
+            return '<div class="oes-archive-wrapper">' .
+                '<div class="oes-alphabet-container">' .
+                implode('', $collectIndexElements) .
+                '</div>' .
+                '</div>';
+        }
 
         /**
          * Collect data for metadata or archive representation.
