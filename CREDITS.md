@@ -19,6 +19,8 @@ research project, **"Von 1914-1918-online zu dem Open Encyclopedia System"**
 (2011–2020), DFG project number
 [195110440](https://gepris.dfg.de/gepris/projekt/195110440?language=en).
 The project produced two successive software solutions, described below.
+For a narrative account of this history, see
+[OES's history](https://www.open-encyclopedia-system.org/en/ueber_uns/historie/index.html) on the official website.
 
 **Antragsteller (grant applicants):** Prof. Dr. Nicolas Apostolopoulos,
 Dr. Klaus Ceynowa, Prof. Dr. Oliver Janz, Prof. Dr. Miltos Pechlivanos
@@ -37,10 +39,13 @@ solution.
 **Roles (CRediT):** Conceptualization, Project administration, Supervision
 
 **Dr. Jennifer Willenberg** — Project coordination
-**Roles (CRediT):** Project administration
+**Roles (CRediT):** Conceptualization, Project administration
 
-**Prof. Nicolas Apostolopoulos (PI), Ilker Egilmez** — Software development (CeDiS)
-**Roles (CRediT):** Software, Supervision (Apostolopoulos); Software (Egilmez)
+**Prof. Nicolas Apostolopoulos (PI)** — Software development
+**Roles (CRediT):** Software, Supervision
+
+**Ilker Egilmez** — Software development
+**Roles (CRediT):** Software
 
 ### Phase 2: Open Encyclopedia System (OES), 2016–2020
 
@@ -55,6 +60,15 @@ and extension by third parties.
 
 **Prof. Nicolas Apostolopoulos** — Project lead
 **Roles (CRediT):** Project administration, Supervision, Funding acquisition
+
+**Prof. Oliver Janz** — Project lead
+**Roles (CRediT):** Conceptualization, Project administration, Supervision
+
+**Dr. Jennifer Willenberg** — Project coordination
+**Roles (CRediT):** Conceptualization, Project administration
+
+**Christoph Schimmel** — Project coordination
+**Roles (CRediT):** Conceptualization, Project administration
 
 **Ilker Egilmez** — Implementation of the OES prototype
 **Roles (CRediT):** Software

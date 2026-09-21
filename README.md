@@ -14,31 +14,49 @@ Building and maintaining online encyclopedias.
 [![Topic](https://img.shields.io/badge/Topic-Linked%20Data-lightgrey.svg)](#)
 [![AI-DECLARATION: assist](https://img.shields.io/badge/䷼%20AI--DECLARATION-assist-fef9c3?labelColor=fef9c3)](./AI-DECLARATION.md)
 
-**Tags:** `publishing`, `encyclopedia`, `digital humanities`, `open access`, `open data`, `open source`, `academic`, `linked data`
+**Tags:** `wordpress-plugin`, `cms`, `php`, `scholarly-publishing`, `publishing`, `digital-humanities`, `social-sciences`, `reference-work`
 **Requires at least:** `WordPress 6.5.0`
-**Tested up to:** `WordPress 6.9.4`
+**Tested up to:** `WordPress 7.1.0`
 **Requires PHP:** `8.1 or later`
 **Requires ACF Plugin:** `6.3.4 or later`
 **License:** `GPLv2 or later`
 **License URI:** [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html)
 
-The **Open Encyclopedia System (OES)** is a modular and configurable open-source software framework for creating, 
-publishing, and maintaining **online encyclopedias** in the **humanities and social sciences**. 
-Designed to support article-based publishing and Open Access principles, OES offers a sustainable and scholarly 
+> **Note:** Most in-depth guides linked from this README (the OES Manual) are written in German. English
+> documentation is limited to this file at present.
+
+## Table of Contents
+
+- [About](#about)
+- [Features](#features)
+- [Shortcodes](#shortcodes)
+- [Demo Version](#demo-version)
+- [Requirements](#requirements)
+- [Recommended Plugins](#recommended-plugins)
+- [Installation](#installation)
+- [Documentation](#documentation)
+- [Cite This Software](#cite-this-software)
+- [Support](#support)
+- [Contributing](#contributing)
+- [Credits](#credits)
+- [License](#license)
+
+## About
+
+The **Open Encyclopedia System (OES)** is a modular and configurable open-source software framework for creating,
+publishing, and maintaining **online encyclopedias** in the **humanities and social sciences**.
+Designed to support article-based publishing and Open Access principles, OES offers a sustainable and scholarly
 solution for digital editorial workflows.
 
-OES is built on **WordPress**, an open-source content management system. WordPress handles core infrastructure such 
+OES is built on **WordPress**, an open-source content management system. WordPress handles core infrastructure such
 as user management, content storage, and plugin architecture.
 
-Developed between 2016–2020 with funding from the **German Research Foundation (DFG)**, 
-OES emerged from the project *“From 1914-1918-online to the Open Encyclopedia System”*.
+OES originated between 2016–2020 as part of the **German Research Foundation (DFG)**-funded
+project *"From 1914-1918-online to the Open Encyclopedia System,"*
+and has been maintained and extended since.
 
-For more information, visit the [official website](https://open-encyclopedia-system.org/).
-
-## Cite this software
-
-If you use this software, please cite it using the metadata in the file CITATION.CFF 
-(for more information about CFF see https://citation-file-format.github.io/).
+For more information, visit the [official website](https://www.open-encyclopedia-system.org/en/index.html)
+or read about [OES's history](https://www.open-encyclopedia-system.org/en/ueber_uns/historie/index.html).
 
 ## Features
 
@@ -49,102 +67,123 @@ If you use this software, please cite it using the metadata in the file CITATION
 - Control article display via a configurable interface
 - Maintain long-term sustainability through version control
 
-### Shortcodes
+## Shortcodes
 
-OES registers several shortcodes for use in templates. Full shortcode documentation: https://manual.open-encyclopedia-system.org/book/shortcodes/
+OES registers several shortcodes for use in templates, for example:
+
+| Shortcode           | Description                          |
+|---------------------|--------------------------------------|
+| `[oes_post_method]` | Renders a post method of an OES post |
+| `[oes_field]`       | Renders a post field                 |
+| `[oes_audit]`       | Displays data table for audit        |
+
+> These are illustrative examples — see the full shortcode reference for parameters and additional shortcodes:
+> [OES Manual Shortcodes](https://manual.open-encyclopedia-system.org/book/shortcodes/) *(German)*.
+
+## Demo Version
+
+The **OES Demo** is an exemplary and fictional online encyclopedia built with the Open Encyclopedia System
+framework. It gives you a first-hand look at OES's editorial and front-end functionality without setting up
+your own application first.
+
+- **Live demo:** [Explore the demo encyclopedia](https://demo.open-encyclopedia-system.org/)
+- **Demo plugin repository:** [oes-demo](https://github.com/open-encyclopedia-system/oes-demo)
+
+> You can find a more detailed installation guide on how to set up the OES Demo here: 
+> [OES Manual Installation & Einrichtung](https://manual.open-encyclopedia-system.org/book/installation-einrichtung/) *(German)*.
+
+## Requirements
+
+| Component                    | Minimum Version            |
+|------------------------------|----------------------------|
+| WordPress                    | 6.5.0 (tested up to 7.1.0) |
+| PHP                          | 8.1+                       |
+| Advanced Custom Fields (ACF) | 6.3.4+                     |
+
+OES is compatible with standard WordPress hosting environments, such as Apache/MySQL servers, as well as local
+development environments like MAMP or XAMPP.
+
+## Recommended Plugins
+
+While not required, the following plugins are commonly used alongside OES to extend its functionality. See the
+[OES Manual — Recommended Plugins](https://manual.open-encyclopedia-system.org/book/ergaenzende-plugins/) *(German)*
+for the full list and configuration guidance.
 
 ## Installation
-
-OES is a WordPress-based plugin suite, which is compatible with standard WordPress hosting environments, such as Apache/MySQL servers or local development environments like MAMP or XAMPP. A typical installation includes:
 
 ### Required Components
 
 - `OES Core` plugin – provides foundational editorial functionality
-- `OES Project` plugin – includes project-specific customizations
+- an application-specific OES plugin, e.g. the `OES Demo` plugin – provides application-specific customizations
 - `Advanced Custom Fields (ACF)` – version 6.3.4 or later
-- (Optional) `OES Theme` – for a tailored front-end interface.
-> Note: The OES Theme is optional. You may use your own WordPress theme, but certain layout features (e.g. custom article styling) are only supported via an OES-compatible theme.
+- *(Optional)* `OES Theme` – for a tailored front-end interface
 
-### Steps
+> **Note:** The OES Theme is optional. You may use your own WordPress theme, but certain layout features (e.g.
+> custom article styling) are only supported via an OES-compatible theme.
 
-1. Download the OES Core plugin from GitHub and add it to your WordPress plugin directory.
-2. Install and activate **Advanced Custom Fields (ACF)**.
-3. Activate the OES Core plugin.
-4. Install a project-specific OES plugin or use the [OES Demo plugin](https://github.com/open-encyclopedia-system/).
-5. (Optional) Install and activate the OES-compatible theme.
-
-## Quick Start
+### Quick Start
 
 To get OES running locally or on a server, follow these steps:
 
-1. **Install WordPress** (v6.5.0 or later) and PHP 8.1+ on your system.
-2. **Download and install the required plugins**:
-- [OES Core Plugin](https://github.com/open-encyclopedia-system/oes-core) → Place it in `/wp-content/plugins/`
-- [Advanced Custom Fields (ACF)](https://www.advancedcustomfields.com/) → Install via WordPress Admin
-- Optionally install:
-- [OES Project Plugin](https://github.com/open-encyclopedia-system/oes-demo)
-- [OES Theme](https://github.com/open-encyclopedia-system/oes-block-theme)
-3. **Activate the plugins** in your WordPress admin dashboard.
-4. **Access the editorial interface**, configure the project settings, and start creating articles.
+1. **Install WordPress** on your system.
+2. **Download and activate the required plugins**:
+   - [OES Core Plugin](https://github.com/open-encyclopedia-system/oes-core)
+   - [Advanced Custom Fields (ACF)](https://www.advancedcustomfields.com/)
+   - An application-specific Plugin, e.g. [OES Demo Plugin](https://github.com/open-encyclopedia-system/oes-demo)
+3. *(Optional)* **Download and activate a theme**, e.g. the [OES Theme](https://github.com/open-encyclopedia-system/oes-block-theme).
+4. **Access the editorial interface**, configure the application settings, and start creating articles.
 
-For a guided setup, see the [OES Manual](https://manual.open-encyclopedia-system.org/).
+> For a guided and more detailed setup, see the [OES Manual Installation & Einrichtung](https://manual.open-encyclopedia-system.org/) *(German)*.
 
 ## Documentation
 
-See [ROADMAP.md](./ROADMAP.md) for planned features and [CHANGELOG.md](./CHANGELOG.md) for release history.
-
 Comprehensive documentation is available at:
-[https://manual.open-encyclopedia-system.org/](https://manual.open-encyclopedia-system.org/)
+[OES Manual](https://manual.open-encyclopedia-system.org/) *(German)*
 
 The manual is regularly updated and includes guidance for installation, configuration, and customization.
 
-For technical support, please contact:
-info@open-encyclopedia-system.org
+Additional application documentation in this repository:
 
-## Demo Version
+- [ROADMAP.md](./ROADMAP.md) — planned features
+- [CHANGELOG.md](./CHANGELOG.md) — release history
+- [DEPRECATIONS.md](./DEPRECATIONS.md) — deprecated features and migration notes for upgrading between versions
 
-Explore the editorial interface and front-end of an example application with the **OES Demo plugin**, which includes:
+> **Upgrading an existing installation?** Check [DEPRECATIONS.md](./DEPRECATIONS.md) before updating to a new
+> version, as it lists deprecated hooks, functions, and shortcodes that may affect existing applications.
 
-- A minimal online encyclopedia setup
-- A compatible WordPress theme
-- Optional demo content for testing
+## Cite This Software
 
-### Steps
-
-1. Install the `OES Demo Plugin` and the `OES Theme` from the [OES GitHub repository](https://github.com/open-encyclopedia-system/).
-2. Activate both in the WordPress admin dashboard.
-3. Navigate to the settings to import the provided demo content.
+If you use this software in academic or research work, please cite it using the metadata provided in
+[CITATION.CFF](./CITATION.cff) (see [citation-file-format.github.io](https://citation-file-format.github.io/) for
+details on the format). This ensures proper attribution and helps track the software's use in scholarly output.
 
 ## Support
 
-This repository does not provide GitHub-based support.
-For help with:
+This repository does not provide GitHub-based support (e.g. no issue tracker or discussions for user support).
 
-- Plugin usage and configuration
-- Customization options
-- Project-based implementation
-
-Please contact:
-info@open-encyclopedia-system.org
+For help with plugin usage and configuration, customization options, or application-based implementation, please
+contact: **info@open-encyclopedia-system.org**
 
 ## Contributing
 
-We welcome contributions from the academic and technical community.
-To get involved, please email:
+We welcome contributions from the academic and technical community. Contributions are currently coordinated
+directly rather than through GitHub pull requests — please reach out first so we can discuss scope and approach:
 
-info@open-encyclopedia-system.org
+**info@open-encyclopedia-system.org**
 
 ## Credits
 
 Developed by:
-**Digitale Infrastrukturen**, Freie Universität Berlin (FUB IT)
+**Digitale Forschungsinfrastrukturen**, Freie Universität Berlin (FUB-IT)
 Funded by: **German Research Foundation (DFG)**
+
+For more detailed credits see [CREDITS.md](./CREDITS.md).
 
 ## License
 
 This software is licensed under the **GNU General Public License (GPL v2 or later)**.
 
-© 2025 Freie Universität Berlin, FUB IT, Digitale Infrastrukturen.
+© 2026 Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen.
 
-For full license terms, see:
-[https://www.gnu.org/licenses/old-licenses/gpl-2.0.html](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+For full license terms see [LICENSE.txt](./LICENSE.txt) or
+[GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html).

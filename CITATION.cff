@@ -23,13 +23,14 @@ abstract: >
   article-based publication formats to already available
   options for electronic publishing.
 keywords:
-  - publishing
-  - encyclopedia
   - digital humanities
   - open access
-  - open source
-  - academic
-  - linked data
+  - open source software
+  - scholarly publishing
+  - online encyclopedia
+  - linked open data
+  - WordPress
+  - research infrastructure
 license: GPL-2.0
 version: 3.0.0
 date-released: '2026-09-22'
