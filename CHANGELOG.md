@@ -29,6 +29,7 @@
 - New parameters for block "Title": HTML tag, link flag
 - New parameters for block "Filter Alphabet": label for "all", include-empty flag
 - New parameters for block "Author Byline": ORCID display, skip-sorting option
+- New parameter for block "Index": group fields
 
 ### Changed
 - Renamed `OES Manual` → `Guidelines`
