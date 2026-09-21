@@ -1,8 +1,89 @@
 .oes-author-byline {
 	display: flex;
 
-	.oes-author-byline-by {
+	&__by {
 		padding-right: .25rem;
+	}
+
+	&__group {
+		display: inline-flex;
+
+		> ul::after {
+			content: ", ";
+			padding-right: .25rem;
+		}
+
+		&:last-child > ul::after {
+			display: none;
+		}
+	}
+
+	&__orcid {
+		&::before {
+			content: "";
+			display: inline-block;
+			width: 1rem;
+			height: 1rem;
+			margin: 0 4px;
+			background-image: url("../images/Orcid_16x16.png");
+			background-size: contain;
+			background-repeat: no-repeat;
+			vertical-align: middle;
+		}
+	}
+
+	&-include-orcid {
+		.oes-field-value-list {
+			li {
+				display: flex;
+			}
+
+			li:after {
+				display: none;
+			}
+		}
+
+		.oes-author-byline__group {
+			display: block;
+
+			> ul:after {
+				display: none;
+			}
+		}
 	}
 }
 
+.is-style-oes-list.wp-block-oes-author-byline {
+	padding-bottom: 2rem;
+
+	.oes-field-value-list {
+		li {
+			display: block;
+			padding-bottom: .5rem;
+
+			a {
+				display: block;
+			}
+		}
+
+		li:after {
+			display: none;
+		}
+	}
+
+	.oes-author-byline__group {
+		display: block;
+
+		ul::after {
+			display: none;
+		}
+	}
+
+	.oes-author-byline__orcid {
+		font-size: .9rem;
+
+		&::before {
+			margin-left: 0;
+		}
+	}
+}

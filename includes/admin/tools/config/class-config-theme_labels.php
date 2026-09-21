@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @reviewed 2.4.0
+ * @reviewed 3.0.0
  */
 
 namespace OES\Admin\Tools;
@@ -11,33 +11,32 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('Theme_Labels')) :
+if (class_exists('Theme_Labels')) exit;
+
+/**
+ * Class Theme_Labels
+ *
+ * Implement the config tool for theme label configurations.
+ */
+class Theme_Labels extends Config
+{
+    protected string $capability = 'oes_read_settings';
+
+    /** @var bool Add expand button on top. */
+    public bool $expand_button = false;
+
+    /** @inheritdoc */
+    function information_html(): string
+    {
+        return $this->expand_button ? get_expand_button() : '';
+    }
 
     /**
-     * Class Theme_Labels
-     *
-     * Implement the config tool for theme label configurations.
+     * Set language row as table header.
+     * @return void
      */
-    class Theme_Labels extends Config
+    function set_language_row(): void
     {
-
-        /** @var bool Add expand button on top. */
-        public bool $expand_button = false;
-
-        /** @inheritdoc */
-        function information_html(): string
-        {
-            return $this->expand_button ? get_expand_button() : '';
-        }
-
-        /**
-         * Set language row as table header.
-         * @return void
-         */
-        function set_language_row(): void
-        {
-            $this->add_table_header('', 'language_label', ['trigger' => false]);
-        }
-
+        $this->add_table_header('', 'language_label', ['trigger' => false]);
     }
-endif;
+}

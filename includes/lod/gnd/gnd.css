@@ -1,0 +1,16 @@
+.oes-lod-box .oes-gnd-box-image img {
+    padding:15px;
+    margin:auto;
+    min-height:200px;
+    max-height:30vh;
+    max-width: 30%;
+}
+
+.oes-lod-popup__popup.oes-popup__popup--tooltip {
+  max-width: 100%;
+  width: 100%;
+}
+
+.oes-lod-box-image-inner {
+  margin-right: 10px;
+}

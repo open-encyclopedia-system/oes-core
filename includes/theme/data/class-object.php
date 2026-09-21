@@ -41,8 +41,11 @@ if (!class_exists('OES_Object')) {
         /** @var string $index_display Display index connection as 'list' (default), 'table'. */
         public string $index_display = 'list';
 
-        /** @var string $schema_type The schema type. Default is 'other'. */
-        public string $schema_type = 'other';
+        /** @var string $schema The schema.org type. Default is 'Thing'. */
+        public string $schema = 'Thing';
+
+        /** @var string $type The OES type. Default is 'other'. */
+        public string $type = 'other';
 
         /** @var bool Prepare data for a block theme (full site editing theme). */
         public bool $block_theme = true;
@@ -808,7 +811,7 @@ if (!class_exists('OES_Object')) {
                                 '</div>';
                         }
 
-            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements);
+            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements, $args['group_fields'] ?? true);
         }
 
 
@@ -844,7 +847,7 @@ if (!class_exists('OES_Object')) {
                                 );
                         }
 
-            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements);
+            return empty($indexElements) ? '' : $this->get_index_entries_html($indexElements, false);
         }
 
 
@@ -898,7 +901,7 @@ if (!class_exists('OES_Object')) {
          * @param array $indexElements The index entries.
          * @return string Return the html representation of the list of index entries.
          */
-        public function get_index_entries_html(array $indexElements): string
+        public function get_index_entries_html(array $indexElements, bool $grouped = true): string
         {
             $collectIndexElements = [];
             foreach ($indexElements as $singleIndex)

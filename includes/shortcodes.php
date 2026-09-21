@@ -11,6 +11,7 @@ add_shortcode('oes_print_button', 'oes_print_button_html');
 add_shortcode('oes_post_terms', 'oes_post_terms_html');
 add_shortcode('oes_field', 'oes_field_html');
 add_shortcode('oes_post_method', 'oes_post_method_html');
+add_shortcode('oes_breadcrumbs', 'oes_post_breadcrumbs');
 
 // Label
 add_shortcode('oes_theme_label', 'oes_theme_label_html');
@@ -34,6 +35,7 @@ add_shortcode('oes_popup', '\OES\Popup\render_shortcode');
 // Admin tools
 add_shortcode('oes_audit', '\OES\Admin\display_audit');
 add_shortcode('oes_audit_relations', '\OES\Admin\display_audit_relations');
+add_shortcode('oes_audit_field_value', '\OES\Admin\display_audit_field_value');
 
-//@oesDevelopment xml output in development
-add_shortcode('oes_xml_button', 'oes_xml_shortcode');
+//@oesDevelopment export in development
+add_shortcode('oes_export_button', '\OES\Rest\export_button_html');

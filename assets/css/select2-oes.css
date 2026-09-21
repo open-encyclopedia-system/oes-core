@@ -1,7 +1,7 @@
-.oes-config-table .select2-container {
-  width: 100% !important;
+.form-table .select2-container {
+  width: 25em !important;
 }
-.oes-config-table .select2-container--default .select2-selection--multiple .select2-selection__choice {
+.form-table .select2-container--default .select2-selection--multiple .select2-selection__choice {
   border: 1px solid #268fbb;
   background-color: white;
 }

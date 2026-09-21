@@ -13,8 +13,22 @@
   "attributes": {
     "labels": {
       "type": "object"
+    },
+    "htmlTag": {
+      "type": "string"
     }
   },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Default",
+      "isDefault": true
+    },
+    {
+      "name": "oes-sticky",
+      "label": "Sticky"
+    }
+  ],
   "supports": {
     "spacing": {
       "margin": true,
@@ -39,5 +53,9 @@
   "editorScript": "file:./index.js",
   "style": "file:./style-index.css",
   "render": "file:./render.php",
-  "viewScript": "file:./view.js"
+  "viewScript": "file:./view.js",
+  "usesContext": [
+    "postID",
+    "postType"
+  ]
 }

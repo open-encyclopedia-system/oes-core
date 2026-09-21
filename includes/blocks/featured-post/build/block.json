@@ -11,12 +11,16 @@
   ],
   "description": "Display a featured post.",
   "attributes": {
-    "post_type": {
+    "oes_post_type": {
       "type": "string"
     },
-    "oes_post": {
-      "type": "string"
+    "oes_post_ID": {
+      "type": "number"
     }
+  },
+  "providesContext": {
+    "postType": "oes_post_type",
+    "postID": "oes_post_ID"
   },
   "supports": {
     "spacing": {
@@ -37,7 +41,8 @@
       "link": true
     },
     "alignText": true,
-    "fullHeight": true
+    "fullHeight": true,
+    "html": false
   },
   "editorScript": "file:./index.js",
   "editorStyle": "file:./index.css",

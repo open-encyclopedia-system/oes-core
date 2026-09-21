@@ -103,7 +103,7 @@ function display_stored_shortcodes(string $prefix, array $parameters = []): void
     }
 
     if (!empty($storedShortcodes)):?>
-        <table class="oes-config-table oes-option-table oes-toggle-checkbox oes-replace-select2-inside striped wp-list-table widefat fixed table-view-list">
+        <table class="oes-config-table oes-option-table oes-toggle-checkbox striped wp-list-table widefat fixed table-view-list">
             <tbody><?php
             foreach ($storedShortcodes as $singleShortcode):
                 if (isset($singleShortcode['option'])):

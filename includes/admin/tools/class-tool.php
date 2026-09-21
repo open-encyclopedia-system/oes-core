@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @reviewed 2.4.0
+ * @reviewed 3.0.0
  */
 
 namespace OES\Admin\Tools;
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 use function OES\Admin\add_oes_notice_after_refresh;
 use function OES\Admin\get_admin_note_html;
 
-if (!class_exists('Tool')) :
+if (!class_exists('\OES\Admin\Tools\Tool')) {
 
     /**
      * Class Tool
@@ -79,10 +79,10 @@ if (!class_exists('Tool')) :
          * @var array
          */
         public array $postbox = [
-            'name'     => '',
-            'screen'   => 'oes-tools',
-            'context'  => 'normal',
-            'priority' => 'high',
+                'name' => '',
+                'screen' => 'oes-tools',
+                'context' => 'normal',
+                'priority' => 'high',
         ];
 
         /**
@@ -110,16 +110,25 @@ if (!class_exists('Tool')) :
          * Tool constructor.
          *
          * @param string $name Tool name (identifier).
-         * @param array  $args Optional parameters to configure the tool.
+         * @param array $args Optional parameters to configure the tool.
          */
         public function __construct(string $name, array $args = [])
         {
-            $this->name = $name;
-
+            $this->set_name($name);
             $this->initialize_parameters($args);
             $this->additional_parameters($args);
             $this->validate_parameters();
             $this->register_hooks();
+        }
+
+        /**
+         * Set tool name.
+         * @param string $name
+         * @return void
+         */
+        protected function set_name(string $name): void
+        {
+            $this->name = $name;
         }
 
         /**
@@ -191,12 +200,12 @@ if (!class_exists('Tool')) :
         protected function initialize_postbox(): void
         {
             add_meta_box(
-                'oes-tool-' . $this->name,
-                esc_html($this->postbox['name'] ?: 'Postbox name missing'),
-                [$this, 'render_form'],
-                $this->postbox['screen'],
-                $this->postbox['context'],
-                $this->postbox['priority']
+                    'oes-tool-' . $this->name,
+                    esc_html($this->postbox['name'] ?: 'Postbox name missing'),
+                    [$this, 'render_form'],
+                    $this->postbox['screen'],
+                    $this->postbox['context'],
+                    $this->postbox['priority']
             );
         }
 
@@ -265,14 +274,15 @@ if (!class_exists('Tool')) :
         public function admin_post(): void
         {
             if (
-                empty($_POST[$this->name . '_nonce']) ||
-                !wp_verify_nonce($_POST[$this->name . '_nonce'], $this->action)
+                    empty($_POST[$this->name . '_nonce']) ||
+                    !wp_verify_nonce($_POST[$this->name . '_nonce'], $this->action)
             ) {
                 wp_die(__('Security check failed.', 'oes'));
             }
 
             $this->validate_form_input_size();
             $this->admin_post_tool_action();
+            $this->after_admin_post_tool_action();
 
             if (empty($_POST['_wp_http_referer'])) {
                 wp_die(__('Missing referer.', 'oes'));
@@ -292,17 +302,17 @@ if (!class_exists('Tool')) :
          */
         protected function validate_form_input_size(): void
         {
-            $max_input_vars = (int) ini_get('max_input_vars');
+            $max_input_vars = (int)ini_get('max_input_vars');
             $form_count = count($_POST, COUNT_RECURSIVE);
 
             if ($form_count > $max_input_vars) {
                 add_oes_notice_after_refresh(
-                    sprintf(
-                        __('The number of submitted form variables (%1$s) exceeds your server limit (%2$s). This may cause incomplete data saving.', 'oes'),
-                        $form_count,
-                        $max_input_vars
-                    ),
-                    'error'
+                        sprintf(
+                                __('The number of submitted form variables (%1$s) exceeds your server limit (%2$s). This may cause incomplete data saving.', 'oes'),
+                                $form_count,
+                                $max_input_vars
+                        ),
+                        'error'
                 );
             }
         }
@@ -316,9 +326,9 @@ if (!class_exists('Tool')) :
         {
             foreach ($this->hidden_inputs as $name => $value) {
                 printf(
-                    '<input type="hidden" name="%s" value="%s">',
-                    esc_attr($name),
-                    esc_attr($value)
+                        '<input type="hidden" name="%s" value="%s">',
+                        esc_attr($name),
+                        esc_attr($value)
                 );
             }
         }
@@ -355,6 +365,16 @@ if (!class_exists('Tool')) :
         }
 
         /**
+         * Executes the tool’s specific logic after form submit.
+         * Override in child classes.
+         *
+         * @return void
+         */
+        protected function after_admin_post_tool_action(): void
+        {
+        }
+
+        /**
          * Handles AJAX requests.
          * Override in child classes.
          *
@@ -364,5 +384,4 @@ if (!class_exists('Tool')) :
         {
         }
     }
-
-endif;
+}

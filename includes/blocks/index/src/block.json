@@ -36,6 +36,10 @@
       "type": "boolean",
       "default": true
     },
+    "group_fields": {
+      "type": "boolean",
+      "default": true
+    },
     "labels": {
       "type": "object"
     },

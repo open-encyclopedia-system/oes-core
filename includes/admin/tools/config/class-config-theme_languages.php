@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @reviewed 2.4.0
+ * @reviewed 3.0.0
  */
 
 namespace OES\Admin\Tools;
@@ -11,67 +11,46 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('Theme_Languages')) :
+if (class_exists('Theme_Languages')) exit;
 
-    /**
-     * Class Theme_Languages
-     *
-     * Implement the config tool for theme configurations.
-     */
-    class Theme_Languages extends Config
+/**
+ * Class Theme_Languages
+ *
+ * Implement the config tool for theme configurations.
+ */
+class Theme_Languages extends Config
+{
+    protected string $capability = 'oes_read_settings';
+
+    /** @inheritdoc */
+    function set_table_data_for_display()
     {
+        foreach (OES()->languages ?? [] as $languageKey => $language) {
 
-        /** @inheritdoc */
-        function set_table_data_for_display()
-        {
+            $header = '<code>' . $languageKey . '</code>' .
+                ($languageKey === 'language0' ?
+                    __(' (Primary Language)', 'oes') :
+                    '');
+            $this->add_table_header($header, 'tag');
 
-            $headers = [
-                __('Key', 'oes'),
-                __('Name', 'oes'),
-                __('Abbreviation', 'oes'),
-                __('Date Locale', 'oes')
+            $options = [
+                'label' => __('Name', 'oes'),
+                'abb' => __('Abbreviation', 'oes'),
+                'locale' => __('Date Locale', 'oes')
             ];
 
-            $this->add_table_header('', 'default', $headers);
-
-            global $oes;
-            foreach ($oes->languages ?? [] as $languageKey => $language){
-
-                $row = [
-                    'cells' => [
-                        [
-                            'value' => '<code>' . $languageKey .
-                                ($languageKey === 'language0' ?
-                                    __(' (Primary Language)', 'oes') :
-                                    '') .
-                                '</code>'
-                        ],
-                        [
-                            'input' => [
-                                'name' => 'oes_config[languages][' . $languageKey . '][label]',
-                                'value' => $language['label'] ?? ''
-                            ]
-                        ],
-                        [
-                            'input' => [
-                                'name' => 'oes_config[languages][' . $languageKey . '][abb]',
-                                'value' => $language['abb'] ?? ''
-                            ]
-                        ],
-                        [
-                            'input' => [
-                                'name' => 'oes_config[languages][' . $languageKey . '][locale]',
-                                'value' => $language['locale'] ?? ''
-                            ]
-                        ]
+            foreach ($options as $optionKey => $optionLabel) {
+                $this->add_table_row(
+                    [
+                        'title' => $optionLabel,
+                        'key' => 'oes_config[languages][' . $languageKey . '][' . $optionKey . ']',
+                        'value' => $language[$optionKey] ?? ''
                     ]
-                ];
-
-                $this->table->add_row($row);
+                );
             }
         }
     }
+}
 
-    // initialize
-    register_tool('\OES\Admin\Tools\Theme_Languages', 'theme-languages');
-endif;
+// initialize
+register_tool('\OES\Admin\Tools\Theme_Languages', 'theme-languages');

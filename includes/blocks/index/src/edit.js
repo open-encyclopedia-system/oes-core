@@ -11,7 +11,7 @@ import '../../blocks.css';
 
 export default function Edit({attributes, setAttributes, isSelected}) {
 
-	let {className, post_type, language, archive_data, labels, relationship} = attributes;
+	let {className, post_type, language, archive_data, group_fields, labels, relationship} = attributes;
 	if(className === undefined) className = 'is-style-oes-default';
 
 	if (isSelected) {
@@ -36,6 +36,14 @@ export default function Edit({attributes, setAttributes, isSelected}) {
 						help={__('The relationship of the displayed post type to the referred post type.', 'oes')}
 						value={relationship}
 						onChange={(val) => setAttributes({relationship: String(val)})}/>
+					<ToggleControl
+						label={__('Group by fields', 'oes')}
+						checked={group_fields}
+						onChange={(val) => {
+							setAttributes({group_fields: val});
+						}}
+						help={__('Group the connections by fields.', 'oes')}
+					/>
 					<ToggleControl
 						label={__('Archive Data', 'oes')}
 						checked={archive_data}

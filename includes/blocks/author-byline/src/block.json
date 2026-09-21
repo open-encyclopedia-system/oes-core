@@ -5,16 +5,38 @@
   "version": "0.1.0",
   "title": "Author Byline",
   "category": "oes-schema",
-  "description": "Display the author byline.",
+  "description": "Displays the author(s) of the contribution, including sorting and an optional ORCID entry. The data source is defined in the OES schema settings.",
   "keywords": [
     "attribution",
-    "credit"
+    "credit",
+    "author",
+    "autor",
+    "orcid",
+    "contributor"
   ],
   "attributes": {
     "labels": {
       "type": "object"
+    },
+    "sorting": {
+      "type": "boolean",
+      "default": true
+    },
+    "orcid": {
+      "type": "boolean"
     }
   },
+  "styles": [
+    {
+      "name": "oes-default",
+      "label": "Inline",
+      "isDefault": true
+    },
+    {
+      "name": "oes-list",
+      "label": "List"
+    }
+  ],
   "supports": {
     "spacing": {
       "margin": true,
@@ -39,5 +61,6 @@
   "editorScript": "file:./index.js",
   "style": "file:./style-index.css",
   "editorStyle": "file:./index.css",
-  "render": "file:./render.php"
+  "render": "file:./render.php",
+  "usesContext": ["postID", "postType"]
 }

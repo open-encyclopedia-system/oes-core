@@ -2,11 +2,13 @@
 
 namespace OES\Admin\Tools;
 
-if (!defined('ABSPATH')) exit; // Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-use WP_Post;
 use WP_Term;
-use function OES\Admin\DB\insert_operation;
+use function OES\Admin\Operations\insert_operation;
+use function OES\Admin\Operations\get_max_temp;
 
 if (!class_exists('Import')) :
 
@@ -17,123 +19,232 @@ if (!class_exists('Import')) :
      */
     class Import extends Tool
     {
+        private int $operation_count = 0;
 
-
-        /** @var array Store new terms. */
-        public array $new_terms = [];
+        /**
+         * Store new terms
+         * @var array<string, array<string, string>>
+         *      [taxonomy][termName] => tempTempId
+         */
+        private array $new_terms = [];
 
         /** All parameters for wp_insert_term. */
-        const ARGS_WP_INSERT_TERM = ['term_id', 'term', 'taxonomy', 'alias_of', 'description', 'parent', 'slug'];
+        private const ARGS_WP_INSERT_TERM = ['term_id', 'term', 'taxonomy', 'alias_of', 'description', 'parent', 'slug'];
 
         /** All parameters for wp_insert_post. Additional: import_id for import matching. */
-        const ARGS_WP_INSERT_POST = ['ID', 'import_id', 'post_type', 'post_title', 'post_status', 'post_author',
-            'post_date', 'post_date_gmt', 'post_content', 'post_content_filtered', 'post_excerpt', 'comment_status',
-            'ping_status', 'post_password', 'post_name', 'to_ping', 'pinged', 'post_modified', 'post_modified_gmt',
-            'post_parent', 'menu_order', 'post_mime_type', 'guid', 'post_category', 'tags_input', 'tax_input',
-            'meta_input'];
+        private const ARGS_WP_INSERT_POST = ['ID', 'import_id', 'post_type', 'post_title', 'post_status', 'post_author',
+                'post_date', 'post_date_gmt', 'post_content', 'post_content_filtered', 'post_excerpt', 'comment_status',
+                'ping_status', 'post_password', 'post_name', 'to_ping', 'pinged', 'post_modified', 'post_modified_gmt',
+                'post_parent', 'menu_order', 'post_mime_type', 'guid', 'post_category', 'tags_input', 'tax_input',
+                'meta_input'];
 
 
         /** @inheritdoc */
-        function display(): void
+        public function display(): void
         {
-
-            $file = wp_import_handle_upload();
-            if (isset($file['file'])) $this->handle_upload($file);
+            if (!\OES\Rights\user_can_manage_content()) {
+                wp_die(__('You do not have permission to import data.', 'oes'));
+            }
 
             echo '<div class="narrow">';
+
+            $displayTable = $this->process_actions();
+            $this->set_count();
             $this->display_admin_notices();
-            $this->greet();
+
+            if ($displayTable) {
+                $this->greet();
+                $this->render_upload_form();
+
+                if ($this->operation_count > 0) {
+                    $this->display_bulk_actions();
+                    $this->display_operations();
+                }
+            }
             echo '</div>';
         }
 
-
-        /* step 0: Display upload form. */
-        function greet()
+        protected function set_count(): void
         {
-            echo '<p>';
-            printf(__('Select a .csv file with data you want to import to your database. The file ' .
-                'must follow a required format concerning field names or matching classes have to be ' .
-                'implemented. A full documentation will be following soon. You can download an import ' .
-                'template %shere%s. You can import any database parameter with an import file ' .
-                'but we recommend to only import the parameter as provided in the import template. A ' .
-                'full documentation for e.g. post type parameters can be found here: %s.', 'oes'),
-                '<a href="' . admin_url('admin.php?page=oes_tools_export') . '">',
-                '</a>',
-                '<a href="https://developer.wordpress.org/reference/classes/wp_post/">' .
-                'https://developer.wordpress.org/reference/classes/wp_post/</a>'
+            global $wpdb;
+            $table = $wpdb->prefix . 'oes_operations';
+            $this->operation_count = (int)$wpdb->get_var("SELECT COUNT(*) FROM $table");
+        }
+
+        protected function process_actions(): bool
+        {
+            if (!empty($_FILES)) {
+                check_admin_referer('import-upload');
+
+                $originalName = $_FILES['import']['name'] ?? '';
+
+                if (strtolower(pathinfo($originalName, PATHINFO_EXTENSION)) !== 'csv') {
+                    echo '<div class="notice notice-error is-dismissible"><p>'
+                            . esc_html__('Invalid file type. CSV required.', 'oes')
+                            . '</p></div>';
+                } else {
+
+                    $file = wp_import_handle_upload();
+                    if (isset($file['file'])) {
+                        $this->handle_upload($file);
+                    }
+                }
+
+                return true;
+            }
+
+            if (!empty($_GET['operations_deleted'])) {
+                echo '<div class="notice notice-success is-dismissible"><p>'
+                        . esc_html__('Operations deletion completed.', 'oes')
+                        . '</p></div>';
+            } elseif (!empty($_GET['operations_imported'])) {
+                echo '<div class="notice notice-success is-dismissible"><p>'
+                        . esc_html__('Operations successfully imported.', 'oes')
+                        . '</p></div>';
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
+
+                if ($_POST['action'] === 'delete_all_operations') {
+
+                    if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'oes_delete_all_operations')) {
+                        wp_die(__('Security check failed', 'oes'));
+                    }
+
+                    \OES\Admin\Operations\delete_all_operations();
+
+                    echo '<div class="updated notice"><p>' . __('Operations table has been reset.', 'oes') . '</p></div>';
+                }
+
+                if ($_POST['action'] === 'import_all_operations') {
+
+                    if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'oes_import_all_operations')) {
+                        wp_die(__('Security check failed', 'oes'));
+                    }
+
+                    \OES\Admin\Operations\import_all_operations();
+
+                    $this->display_successful_operations();
+
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        protected function display_bulk_actions(): void {
+
+            ?>
+            <div class="oes-action-buttons" style="display:flex; gap:6px; align-items:center;">
+                <form method="post" onsubmit="return confirm('Are you sure you want to delete all operations?');">
+                    <?php wp_nonce_field('oes_delete_all_operations', '_wpnonce'); ?>
+                    <input type="hidden" name="action" value="delete_all_operations">
+                    <?php submit_button(__('Delete All', 'oes'), 'delete', 'reset_operations_btn', false); ?>
+                </form>
+
+                <form method="post" onsubmit="return confirm('Are you sure you want to import all operations?');">
+                    <?php wp_nonce_field('oes_import_all_operations', '_wpnonce'); ?>
+                    <input type="hidden" name="action" value="import_all_operations">
+                    <?php submit_button(__('Import All', 'oes'), 'primary', 'import_all_btn', false); ?>
+                </form>
+            </div>
+            <?php
+        }
+
+        protected function display_successful_operations(): void {
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'oes_operations';
+
+            $results = $wpdb->get_results(
+                    "SELECT * FROM $table WHERE operation_status = 'success' ORDER BY operation_sequence ASC"
             );
-            echo '</p><p>';
-            _e('The valid operations are: "insert" to add a new object and "update" to edit an ' .
-                'existing object. For an "update" ' .
-                'operation you need a valid object id.', 'oes');
-            echo '</p><p>';
-            _e(//@oesDevelopment Validate 'The time limit for import operations has been set to 10 minutes. ' .
-                '<strong>Please note</strong> that as for now the .csv files are ' .
-                '<strong>utf-8</strong> encoded!',
-                'oes');
-            echo '</p><p>';
-            _e('It is recommended to import not too much data at once.'
-                /* @oesDevelopment Implement . 'You can import selected rows by filling the row input options.' */,
-                'oes');
-            echo '</p>';
+
+            if (empty($results)) {
+                _e('No operations to be displayed.', 'oes');
+                return;
+            }
+
+            $displayBuilder = new \OES\Admin\Operations\Display_Builder();
+
+            $updatedObjects = [];
+            foreach ($results as $row) {
+
+                $operation = \OES\Admin\Operations\Operation::from_row($row);
+                echo $displayBuilder->build_success_message($operation, $updatedObjects) . '<br>';
+            }
+
+            echo '<div class="updated notice"><p>' . sizeof($updatedObjects). __(' Operations have been imported.', 'oes') . '</p></div>';
+
+            $wpdb->query(
+                    "DELETE FROM $table WHERE operation_status = 'success'"
+            );
+        }
 
 
-            //@oesDevelopment Modify wp_import_upload_form('admin.php?page=oes_tools_import');
+        /**
+         * Display the upload form and instructions for the import tool.
+         */
+        protected function greet(): void
+        {
+            echo '<p>' . esc_html__('Upload a UTF-8 encoded CSV file to prepare import operations.', 'oes') . '</p>';
+        }
+
+        protected function display_operations(): void
+        {
+            require_once OES_CORE_PLUGIN . '/includes/admin/operations/class-operations_list_table.php';
+            $listTable = new \Operations_List_Table([
+                    'singular' => 'Operation',
+                    'plural' => 'Operations',
+                    'columns' => [
+                            'cb' => ' ',
+                            'info' => __('Title', 'oes'),
+                            'summary' => __('Summary', 'oes'),
+                            'status' => __('Status', 'oes'),
+                            'message' => __('Message', 'oes')
+                    ]
+            ]);
+
+            $listTable->process_bulk_action();
+            $listTable->prepare_items();
+
+            echo '<form method="post" action="' . esc_url(admin_url('admin.php?page=oes_tools_import')) . '">';
+            echo '<input type="hidden" name="page" value="admin_oes_import" />';
+            $listTable->display();
+            echo wp_nonce_field('oes_import_bulk_action');
+            echo '</form>';
+        }
+
+        /**
+         * Render upload form.
+         * @return void
+         */
+        protected function render_upload_form(): void
+        {
             $bytes = apply_filters('import_upload_size_limit', wp_max_upload_size());
             $size = size_format($bytes);
-            $upload_dir = wp_upload_dir();
-            if (!empty($upload_dir['error'])) :
-                ?>
-                <div class="error">
-                    <p><?php
-                        _e('Before you can upload your import file, you will need to fix the following error:');
-                        ?></p>
-                    <p><strong><?php echo $upload_dir['error']; ?></strong></p></div>
-            <?php
+            $uploadDir = wp_upload_dir();
+
+            if (!empty($uploadDir['error'])) :
+                echo '<div class="error"><p>' . esc_html__('Before uploading, you need to fix the following error:', 'oes') . '</p>';
+                echo '<p><strong>' . esc_html($uploadDir['error']) . '</strong></p></div>';
             else :
                 ?>
                 <form enctype="multipart/form-data" id="import-upload-form" method="POST" class="wp-upload-form"
                       action="<?php echo esc_url(wp_nonce_url('admin.php?page=oes_tools_import', 'import-upload')); ?>">
                     <p>
-                        <?php
-                        printf(
-                            '<label for="upload">%s</label> (%s)',
-                            __('Choose a file from your computer:', 'oes'),
-                            sprintf(__('Maximum size: %s', 'oes'), $size)
-                        );
-                        ?>
+                        <label for="upload"><?php echo esc_html__('Choose a file from your computer:', 'oes'); ?></label>
+                        (<?php printf(esc_html__('Maximum size: %s', 'oes'), esc_html($size)); ?>)
                         <input type="file" id="upload" name="import" size="25"/>
                         <input type="hidden" name="action" value="save"/>
-                        <input type="hidden" name="max_file_size" value="<?php echo $bytes; ?>"/>
+                        <input type="hidden" name="max_file_size" value="<?php echo esc_attr($bytes); ?>"/>
                     </p>
-                    <?php submit_button(__('Upload file and import', 'oes')); ?>
+                    <?php submit_button(__('Upload file and prepare import', 'oes')); ?>
                 </form>
             <?php
             endif;
-
-
-            /* get current available operations */
-            $operations = 0;
-            global $wpdb;
-            $table = $wpdb->prefix . 'oes_operations';
-            $count = $wpdb->get_results(
-                "SELECT count(`operation_status`) AS count from $table WHERE `operation_status` <> 'ignored' OR `operation_status` <> 'success' OR `operation_status` <> 'error'"
-            );
-            if (isset($count[0]) && property_exists($count[0], 'count') && $count[0]->count)
-                $operations = $count[0]->count;
-
-            echo '<p>';
-            _e('The imported data is stored as executable operations. You can view a list of all available ' .
-                'operations and decide which operations will be executed. The number inside the brackets indicates ' .
-                'how many operations are currently stored in the database.', 'oes');
-            echo '</p>';
-            printf('<a href="%s" class="button button-secondary">%s (%s)</a>',
-                admin_url('admin.php?page=oes_tools_operations'),
-                __('See Operations', 'oes'),
-                $operations
-            );
         }
-
 
         /**
          * Handles the upload and initial parsing of the file to prepare for displaying import options.
@@ -144,657 +255,605 @@ if (!class_exists('Import')) :
          */
         function handle_upload(array $file): bool
         {
-            /* error handling */
             if (isset($file['error'])) {
-                $this->admin_notices[] = [
-                    'notice' => __('Sorry, there has been an error while uploading the file. %s', 'oes'),
-                    esc_html($file['error']),
-                    'type' => 'error'
-                ];
-                return false;
+                return oes_write_log(
+                        sprintf(
+                                __('Upload error: %s', 'oes'),
+                                esc_html($file['error'])
+                        ),
+                        'Import');
             } else if (!file_exists($file['file'])) {
-                $this->admin_notices[] = [
-                    'notice' => sprintf(__('Sorry, there has been an error while uploading the file. %s', 'oes'),
-                            esc_html($file['error'])) . '<br>' .
-                        sprintf(__('The export file could not be found at <code>%s</code>. It is likely that this ' .
-                            'was caused by a permission problem.', 'oes'),
-                            esc_html($file['file'])),
-                    'type' => 'error'
-                ];
-                return false;
+                return oes_write_log(
+                        sprintf(
+                                __('Uploaded file could not be found at %s. This may be a permission issue.', 'oes'),
+                                '<code>' . esc_html($file['file'] ?? 'unknown') . '</code>'
+                        ),
+                        'Import');
             }
 
-            /* parse file */
             $success = $this->parse($file);
 
-            /* delete attachment */
-            $deleteSuccess = wp_delete_attachment($file['id']);
-            if (!$deleteSuccess)
-                $this->admin_notices[] = [
-                    'notice' => __('There was an error trying to delete the imported file.', 'oes'),
-                    'type' => 'error'
-                ];
+            if (!empty($file['id'])) {
+                $deleted = wp_delete_attachment((int)$file['id'], true);
+
+                if (!$deleted) {
+                    oes_write_log(
+                            __('Warning: Imported file could not be deleted from media library.', 'oes'),
+                            'Import'
+                    );
+                }
+            }
 
             return $success;
         }
 
-
         /**
-         * Parse file and retrieve operation information.
+         * Parse the csv file and insert the operations.
          *
-         * @param array $file The file data.
-         * @return bool Return true on success.
+         * @param array $file
+         * @return bool
          */
-        function parse(array $file): bool
+        private function parse(array $file): bool
         {
+            if (!$this->validate_csv_file($file)) {
+                return false;
+            }
 
-            /* Read file ---------------------------------------------------------------------------------------------*/
-
-            /* try to open file */
             $handle = fopen($file['file'], 'r');
+
             if (!$handle) {
-                $this->admin_notices[] = [
-                    'notice' => __('Could not open the file. Please check the permission rights.', 'oes'),
-                    'type' => 'error'
-                ];
-                return false;
-            }
-            if (!strpos($file['file'], '.csv')) {
-                $this->admin_notices[] = [
-                    'notice' => __('You seem to have uploaded an incorrect file type. ' .
-                        'CSV-File is required, please check the file and make sure that is has the ' .
-                        'extension \'.csv\'.', 'oes'),
-                    'type' => 'error'
-                ];
-                return false;
+                return oes_write_log(
+                        __('Could not open the file. Please check file permissions.', 'oes'),
+                        'Import'
+                );
             }
 
-
-            /**
-             * Filter the time limit.
-             *
-             * @param string $timeLimit The time limit.
-             */
-            $timeLimit = apply_filters('oes/import_time_limit', 600);
+            $timeLimit = (int)apply_filters('oes/import_time_limit', 600);
             set_time_limit($timeLimit);
 
+            $delimiter = apply_filters('oes/import_csv_delimiter', ';');
+            $headers = fgetcsv($handle, 0, $delimiter);
 
-            /* check if file is empty */
-            $firstRow = fgetcsv($handle, 0, ";");
-            if (sizeof($firstRow) < 2) {
-                $this->admin_notices[] = [
-                    'notice' => __('The file appears to be empty. Check the file and make sure that more than the ' .
-                        'first column is filled.', 'oes'),
-                    'type' => 'error'
-                ];
-                return false;
+            if (!$headers || count($headers) < 2) {
+                fclose($handle);
+                return oes_write_log(
+                        __('The CSV file appears to be empty or invalid.', 'oes'),
+                        'Import'
+                );
             }
 
-            /* get number of columns and prepare labels */
-            $numColumns = count($firstRow);
-            $readFieldLabels = [];
+            $headers = $this->sanitize_headers($headers);
+            $matchedLabels = $this->match_labels($headers);
+            $columnMap = $this->build_column_map($matchedLabels);
 
-            /* strip value of UTF-8 tags (ZWNBSP) */
-            for ($col = 0; $col < $numColumns; $col++)
-                $readFieldLabels[$col] = str_replace('?', '', utf8_decode($firstRow[$col])); //@oesDevelopment Validate utf8
+            $operations = [];
+            $rowIndex = 0;
 
-            /* filter for matching labels */
-            $matchedFieldLabels = $this->match_labels($readFieldLabels);
+            while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
 
-            /* sort fields into WordPress objects 'post', 'term', (post-/term-) 'meta'. */
-            $colMatch = [];
-            $operationIncluded = false;
-            foreach ($matchedFieldLabels as $key => $label) {
-                if ($label == 'operation') $operationIncluded = $key;
-                elseif (in_array($label, self::ARGS_WP_INSERT_POST)) $colMatch[$key] = 'post';
-                elseif (in_array($label, self::ARGS_WP_INSERT_TERM)) $colMatch[$key] = 'term';
-                elseif ($label == 'term_id') $colMatch[$key] = 'term';
-                elseif ($label == 'append') $colMatch[$key] = 'term';
-                elseif ($label == 'post_ID') $colMatch[$key] = 'post_term';
-                else $colMatch[$key] = 'meta';
+                $rowData = $this->map_row_to_values($row, $matchedLabels, $columnMap);
+                $rowData = $this->modify_values($rowData, $headers, $rowIndex);
 
-                //@oesDevelopment Add case when post meta and term meta are in same file.
+                $rowOperations = $this->build_operations_from_row($rowData, $rowIndex);
+
+                if (!empty($rowOperations)) {
+                    $operations = array_merge($operations, $rowOperations);
+                }
+
+                $rowIndex++;
             }
 
-            /* prepare loop */
-            $firstRow = $_POST['file-row-start'] ?? 0;
-            $lastRow = $_POST['file-row-end'] ?? 0;
-            $countRows = 0;
-            $allRows = [];
-            while (($fileRow = fgetcsv($handle, 0, ";")) !== FALSE &&
-                ($lastRow < 1 || $countRows < $lastRow + 1)) {
-                if ($countRows > $firstRow - 1) $allRows[] = $fileRow;
-                $countRows++;
-            }
-
-            /* Close file --------------------------------------------------------------------------------------------*/
             fclose($handle);
 
+            $operations = $this->append_new_term_operations($operations);
+            $this->persist_operations($operations);
 
-            /**
-             * Filter the rows.
-             *
-             * @param string $allRows The rows.
-             * @param string $readFieldLabels Field Labels.
-             */
-            $allRows = apply_filters('oes/import_rows_before_loop', $allRows, $readFieldLabels);
-
-
-            /* Prepare data  -----------------------------------------------------------------------------------------*/
-            $prepareOperations = [];
-            foreach ($allRows as $row => $nextRow) {
-
-                //@oesDevelopment Handle encoding to include umlaute, $nextRow = array_map("utf8_encode", $nextRow);
-
-                /* read row into value array */
-                $values = [];
-
-                /* loop through columns and skip not matched and operation columns */
-                for ($col = 0; $col < $numColumns; $col++)
-                    if ((!$operationIncluded || $col != $operationIncluded) && isset($matchedFieldLabels[$col])
-                        && isset($colMatch[$col]) && !is_null($nextRow[$col])) {
-                        $values[$colMatch[$col]][$matchedFieldLabels[$col]] = $nextRow[$col];
-                    }
-
-                /* get operation */
-                $operation = ($operationIncluded !== false) ? $nextRow[$operationIncluded] : 'update';
-
-                /* optional modify or augment values */
-                $values = $this->modify_values($values, $readFieldLabels, $row);
-
-                /* check if post data */
-                if (isset($values['post'])) {
-
-                    $collectDataForOperation = [];
-
-                    /* check if post already exists or creation is skipped */
-                    $post = false;
-                    if (isset($values['skip_insert']) && $values['skip_insert'])
-                        $post = intval($values['skip_insert']['post_id']) ?
-                            get_post($values['skip_insert']['post_id']) : false;
-                    elseif ($operation == 'update' && isset($values['post']['ID']) && !empty($values['post']['ID']))
-                        $post = get_post($values['post']['ID']);
-                    else
-                        $collectDataForOperation = [
-                            'insert_or_update' => 'insert',
-                            'object_args' => $values['post'],
-                            'operation' => $operation,
-                            'row' => $row
-                        ];
-
-                    /* check if successful */
-                    if ($post instanceof WP_Post || !empty($collectDataForOperation)) {
-
-                        /* update post data --------------------------------------------------------------------------*/
-                        if (sizeof($values['post']) > 2) {
-                            if (empty($collectDataForOperation))
-                                $collectDataForOperation = [
-                                    'insert_or_update' => 'update',
-                                    'object_id' => $post->ID,
-                                    'row' => $row
-                                ];
-                            $collectDataForOperation['object_args'] = $values['post'];
-                        }
-
-                        /* update fields and post meta ---------------------------------------------------------------*/
-                        if (!empty($values['meta'])) {
-                            if (empty($collectDataForOperation))
-                                $collectDataForOperation = [
-                                    'insert_or_update' => 'update',
-                                    'object_args' => $values['post'],
-                                    'object_id' => $post->ID,
-                                    'row' => $row
-                                ];
-                            $collectDataForOperation['meta'] = $values['meta'];
-                            $collectDataForOperation['add'] = $values['add'] ?? false;
-                        }
-
-                        /* update terms ------------------------------------------------------------------------------*/
-                        //@oesDevelopment Differentiate between append and replace
-                        if (!empty($values['term']) &&
-                            isset($values['term']['term_id']) &&
-                            isset($values['term']['taxonomy'])) {
-                            if (empty($collectDataForOperation))
-                                $collectDataForOperation = [
-                                    'insert_or_update' => 'update',
-                                    'object_args' => $values['post'],
-                                    'object_id' => $post->ID,
-                                    'row' => $row
-                                ];
-                            if (intval($values['term']['term_id']))
-                                $collectDataForOperation['terms'][$values['term']['taxonomy']] =
-                                    intval($values['term']['term_id']);
-                            $collectDataForOperation['append'] = boolval($values['term']['append'] ?? false);
-                        }
-                    }
-
-                    if (!empty($collectDataForOperation))
-                        $prepareOperations[] = [
-                            'operation' => 'post',
-                            'args' => $collectDataForOperation
-                        ];
-
-                } /* check if term data */
-                elseif (isset($values['term'])) {
-
-                    $collectDataForOperation = [];
-
-                    /* insert term or skip */
-                    $term = false;
-                    if (isset($values['skip_insert']) && $values['skip_insert'])
-                        $term = intval($values['skip_insert']['term_id']) ?
-                            get_term($values['skip_insert']['term_id']) : false;
-                    elseif ($operation == 'update' &&
-                        isset($values['term']['term_id']) &&
-                        !empty($values['term']['term_id']))
-                        $term = get_term($values['term']['term_id']) ?? false;
-                    else
-                        $collectDataForOperation = [
-                            'operation' => 'term',
-                            'args' => [
-                                'object_args' => $values['term'],
-                                'row' => $row
-                            ]];
-
-                    /* check if successful */
-                    $isTerm = $term instanceof WP_Term;
-                    if ($isTerm || !empty($collectDataForOperation)) {
-
-                        /* update term data --------------------------------------------------------------------------*/
-                        if (sizeof($values['term']) > 2) {
-                            if (empty($collectDataForOperation))
-                                $collectDataForOperation = [
-                                    'insert_or_update' => 'update',
-                                    'object_id' => $term->term_id,
-                                    'row' => $row
-                                ];
-                            $collectDataForOperation['object_args'] = $values['term'];
-                        }
-
-                        /* update fields and post meta ---------------------------------------------------------------*/
-                        if (!empty($values['meta'])) {
-
-                            if (isset($collectDataForOperation['operation'])) {
-                                if ($isTerm) $collectDataForOperation['args']['object_id'] = $term->term_id; //sic!
-                                $collectDataForOperation['args']['meta'] = $values['meta'];
-                                if ($isTerm) $collectDataForOperation['args']['taxonomy'] = $term->taxonomy;
-                            } else
-                                $collectDataForOperation = [
-                                    'operation' => 'term_meta_update',
-                                    'args' => [
-                                        'object_id' => $term->term_id, //sic!
-                                        'meta' => $values['meta'],
-                                        'taxonomy' => $term->taxonomy,
-                                        'row' => $row
-                                    ]];
-                        }
-                    }
-
-                    if (!empty($collectDataForOperation)) $prepareOperations[] = $collectDataForOperation;
-                }
-            }
-
-            /* check if new terms are added */
-            foreach ($this->new_terms as $taxonomy => $taxonomyTerms)
-                foreach ($taxonomyTerms as $newTerm => $newTermID) {
-
-                    $prepareOperations[] = [
-                        'operation' => 'term',
-                        'sequence' => 1,
-                        'temp' => $newTermID,
-                        'args' => [
-                            'object_args' => [
-                                'term' => $newTerm,
-                                'taxonomy' => $taxonomy
-                            ]
-                        ]];
-                }
-
-            /* Add operations to database ----------------------------------------------------------------------------*/
-            $countSuccess = 0;
-            foreach ($prepareOperations as $data) {
-
-                /* prepare data */
-                $tempID = (int)($data['args']['row'] ?? 0) + 1;
-                $objectID = ($data['args']['object_id'] ?? 0);
-
-                $objectType = 'missing';
-                switch ($data['operation']) {
-                    case 'post':
-                        $objectType = $data['args']['object_args']['post_type'] ?? 'missing';
-                        break;
-
-                    case 'term':
-                        $objectType = $data['args']['object_args']['taxonomy'] ?? 'missing';
-                        break;
-                }
-
-                /* insert post data */
-                if (isset($data['args']['object_args']) &&
-                    sizeof($data['args']['object_args']) > 1) {
-                    $success = insert_operation(
-                        $objectID ? 'update' : 'insert',
-                        $data['operation'],
-                        $objectID ?? 0,
-                        json_encode($data['args']['object_args']),
-                        'args',
-                        $objectType,
-                        [
-                            'temp' => $data['temp'] ?? ($objectID ? '' : $tempID),
-                            'sequence' => $data['sequence'] ?? 0,
-                            'status' => 'imported']);
-                    if ($success) $countSuccess++;
-                    else
-                        $this->admin_notices[] = [
-                            'notice' => '<p>' .
-                                sprintf(__('Error while inserting operation for row %s.', 'oes'), $tempID) .
-                                '</p>',
-                            'type' => 'error'
-                        ];
-                }
-
-
-                /* insert metadata */
-                if (isset($data['args']['meta']) && sizeof($data['args']['meta']) > 0)
-                    foreach ($data['args']['meta'] as $key => $value) {
-                        $success = insert_operation(
-                            $objectID ? 'update' : 'insert',
-                            $data['operation'],
-                            $objectID ?? 0,
-                            (is_array($value) ? json_encode($value) : $value),
-                            $key,
-                            $objectType,
-                            ['temp' => $objectID ? '' : $tempID, 'status' => 'imported']
-                        );
-                        if ($success) $countSuccess++;
-                        else $this->admin_notices[] = [
-                            'notice' => sprintf('<p>' .
-                                __('Error while inserting operation for row %s.', 'oes') .
-                                '</p>',
-                                $tempID),
-                            'type' => 'error'
-                        ];
-                    }
-            }
-
-            if ($countSuccess)
-                $this->admin_notices[] = [
-                    'notice' => sprintf(
-                            _n('1 operation has been inserted into the database. ',
-                                '%s operations have been inserted into the database. ',
-                                $countSuccess,
-                                'oes'),
-                            $countSuccess) .
-                        sprintf(__('You can see the prepared operations %shere%s.', 'oes'),
-                            '<a href="' . admin_url('admin.php?page=oes_tools_operations') . '">',
-                            '</a>'),
-                    'type' => 'info'
-                ];
-
-            /* return success */
             return true;
         }
 
+        /**
+         * Validate csv file.
+         *
+         * @param array $file
+         * @return bool
+         */
+        private function validate_csv_file(array $file): bool
+        {
+            if (empty($file['file']) || !file_exists($file['file'])) {
+                return oes_write_log(__('Uploaded file not found.', 'oes'), 'Import');
+            }
+
+            return true;
+        }
+
+        /**
+         * Sanitize the file header row.
+         *
+         * @param array $headers
+         * @return array
+         */
+        private function sanitize_headers(array $headers): array
+        {
+            return array_map(function ($header) {
+                return preg_replace('/^\xEF\xBB\xBF/', '', trim($header));
+            }, $headers);
+        }
+
+        /**
+         * Build the columns header row.
+         *
+         * @param array $matchedLabels
+         * @return array
+         */
+        private function build_column_map(array $matchedLabels): array
+        {
+            $map = [];
+            $isPost = true;
+
+            foreach ($matchedLabels as $index => $label) {
+                if ($label === 'operation') {
+                    $map[$index] = 'operation';
+                } elseif (in_array($label, self::ARGS_WP_INSERT_POST, true)) {
+                    $map[$index] = 'post';
+                } elseif (in_array($label, self::ARGS_WP_INSERT_TERM, true)) {
+                    $map[$index] = 'term';
+                    $isPost = false;
+                } elseif (in_array($label, ['term_id', 'append'])) {
+                    $map[$index] = 'term';
+                } else {
+                    $map[$index] = $isPost ? 'meta' : 'term_meta';
+                }
+            }
+
+            return $map;
+        }
+
+        /**
+         * Map rows to values.
+         *
+         * @param array $row
+         * @param array $labels
+         * @param array $map
+         * @return array
+         */
+        private function map_row_to_values(array $row, array $labels, array $map): array
+        {
+            $values = [];
+
+            foreach ($row as $col => $value) {
+
+                if (!isset($labels[$col], $map[$col])) {
+                    continue;
+                }
+
+                if ($map[$col] === 'operation') {
+                    $values['operation'] = $value ?: 'insert';
+                    continue;
+                }
+
+                if ($value === null || $value === '') {
+                    continue;
+                }
+
+                $values[$map[$col]][$labels[$col]] = $value;
+            }
+
+            return $values;
+        }
+
+        /**
+         * Build operations represented from the row.
+         *
+         * @param array $values
+         * @param int $rowIndex
+         * @return array
+         */
+        private function build_operations_from_row(array $values, int $rowIndex): array
+        {
+            $operations = [];
+            $operation = $values['operation'] ?? 'insert';
+
+            if (isset($values['post'])) {
+                $operations[] = [
+                        'operation' => 'post',
+                        'args' => [
+                                'insert_or_update' => $operation,
+                                'object_args' => $values['post'],
+                                'meta' => $values['meta'] ?? [],
+                                'row' => $rowIndex
+                        ]
+                ];
+            }
+
+            if (isset($values['term'])) {
+                $operations[] = [
+                        'operation' => 'term',
+                        'args' => [
+                                'insert_or_update' => $operation,
+                                'object_args' => $values['term'],
+                                'meta' => $values['meta'] ?? [],
+                                'row' => $rowIndex
+                        ]
+                ];
+            }
+
+            return $operations;
+        }
+
+        /**
+         * Add new term operations if necessary.
+         *
+         * @param array $operations
+         * @return array
+         */
+        private function append_new_term_operations(array $operations): array
+        {
+            foreach ($this->new_terms as $taxonomy => $terms) {
+                foreach ($terms as $termName => $tempId) {
+                    $operations[] = [
+                            'operation' => 'term',
+                            'sequence' => 2,
+                            'temp' => $tempId,
+                            'args' => [
+                                    'object_args' => [
+                                            'term' => $termName,
+                                            'taxonomy' => $taxonomy
+                                    ]
+                            ]
+                    ];
+                }
+            }
+
+            return $operations;
+        }
+
+        /**
+         * Persist operations by importing them into the database.
+         *
+         * @param array $operations
+         * @return void
+         */
+        private function persist_operations(array $operations): void
+        {
+            $rowCounter = get_max_temp();
+
+            foreach ($operations as $data) {
+
+                $tempID = 'temp_' . ++$rowCounter;
+                $objectArgs = $data['args']['object_args'] ?? [];
+                $objectType = $objectArgs['post_type'] ?? $objectArgs['taxonomy'] ?? 'missing';
+                $objectID = (int)($data['args']['object_args']['ID'] ?? ($data['args']['object_args']['object_ID'] ?? 0));
+                $postOrTerm = $data['object'] ?? 'post';
+
+                $operation = $data['args']['insert_or_update'] ?? ($objectID ? 'update' : 'insert');
+
+                $success = $this->validate_and_insert_operation(
+                        $operation,
+                        $postOrTerm,
+                        $objectID,
+                        wp_json_encode($objectArgs),
+                        'args',
+                        $objectType,
+                        [
+                                'temp' => $tempID,
+                                'status' => 'ready',
+                                'sequence' => 1
+                        ]
+                );
+
+                if (!$success) {
+                    oes_write_log(
+                            sprintf(
+                                    __('Error while trying to insert args operation for row %s.', 'oes'),
+                                    $data['args']['row'] ?? 'row info missing'),
+                            'INSERT OPERATION'
+                    );
+                }
+
+                foreach ($data['args']['meta'] ?? [] as $metaKey => $metaValue) {
+
+                    $success = $this->validate_and_insert_operation(
+                            $operation,
+                            'meta',
+                            $objectID,
+                            is_string($metaValue) ? $metaValue : wp_json_encode($metaValue),
+                            $metaKey,
+                            $objectType,
+                            [
+                                    'temp' => $tempID,
+                                    'status' => 'ready',
+                                    'sequence' => 5
+                            ]
+                    );
+
+                    if ($success) {
+                        oes_write_log(
+                                sprintf(
+                                        __('Error while trying to insert meta operation for row %s.', 'oes'),
+                                        $data['args']['row'] ?? 'row info missing'),
+                                'INSERT OPERATION'
+                        );
+                    }
+                }
+            }
+        }
+
+        private function validate_and_insert_operation(string $operation,
+                                                       string $object,
+                                                       string $objectID,
+                                                       string $value,
+                                                       string $key = '',
+                                                       string $type = '',
+                                                       array  $args = [])
+        {
+            $errors = [];
+            $warnings = [];
+
+            if (!in_array($operation, ['insert', 'update', 'delete'], true)) {
+                $errors[] = __('Invalid operation type.', 'oes');
+            }
+
+            if (!in_array($object, ['post', 'term', 'meta'], true)) {
+                $errors[] = __('Invalid operation object.', 'oes');
+            }
+
+            $objectArgs = [];
+
+            if ($key === 'args') {
+                $objectArgs = json_decode($value, true);
+
+                if (!is_array($objectArgs)) {
+                    $errors[] = __('Args must be valid JSON.', 'oes');
+                    $objectArgs = [];
+                }
+            }
+
+            $existingObject = null;
+
+            if ($object === 'post') {
+
+                if (!empty($type) && !post_type_exists($type)) {
+                    $errors[] = __('Post type does not exist.', 'oes');
+                }
+
+                if (!empty($objectID)) {
+                    $existingObject = get_post($objectID);
+                }
+            } elseif ($object === 'term') {
+
+                if (!empty($type) && !taxonomy_exists($type)) {
+                    $errors[] = __('Taxonomy does not exist.', 'oes');
+                }
+
+                if (!empty($objectID) && !empty($type)) {
+                    $existingObject = get_term($objectID, $type);
+                }
+            }
+
+            if ($object !== 'meta' && $operation === 'update' && (!$existingObject || is_wp_error($existingObject))) {
+                $errors[] = __('Object does not exist.', 'oes');
+            }
+
+            if ($existingObject && !is_wp_error($existingObject) && !empty($objectArgs)) {
+
+                $updateRequired = false;
+
+                foreach ($objectArgs as $argsKey => $argsValue) {
+
+                    $currentValue = property_exists($existingObject, $argsKey)
+                            ? $existingObject->$argsKey
+                            : null;
+
+                    if ((string)$argsValue !== (string)$currentValue) {
+                        $updateRequired = true;
+                        break;
+                    }
+                }
+
+                if (!$updateRequired) {
+                    $warnings[] = __('No changes detected.', 'oes');
+                    $args['status'] = 'ignored';
+                }
+            }
+
+            $notes = '';
+            if (!empty($warnings)) {
+                $notes .= __('Warnings: ', 'oes') . implode(' ', $warnings);
+            }
+            if (!empty($errors)) {
+                $notes .= __('Errors: ', 'oes') . implode(' ', $errors);
+                $args['status'] = 'error';
+            }
+
+            $args['comment'] = ($args['comment'] ?? '') . $notes;
+
+            return insert_operation(
+                    $operation,
+                    $object,
+                    $objectID,
+                    $value,
+                    $key,
+                    $type,
+                    $args
+            );
+        }
 
         /**
          * Match labels for import.
          *
-         * @param array $fieldLabels An array containing the labels (first row of csv file)
-         * @return mixed|void Returns error or array with matched labels.
+         * @param array $fieldLabels An array containing the labels (first row of CSV file).
+         * @return array Matched labels ready for processing.
          */
-        function match_labels(array $fieldLabels)
+        private function match_labels(array $fieldLabels): array
         {
-
-            /**
-             * Filter the field labels.
-             *
-             * @param array $fieldLabels The field labels.
-             */
             $fieldLabels = apply_filters('oes/import_match_labels_before', $fieldLabels);
-
-
-            /**
-             * Filter if fields have match array.
-             *
-             * @param array $matchArray The matching information
-             * @param array $fieldLabels The field labels.
-             */
             $matchArray = apply_filters('oes/import_match_data_array', false, $fieldLabels);
 
-
-            /* prepare matched labels */
             $returnLabels = [];
-            if ($matchArray) {
 
-                /* check for fields and loop through fields */
-                if (isset($matchArray['fields'])) {
-                    foreach ($fieldLabels as $key => $value) {
-                        if (isset($matchArray['fields'][$value])) {
+            if ($matchArray && isset($matchArray['fields']) && is_array($matchArray['fields'])) {
 
-                            /* prepare label */
-                            $returnLabel = $key;
-                            if (is_array($matchArray['fields'][$value])) {
-                                $returnLabel = $matchArray['fields'][$value]['field_key'] ??
-                                    (($matchArray['fields'][$value]['repeater_base'] ?? $key) . '_' .
-                                        ($matchArray['fields'][$value]['sequence'] ?? 0) . '_' .
-                                        ($matchArray['fields'][$value]['repeater_field_key'] ?? $key));
-                            } elseif (is_string($matchArray['fields'][$value])) {
-                                $returnLabel = $matchArray['fields'][$value];
-                            }
+                foreach ($fieldLabels as $index => $label) {
 
-                            $returnLabels[$key] = $returnLabel;
+                    if (isset($matchArray['fields'][$label])) {
+                        $fieldMatch = $matchArray['fields'][$label];
 
-                        } /* add to label if key is part of post, term or operation*/
-                        elseif ($value == 'operation'
-                            || in_array($value, self::ARGS_WP_INSERT_POST)
-                            || in_array($value, self::ARGS_WP_INSERT_TERM)) {
-                            $returnLabels[$key] = $value;
+                        if (is_array($fieldMatch)) {
+                            $returnLabel = $fieldMatch['field_key']
+                                    ?? (($fieldMatch['repeater_base'] ?? $index) . '_' .
+                                            ($fieldMatch['sequence'] ?? 0) . '_' .
+                                            ($fieldMatch['repeater_field_key'] ?? $index));
+                        } elseif (is_string($fieldMatch)) {
+                            $returnLabel = $fieldMatch;
+                        } else {
+                            $returnLabel = $index;
                         }
+
+                        $returnLabels[$index] = $returnLabel;
+
+                    } elseif ($label === 'operation'
+                            || in_array($label, self::ARGS_WP_INSERT_POST, true)
+                            || in_array($label, self::ARGS_WP_INSERT_TERM, true)) {
+                        $returnLabels[$index] = $label;
                     }
                 }
+
             } else {
-                /* no modification */
                 $returnLabels = $fieldLabels;
             }
 
-
-            /**
-             * Filter the return labels.
-             *
-             * @param array $returnLabels The field labels.
-             */
             return apply_filters('oes/import_match_labels_after', $returnLabels);
         }
-
 
         /**
          * Modify values for import.
          *
-         * @param array $values An array containing the values (for this csv-file row).
-         * @param array $fieldLabels An array containing the field labels.
-         * @param int $row The row id.
-         * @return mixed|void Returns error or array with modified values.
+         * @param array $values An array containing the values for this CSV row.
+         * @param array $fieldLabels Field labels from CSV header.
+         * @param int $row Current row number.
+         * @return array Processed values ready for import.
          */
-        function modify_values(array $values, array $fieldLabels, int $row)
+        private function modify_values(array $values, array $fieldLabels, int $row): array
         {
-
-            /**
-             * Filter the return values before processing.
-             *
-             * @param array $values The return values.
-             * @param array $fieldLabels The field labels.
-             */
             $returnValues = apply_filters('oes/import_modify_values_before', $values, $fieldLabels);
-
-
-            /**
-             * Filter the matching information.
-             *
-             * @param array $matchArray The matching information.
-             * @param array $fieldLabels The field labels.
-             */
             $matchArray = apply_filters('oes/import_match_data_array', false, $fieldLabels);
-
 
             if ($matchArray) {
 
-                /* check if additional fields, merge to existing values */
-                if (isset($matchArray['additional'])) {
+                if (!empty($matchArray['additional']) && is_array($matchArray['additional'])) {
+                    foreach ($matchArray['additional'] as $key => $fieldArray) {
+                        foreach ($fieldArray as $field => $value) {
 
-                    /* check for callbacks */
-                    foreach ($matchArray['additional'] as $key => $valueArray) {
-                        foreach ($valueArray as $field => $value) {
-
-                            /* prepare value */
-                            $additionalValue = '';
-
-                            /* check for callback */
-                            if (is_array($value)) {
-                                if (isset($value['callback'])) {
-                                    $args = $value['args'] ?? [];
-                                    $args = array_merge(['values' => $values], $args);
-                                    $additionalValue = call_user_func($value['callback'], $args);
-                                }
+                            if (is_array($value) && isset($value['callback'])) {
+                                $args = array_merge(['values' => $values], $value['args'] ?? []);
+                                $additionalValue = call_user_func($value['callback'], $args);
                             } else {
                                 //@oesDevelopment Validate value
                                 $additionalValue = is_string($value) ? $value : '';
                             }
+
                             $returnValues[$key][$field] = $additionalValue;
                         }
                     }
                 }
 
-                /* check for callbacks */
-                if (isset($matchArray['fields'])) {
+                // Handle field callbacks / repeater / term fields
+                $tempStore = [];
+                $tempCounter = 0;
 
-                    /* prepare matching array */
-                    $temp = 0;
+                if (!empty($matchArray['fields']) && is_array($matchArray['fields'])) {
                     foreach ($matchArray['fields'] as $tableKey => $match) {
                         if (is_array($match)) {
                             $fieldKey = $match['field_key'] ?? ($match['repeater_base'] ?
-                                ($match['repeater_base'] . '_' . ($match['sequence'] ?? 0) . '_' .
-                                    ($match['repeater_field_key'] ?? '')) :
-                                $tableKey); //@oesDevelopment Validate value.
+                                    ($match['repeater_base'] . '_' . ($match['sequence'] ?? 0) . '_' .
+                                            ($match['repeater_field_key'] ?? '')) :
+                                    $tableKey); //@oesDevelopment Validate value.
                             $tempStore[$fieldKey] = $match;
                         }
                     }
 
-                    /* store as new value */
                     foreach ($returnValues as $subArray => $subArrayValues) {
                         foreach ($subArrayValues as $fieldKey => $fieldValue) {
 
-                            /* call function*/
-                            if (isset($tempStore[$fieldKey])) {
+                            if (!isset($tempStore[$fieldKey])) continue;
 
-                                /* add original value */
-                                $args = array_merge([
+                            $args = array_merge([
                                     'match_value' => $fieldValue,
                                     'field_key' => $fieldKey,
                                     'values' => $values
-                                ],
-                                    $tempStore[$fieldKey]['args'] ?? []);
+                            ], $tempStore[$fieldKey]['args'] ?? []);
 
-                                /* check if term field */
-                                if (isset($tempStore[$fieldKey]['args']['get_term_by'])) {
-
-                                    $newValue = '';
-                                    if (isset($args['match_value']) && !empty($args['match_value'])) {
-
-                                        $split = explode(';', $args['match_value']);
-                                        $terms = [];
-                                        foreach ($split as $singleTerm) {
-                                            $term = get_term_by($args['get_term_by'] ?? 'name',
-                                                $singleTerm,
-                                                $args['taxonomy'][0] ?? false);
-                                            if ($term instanceof WP_Term) $terms[] = $term->term_id;
-                                            else {
-
-                                                /* check if term already prepared */
-                                                if (isset($this->new_terms[$args['taxonomy'][0] ?? 'missing'][$singleTerm])) {
-                                                    $termTempID = $this->new_terms[$args['taxonomy'][0] ?? 'missing'][$singleTerm];
-                                                } else {
-                                                    /* insert new term operation */
-                                                    $termTempID = 'new_term_' . ($row + 1) . '_' . $temp++;
-                                                    $this->new_terms[$args['taxonomy'][0] ?? 'missing'][$singleTerm] =
-                                                        $termTempID;
-                                                }
-
-                                                $terms[] = $termTempID;
-                                            }
+                            // Handle term fields
+                            if (isset($tempStore[$fieldKey]['args']['get_term_by'])) {
+                                $newValue = '';
+                                if (!empty($args['match_value'])) {
+                                    $terms = [];
+                                    $split = explode(';', $args['match_value']);
+                                    foreach ($split as $singleTerm) {
+                                        $term = get_term_by($args['get_term_by'] ?? 'name', $singleTerm, $args['taxonomy'][0] ?? false);
+                                        if ($term instanceof WP_Term) {
+                                            $terms[] = $term->term_id;
+                                        } else {
+                                            $termTempID = $this->new_terms[$args['taxonomy'][0] ?? 'missing'][$singleTerm]
+                                                    ?? ('new_term_' . ($row + 1) . '_' . $tempCounter++);
+                                            $this->new_terms[$args['taxonomy'][0] ?? 'missing'][$singleTerm] = $termTempID;
+                                            $terms[] = $termTempID;
                                         }
-                                        $newValue = implode(';', $terms);
                                     }
-                                } else {
-                                    $newValue = isset($tempStore[$fieldKey]['callback']) ?
+
+                                    $newValue = implode(';', $terms);
+                                }
+                            } else {
+                                $newValue = isset($tempStore[$fieldKey]['callback']) ?
                                         call_user_func($tempStore[$fieldKey]['callback'], $args) :
                                         $fieldValue;
-                                }
+                            }
 
-
-                                /* check if post - term relation */
-                                if ($fieldKey == 'post_term_ID') {
-                                    $returnValues[$subArray] = $newValue;
-                                } elseif (isset($tempStore[$fieldKey]['repeater']) &&
-                                    $tempStore[$fieldKey]['repeater'] &&
-                                    $tempStore[$fieldKey]['repeater_base']) {
-
-                                    if (!empty($newValue))
-                                        $returnValues[$subArray][$tempStore[$fieldKey]['repeater_base']][($tempStore[$fieldKey]['sequence'] ?? 0)][$tempStore[$fieldKey]['repeater_field_key']] =
-                                            $newValue;
-                                    unset($returnValues[$subArray][$fieldKey]);
-                                } else {
-                                    $returnValues[$subArray][$fieldKey] = $newValue;
-                                }
+                            // Handle post-term relation or repeaters
+                            if ($fieldKey === 'post_term_ID') {
+                                $returnValues[$subArray] = $newValue;
+                            } elseif (!empty($tempStore[$fieldKey]['repeater']) && !empty($tempStore[$fieldKey]['repeater_base'])) {
+                                $returnValues[$subArray][$tempStore[$fieldKey]['repeater_base']][($tempStore[$fieldKey]['sequence'] ?? 0)][($tempStore[$fieldKey]['repeater_field_key'] ?? '')] = $newValue;
+                                unset($returnValues[$subArray][$fieldKey]);
+                            } else {
+                                $returnValues[$subArray][$fieldKey] = $newValue;
                             }
                         }
                     }
                 }
 
-                /* check if skip insert */
-                if (isset($matchArray['skip_insert'])) {
-
-                    /* skip post */
-                    if ($matchArray['skip_insert'] == 'ID') {
+                if (!empty($matchArray['skip_insert'])) {
+                    if ($matchArray['skip_insert'] === 'ID' && isset($returnValues['post']['ID'])) {
                         $returnValues['skip_insert']['object_id'] = $returnValues['post']['ID'];
-                    } elseif ($matchArray['skip_insert'] == 'term_id') {
+                    } elseif ($matchArray['skip_insert'] === 'term_id' && isset($returnValues['term']['term_id'])) {
                         $returnValues['skip_insert']['term_id'] = $returnValues['term']['term_id'];
                     } else {
                         //@oesDevelopment Error handling.
                     }
                 }
 
-                /* check for parent and store for after processing */
-                //@oesDevelopment Validate value.
-                if (isset($matchArray['parent'])) $returnValues['parent'] = $matchArray['parent'];
-
+                if (!empty($matchArray['parent'])) {
+                    $returnValues['parent'] = $matchArray['parent'];
+                }
             }
 
-            /* validate field values : json encoded relationship values */
-            if (isset($returnValues['meta']))
-                foreach ($returnValues['meta'] as $fieldKey => $fieldValue)
-                    if ($fieldObject = get_field_object($fieldKey))
-                        if (isset($fieldObject['type']) &&
-                            ($fieldObject['type'] === 'relationship' ||
-                                $fieldObject['type'] == 'taxonomy' && $fieldObject['field_type'] == 'multi_select')) {
+            // Encode relationship / multi-select meta fields as JSON
+            if (!empty($returnValues['meta'])) {
+                foreach ($returnValues['meta'] as $fieldKey => $fieldValue) {
+                    $fieldObject = get_field_object($fieldKey);
+                    if (!empty($fieldObject) &&
+                            ($fieldObject['type'] === 'relationship' || ($fieldObject['type'] === 'taxonomy' && ($fieldObject['field_type'] ?? '') === 'multi_select'))) {
 
-                            /* prepare value */
-                            $cleanValue = [];
-                            if (is_string($fieldValue)) {
-
-                                /* convert string to json encoded value */
-                                $parseValue = str_replace(['\'', '[', ']'], ['', '', ''], $fieldValue);
-                                $cleanValue = explode(';', $parseValue);
-                            }
-                            $returnValues['meta'][$fieldKey] = json_encode($cleanValue);
+                        $cleanValue = [];
+                        if (is_string($fieldValue)) {
+                            $parseValue = str_replace(['\'', '[', ']'], '', $fieldValue);
+                            $cleanValue = explode(';', $parseValue);
                         }
+                        $returnValues['meta'][$fieldKey] = wp_json_encode($cleanValue);
+                    }
+                }
+            }
 
-
-            /**
-             * Filter the return values after processing.
-             *
-             * @param array $returnValues The return values.
-             * @param array $returnValues The field labels.
-             */
             return apply_filters('oes/import_modify_values_after', $returnValues, $fieldLabels);
         }
     }

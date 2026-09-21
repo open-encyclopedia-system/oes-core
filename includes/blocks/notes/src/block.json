@@ -43,5 +43,9 @@
   },
   "editorScript": "file:./index.js",
   "render": "file:./render.php",
-  "style": "file:./style-index.css"
+  "style": "file:./style-index.css",
+  "usesContext": [
+    "postID",
+    "postType"
+  ]
 }

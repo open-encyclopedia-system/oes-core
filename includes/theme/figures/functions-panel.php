@@ -20,14 +20,9 @@
  */
 function oes_get_panel_html(string $content = '', array $args = []): string {
 
-    /**
-     * Filters the panel arguments.
-     *
-     * @param array $args The panel arguments.
-     */
     $args = apply_filters('oes/get_panel_html_args', $args);
 
-    $class = oes_get_project_class_name('OES_Panel');
+    $class = oes_get_application_class_name('OES_Panel');
     $panel = new $class($args);
     return $panel->html($content);
 }
@@ -50,16 +45,9 @@ function oes_get_panel_html(string $content = '', array $args = []): string {
 function oes_get_image_panel_html($image, array $args = []): string
 {
     $args['figure_ID'] = $image['ID'] ?? ($image['id'] ?? $image);
-
-
-    /**
-     * Filters the image panel arguments.
-     *
-     * @param array $args The panel arguments.
-     */
     $args = apply_filters('oes/get_image_panel_html_args', $args);
 
-    $class = oes_get_project_class_name('OES_Image_Panel');
+    $class = oes_get_application_class_name('OES_Image_Panel');
     $panel = new $class($args);
     return $panel->html();
 }
@@ -77,18 +65,10 @@ function oes_get_image_panel_html($image, array $args = []): string
  */
 function oes_get_gallery_panel_html(array $figures, array $args = []): string
 {
-
     $args['figures'] = $figures;
-
-
-    /**
-     * Filters the image panel arguments.
-     *
-     * @param array $args The panel arguments.
-     */
     $args = apply_filters('oes/get_gallery_panel_html_args', $args);
 
-    $class = oes_get_project_class_name('OES_Gallery_Panel');
+    $class = oes_get_application_class_name('OES_Gallery_Panel');
     $panel = new $class($args);
     return $panel->html();
 }

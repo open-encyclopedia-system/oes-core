@@ -96,18 +96,22 @@ if (!class_exists('OES_Post')) {
             /* if called in admin set global language */
             if (empty($language) && empty($oes_language)) $language = 'language0';
 
-            return (empty($language) || $language === 'all') ? $oes_language : $language;
+            $languageString = (empty($language) || $language === 'all') ? $oes_language : $language;
+
+            return is_string($languageString) ? $languageString : 'language0';
         }
 
 
         /**
-         * Set the schema type for the object.
+         * Set the OES type for the object.
          *
          * @return void
          */
         public function set_schema_type(): void
         {
-            $this->schema_type = OES()->post_types[$this->post_type]['type'] ?? 'other';
+            global $oes;
+            $this->type = $oes->post_types[$this->post_type]['type'] ?? 'other';
+            $this->schema = $oes->post_types[$this->post_type]['schema'] ?? 'Thing';
         }
 
 
@@ -135,13 +139,15 @@ if (!class_exists('OES_Post')) {
                         $this->current_version = $currentVersion;
 
                     /* check if translation exists */
-                    if ($translationParent = get_translation_id($this->parent_ID))
-                        if ($currentVersion = get_current_version_id($translationParent))
+                    if ($translationParent = get_translation_id($this->parent_ID)) {
+                        if ($currentVersion = get_current_version_id($translationParent)) {
                             $this->translations[] = [
                                 'id' => $currentVersion,
                                 'language' => oes_get_post_language($currentVersion) ?:
                                     oes_get_post_language($translationParent)
                             ];
+                        }
+                    }
                 } elseif ($translationField =
                     oes_get_field('field_' . $this->post_type . '__translations', $this->object_ID)) {
                     if (is_array($translationField))
@@ -163,11 +169,10 @@ if (!class_exists('OES_Post')) {
             global $oes;
 
             $fields = [];
-            if(!$this->skip_single_processing){
+            if (!$this->skip_single_processing) {
                 $fields = $oes->post_types[$this->post_type]['field_options'] ?? [];
-            }
-            else {
-                foreach ($oes->post_types[$this->post_type]['archive'] ?? [] as $fieldKey){
+            } else {
+                foreach ($oes->post_types[$this->post_type]['archive'] ?? [] as $fieldKey) {
                     $fields[$fieldKey] = $oes->post_types[$this->post_type]['field_options'][$fieldKey] ?? [];
                 }
             }
@@ -282,10 +287,24 @@ if (!class_exists('OES_Post')) {
                 }
 
             /* add archive data */
-            foreach (OES()->post_types[$this->post_type]['archive'] ?? [] as $fieldKey)
-                $this->archive_data[$fieldKey] = $this->get_meta_or_archive_field_data($fieldKey, 'archive');
+            foreach (OES()->post_types[$this->post_type]['archive'] ?? [] as $fieldKey) {
+                $this->add_archive_data($fieldKey);
+            }
         }
 
+        /**
+         * Add archive data.
+         *
+         * @param string $fieldKey
+         * @return void
+         */
+        protected function add_archive_data(string $fieldKey): void
+        {
+            $data = $this->get_meta_or_archive_field_data($fieldKey, 'archive');
+            if (!empty($data)) {
+                $this->archive_data[$fieldKey] = $data;
+            }
+        }
 
         /**
          * Set additional data (for theme display).
@@ -337,26 +356,12 @@ if (!class_exists('OES_Post')) {
             ];
 
             /* differentiate schema type */
-            switch ($this->schema_type) {
-
-                case 'single-article':
-                    $contentArray = $this->prepare_html_main_classic_article($args, $contentArray);
-                    break;
-
-                case 'single-index':
-                    $contentArray = $this->prepare_html_main_classic_index($args, $contentArray);
-                    break;
-
-                case 'single-contributor':
-                    $contentArray = $this->prepare_html_main_classic_contributor($args, $contentArray);
-                    break;
-
-                case 'other':
-                default:
-                    $contentArray = $this->prepare_html_main_classic_other($args, $contentArray);
-            }
-
-            return $contentArray;
+            return match ($this->type) {
+                'single-article' => $this->prepare_html_main_classic_article($args, $contentArray),
+                'single-index' => $this->prepare_html_main_classic_index($args, $contentArray),
+                'single-contributor' => $this->prepare_html_main_classic_contributor($args, $contentArray),
+                default => $this->prepare_html_main_classic_other($args, $contentArray),
+            };
         }
 
 
@@ -541,7 +546,19 @@ if (!class_exists('OES_Post')) {
                     else unset($args[$param]);
                 }
 
-            if (isset($args['authors'])) $returnString = $this->get_author_info($args['authors']);
+            if (isset($args['authors'])) {
+
+                $authorArgs = false;
+                if (is_string($args['authors'])) {
+                    $authorArgs = ['authors' => [$args['authors']]];
+                } elseif (is_array($args['authors'])) {
+                    $authorArgs = ['authors' => $args['authors']];
+                }
+
+                if (is_array($authorArgs)) {
+                    $returnString = $this->get_author_info($authorArgs);
+                }
+            }
 
             if (isset($args['pub_date']) || isset($args['edit_date'])) {
                 if (isset($args['version']) && !$args['version']) $args['version-parameter']['skip-version'] = true;
@@ -557,44 +574,188 @@ if (!class_exists('OES_Post')) {
             return empty($returnString) ? '' : '<div class="oes-cover-info">' . $returnString . '</div>';
         }
 
-
         /**
          * Get author info (e.g. for cover info).
          *
-         * @param string|array $args Additional arguments like author field keys.
+         * @param array $args Additional arguments like author field keys.
          * @return string The author info.
+         *
+         * @oesDevelopment: sort alphabetically with multiple fields
          */
-        public function get_author_info($args = []): string
+        public function get_author_info(array $args = []): string
         {
-            $authorsArray = [];
-            if (is_string($args)) $authorsArray[] = $this->fields[$args]['value-display'] ?? '';
-            foreach ($args['authors'] ?? [] as $authorFieldKey) {
-                if (str_starts_with($authorFieldKey, 'parent__')) {
-                    $fieldValue = oes_get_field_display_value(
-                        substr($authorFieldKey, 8),
-                        $this->parent_ID,
-                        ['list-class' => 'oes-field-value-list']);
-                    if (!empty($fieldValue)) $authorsArray[] = $fieldValue;
-                } else
-                    $authorsArray[] = $this->check_if_field_not_empty($authorFieldKey) ?
-                        $this->fields[$authorFieldKey]['value-display'] :
-                        '';
+            $authorFields = $args['authors'] ?? [];
+            if (empty($authorFields)) {
+                return '';
             }
 
-            /* return early on empty data */
-            if (empty($authorsArray)) return '';
-            $authorsString = implode(', ', $authorsArray);
-            if (empty($authorsString)) return '';
+            $sorted = (bool)($args['sorting'] ?? false);
+            $includeOrcid = (bool)($args['orcid'] ?? false);
+            $labels = $args['labels'] ?? false;
 
-            /* prepare prefix */
-            $prefix = $this->get_label($args['labels'] ?? [], 'single__sub_line__author_by', '');
+            foreach ($authorFields as $authorFieldKey) {
 
-            return '<div class="' . ($args['className'] ?? '') . ' oes-author-byline">' .
-                ($prefix ? '<span class="oes-author-byline-by">' . $prefix . '</span>' : '') .
-                $authorsString .
+                if (!$includeOrcid) {
+
+                    if (str_starts_with($authorFieldKey, 'parent__')) {
+                        $authorList = oes_get_field_display_value(
+                            substr($authorFieldKey, 8),
+                            $this->parent_ID,
+                            ['list-class' => 'oes-field-value-list', 'sort' => $sorted],
+                        );
+
+                    } elseif (is_array($this->fields[$authorFieldKey]['value'] ?? []) && !$sorted) {
+                        $authorList = oes_get_field_display_value(
+                            $authorFieldKey,
+                            $this->object_ID,
+                            ['list-class' => 'oes-field-value-list', 'sort' => false]
+                        );
+                    } else {
+                        $authorList = $this->fields[$authorFieldKey]['value-display'];
+                    }
+                } else {
+
+                    if (str_starts_with($authorFieldKey, 'parent__')) {
+                        $authorIDs = oes_get_field($authorFieldKey, $this->object_ID);
+                    } else {
+                        $authorIDs = $this->fields[$authorFieldKey]['value'] ?? [];
+                    }
+
+                    if (empty($authorIDs)) {
+                        continue;
+                    }
+
+                    if(is_array($authorIDs)) {
+                        $authorList = $this->get_author_list_with_orcid($authorIDs, $sorted);
+                    }
+                    elseif (is_string($authorIDs)) {
+                        $authorList = $authorIDs;
+                    }
+                    else {
+                        $authorList = '<span class="oes-author-byline__link">' . $this->fields[$authorFieldKey]['value-display'] . '</span>';
+                    }
+                }
+
+                if (!empty($authorList)) {
+                    $authorsArray[] = $authorList;
+                }
+            }
+
+
+            if (empty($authorsArray)) {
+                return '';
+            }
+
+            $authorsString = implode('</div><div class="oes-author-byline__group">', $authorsArray);
+            if (empty($authorsString)) {
+                return '';
+            }
+
+            $prefix = '';
+            if($labels) {
+
+                $prefixString = $this->get_label($labels, 'single__sub_line__author_by');
+
+                if(!empty($prefixString)) {
+                    $prefix = '<span class="oes-author-byline__by">' . esc_html($prefixString) . '</span>';
+                }
+            }
+
+            $classes[] = 'oes-author-byline';
+            if($includeOrcid){
+                $classes[] = 'oes-author-byline-include-orcid';
+            }
+
+            return '<div class="' . esc_attr(implode(' ', $classes)) . '">' .
+                $prefix .
+                '<div class="oes-author-byline__container">' .
+                '<div class="oes-author-byline__group">' . $authorsString . '</div>' .
+                '</div>' .
                 '</div>';
         }
 
+        /**
+         * Build a sorted <ul> of authors with ORCID info where available.
+         *
+         * @param array $authorIDs Array of author post IDs or WP_Post objects.
+         * @param bool $sorted Whether to sort by sorting title.
+         * @return string The rendered list, or empty string if no valid authors.
+         */
+        private function get_author_list_with_orcid(array $authorIDs, bool $sorted): string
+        {
+            global $oes;
+
+            $collectSingleAuthors = [];
+            $orcidField = false;
+
+            foreach ($authorIDs as $authorID) {
+
+                if (!$orcidField) {
+                    $postType = $authorID instanceof WP_Post
+                        ? $authorID->post_type
+                        : get_post_type($authorID);
+
+                    if ($postType) {
+                        $orcidField = $oes->post_types[$postType]['orcid'] ?? '';
+                    }
+                }
+
+                if (!$orcidField) {
+                    continue;
+                }
+
+                $orcidID = oes_get_field($orcidField, $authorID);
+                $sortingTitle = oes_get_display_title_sorting($authorID);
+
+                $collectSingleAuthors[$sortingTitle . $authorID] = [
+                    'permalink' => get_permalink($authorID),
+                    'title' => oes_get_display_title($authorID),
+                    'orcidID' => $orcidID,
+                ];
+            }
+
+            if (empty($collectSingleAuthors)) {
+                return '';
+            }
+
+            if ($sorted) {
+                ksort($collectSingleAuthors);
+            }
+
+            $singleAuthors = '';
+            foreach ($collectSingleAuthors as $author) {
+                $singleAuthors .= $this->format_author_entry($author);
+            }
+
+            return '<ul class="oes-field-value-list">' . $singleAuthors . '</ul>';
+        }
+
+        /**
+         * Render a single author's list item, with ORCID link if available.
+         *
+         * @param array $author Associative array with 'permalink', 'title', 'orcidID'.
+         * @return string
+         */
+        private function format_author_entry(array $author): string
+        {
+            $permalink = esc_url($author['permalink']);
+            $title = esc_html($author['title']);
+            $orcidID = $author['orcidID'];
+
+            if (!empty($orcidID) && is_string($orcidID)) {
+                $orcidUrl = esc_url('https://orcid.org/' . $orcidID);
+                $orcidLabel = esc_html('https://orcid.org/' . $orcidID);
+                return sprintf(
+                    '<li><a href="%s" class="oes-author-byline__link">%s</a><a href="%s" class="oes-author-byline__orcid">%s</a></li>',
+                    $permalink,
+                    $title,
+                    $orcidUrl,
+                    $orcidLabel
+                );
+            }
+
+            return sprintf('<li><a href="%s" class="oes-author-byline__link">%s</a></li>', $permalink, $title);
+        }
 
         /**
          * Get version info (e.g. for cover info).
@@ -670,7 +831,8 @@ if (!class_exists('OES_Post')) {
         function collect_version_info(
             string $publicationDateFieldKey = '',
             string $editDateFieldKey = '',
-            array  $args = []): array {
+            array  $args = []): array
+        {
 
             global $oes, $oes_language;
             $dateLocale = $args['date-locale'] ?? ($oes->languages[$oes_language]['locale'] ?? 'en_BE');
@@ -847,7 +1009,13 @@ if (!class_exists('OES_Post')) {
             /* check if field is set */
             $citation = '';
             if ($fieldKey) {
-                $fieldValue = $this->fields[$fieldKey]['value-display'] ?? false;
+
+                if (isset($this->fields[$fieldKey])) {
+                    $fieldValue = $this->fields[$fieldKey]['value-display'] ?? false;
+                } else {
+                    $fieldValue = oes_get_field_display_value($fieldKey, $this->object_ID);
+                }
+
                 if (!empty($fieldValue)) {
                     if ($fieldValue === 'empty') return '';
                     elseif ($fieldValue !== 'generate' &&
@@ -856,7 +1024,13 @@ if (!class_exists('OES_Post')) {
             }
 
             /* check for pattern */
-            $pattern = $this->modify_citation_pattern($oes->post_types[$this->post_type]['citation']['pattern'] ?? []);
+            $patternValue = $oes->post_types[$this->post_type]['citation']['pattern'] ?? [];
+
+            if (!is_array($patternValue)) {
+                $patternValue = [];
+            }
+
+            $pattern = $this->modify_citation_pattern($patternValue);
             if ((empty($citation) || trim(strip_tags($citation)) == 'generate') && !empty($pattern))
                 $citation = calculate_value($pattern,
                     $this->object_ID,
@@ -1223,40 +1397,91 @@ if (!class_exists('OES_Post')) {
         /** @inheritdoc */
         public function get_index_connected_posts(string $consideredPostType, string $postRelationship = ''): array
         {
-            /* prepare data */
+            if (!$consideredPostType) {
+                return [];
+            }
+
             $connectedPosts = [];
 
-            /* get considered post type */
-            if ($consideredPostType) {
+            foreach ($this->fields as $fieldKey => $field) {
 
-                /* loop through fields and check for relationship fields with the post type */
-                foreach ($this->fields as $fieldKey => $field)
-                    if ($field['type'] === 'relationship' && $field['relationships'] &&
-                        in_array($consideredPostType, $field['relationships']) &&
-                        isset($field['value'])) {
+                $fieldType = $field['type'] ?? false;
 
-                        /* check for post relationship */
-                        $versionPosts = [];
-                        if ($postRelationship === 'child_version') {
-                            if (is_array($field['value']))
-                                foreach ($field['value'] as $post) {
-                                    $versionID = get_current_version_id($post->ID ?? $post);
-                                    if ($versionID) $versionPosts[] = get_post($versionID);
-                                }
-                        } elseif ($postRelationship === 'parent')
-                            foreach ($field['value'] as $post) {
-                                $versionID = oes_get_parent_id($post->ID ?? $post);
-                                if ($versionID) $versionPosts[] = get_post($versionID);
+                if ($fieldType !== 'relationship') {
+                    continue;
+                }
+
+                if (!$field['relationships']) {
+                    continue;
+                }
+
+                if (!($field['value'] ?? false)) {
+                    continue;
+                }
+
+                if (!in_array($consideredPostType, $field['relationships'])) {
+                    continue;
+                }
+
+                $versionPosts = [];
+                if ($postRelationship === 'child_version') {
+
+                    if (is_array($field['value'])) {
+                        foreach ($field['value'] as $post) {
+
+                            $versionID = get_current_version_id($post->ID ?? $post);
+                            if ($versionID) {
+                                $versionPosts[] = get_post($versionID);
                             }
-                        else $versionPosts = !empty($field['value'] ?? '') ? $field['value'] : [];
-
-                        $connectedPosts[$fieldKey] = $versionPosts;
+                        }
                     }
+
+                } elseif ($postRelationship === 'parent') {
+
+                    foreach ($field['value'] as $post) {
+                        $versionID = oes_get_parent_id($post->ID ?? $post);
+                        if ($versionID) {
+                            $versionPosts[] = get_post($versionID);
+                        }
+                    }
+                } else {
+                    $versionPosts = !empty($field['value'] ?? '') ? $field['value'] : [];
+                }
+
+                $connectedPosts[$fieldKey] = $versionPosts;
             }
 
             return $connectedPosts;
         }
 
+        /** @inheritdoc */
+        public function get_index_entries_html(array $indexElements, bool $grouped = true): string
+        {
+            $collectIndexElements = [];
+            foreach ($indexElements as $fieldKey => $singleIndex) {
+                if($grouped){
+                    ksort($singleIndex);
+                    $collectIndexElements[] = '<div class="oes-archive-wrapper-header">' .
+                        '<h3 class="oes-index-grouped oes-content-table-header">' .
+                        $this->fields[$fieldKey]['further_options']['label_translation_' . $this->language] .
+                        '</h3>' .
+                        '</div>' .
+                        implode('', $singleIndex);
+                }
+                else{
+                    foreach ($singleIndex as $singleEntryKey => $singleEntry) {
+                        $collectIndexElements[$singleEntryKey] = $singleEntry;
+                    }
+                }
+            }
+
+            ksort($collectIndexElements);
+            return '<div class="oes-archive-wrapper">' .
+                '<div class="oes-alphabet-container">' .
+                implode('', $collectIndexElements) .
+                '</div>' .
+                '</div>';
+        }
 
         /**
          * Collect data for metadata or archive representation.
@@ -1367,41 +1592,8 @@ if (!class_exists('OES_Post')) {
                 /* check if value is empty and is to be skipped if empty */
                 if (empty($field['value']) || (empty($field['value-display']))) return '';
 
-
-                /* modify list values @oesDevelopment */
-                $replaceValue = [];
-                if ($loop === 'xml' && is_array($field['value']))
-                    foreach ($field['value'] as $singleValue)
-                        if ($singleValue instanceof WP_Post) {
-                            $replaceValue[$singleValue->ID] = [
-                                'title' => oes_get_display_title($singleValue),
-                                'permalink' => get_permalink($singleValue->ID),
-                                'type' => $singleValue->post_type
-                            ];
-                        } elseif ($singleValue instanceof WP_Term) {
-                            $replaceValue[$singleValue->term_id] = [
-                                'title' => oes_get_display_title($singleValue),
-                                'permalink' => get_term_link($singleValue->term_id),
-                                'type' => $singleValue->taxonomy
-                            ];
-                        } elseif (is_int($singleValue))
-                            if ($singleValuePost = get_post($singleValue)) {
-                                $replaceValue[$singleValuePost->ID] = [
-                                    'title' => oes_get_display_title($singleValuePost),
-                                    'permalink' => get_permalink($singleValuePost->ID),
-                                    'type' => $singleValuePost->post_type
-                                ];
-                            } elseif ($singleValueTerm = get_term($singleValue)) {
-                                $replaceValue[$singleValueTerm->term_id] = [
-                                    'title' => oes_get_display_title($singleValueTerm),
-                                    'permalink' => get_term_link($singleValueTerm->term_id),
-                                    'type' => $singleValueTerm->taxonomy
-                                ];
-                            }
-
                 /* prepare value, use 'value-display' if set, else use 'value' */
-                if (empty($replaceValue))
-                    $replaceValue = (is_string($field['value-display'])) ?
+                $replaceValue = (is_string($field['value-display'])) ?
                         $field['value-display'] :
                         (is_string($field['value']) ? 'Value Display missing' : $field['value']);
 

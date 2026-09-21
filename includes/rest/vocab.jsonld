@@ -1,0 +1,31 @@
+{
+  "@context": {
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "dcterms": "http://purl.org/dc/terms/"
+  },
+  "@id": "https://your-domain.com/wp-json/oes/v1/vocab",
+  "@type": "owl:Ontology",
+  "owl:versionInfo": "1.0.0",
+  "dcterms:modified": "2026-08-17",
+  "@graph": [
+    {
+      "@id": "oes:status",
+      "@type": "rdf:Property",
+      "rdfs:label": "OES editorial status",
+      "rdfs:comment": "Internal editorial workflow status of an OES post (e.g. draft, progress, published)."
+    },
+    {
+      "@id": "oes:citations",
+      "@type": "rdf:Property",
+      "rdfs:label": "OES citations",
+      "rdfs:comment": "All citations of an OES post object."
+    },
+    {
+      "@id": "oes:externals",
+      "@type": "rdf:Property",
+      "rdfs:label": "OES externals",
+      "rdfs:comment": "All external links of an OES post object."
+    }
+  ]
+}

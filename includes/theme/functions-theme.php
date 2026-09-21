@@ -224,8 +224,8 @@ function oes_get_language_switch()
 {
     global $oes_language_switch;
     if (empty($oes_language_switch)) {
-
-        $languageSwitchClass = str_replace('-', '_', OES_BASENAME_PROJECT) . '_Language_Switch';
+        $name = oes_get_application_name();
+        $languageSwitchClass = $name . '_Language_Switch';
         $oes_language_switch = class_exists($languageSwitchClass) ?
             new $languageSwitchClass() :
             new \OES\Navigation\Language_Switch();
@@ -305,7 +305,7 @@ function oes_post_terms_html(array $args): string
 
 
 /**
- * Get the HTML representation of connected terms.
+ * Get the HTML representation of a field.
  *
  * @param array $args Shortcode attributes.
  *
@@ -313,65 +313,7 @@ function oes_post_terms_html(array $args): string
  */
 function oes_field_html(array $args): string
 {
-    /* check for tags */
-    global $oes_post, $oes_term, $oes_language;
-    if ((empty($oes_post) && empty($oes_term)) || empty($args['field'])) return '';
-
-
-    /* check for value */
-    if (empty($oes_post))
-        $value = oes_get_field($args['field'], $oes_term->taxonomy . '_' . $oes_term->object_ID);
-    else {
-        ;
-
-        if($args['parent'] ?? false) $value = oes_get_field_display_value($args['field'], $oes_post->parent_ID);
-        elseif($args['version'] ?? false) {
-            $currentVersion = \OES\Versioning\get_current_version_id($oes_post->object_ID);
-            if($currentVersion) $value = oes_get_field_display_value($args['field'], $currentVersion);
-        }
-        else {
-            if($args['relation'] ?? false) {
-
-                $rawValue = oes_get_field($args['field'], $oes_post->object_ID);
-                $fieldObject = oes_get_field_object($args['field'], $oes_post->object_ID);
-
-                /* modify value for return format 'id' */
-                $replaceValue = [];
-                if (isset($fieldObject['return_format']) &&
-                    $fieldObject['return_format'] === 'id' &&
-                    is_array($rawValue)) {
-                    foreach ($rawValue as $singleValue) {
-                        $replaceValue[] = ($args['relation'] == 'version') ?
-                            get_post(\OES\Versioning\get_current_version_id($singleValue)):
-                            get_post(\OES\Versioning\get_parent_id($singleValue));
-                    }
-                }
-
-                if(isset($args['list-class'])) $args['class'] = $args['list-class'];
-                $value = oes_display_post_array_as_list($replaceValue, $args['list-id'] ?? false, $args);
-            }
-            else
-                $value = ($oes_post->fields[$args['field']][$args['type'] ?? 'value-display'] ?? '');
-        }
-    }
-    if (empty($value)) return '';
-
-    /* check for header */
-    $headerText = '';
-    if (!empty($args['header'] ?? '')) $headerText = $args['header'];
-    elseif ($oes_language && !empty($args['header_' . $oes_language] ?? ''))
-        $headerText = $args['header_' . $oes_language];
-
-    $header = '';
-    if (!empty($headerText))
-        $header = empty($oes_post) ?
-            $oes_term->generate_table_of_contents_header($headerText) :
-            $oes_post->generate_table_of_contents_header($headerText);
-
-    /* check for prefix */
-    $prefix = $args['prefix_' . $oes_language] ?? ($args['prefix'] ?? '');
-
-    return $header . '<div class="' . ($args['class'] ?? '') . '">' . $prefix . $value . '</div>';
+    return \OES\Field\render($args);
 }
 
 
@@ -480,7 +422,7 @@ function oes_post_method_html(array $args = []): string
 
     return isset($args['args'])
         ? $oes_post->$method($args['args'])
-        : $oes_post->$method();
+        : $oes_post->$method($args);
 }
 
 
@@ -514,4 +456,79 @@ function oes_set_language_cookie(): void
                 $oes_language_switched = $newValue;
             }
     }
+}
+
+/**
+ * @oesDevelopment Add more parameter, convert into block
+ *
+ * Display breadcrumbs for post.
+ *
+ * @param array $args
+ * @return string
+ */
+function oes_post_breadcrumbs(array $args = []): string {
+
+    $breadcrumbs[] = oes_get_page_title(['is_link' => ($args['isLink'] ?? true)]);
+
+    $taxonomies = $args['taxonomy'] ?? '';
+    if(!empty($taxonomies)){
+
+        global $oes_post;
+
+        $categories = oes_get_terms($oes_post->parent_ID, explode(',', $taxonomies));
+
+        foreach($categories as $category){
+            foreach($category as $term){
+                $breadcrumbs[] = $term;
+            }
+        }
+    }
+
+    $separator = $args['separator'] ?? '  ›  ';
+    return implode($separator, $breadcrumbs);
+}
+
+/**
+ * Redirect template parts according to language.
+ *
+ * @param array $parsed_block The block data.
+ * @return array Return the modified block data.
+ */
+function oes_redirect_template_parts(array $parsed_block): array
+{
+    if ('core/template-part' === $parsed_block['blockName'] &&
+            in_array($parsed_block['attrs']['slug'], ['header', 'footer'])) {
+        global $oes_language;
+        if ($oes_language != 'language0') {
+            $parsed_block['attrs']['slug'] .= '_' . $oes_language;
+        }
+    }
+    return $parsed_block;
+}
+
+/**
+ * Modify the document title.
+ *
+ * @oesDevelopment: pass this in classes; add document title
+ *
+ * @param string $title The document title.
+ * @return string Return the modified document title.
+ */
+function oes_document_title(string $title): string
+{
+    global $oes_post, $oes_term, $oes_archive;
+
+    if (!empty($oes_post) && isset($oes_post->title)) {
+        return wp_strip_all_tags($oes_post->title);
+    }
+
+    if (!empty($oes_term) && isset($oes_term->title)) {
+        return wp_strip_all_tags($oes_term->title);
+    }
+
+    if (!empty($oes_archive) && isset($oes_archive['page_title'])) {
+        return wp_strip_all_tags($oes_archive['page_title']);
+    }
+
+    return wp_strip_all_tags($title);
 }

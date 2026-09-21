@@ -1,39 +1,25 @@
 <?php
 
 /**
- * Open Encyclopedia System CORE
+ * Open Encyclopedia System Core
  *
  * @wordpress-plugin
  * Plugin Name:       OES Core
  * Plugin URI:        https://www.open-encyclopedia-system.org/
- * Description:       Tools for building and maintaining online encyclopedias.
- * Version:           2.4.3
- * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT
- * Author URI:        https://www.it.fu-berlin.de/die-fub-it/mitarbeitende/mstrobl.html
+ * Description:       A framework for scholarly reference works.
+ * Version:           3.0.0
+ * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen
+ * Author URI:        https://www.fu-berlin.de/
  * Requires at least: 6.5
- * Tested up to:      6.8.3
+ * Tested up to:      7.1
  * Requires PHP:      8.1
- * Tags:              encyclopedia, open-access, digital-humanities, academic, wiki, lexicon, education
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Text Domain:       oes
  */
 
 if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+    exit;
 }
 
 /** --------------------------------------------------------------------------------------------------------------------
@@ -44,18 +30,44 @@ if (!function_exists('OES')) {
     /**
      * Returns the OES Core instance, initializing it if necessary.
      *
-     * @param string $projectPath Optional path to the OES Project plugin.
+     * @param string $applicationPath Optional path to the OES Application plugin.
      * @param array $args Optional additional arguments for initialization.
      *
      * @return OES_Core The OES Core instance.
      */
-    function OES(string $projectPath = '', array $args = []): OES_Core
+    function OES(string $applicationPath = '', array $args = []): OES_Core
     {
         global $oes;
 
         if (!isset($oes)) {
-            $oes = new OES_Core($args, $projectPath);
-            if ($oes->initialized) $oes->initialize_core();
+            $oes = new OES_Core($args);
+            if ($oes->initialized) {
+                $oes->maybe_upgrade();
+                $oes->initialize_core();
+            }
+        }
+
+        if (!$oes->application_initialized && !empty($applicationPath)) {
+            $oes->initialize_application($applicationPath);
+        }
+
+        if (!$oes->data_model_initialized) {
+            try {
+                $oes->initialize_data_model();
+            } catch (Exception $e) {
+                if (is_admin()) {
+                    add_action('admin_notices', function () use ($e) {
+                        echo '<div class="notice notice-warning is-dismissible"><p>' .
+                            __('The OES Core Plugin could not be initialized for this application.', 'oes') . '</p>' .
+                            $e->getMessage() .
+                            '</div>';
+                    });
+                }
+            }
+        }
+
+        if ($args['hide_menu'] ?? true) {
+            oes_hide_obsolete_menu_structure();
         }
 
         return $oes;
@@ -67,6 +79,9 @@ if (!function_exists('OES')) {
  * hook.)
  * -------------------------------------------------------------------------------------------------------------------*/
 add_action('plugins_loaded', function () {
+
+    OES();
+
     /**
      * Fires after all plugins are loaded.
      */
@@ -90,19 +105,25 @@ if (!class_exists('OES_Core')) :
     {
 
         /** @var string The version of the OES Core plugin. */
-        public string $version = '2.4.3';
+        public string $version = '3.0.0';
 
         /** @var string The version of the OES database schema. */
-        public string $db_version = '2.0';
+        public string $db_version = '2.1';
 
-        /** @var bool Indicates whether the project is legacy (before OES Core 2.3). */
+        /** @var bool Indicates whether the application is legacy (before OES Core 2.3). */
         public bool $legacy = false;
 
-        /** @var bool Indicates whether the project uses a block theme (Full Site Editing theme). */
+        /** @var bool Indicates whether the application uses a block theme (Full Site Editing theme). */
         public bool $block_theme = true;
 
         /** @var bool Whether the OES Core plugin was successfully initialized. */
         public bool $initialized = true;
+
+        /** @var bool Whether an OES application plugin was successfully initialized. */
+        public bool $application_initialized = false;
+
+        /** @var bool Whether the OES data model was successfully initialized. */
+        public bool $data_model_initialized = false;
 
         /** @var bool Whether the ACF Pro plugin is active. */
         public bool $acf_pro = false;
@@ -116,8 +137,11 @@ if (!class_exists('OES_Core')) :
         /** @var array Media group configurations. */
         public array $media_groups = [];
 
-        /** @var array Admin pages for OES Core and project plugins. See class 'Menu_Page'. */
+        /** @var array Admin pages for OES Core and application plugins. See class 'Menu_Page'. */
         public array $admin_pages = [];
+
+        /** @var array Admin pages for OES Module plugins. See class 'Module_Page'. */
+        public array $module_pages = [];
 
         /** @var array Supported languages for multilingual posts. Default is English. */
         public array $languages = [
@@ -147,14 +171,22 @@ if (!class_exists('OES_Core')) :
         public array $search = [];
 
         /**
+         * @var array<string, string> Map of deprecated property names to their replacements.
+         *
+         * @deprecated 1.1.0 Use $application_initialized instead of $project_initialized.
+         */
+        protected array $deprecated_properties = [
+            'project_initialized' => 'application_initialized',
+        ];
+
+        /**
          * OES_Core constructor.
          *
          * Checks for ACF plugin activation, plugin compatibility, and sets configuration values.
          *
          * @param array $args Additional initialization parameters.
-         * @param string $projectPath Absolute path to the project plugin.
          */
-        public function __construct(array $args = [], string $projectPath = '')
+        public function __construct(array $args = [])
         {
             if (!class_exists('ACF')) {
                 add_action('admin_notices', function () {
@@ -180,42 +212,108 @@ if (!class_exists('OES_Core')) :
                     if (property_exists($this, $propertyKey)) $this->$propertyKey = $value;
                 }
 
-                $this->define_constants($projectPath);
+                $this->define_constants();
             }
+        }
+
+        /**
+         * Get deprecated properties
+         */
+        public function __get(string $name)
+        {
+            if (isset($this->deprecated_properties[$name])) {
+                $replacement = $this->deprecated_properties[$name];
+
+                _deprecated_argument(
+                    self::class . '::$' . $name,
+                    '3.0.0',
+                    sprintf('Use $%s instead.', $replacement)
+                );
+
+                return $this->$replacement;
+            }
+
+            return null;
+        }
+
+        /**
+         * Set deprecated properties.
+         *
+         * @param string $name
+         * @param $value
+         * @return void
+         */
+        public function __set(string $name, $value): void
+        {
+            if (isset($this->deprecated_properties[$name])) {
+                $replacement = $this->deprecated_properties[$name];
+
+                _deprecated_argument(
+                    self::class . '::$' . $name,
+                    '3.0.0',
+                    sprintf('Use $%s instead.', $replacement)
+                );
+
+                $this->$replacement = $value;
+                return;
+            }
+
+            $this->$name = $value;
         }
 
         /**
          * Defines global constants used by the OES Core plugin.
          *
-         * @param string $projectPath The absolute path to the project plugin, if any.
          * @return void
          */
-        public function define_constants(string $projectPath = ''): void
+        public function define_constants(): void
         {
             define('OES_CORE_PLUGIN', __DIR__);
             define('OES_BASENAME', basename(__DIR__));
-            define('OES_ACF_PRO', class_exists('acf_pro'));
-            define('OES_LIVEMODE', true);
+            define('OES_CORE_PLUGIN_FILE', __FILE__);
+            define('OES_CORE_PLUGIN_BASENAME', plugin_basename(__FILE__));
+            define('OES_LIVE_MODE', true);
+        }
 
-            if (!empty($projectPath)) {
-                define('OES_PROJECT_PLUGIN', $projectPath);
-                define('OES_BASENAME_PROJECT', basename($projectPath));
+        /**
+         * Defines global constants used by the OES Core plugin.
+         *
+         * @param string $applicationPath The absolute path to the application plugin, if any.
+         * @return void
+         */
+        public function define_application_constants(string $applicationPath = ''): void
+        {
+            if (!empty($applicationPath)) {
+
+                define('OES_APPLICATION_PLUGIN', $applicationPath);
+                define('OES_BASENAME_APPLICATION', basename($applicationPath));
+
+                /**
+                 * @deprecated 3.0.0 Use OES_APPLICATION_PLUGIN instead.
+                 */
+                define('OES_PROJECT_PLUGIN', $applicationPath);
+
+                /**
+                 * @deprecated 3.0.0 Use OES_BASENAME_APPLICATION instead.
+                 */
+                define('OES_BASENAME_PROJECT', $applicationPath);
             }
         }
 
         /**
          * Initializes the OES Core plugin functionalities and features.
+         *
+         * @return void
          */
-        function initialize_core(): void
+        public function initialize_core(): void
         {
             /**
              * Include core plugin functionalities.
-             * This includes functions that are used throughout both the OES Core plugin and the Project plugin.
+             * This includes functions that are used throughout both the OES Core plugin and the application plugin.
              * Specifically, it includes the function 'oes_include'.
              */
             require(OES_CORE_PLUGIN . '/includes/functions-utility.php');
             require(OES_CORE_PLUGIN . '/includes/functions-features.php');
-
 
             // Initialize OES Features
             \OES\Features\utility_functions();
@@ -228,7 +326,8 @@ if (!class_exists('OES_Core')) :
             $features = \OES\Admin\get_features();
             $is_enabled = fn($key) => !$features || ($features[$key] ?? false);
 
-            \OES\Features\dashboard($is_enabled('dashboard'));
+            \OES\Features\dashboard();
+            \OES\Features\site_health();
             \OES\Features\admin_pages();
             \OES\Features\assets();
             \OES\Features\columns();
@@ -236,7 +335,7 @@ if (!class_exists('OES_Core')) :
             \OES\Features\user_rights();
 
             \OES\Features\remarks($is_enabled('remarks'));
-            \OES\Features\manual($is_enabled('manual'));
+            \OES\Features\guidelines($is_enabled('manual'));
             \OES\Features\tasks($is_enabled('task'));
 
             \OES\Features\data_model();
@@ -244,20 +343,20 @@ if (!class_exists('OES_Core')) :
             \OES\Features\formula_functions();
             \OES\Features\versioning();
             \OES\Features\cache($is_enabled('cache'));
-            \OES\Features\lod_api($is_enabled('lod_apis'));
+            \OES\Features\lod_apis($is_enabled('lod_apis'));
 
             \OES\Features\icons();
             \OES\Features\popup();
             \OES\Features\notes();
             \OES\Features\blocks();
             \OES\Features\theme_classes();
-            \OES\Features\figures($is_enabled('figures'));
+            \OES\Features\figures();
             \OES\Features\filter();
             \OES\Features\labels();
-            \OES\Features\language_switch(!$this->block_theme);
+            \OES\Features\navigation(!$this->block_theme);
             \OES\Features\search();
+            \OES\Features\export();
             \OES\Features\shortcodes();
-
 
             /**
              * Fires after the OES Plugin has been fully initialized.
@@ -268,11 +367,40 @@ if (!class_exists('OES_Core')) :
         }
 
         /**
-         * Initialize the OES Project plugin, including data model and project processing.
+         * Initialize the OES application plugin, including data model and application processing.
          *
-         * @throws Exception
+         * @param string $applicationPath The absolute path to the application plugin, if any.
+         *
+         * @return void
          */
-        function initialize_project(): void
+        public function initialize_application(string $applicationPath = ''): void
+        {
+            $this->define_application_constants($applicationPath);
+            $this->application_initialized = true;
+
+            /**
+             * Fires after the OES Application Plugin has been fully initialized.
+             */
+            do_action('oes/application_initialized');
+        }
+
+        /**
+         * @deprecated 3.0.0 Use OES::initialize_application() instead.
+         */
+        public function initialize_project(string $applicationPath = ''): void
+        {
+            _deprecated_function(__CLASS__ . '::' . __FUNCTION__, '3.0.0', 'OES::initialize_application()');
+            $this->initialize_application($applicationPath);
+        }
+
+        /**
+         * Initialize the OES application plugin, including data model and application processing.
+         *
+         * @return void
+         * @throws Exception
+         *
+         */
+        public function initialize_data_model(): void
         {
             $generalConfigPost = get_posts([
                     'post_type' => 'oes_object',
@@ -309,10 +437,9 @@ if (!class_exists('OES_Core')) :
                         $this->admin_pages['container'][$containerID] = $container;
                     }
                 }
-            }
 
-            oes_include('admin/functions-rights.php');
-            add_action('init', '\OES\Rights\user_roles');
+                $this->data_model_initialized = true;
+            }
         }
 
         /**
@@ -320,7 +447,7 @@ if (!class_exists('OES_Core')) :
          *
          * @return void
          */
-        function data_model_registered(): void
+        public function data_model_registered(): void
         {
             \OES\Block\register_block_styles();
             \OES\Block\register();
@@ -337,8 +464,7 @@ if (!class_exists('OES_Core')) :
                 if (isset($taxonomyConfiguration['admin_columns'])) {
                     add_filter('manage_edit-' . $taxonomyKey . '_columns', '\OES\Admin\add_post_column');
                     add_filter('manage_' . $taxonomyKey . '_custom_column', '\OES\Admin\display_taxonomy_column_value', 10, 3);
-                    // @oesDevelopment: Add feature for taxonomy sortable columns (e.g., `add_filter('manage_edit-' . $taxonomyKey . '_sortable_columns', 'OES\Admin\make_columns_sortable');`)
-                }
+                 }
 
                 if (sizeof($this->languages) > 1 && ($taxonomyConfiguration['language_dependent'] ?? false)) {
                     add_action($taxonomyKey . '_edit_form_fields', '\OES\Model\term_add_fields_for_multilingualism', 10, 2);
@@ -352,20 +478,9 @@ if (!class_exists('OES_Core')) :
          *
          * @return string|null Returns the version or null.
          */
-        function get_version(): ?string
+        public function get_version(): ?string
         {
             return $this->version ?? null;
-        }
-
-        /**
-         * Set the config post ID linking the OES object post storing the general configuration to the OES instance.
-         *
-         * @param mixed $postID The OES object post ID storing the general configuration.
-         * @return void
-         */
-        function set_config_post($postID): void
-        {
-            $this->config_post = $postID;
         }
 
         /**
@@ -373,9 +488,10 @@ if (!class_exists('OES_Core')) :
          *
          * @param array $config The config parameters.
          * @param mixed $postID The OES object post ID storing the general configuration.
+         *
          * @return void
          */
-        function set_general_parameters(array $config, $postID = null): void
+        public function set_general_parameters(array $config, $postID = null): void
         {
             if ($postID) {
                 $this->set_config_post($postID);
@@ -393,13 +509,26 @@ if (!class_exists('OES_Core')) :
         }
 
         /**
+         * Set the config post ID linking the OES object post storing the general configuration to the OES instance.
+         *
+         * @param mixed $postID The OES object post ID storing the general configuration.
+         *
+         * @return void
+         */
+        public function set_config_post($postID): void
+        {
+            $this->config_post = $postID;
+        }
+
+        /**
          * Set media parameters.
          *
          * @param array $oesArgs The media OES arguments.
          * @param mixed $postID The OES object post ID storing the media configuration.
+         *
          * @return void
          */
-        function set_media_parameters(array $oesArgs, $postID = null): void
+        public function set_media_parameters(array $oesArgs, $postID = null): void
         {
             $this->media_groups = $oesArgs;
 
@@ -413,9 +542,10 @@ if (!class_exists('OES_Core')) :
          *
          * @param string $taxonomyKey The taxonomy key.
          * @param array $oesArgs The taxonomy OES arguments.
+         *
          * @return void
          */
-        function set_taxonomy_parameters(string $taxonomyKey, array $oesArgs): void
+        public function set_taxonomy_parameters(string $taxonomyKey, array $oesArgs): void
         {
             foreach (\OES\Model\get_taxonomy_oes_args_defaults() as $configKey => $default) {
                 $this->taxonomies[$taxonomyKey][$configKey] = $oesArgs[$configKey] ?? $default;
@@ -432,9 +562,10 @@ if (!class_exists('OES_Core')) :
          * @param string $postTypeKey The post type key.
          * @param array $oesArgs The post type OES arguments.
          * @param array $registerArgs The post type register arguments.
+         *
          * @return void
          */
-        function set_post_type_parameters(string $postTypeKey, array $oesArgs, array $registerArgs = []): void
+        public function set_post_type_parameters(string $postTypeKey, array $oesArgs, array $registerArgs = []): void
         {
             foreach (\OES\Model\get_post_type_oes_args_defaults() as $configKey => $default) {
                 $this->post_types[$postTypeKey][$configKey] = $oesArgs[$configKey] ?? $default;
@@ -450,42 +581,12 @@ if (!class_exists('OES_Core')) :
                 }
             }
 
-            $options = [
-                'language' => 'none',
-                'external' => []
-            ];
+            $options = \OES\Model\get_schema_config($this->post_types[$postTypeKey]['schema'] ?? '');
 
-            if ($this->post_types[$postTypeKey]['type'] == 'single-article') {
-                $options = [
-                    'authors' => [],
-                    'creators' => [],
-                    'subtitle' => 'none',
-                    'citation' => 'none',
-                    'excerpt' => 'none',
-                    'featured_image' => 'none',
-                    'licence' => 'none',
-                    'pub_date' => 'none',
-                    'edit_date' => 'none',
-                    'language' => 'none',
-                    'version_field' => 'none',
-                    'literature' => [],
-                    'terms' => [],
-                    'external' => [],
-                    'lod' => false
-                ];
-            }
-            elseif ($this->post_types[$postTypeKey]['type'] == 'single-contributor') {
-                $options = [
-                    'vita' => 'none',
-                    'publications' => 'none',
-                    'language' => 'none',
-                    'external' => [],
-                    'lod' => false
-                ];
-            }
-
-            foreach ($options as $parameter => $default) {
-                $this->post_types[$postTypeKey][$parameter] = $oesArgs[$parameter] ?? $default;
+            foreach ($options as $group) {
+                foreach ($group as $key => $parameter) {
+                    $this->post_types[$postTypeKey][$key] = $oesArgs[$key] ?? (empty($parameter['multiple']) ? '' : []);
+                }
             }
 
             $themeLabels = array_merge([], $oesArgs['theme_labels'] ?? []);
@@ -501,9 +602,10 @@ if (!class_exists('OES_Core')) :
          * @param string $key The object key.
          * @param array $fields The fields.
          * @param string|int $postID The post ID of the OES object post.
+         *
          * @return void
          */
-        function set_field_options(string $component, string $key, array $fields, $postID): void
+        public function set_field_options(string $component, string $key, array $fields, $postID): void
         {
             if ($component == 'taxonomy') $component = 'taxonomies';
             elseif ($component == 'post_type') $component = 'post_types';
@@ -512,10 +614,15 @@ if (!class_exists('OES_Core')) :
             $target[$key]['acf_ids'][$postID] = $postID;
 
             foreach ($fields as $field) {
+
+                if ($field['endpoint'] ?? false) {
+                    continue;
+                }
+
                 $target[$key]['field_options'][$field['key']]['label'] = $field['label'];
                 $target[$key]['field_options'][$field['key']]['type'] = $field['type'];
 
-                if(!empty($field['taxonomy'] ?? '')){
+                if (!empty($field['taxonomy'] ?? '')) {
                     $target[$key]['field_options'][$field['key']]['taxonomy'] = $field['taxonomy'] ?? '';
                 }
 
@@ -550,9 +657,10 @@ if (!class_exists('OES_Core')) :
          * Set field options for media field groups.
          *
          * @param array $fields The fields.
+         *
          * @return void
          */
-        function set_media_field_options(array $fields): void
+        public function set_media_field_options(array $fields): void
         {
             foreach ($fields as $field) {
                 $this->media_groups['fields'][$field['key']]['label'] = $field['label'];
@@ -575,5 +683,47 @@ if (!class_exists('OES_Core')) :
                 }
             }
         }
+
+        /**
+         * Check plugin version and run upgrade routines if needed.
+         *
+         * @return void
+         */
+        public function maybe_upgrade(): void
+        {
+            $installedVersion = get_option('oes_db_version');
+
+            if (!$installedVersion) {
+                $this->install_db();
+                return;
+            }
+
+            if (version_compare($installedVersion, $this->db_version, '<')) {
+                $this->install_db();
+            }
+        }
+
+        /**
+         * Perform database installation.
+         *
+         * @return void
+         */
+        public function install_db(): void
+        {
+            \OES\DB\install_operation_table();
+            \OES\DB\install_cache_table();
+
+            update_option('oes_db_version', $this->db_version);
+        }
     }
 endif;
+
+/** --------------------------------------------------------------------------------------------------------------------
+ * Install the OES data base tables.
+ * -------------------------------------------------------------------------------------------------------------------*/
+
+require_once __DIR__ . '/includes/admin/initialize-db.php';
+
+register_activation_hook(__FILE__, function () {
+    OES()->maybe_upgrade();
+});

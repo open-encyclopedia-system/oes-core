@@ -1,7 +1,87 @@
-
 # Changelog
 
-## 2.4.4 (in development)
+## 3.0.0 - 2026-09-22
+
+### Added
+- New rights model
+- New application plugin initialization logic
+- `OES_List_Table` (extends `WP_List_Table`)
+- Factory service and improved data model factory
+- Cache database table
+- New blocks: Context Link, Archive Toggle All, Field (uses shortcode `oes_field`), Abstract, Post Link, Featured Post
+- New LOD APIs: ROR, ORCID
+- REST API export
+- Site health feature
+- Shortcodes: audit field value, breadcrumbs
+- Update function for OES database tables
+- Filter `oes/template_redirect_index_additional_objects` — object filtering on index pages
+- Filter `oes/lod_render_shortcode` — modify LOD shortcode output (e.g. during export)
+- Filter block styles "Details" and "Classic"
+- Language-dependent templates for terms and index pages
+- Optional schema tabs for module pages
+- General schema option: publisher
+- Schema.org types for OES schema
+- `schema_type` and `oes_type` parameters for OES objects (replace `type`)
+- "Template Type" setting
+- Parameter `hide_menu` (replaces `oes_hide_obsolete_menu_structure()`)
+- Context parameters for OES Blocks (pass a specific post ID)
+- New parameters for block "Display Title": tag selection, display-as-link option
+- New parameters for block "Title": HTML tag, link flag
+- New parameters for block "Filter Alphabet": label for "all", include-empty flag
+- New parameters for block "Author Byline": ORCID display, skip-sorting option
+- New parameter for block "Index": group fields
+
+### Changed
+- Renamed `OES Manual` → `Guidelines`
+- Renamed `Project` → `Application` throughout
+- Renamed schema properties: Excerpt → Abstract, Literature → Bibliography, Terms → Subjects
+- Reorganized settings and tools pages
+- Reorganized and expanded schema settings
+- Redesigned settings/tools administration GUI and stabilized config tools
+- Redesigned OES dashboard, operations/feature display, page and container icons
+- Restyled `oes-filter-item-count`
+- Improved internal page generation
+- Improved caching via new cache database table
+- Added LOD query support via React
+- Made LOD preview optional; metadata now configurable
+- Made language switch block available outside the navigation
+- Added sticky style for block "Table of Contents"
+- Added editor style class for Guideline admin pages
+- Cleaned up version information notice
+- Consolidated XML processing into export formats module
+
+### Deprecated
+- Constant `OES_LIVEMODE` — use `OES_LIVE_MODE` instead
+- See [DEPRECATIONS.md](./DEPRECATIONS.md) for the full list
+
+### Removed
+- "Show OES Objects" setting (admin-only feature)
+- Legacy options `hide_version_tab` and `oes_admin-hide_version-tab` (now admin-only by default)
+- Parameters 3 and 5 from filter `oes/api_gnd_display_entry`
+- Global `$oes_archive_data['archive']['post_type']` — use `$oes_archive['post_type']` instead
+- Filter `oes/schema_types` — use `oes/oes_types` instead
+- Filters `oes/set_archive_data_caching_enabled`, `oes/schema_options_single`
+- Functions `oes_replace_for_serializing()`, `oes_stripslashes_array()`, `oes_replace_for_form()`, `copy_post_meta()`
+- Obsolete CSS
+- HTML attribute `oes-post-filter-[ID]` — replace with `date=...`
+- HTML attribute `oes-post-[language]`
+
+### Fixed
+- Warning on custom post archive page
+- Editor style for iframe (since WP 7.0.0)
+
+## 2.4.4
+### New Filters / Functions
+- Added filter: 'oes/get_literature_field_display_value' 
+- Added function: oes_normalize_path_for_localhost() (removes leading /oes prefix in path)
+
+### Roles / Permissions
+- Modify dashboard view for users with role subscriber
+- Remove role read-only
+- Add role blocked
+
+### UI / CSS
+- Modified admin CSS oes-grey-out to make it darker
 
 ## 2.4.3
 ### Fixes
@@ -22,6 +102,7 @@
 - Fixed filter processing for alphabet filter when no other filters are applied
 - Fixed filter items list: now sorted case-insensitively by default
 - Fixed dashicons alignment in "Print" and "Cite as" block
+- Added localized schema templates for archives
 
 ### Improvements
 - Improved caching: transients now stored without autoload

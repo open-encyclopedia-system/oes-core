@@ -39,7 +39,7 @@ function get_parent_post_type(string $postType)
  */
 function get_current_version_id($postID)
 {
-    return oes_get_field('field_oes_versioning_current_post', $postID);
+    return get_post_meta($postID, 'field_oes_versioning_current_post', true);
 }
 
 
@@ -64,7 +64,7 @@ function set_current_version_id($parentID, $currentPostID): void
  */
 function get_version_field($postID)
 {
-    return oes_get_field('field_oes_post_version', $postID);
+    return get_post_meta($postID, 'field_oes_post_version', true);
 }
 
 
@@ -88,7 +88,7 @@ function set_version_field($postID, $version)
  */
 function get_parent_id($postID)
 {
-    return oes_get_field('field_oes_versioning_parent_post', $postID);
+    return get_post_meta($postID, 'field_oes_versioning_parent_post', true);
 }
 
 
@@ -281,44 +281,32 @@ function display_version_table(array $postIDs, $currentVersionID): void
     </table><?php
 }
 
-
 /**
  * Get the notice string with versioning information for the post.
  */
-function get_notice_string(): string
-{
+function get_notice_string(): string {
     global $post;
 
-    /* get parent post */
-    if ($parentID = get_parent_id($post->ID)) {
+    if (!$parentID = get_parent_id($post->ID)) {
+        return __('This post is not version controlled and will not be displayed on the website. Create a parent post first.', 'oes');
+    }
 
-        /* get information about parent post */
-        $parentPost = get_post($parentID);
+    $parentPost  = get_post($parentID);
+    $currentPost = get_post(get_current_version_id($parentID));
+    $typeName    = get_post_type_object($parentPost->post_type)->labels->singular_name ?? $parentPost->post_type;
+    $isCurrent   = $currentPost?->ID && $currentPost->ID != $post->ID;
 
-        /* get current version from parent post */
-        $currentPost = get_post(get_current_version_id($parentID));
-
-        $noticeString = '<span>' . __('This post is version controlled. ', 'oes') . '</span>' .
-            '<div><strong>' .
-            (get_post_type_object($parentPost->post_type)->labels->singular_name ?? $parentPost->post_type) .
-            ': </strong>' .
-            sprintf('<a href="%s">%s</a>', get_edit_post_link($parentID), $parentPost->post_title) .
-            '</div>';
-
-        /* check for most current version */
-        if ($currentPost && $currentPost->ID && $currentPost->ID != $post->ID)
-            $noticeString .= '<div><strong>' .
-                __('Currently Displayed Version: ', 'oes') .
-                '</strong>' .
-                sprintf('<a href="%s">%s</a>', get_edit_post_link($currentPost), $currentPost->post_title) .
-                '</div>';
-        else $noticeString .= '<div>' . __('This is the currently displayed version.', 'oes') . '</div>';
-    } else $noticeString = '<div>' . __('This post is not version controlled and will not be displayed on the ' .
-            'website. Create a parent post first.', 'oes') . '</div>';
-
-    return $noticeString;
+    return sprintf(
+            '<strong>%s</strong> %s: <a href="%s">%s</a> &mdash; %s',
+            __('Version controlled.', 'oes'),
+            $typeName,
+            get_edit_post_link($parentID),
+            $parentPost->post_title,
+            $isCurrent
+                    ? sprintf(__('Current version: <a href="%s">%s</a>', 'oes'), get_edit_post_link($currentPost), $currentPost->post_title)
+                    : __('This is the currently displayed version.', 'oes')
+    );
 }
-
 
 /**
  * Callback function for the meta box of "parent" post types.
@@ -491,7 +479,7 @@ function add_meta_boxes(string $post_type): void
                                     'warning',
                                     '<?php echo str_replace('\'', '\\\'', $noticeString);?>',
                                     {
-                                        isDismissible: false,
+                                        isDismissible: true,
                                         __unstableHTML: true,
                                     }
                                 );
@@ -507,32 +495,10 @@ function add_meta_boxes(string $post_type): void
              */
                 'admin_notices',
                 function () {
-                    echo '<div class="notice notice-warning"><p>' . \OES\Versioning\get_notice_string() . '</p></div>';
+                    echo '<div class="notice notice-warning is-dismissible"><p>' . \OES\Versioning\get_notice_string() . '</p></div>';
                 }
             );
     }
-
-
-    /* show version control tab according to option */
-    if (get_option('oes_admin-hide_version_tab'))
-        add_action(
-        /**
-         * Notice for "version" post types with block editor. For post types that are controlled by a parent
-         * post type display a link to the parent post and current version after the title.
-         */
-            'admin_footer',
-            function () {
-                ?>
-                <script>
-                    let tabs = document.querySelectorAll("[data-key = 'oes_versioning_tab']");
-                    let i = 0, n = tabs.length;
-                    for (; i < n; i++) {
-                        tabs[i].style.display = "none";
-                    }
-                </script>
-                <?php
-            }
-        );
 }
 
 
@@ -603,8 +569,7 @@ function admin_action_oes_copy_version(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-copy-version-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-copy-version-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -737,8 +702,7 @@ function admin_action_oes_create_version(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-create-version-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-create-version-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -834,8 +798,7 @@ function admin_action_oes_create_translation(): void
 
     /* validate nonce */
     $nonce = $_REQUEST['nonce'];
-    if (wp_verify_nonce($nonce, 'oes-create-translation-' . $parentID)
-        && current_user_can('edit_posts', $parentID)) {
+    if (wp_verify_nonce($nonce, 'oes-create-translation-' . $parentID)) {
 
         /* throw error if no post found or wrong action */
         if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action'])
@@ -900,4 +863,31 @@ function admin_action_oes_create_translation(): void
 
         } else wp_die('Translation creation failed for parent post with ID ' . $parentID . '.');
     } else wp_die('Security check issue. Please try again.');
+}
+
+/**
+ * Hides specific ACF fields from non-admin users.
+ *
+ * @param array $field The ACF field array.
+ * @return array|false Returns the field array for admins or false to hide it for non-admins.
+ */
+function hide_fields_for_non_admins($field) {
+
+    // Normalize the field key if it is in the format 'acf[field_key]'
+    if (preg_match('/acf\[(.+)\]/', $field['key'], $matches)) {
+        $fieldKey = $matches[1];
+    } else {
+        $fieldKey = $field['key'];
+    }
+
+    $isVersioningField =
+        $fieldKey === 'oes_versioning_tab'
+        || str_starts_with($fieldKey, 'field_oes_versioning_')
+        || str_starts_with($fieldKey, 'field_connected_parent');
+
+    if ($isVersioningField && !\OES\Rights\user_is_admin()) {
+        return false;
+    }
+
+    return $field;
 }

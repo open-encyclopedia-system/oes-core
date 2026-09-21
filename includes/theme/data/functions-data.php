@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 /**
@@ -14,7 +9,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function oes_prepare_data(): void
 {
-    $class = oes_get_project_class_name('OES_Template_Redirect');
+    $class = oes_get_application_class_name('OES_Template_Redirect');
     $templateRedirect = new $class();
     $templateRedirect->prepare_data();
 
@@ -25,14 +20,22 @@ function oes_prepare_data(): void
  * Set post data for OES_Post object. (Prepare rendered content to derive table of content etc).
  *
  * @param int $postID The post id. Default is current post ID.
+ * @param string $postType The post type.
  * @return void
  */
-function oes_set_post_data(int $postID = 0): void
+function oes_set_post_data(int $postID = 0, string $postType = ''): void
 {
-    global $oes_post, $post_type;
-    if (!$postID) $postID = get_the_ID();
-    $oes_post = class_exists($post_type) ?
-        new $post_type($postID) :
+    global $oes_post;
+
+    $postID = $postID ?: (int) get_the_ID();
+    if (!$postID) {
+        return;
+    }
+
+    $consideredPostType = $postType ?: (get_post_type($postID) ?: '');
+
+    $oes_post = class_exists($consideredPostType) ?
+        new $consideredPostType($postID) :
         new OES_Post($postID);
 }
 
@@ -48,7 +51,7 @@ function oes_set_page_data(int $postID = 0): void
     if (!$postID) {
         $postID = get_the_ID();
     }
-    $class = oes_get_project_class_name('OES_Page');
+    $class = oes_get_application_class_name('OES_Page');
     $oes_post = new $class($postID);
 }
 
@@ -64,7 +67,7 @@ function oes_set_attachment_data(int $postID = 0): void
     if (!$postID) {
         $postID = get_the_ID();
     }
-    $class = oes_get_project_class_name('OES_Attachment');
+    $class = oes_get_application_class_name('OES_Attachment');
     $oes_post = new $class($postID);
 }
 
@@ -105,58 +108,58 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         }
     }
 
-    // Determine if caching is enabled
     $cachingEnabled = false;
-    if(!is_search()) {
-        if (!empty($args['callables']['is_caching_enabled']) && is_callable($args['callables']['is_caching_enabled'])) {
-            $cachingEnabled = (bool)$args['callables']['is_caching_enabled']($args);
-        } elseif (has_filter('oes/set_archive_data_caching_enabled')) {
-            $cachingEnabled = (bool)apply_filters('oes/set_archive_data_caching_enabled', null, $args);
-        } else {
-            global $oes_caching_enabled;
-            $cachingEnabled = $oes_caching_enabled && !($args['ignore_cache'] ?? false);
-        }
+    if (!is_search()) {
+        global $oes_caching_enabled;
+        $cachingEnabled = $oes_caching_enabled && !($args['ignore_cache'] ?? false);
     }
 
-    if($cachingEnabled) {
+    $cachingArgs = [];
+    if ($cachingEnabled) {
 
         global $oes_language;
 
-        // Build cache key
         $language = empty($oes_language) ? ($args['language'] ?? 'language0') : $oes_language;
-        $cacheKeyType = $args['taxonomy'] ?? ($oes_is_index ?? $postType);
-        $cacheKey = 'oes_cache-' . $cacheKeyType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
+        $cacheKeyType = $args['taxonomy'] ?? ($args['index'] ?? ($oes_is_index ?? $postType));
+        $cacheKey = $cacheKeyType . '-' . sanitize_key($class) . '-' . sanitize_key($language);
 
-        // Retrieve from cache
         if (!empty($args['callables']['get_cache']) && is_callable($args['callables']['get_cache'])) {
             $cached = $args['callables']['get_cache']($cacheKey, $args);
         } elseif (has_filter('oes/set_archive_data_get_cache')) {
             $cached = apply_filters('oes/set_archive_data_get_cache', null, $cacheKey, $args);
         } else {
-            $cached = \OES\Caching\get_cache($cacheKey);
+            $cached = oes_cache()->get($cacheKey);
         }
 
         if ($cached) {
-            global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
-            $oes_archive = $cached['archive'] ?? [];
-            $oes_archive_data = $cached['archive_data'] ?? [];
-            $oes_filter = $cached['filter'] ?? [];
-            $oes_archive_count = $cached['count'] ?? 0;
-            $oes_is_index = $oes_archive['is_index'] ?? false;
+
+            if ($setGlobals) {
+                global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
+                $oes_archive = $cached['archive'] ?? [];
+                $oes_archive_data = $cached['archive_data'] ?? [];
+                $oes_filter = $cached['filter'] ?? [];
+                $oes_archive_count = $cached['count'] ?? 0;
+                $oes_is_index = $oes_archive['is_index'] ?? false;
+            }
             return;
+        } else {
+            $cachingArgs = $args + [
+                    'object_type' => $cacheKeyType,
+                    'class' => $class,
+                    'cache_language' => $language,
+                    'cache_type' => 'archive'
+                ];
         }
     }
 
-    // Not in cache, generate archive and set global parameters
     $oesArchive = class_exists($class) ? new $class($args) : new OES_Archive($args);
 
-    if($setGlobals) {
+    if ($setGlobals) {
         global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
     }
 
     [$oes_archive, $oes_filter, $oes_archive_count, $oes_archive_data] = oes_prepare_archive_payload($oesArchive);
 
-    // Store in cache
     if ($cachingEnabled) {
         $cachePayload = [
             'archive' => $oes_archive,
@@ -168,9 +171,9 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         if (!empty($args['callables']['set_cache']) && is_callable($args['callables']['set_cache'])) {
             $args['callables']['set_cache']($cacheKey, $cachePayload, $args);
         } elseif (has_filter('oes/set_archive_data_set_cache')) {
-            do_action('oes/set_archive_data_set_cache', $cacheKey, $cachePayload, $args);
+            do_action('oes/set_archive_data_set_cache', $cacheKey, $cachePayload, $cachingArgs);
         } else {
-            \OES\Caching\set_cache($cacheKey, $cachePayload);
+            oes_cache()->set($cacheKey, $cachePayload, $cachingArgs);
         }
     }
 }
@@ -194,25 +197,25 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
  */
 function oes_prepare_archive_payload($oesArchive): array
 {
-    if(!($oesArchive instanceof OES_Archive)){
+    if (!($oesArchive instanceof OES_Archive)) {
         return [];
     }
 
     $archive = [
-        'characters'       => $oesArchive->characters ?? [],
-        'post_type'        => $oesArchive->post_type ?? '',
-        'taxonomy'         => $oesArchive->taxonomy ?? '',
-        'term'             => $oesArchive->term ?? '',
-        'filtered_language'=> $oesArchive->filtered_language ?? '',
-        'label'            => $oesArchive->label ?? '',
-        'page_title'       => $oesArchive->page_title ?? '',
-        'title_is_link'    => $oesArchive->title_is_link ?? false,
-        'filter'           => $oesArchive->filter ?? [],
-        'hide_on_empty'    => $oesArchive->hide_on_empty ?? true,
-        'childless'        => $oesArchive->childless ?? true,
+        'characters' => $oesArchive->characters ?? [],
+        'post_type' => $oesArchive->post_type ?? '',
+        'taxonomy' => $oesArchive->taxonomy ?? '',
+        'term' => $oesArchive->term ?? '',
+        'filtered_language' => $oesArchive->filtered_language ?? '',
+        'label' => $oesArchive->label ?? '',
+        'page_title' => $oesArchive->page_title ?? '',
+        'title_is_link' => $oesArchive->title_is_link ?? false,
+        'filter' => $oesArchive->filter ?? [],
+        'hide_on_empty' => $oesArchive->hide_on_empty ?? true,
+        'childless' => $oesArchive->childless ?? true,
         'only_first_level' => $oesArchive->only_first_level ?? false,
-        'display_content'  => $oesArchive->display_content ?? false,
-        'is_index'         => $oesArchive->is_index ?? false,
+        'display_content' => $oesArchive->display_content ?? false,
+        'is_index' => $oesArchive->is_index ?? false,
     ];
 
     $filter = $oesArchive->filter_array;
@@ -226,7 +229,7 @@ function oes_prepare_archive_payload($oesArchive): array
     global $oes;
     if ($oes->legacy) {
         $data = [
-            'archive'     => (array)$oesArchive,
+            'archive' => (array)$oesArchive,
             'table-array' => $oesArchive->get_data_as_table(),
         ];
     } else {
@@ -244,13 +247,13 @@ function oes_prepare_archive_payload($oesArchive): array
 /**
  * Get a localized label for a given object, such as a post type or taxonomy.
  *
- * @param string $object   The object name (post type or taxonomy).
+ * @param string $object The object name (post type or taxonomy).
  * @param string $language Optional. The language code for localization. Default is 'language0'.
  * @return string The localized label or the object name as a fallback.
  */
 function oes_get_object_label(string $object, string $language = ''): string
 {
-    if(empty($language)){
+    if (empty($language)) {
         global $oes_language;
         $language = $oes_language ?? 'language0';
     }
@@ -277,7 +280,7 @@ function oes_get_post_type_label(string $postType, string $language = ''): strin
 {
     global $oes;
 
-    if(empty($language)){
+    if (empty($language)) {
         global $oes_language;
         $language = $oes_language ?? 'language0';
     }
@@ -294,7 +297,6 @@ function oes_get_post_type_label(string $postType, string $language = ''): strin
         return $oes->post_types[$postType]['label'];
     }
 
-    // Fallback to WordPress post type object label
     $postTypeObject = get_post_type_object($postType);
     return $postTypeObject->label ?? $postType;
 }
@@ -310,7 +312,7 @@ function oes_get_taxonomy_label(string $taxonomy, string $language = ''): string
 {
     global $oes;
 
-    if(empty($language)){
+    if (empty($language)) {
         global $oes_language;
         $language = $oes_language ?? 'language0';
     }
@@ -327,7 +329,53 @@ function oes_get_taxonomy_label(string $taxonomy, string $language = ''): string
         return $oes->taxonomies[$taxonomy]['label'];
     }
 
-    // Fallback to WordPress taxonmy object label
     $taxonomyObject = get_taxonomy($taxonomy);
     return $taxonomyObject->label ?? $taxonomy;
+}
+
+/**
+ * Get the publisher as set in general schema settings.
+ *
+ * @return array
+ */
+function oes_get_publisher(): array
+{
+    $option = get_option('oes_publisher');
+
+    if (!is_array($option)) {
+        return [];
+    }
+
+    return $option;
+}
+
+/**
+ * Get all configured schema types.
+ *
+ * @return array
+ */
+function oes_get_all_schema_types(): array
+{
+    global $oes;
+
+    $mappedTypes = array_map(function ($postTypeData) {
+        return oes_normalize_schema_type($postTypeData['schema'] ?? '');
+    }, $oes->post_types ?? []);
+
+    foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
+        $mappedTypes[$taxonomy] = oes_normalize_schema_type($taxonomyData['schema'] ?? '');
+    }
+
+    return $mappedTypes;
+}
+
+/**
+ * Normalize a schema type from config setting tool.
+ *
+ * @param string $schemaType
+ * @return string
+ */
+function oes_normalize_schema_type(string $schemaType): string
+{
+    return $schemaType === 'none' ? '' : $schemaType;
 }

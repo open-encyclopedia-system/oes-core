@@ -1,20 +1,16 @@
 let oesLanguageArray = oesLanguages;
-function oesConfigTableToggleRow(el){
-    jQuery(el).toggleClass('active')
-        .parent().parent().toggleClass('active')
-        .next('tr.oes-expandable-row').fadeToggle();
-}
 
-function oesConfigTableDeleteRow(el){
+document.addEventListener('click', function (e) {
 
-    const tr2 = el.closest('.oes-expandable-row');
-    const tr1 = tr2.previousElementSibling;
+    const deleteBtn = e.target.closest('.oes-table-delete');
+    if (!deleteBtn) return;
 
-    if (tr2) {
-        tr2.remove();
+    e.preventDefault();
+
+    const container = deleteBtn.closest('[id^="oes-form-table-"]');
+
+    if (container) {
+        container.remove();
     }
 
-    if (tr1 && tr1.classList.contains('oes-expandable-header')) {
-        tr1.remove();
-    }
-}
+});

@@ -187,7 +187,6 @@ function oes_html_get_form_element(
     /* prepare for additional parameters */
     $additional = '';
     if (isset($args['on_change'])) $additional .= ' onChange={' . $args['on_change'] . '}';
-    if (isset($args['class'])) $additional .= ' class="' . $args['class'] . '"';
     if (isset($args['disabled']) && $args['disabled']) $additional .= ' disabled';
 
     /* check for form type */
@@ -237,9 +236,10 @@ function oes_html_get_form_element(
                     $optionsString .= '<option value="' . $key . '"' .
                         (in_array($key, $valueArray) ? ' selected' : '') . '>' . $optionGroup . '</option>';
 
-            $formHtml .= sprintf('<select id="%s" name="%s" %s>%s</select>',
+            $formHtml .= sprintf('<select id="%s" name="%s" class="%s" %s>%s</select>',
                 $id,
                 $name . ($multiple ? '[]' : ''),
+                $args['class'] ?? ($multiple ? 'oes-replace-select2' : ''),
                 $additional,
                 $optionsString
             );
@@ -251,10 +251,11 @@ function oes_html_get_form_element(
                     __('Place text here', 'oes') :
                     $args['placeholder']) .
                 '"';
-            $formHtml = sprintf('<input type="text" id="%s" name="%s" value="%s" %s>',
+            $formHtml = sprintf('<input type="text" id="%s" name="%s" value="%s" class="%s" %s>',
                 $id,
                 $name,
                 $value,
+                $args['class'] ?? 'regular-text',
                 $additional
             );
             break;
@@ -268,9 +269,10 @@ function oes_html_get_form_element(
             if (isset($args['rows'])) $additional .= ' rows="' . $args['rows'] . '"';
             if (isset($args['cols'])) $additional .= ' cols="' . $args['cols'] . '"';
 
-            $formHtml = sprintf('<textarea id="%s" name="%s" %s>%s</textarea>',
+            $formHtml = sprintf('<textarea id="%s" name="%s" class="%s" %s>%s</textarea>',
                 $id,
                 $name,
+                $args['class'] ?? 'large-text',
                 $additional,
                 $value
             );
@@ -287,9 +289,10 @@ function oes_html_get_form_element(
             break;
 
         case 'number' :
-            $formHtml = sprintf('<input type="number" id="%s" name="%s" value="%d" min="%d" max="%d" %s>',
+            $formHtml = sprintf('<input type="number" id="%s" name="%s" class="%s" value="%d" min="%d" max="%d" %s>',
                 $id,
                 $name,
+                $args['class'] ?? 'small-text',
                 $value,
                 $args['min'] ?? '',
                 $args['max'] ?? '',
@@ -698,28 +701,6 @@ function oes_get_gallery_panel_slider_HTML(): string
 
 
 /**
- * Remove all slashes from value (string or array).
- *
- * @param mixed $input The value to be unslashed.
- *
- * return mixed The clean value.
- */
-function oes_stripslashes_array($input)
-{
-    $returnValue = false;
-    if (is_array($input)) {
-        $returnValue = $input;
-        $returnValue = stripslashes_deep($returnValue);
-        $returnValue = map_deep($returnValue, 'oes_replace_for_form');
-    } elseif (is_string($input)) {
-        $returnValue = oes_replace_for_form(stripslashes($input));
-    }
-
-    return $returnValue;
-}
-
-
-/**
  * Get a toggle icon for table sorting.
  *
  * @param int $column The column id.
@@ -767,7 +748,6 @@ function oes_get_column_sorting_toggle(int $column = 0, array $args = []): strin
  */
 function oes_get_filter_item_html(string $key, string $label, string $filter, array $args = []): string
 {
-
     $args = array_merge([
         'additional' => '',
         'element' => 'li',
@@ -779,16 +759,16 @@ function oes_get_filter_item_html(string $key, string $label, string $filter, ar
     $additional = $args['additional'];
     if ($args['add-count'] ?? false) {
         global $oes_filter;
-        $additional .= '<span class="oes-filter-item-count">(' .
+        $additional .= '<span class="oes-filter-item-count">' .
             (isset($oes_filter['json'][$filter][$key]) ?
                 sizeof($oes_filter['json'][$filter][$key]) :
                 0) .
-            ')</span>';
+            '</span>';
     }
 
     return sprintf('<%s class="oes-archive-filter-item %s">' .
-        '<a href="#" data-filter="%s" data-name="%s" data-type="%s" data-additional="%s" class="oes-archive-filter">' . // todo remove onClick and class with ids?
-        '<span>%s</span>' .
+        '<a href="#" data-filter="%s" data-name="%s" data-type="%s" data-additional="%s" class="oes-archive-filter">' .
+        '<span class="oes-archive-filter-text">%s</span>' .
         '%s</a>' .
         '</%s>',
         $args['element'],
@@ -838,4 +818,18 @@ function oes_get_translated_string(string $rawString, string $languageKey = ''):
     }
 
     return esc_html($rawString);
+}
+
+/**
+ * Render a single button-styled link. Centralises escaping so every
+ * button in this file is guaranteed to be built the same way.
+ */
+function oes_render_button(string $url, string $label, string $variant = 'secondary'): void
+{
+    printf(
+        '<a href="%s" class="button button-%s">%s</a>',
+        esc_url($url),
+        esc_attr($variant),
+        esc_html($label)
+    );
 }

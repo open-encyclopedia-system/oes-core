@@ -96,9 +96,15 @@ if (!class_exists('OES_Gallery_Panel')) {
                 }
             }
 
-            return '<span class="oes-panel-caption-text"><label>' .
+            return '<span class="oes-panel-caption-text"><span class="oes-panel-title-label">' .
                 esc_html($this->number_prefix . $numberString) .
-                '</label></span>';
+                '</span></span>';
+        }
+
+        /** @inheritdoc */
+        protected function get_export_panel_data(): array
+        {
+            return $this->figures;
         }
 
         /**
@@ -111,7 +117,7 @@ if (!class_exists('OES_Gallery_Panel')) {
             $first = true;
 
             foreach ($this->figures as $figure) {
-                // Resolve figure to ACF attachment array if necessary
+
                 if (is_numeric($figure)) {
                     $figure = acf_get_attachment($figure);
                 } elseif (is_array($figure)) {
@@ -121,7 +127,6 @@ if (!class_exists('OES_Gallery_Panel')) {
                     }
                 }
 
-                // Skip invalid or unresolved figures
                 if (!is_array($figure) || empty($figure['ID'])) {
                     continue;
                 }
@@ -160,13 +165,17 @@ if (!class_exists('OES_Gallery_Panel')) {
         {
             global $oesListOfFigures, $post;
 
-            /* get next number */
+            if(!$post){
+                return 0;
+            }
+
             $number = isset($oesListOfFigures[$post->ID]['number']) ?
                 $oesListOfFigures[$post->ID]['number'] + 1 :
                 1;
 
-            /* add to global variable */
-            if (intval($number)) $oesListOfFigures[$post->ID]['number'] = $number;
+            if (intval($number)) {
+                $oesListOfFigures[$post->ID]['number'] = $number;
+            }
 
             $oesListOfFigures[$post->ID]['figures'][] = [
                 'number' => $number,
@@ -175,7 +184,6 @@ if (!class_exists('OES_Gallery_Panel')) {
                 'type' => 'gallery'
             ];
 
-            /* add to class variable */
             $this->numbers[] = $number;
             return $number;
         }
@@ -210,12 +218,18 @@ if (!class_exists('OES_Gallery_Panel')) {
          */
         protected function get_image_modal_html(): string
         {
-            if (!isset($this->figures[0])) return '';
-            return $this->add_modal ?
-                oes_get_panel_image_modal_container_HTML($this->figures[0],
+            if (!isset($this->figures[0])) {
+                return '';
+            }
+
+            if(!$this->add_modal){
+                return '';
+            }
+
+            return oes_get_panel_image_modal_container_HTML($this->figures[0],
                     $this->tableHTML,
                     $this->add_slider,
-                    ['slider' => $this->get_gallery_panel_slider_html()]) : '';
+                    ['slider' => $this->get_gallery_panel_slider_html()]);
         }
 
         /**

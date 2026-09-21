@@ -172,7 +172,7 @@ if (!class_exists('Language_Switch')) {
         {
             foreach ($this->links as $languageKey => $languageAbb) {
                 $this->links[$languageKey]['link'] = get_site_url() . '/';
-                $this->links[$languageKey]['param']['s'] = $_GET['s'] ?? '';
+                $this->links[$languageKey]['param']['s'] = esc_html($_GET['s'] ?? '');
             }
         }
 
@@ -236,7 +236,7 @@ if (!class_exists('Language_Switch')) {
 
 
         /**
-         * Custom page link (overwritten by project processing).
+         * Custom page link (overwritten by application processing).
          *
          * @return void
          */
@@ -318,17 +318,11 @@ if (!class_exists('Language_Switch')) {
          */
         public function html(string $style = 'is-style-oes-default'): string
         {
-            switch ($style) {
-                case 'is-style-oes-popup':
-                    return $this->get_popup_links_html();
-
-                case 'is-style-oes-two':
-                    return $this->get_single_link_html();
-
-                case 'is-style-oes-default':
-                default:
-                    return $this->get_all_links_html();
-            }
+            return match (true) {
+                str_contains($style, 'is-style-oes-popup') => $this->get_popup_links_html(),
+                str_contains($style, 'is-style-oes-two') => $this->get_single_link_html(),
+                default => $this->get_all_links_html(),
+            };
         }
 
 

@@ -154,7 +154,7 @@ if (!class_exists('OES_Template_Redirect')):
             global $oes_search, $oes_archive_count, $oes_is_search;
 
             $args = ['language' => 'all'];
-            $class = oes_get_project_class_name('OES_Search');
+            $class = oes_get_application_class_name('OES_Search');
             $oes_search = new $class($args);
             $oes_archive_count = $oes_search->count;
 

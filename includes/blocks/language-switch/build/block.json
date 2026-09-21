@@ -21,9 +21,6 @@
     "alignText": false,
     "fullHeight": false
   },
-  "parent": [
-    "core/navigation"
-  ],
   "styles": [
     {
       "name": "oes-default",

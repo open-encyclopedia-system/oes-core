@@ -30,6 +30,9 @@ if (!class_exists('Page')) :
         /** @var bool Whether the page is a core page. */
         protected bool $is_core_page = false;
 
+        /** @var string The page hook. */
+        protected string $page_hook = '';
+
         /** @var string Menu separator position: 'before' or 'after'. */
         protected string $separator = '';
 
@@ -76,7 +79,13 @@ if (!class_exists('Page')) :
                 }
             }
 
-            $this->set_page_parameters($args['page_parameters'] ?? []);
+            if(!isset($args['separator'])) {
+                $this->set_page_parameters($args['page_parameters'] ?? []);
+            }
+            else {
+                $this->separator = 'before';
+                $this->page_parameters['position'] = $args['position'] ?? 80.1;
+            }
         }
 
         /**
@@ -97,11 +106,11 @@ if (!class_exists('Page')) :
 
             $this->page_parameters = array_merge($defaults, $args);
 
-            if(!isset($this->page_parameters['page_title'])){
+            if (!isset($this->page_parameters['page_title'])) {
                 $this->page_parameters['page_title'] = $this->page_parameters['menu_title'];
             }
 
-            $this->set_icon_path($args['icon_url'] ?? 'default');
+            $this->set_icon_path($this->page_parameters['icon_url'] ?? 'default');
         }
 
         /**
@@ -125,10 +134,7 @@ if (!class_exists('Page')) :
          */
         protected function set_icon_path($icon): void
         {
-            if (is_string($icon) && in_array($icon, ['default', 'second', 'parent', 'admin'])) {
-                $icon = oes_get_menu_icon_path($icon);
-            }
-            $this->page_parameters['icon_url'] = $icon;
+            $this->page_parameters['icon_url'] = oes_get_menu_icon_path($icon);
         }
 
         /**
@@ -138,9 +144,10 @@ if (!class_exists('Page')) :
          */
         public function validate_page_position($position): void
         {
-            if ($position === 'compute') {
-                global $menu;
-                $newPosition = 0.0;
+            global $menu;
+            if ($position === 'compute' || isset($menu[(string)$position])) {
+
+                $newPosition = $position === 'compute' ? 0.0 : $position;
                 while (isset($menu["$newPosition"]) && $newPosition <= 100.1) {
                     $newPosition += 0.2;
                 }
@@ -162,18 +169,15 @@ if (!class_exists('Page')) :
          */
         public function admin_menu(): void
         {
-            $this->validate_page_position($this->page_parameters['position']);
+            $this->validate_page_position($this->page_parameters['position'] ?? 'compute');
 
             if (!empty($this->separator)) {
                 $this->add_separator();
+                return;
             }
 
             $this->additional_admin_menu();
-
-            if ($this->add_page()) {
-                get_role('administrator')?->add_cap($this->page_parameters['capability']);
-                get_role('editor')?->add_cap($this->page_parameters['capability']);
-            }
+            $this->add_page();
         }
 
         /**
@@ -219,7 +223,7 @@ if (!class_exists('Page')) :
          */
         protected function add_page()
         {
-            return add_menu_page(
+            $this->page_hook = add_menu_page(
                 $this->page_parameters['page_title'],
                 $this->page_parameters['menu_title'],
                 $this->page_parameters['capability'],
@@ -228,6 +232,7 @@ if (!class_exists('Page')) :
                 $this->page_parameters['icon_url'],
                 $this->page_parameters['position']
             );
+            return $this->page_hook;
         }
 
         /**
@@ -235,26 +240,22 @@ if (!class_exists('Page')) :
          */
         public function html(): void
         {
-            echo '<div class="oes-page-wrap"><h2 class="oes-display-none"></h2>';
-
             if (!empty($this->view_file_name_full_path) && file_exists($this->view_file_name_full_path)) {
                 include($this->view_file_name_full_path);
             } elseif (!empty($this->view_file_name)) {
                 $this->is_core_page
                     ? oes_get_view($this->view_file_name)
-                    : oes_get_project_view($this->view_file_name);
+                    : oes_get_application_view($this->view_file_name);
             } else {
+
                 $this->check_for_tool();
 
                 if (!empty($this->tool)) {
                     $this->tool_html();
-                }
-                else{
+                } else {
                     $this->default_html();
                 }
             }
-
-            echo '</div>';
         }
 
         /**
@@ -262,7 +263,7 @@ if (!class_exists('Page')) :
          */
         protected function check_for_tool(): void
         {
-            if(!empty($this->tool)){
+            if (!empty($this->tool)) {
                 return;
             }
 
@@ -281,15 +282,19 @@ if (!class_exists('Page')) :
          */
         protected function tool_html(): void
         {
+            $currentTool = $_GET['tab'] ?? $this->tool;
             ?>
-            <div class="oes-page-header-wrapper">
-                <div class="oes-page-header">
+            <div class="wrap">
+                <div class="oes-page-header-wrapper">
                     <h1><?php echo esc_html($this->page_parameters['page_title']); ?></h1>
+                    <h2 class="oes-display-none"></h2>
+                    <div class="oes-page-navigation"><?php
+                        $this->nav_html();
+                        ?></div>
                 </div>
-                <?php $this->nav_html(); ?>
-            </div>
-            <div class="oes-page-body">
-                <?php \OES\Admin\Tools\display($this->tool); ?>
+                <div class="oes-page-body" style="clear:both">
+                    <?php \OES\Admin\Tools\display($currentTool); ?>
+                </div>
             </div>
             <?php
         }
@@ -305,20 +310,23 @@ if (!class_exists('Page')) :
             $urlBase = admin_url('admin.php?page=' . urlencode($menuSlug) . '&tab=');
             $activeTab = $_GET['tab'] ?? $this->tool;
 
-            echo '<nav class="oes-tabs-wrapper hide-if-no-js tab-count-' . esc_attr(count($this->tabs)) . '" aria-label="Secondary menu">';
+            echo '<ul class="subsubsub">';
 
             foreach ($this->tabs as $tab => $label) {
                 $isActive = ($activeTab === $tab);
-                $classes = 'oes-tab' . ($isActive ? ' active' : '');
+                $classes = 'oes-tab' . ($isActive ? ' current' : '');
                 echo sprintf(
-                    '<a href="%s" class="%s">%s</a>',
+                    '<li class="%s"><a href="%s" class="%s">%s</a></li>',
+                    esc_html($tab),
                     esc_url($urlBase . urlencode($tab)),
                     esc_attr($classes),
                     esc_html($label)
                 );
             }
 
-            echo '</nav>';
+            echo '</ul>';
+            echo '<div style="clear: both;"></div>';
+            echo '<hr>';
         }
 
         /**

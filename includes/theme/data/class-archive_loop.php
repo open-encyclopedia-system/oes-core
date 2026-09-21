@@ -57,7 +57,7 @@ class OES_Archive_Loop
 
         $defaults = [
             'alphabet' => true,
-            'exclude-preview' => false,
+            'archive_data' => true,
             'skip-empty' => true,
             'className' => 'is-style-oes-default',
             'display_content' => false,
@@ -307,6 +307,10 @@ HTML;
      */
     protected function render_row(array $row): string
     {
+        if(!$this->check_if_row_is_rendered($row)){
+            return '';
+        }
+
         $title = $this->prepare_row_title($row);
         $previewTable = $this->prepare_preview_table($row['data'] ?? []);
         $readMore = ($this->mode === 'search') ? $this->prepare_read_more_link($row['permalink']) : '';
@@ -322,6 +326,15 @@ HTML;
         }
 
         return $this->render_default_row($row, $title, $previewTable, $readMore);
+    }
+
+    /**
+     * Check if row is to be rendered.
+     * @param $row
+     * @return bool
+     */
+    protected function check_if_row_is_rendered($row): bool {
+        return true;
     }
 
     /**
@@ -388,7 +401,7 @@ HTML;
      */
     protected function prepare_preview_table(array $data): string
     {
-        if (($this->options['exclude-preview'] ?? false) || empty($data)) {
+        if (!($this->options['archive_data'] ?? true) || empty($data)) {
             return '';
         }
 
@@ -399,7 +412,7 @@ HTML;
                 $label = $entry['label'] ?? '';
                 $preview .= $label
                     ? sprintf('<tr><th>%s</th><td>%s</td></tr>', $label, $value)
-                    : sprintf('<tr><th colspan="2">%s</th></tr>', $value);
+                    : sprintf('<tr><td colspan="2">%s</td></tr>', $value);
             }
         }
 
@@ -489,7 +502,7 @@ HTML;
         return <<<HTML
 <tr>
     <td colspan="2">
-        <div class="wp-block-buttons">
+        <div class="wp-block-buttons oes-read-more-button">
             <div class="wp-block-button">
                 <a href="{$permalink}" class="wp-block-button__link wp-element-button">{$label}</a>
             </div>

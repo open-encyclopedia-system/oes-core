@@ -12,13 +12,12 @@
     "meta data"
   ],
   "attributes": {
-    "label": {
-      "type": "string",
-      "default": "Änderungen am Projekt melden"
+    "include_toc": {
+      "type": "boolean",
+      "default": true
     },
-    "link": {
-      "type": "string",
-      "default": "#"
+    "labels": {
+      "type": "object"
     }
   },
   "styles": [
@@ -64,5 +63,9 @@
   "editorScript": "file:./index.js",
   "style": "file:./style-index.css",
   "editorStyle": "file:./index.css",
-  "render": "file:./render.php"
+  "render": "file:./render.php",
+  "usesContext": [
+    "postID",
+    "postType"
+  ]
 }

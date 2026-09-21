@@ -618,42 +618,6 @@ function oes_insert_term_meta($termID, string $taxonomy, array $parameters)
     return $resultArray;
 }
 
-
-/**
- * Copy all metadata from one post to another.
- *
- * @param int $postID The post ID.
- * @param int $newPostID The post ID of the new post.
- * @return void
- */
-function copy_post_meta(int $postID, int $newPostID): void
-{
-
-    /* copy metadata */
-    global $wpdb;
-
-    /* get all metadata */
-    $postMetaArray = $wpdb->get_results("SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id=$postID");
-    if (count($postMetaArray) != 0) {
-
-        /* prepare query */
-        $sqlQueryArray = [];
-        foreach ($postMetaArray as $postMeta) {
-            $sqlQueryArray[] = sprintf("SELECT %s, '%s', '%s'",
-                $newPostID,
-                $postMeta->meta_key,
-                addslashes($postMeta->meta_value)
-            );
-        }
-        $sqlQuery = "INSERT INTO $wpdb->postmeta (post_id, meta_key, meta_value) " .
-            implode(" UNION ALL ", $sqlQueryArray);
-
-        /* execute insert */
-        $wpdb->query($sqlQuery);
-    }
-}
-
-
 /**
  * Get the connected terms of a specific taxonomy of a post and return as array or html string.
  *

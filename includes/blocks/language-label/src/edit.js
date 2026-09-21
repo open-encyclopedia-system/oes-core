@@ -3,17 +3,19 @@ import {useBlockProps} from '@wordpress/block-editor';
 import {SelectControl} from '@wordpress/components';
 import {getLanguageControls, getDisplayValueFromArray} from '../../blocks';
 
+const ALLOWED_TAGS = ['div', 'p', 'span', 'button', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
 export default function Edit({attributes, setAttributes, isSelected}) {
 
     let {htmlTag, labels} = attributes;
-    if (htmlTag === undefined || htmlTag.length < 1) htmlTag = 'div';
+    if (!ALLOWED_TAGS.includes(htmlTag)) htmlTag = 'div';
 
-    /* prepare current value */
     const preview = getDisplayValueFromArray(labels, __('No labels set.', 'oes'));
+    const blockProps = useBlockProps();
 
     if (isSelected) {
         return (
-            <div {...useBlockProps()}>
+            <div {...blockProps}>
                 <div className="components-placeholder components-placeholder is-large">
                     <div className="components-placeholder__label">{__('OES Language Label', 'oes')}</div>
                     {getLanguageControls(labels, setAttributes)}
@@ -33,50 +35,13 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                         ]}
                         value={htmlTag}
                         help={__('The html tag defines the presentation of the content.', 'oes')}
-                        onChange={(val) => {
-                            setAttributes({
-                                htmlTag: String(val)
-                            })
-                        }}
+                        onChange={(val) => setAttributes({htmlTag: String(val)})}
                     />
                 </div>
             </div>
         );
-    } else {
-
-        switch (htmlTag) {
-
-            case 'p':
-                return (<p {...useBlockProps}>{preview}</p>);
-
-            case 'span':
-                return (<span {...useBlockProps}>{preview}</span>);
-
-            case 'button':
-                return (<button {...useBlockProps}>{preview}</button>);
-
-            case 'h1':
-                return (<h1 {...useBlockProps}>{preview}</h1>);
-
-            case 'h2':
-                return (<h2 {...useBlockProps}>{preview}</h2>);
-
-            case 'h3':
-                return (<h3 {...useBlockProps}>{preview}</h3>);
-
-            case 'h4':
-                return (<h4 {...useBlockProps}>{preview}</h4>);
-
-            case 'h5':
-                return (<h5 {...useBlockProps}>{preview}</h5>);
-
-            case 'h6':
-                return (<h6 {...useBlockProps}>{preview}</h6>);
-
-            case 'div':
-            default:
-                return (<div {...useBlockProps}>{preview}</div>);
-
-        }
     }
+
+    const Tag = htmlTag;
+    return <Tag {...blockProps}>{preview}</Tag>;
 }

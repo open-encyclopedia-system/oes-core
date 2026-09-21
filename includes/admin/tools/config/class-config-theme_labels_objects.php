@@ -2,7 +2,7 @@
 
 /**
  * @file
- * @reviewed 2.4.0
+ * @reviewed 3.0.0
  */
 
 namespace OES\Admin\Tools;
@@ -11,70 +11,73 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 if (!class_exists('Theme_Labels')) oes_include('admin/tools/config/class-config-theme_labels.php');
 
-if (!class_exists('Theme_Labels_Objects')) :
+if (class_exists('Theme_Labels_Objects')) exit;
 
-    /**
-     * Class Theme_Labels_Objects
-     *
-     * Implement the config tool for theme configurations.
-     */
-    class Theme_Labels_Objects extends Theme_Labels
+/**
+ * Class Theme_Labels_Objects
+ *
+ * Implement the config tool for theme configurations.
+ */
+class Theme_Labels_Objects extends Theme_Labels
+{
+
+    public bool $expand_button = true;
+
+
+    /** @inheritdoc */
+    function set_table_data_for_display()
     {
+        global $oes;
 
-        public bool $expand_button = true;
-
-
-        /** @inheritdoc */
-        function set_table_data_for_display()
-        {
-            global $oes;
-
-            foreach ($oes->post_types ?? [] as $postTypeKey => $postType) {
-                $this->add_object_rows('post_types', $postTypeKey, $postType);
-            }
-
-            foreach ($oes->taxonomies ?? [] as $taxonomyKey => $taxonomy) {
-                $this->add_object_rows('taxonomies', $taxonomyKey, $taxonomy);
-            }
+        foreach ($oes->post_types ?? [] as $postTypeKey => $postType) {
+            $this->add_object_rows('post_types', $postTypeKey, $postType);
         }
 
-        /**
-         * Add rows for object.
-         *
-         * @param string $identifier Post types or taxonomies.
-         * @param string $objectKey The post type key or the taxonomy key.
-         * @param array $object The post type object or the taxonomy object.
-         */
-        function add_object_rows(string $identifier, string $objectKey, array $object)
-        {
-            $objectLabel = $object['label'] ?? $objectKey;
-            $this->add_table_header($objectLabel, 'standalone');
+        foreach ($oes->taxonomies ?? [] as $taxonomyKey => $taxonomy) {
+            $this->add_object_rows('taxonomies', $taxonomyKey, $taxonomy);
+        }
+    }
 
-            // general labels
-            $this->add_table_header('General', 'trigger');
+    /**
+     * Add rows for object.
+     *
+     * @param string $identifier Post types or taxonomies.
+     * @param string $objectKey The post type key or the taxonomy key.
+     * @param array $object The post type object or the taxonomy object.
+     */
+    function add_object_rows(string $identifier, string $objectKey, array $object)
+    {
+        $objectLabel = $object['label'] ?? $objectKey;
+        $this->add_table_header($objectLabel, 'tag');
 
-            $optionPrefixGeneral = $identifier . '[' . $objectKey . '][oes_args]';
+        // general labels
+        $this->add_table_header('General', 'details');
 
-            $this->add_table_row(
-                [
-                    'title' => __('Label (Singular)', 'oes'),
-                    'key' => $optionPrefixGeneral . '[label_translations]',
-                    'value' => $object['label_translations'] ?? [],
-                    'is_label' => true
-                ]
-            );
+        $optionPrefixGeneral = $identifier . '[' . $objectKey . '][oes_args]';
 
-            $this->add_table_row(
-                [
-                    'title' => __('Label (Plural)', 'oes'),
-                    'key' => $optionPrefixGeneral . '[label_translations_plural]',
-                    'value' => $object['label_translations_plural'] ?? [],
-                    'is_label' => true
-                ]
-            );
+        $this->add_table_row(
+            [
+                'title' => __('Label (Singular)', 'oes'),
+                'key' => $optionPrefixGeneral . '[label_translations]',
+                'value' => $object['label_translations'] ?? [],
+                'is_label' => true
+            ]
+        );
 
-            // field labels
-            $this->add_table_header('Fields', 'trigger');
+        $this->add_table_row(
+            [
+                'title' => __('Label (Plural)', 'oes'),
+                'key' => $optionPrefixGeneral . '[label_translations_plural]',
+                'value' => $object['label_translations_plural'] ?? [],
+                'is_label' => true
+            ]
+        );
+
+        // field labels
+        $fields = $object['field_options'] ?? [];
+
+        if(!empty($fields)) {
+            $this->add_table_header('Fields', 'details');
 
             foreach ($object['field_options'] ?? [] as $fieldKey => $field) {
 
@@ -93,29 +96,32 @@ if (!class_exists('Theme_Labels_Objects')) :
                     ]
                 );
             }
+        }
 
-            // theme labels
-            $this->add_table_header('Theme Labels', 'trigger');
+        // theme labels
+        $themeLabels = $object['theme_labels'] ?? [];
 
-            $themeLabels = $object['theme_labels'] ?? [];
-            ksort($themeLabels);
-            foreach ($themeLabels as $key => $label) {
-                $this->add_table_row(
-                    [
-                        'title' => $label['name'] ?? $key,
-                        'key' => $identifier . '[' . $objectKey . '][oes_args][theme_labels][' . $key . ']',
-                        'value' => $label,
-                        'is_label' => true,
-                        'label_key' => $key,
-                        'location' => $label['location'] ?? ''
-                    ]
-                );
-            }
+        if(empty($themeLabels)){
+            return;
+        }
 
-            $this->end_nested_table();
+        $this->add_table_header('Theme Labels', 'details');
+
+        ksort($themeLabels);
+        foreach ($themeLabels as $key => $label) {
+            $this->add_table_row(
+                [
+                    'title' => $label['name'] ?? $key,
+                    'key' => $identifier . '[' . $objectKey . '][oes_args][theme_labels][' . $key . ']',
+                    'value' => $label,
+                    'is_label' => true,
+                    'label_key' => $key,
+                    'location' => $label['location'] ?? ''
+                ]
+            );
         }
     }
+}
 
-    // initialize
-    register_tool('\OES\Admin\Tools\Theme_Labels_Objects', 'theme-labels-objects');
-endif;
+// initialize
+register_tool('\OES\Admin\Tools\Theme_Labels_Objects', 'theme-labels-objects');

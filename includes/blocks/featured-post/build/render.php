@@ -1,6 +1,12 @@
-<div <?php echo get_block_wrapper_attributes(); ?>><?php
-	echo oes_get_featured_post_html(
-			(!empty($attributes['oes_post']) ? get_post($attributes['oes_post']) : false), [
-			'post_type' => $attributes['post_type'] ?? 'page'
-	]); ?>
+<?php
+/**
+ * @var array    $attributes
+ * @var string   $content
+ * @var WP_Block $block
+ */
+
+$wrapper_attributes = get_block_wrapper_attributes();
+?>
+<div <?php echo $wrapper_attributes; ?>>
+    <?php echo $content; ?>
 </div>

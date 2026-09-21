@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+title: OES Core
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - name: 'Freie Universität Berlin'
+    address: 'Kaiserswerther Str. 16-18'
+    city: 'Berlin'
+    post-code: '14195'
+    website: 'https://www.fu-berlin.de/'
+  - given-names: Maren
+    family-names: Welterlich-Strobl
+    orcid: 'https://orcid.org/0000-0002-3690-2992'
+    affiliation: 'Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen, Ihnestraße 24, 14195 Berlin'
+abstract: >
+  The Open Encyclopedia System (OES) is a modular and
+  configurable software for creating, publishing and
+  maintaining online encyclopedias in the humanities and
+  social sciences that are accessible worldwide via Open
+  Access. OES adds a web-based open source software for
+  article-based publication formats to already available
+  options for electronic publishing.
+keywords:
+  - digital humanities
+  - open access
+  - open source software
+  - scholarly publishing
+  - online encyclopedia
+  - linked open data
+  - WordPress
+  - research infrastructure
+license: GPL-2.0
+version: 3.0.0
+date-released: '2026-09-22'
+repository-code: 'https://github.com/open-encyclopedia-system/oes-core'
+url: 'https://www.open-encyclopedia-system.org/'

@@ -55,7 +55,7 @@ function oes_add_style_admin(
 
 
 /**
- * Add project style to be registered.
+ * Add application style to be registered.
  *
  * @param string $handle A string containing the name of the style.
  * @param string $src A string containing the full url of the style. If false, style is alias.
@@ -65,7 +65,7 @@ function oes_add_style_admin(
  * @param bool $admin Optional boolean identifying if style is enqueued only for admin.
  * @return void
  */
-function oes_add_project_style(
+function oes_add_application_style(
     string $handle,
     string $src,
     array  $deps = [],
@@ -73,15 +73,17 @@ function oes_add_project_style(
     string $media = 'all',
     bool   $admin = false): void
 {
-    global $oes_assets;
-    $oes_assets['styles'][$handle] = [
-        'handle' => $handle,
-        'src' => plugins_url(OES_BASENAME_PROJECT . $src),
-        'deps' => $deps,
-        'ver' => is_null($ver) ? oes_get_version() : $ver,
-        'media' => $media,
-        'admin' => $admin
-    ];
+    if(defined('OES_BASENAME_APPLICATION')) {
+        global $oes_assets;
+        $oes_assets['styles'][$handle] = [
+            'handle' => $handle,
+            'src' => plugins_url(OES_BASENAME_APPLICATION . $src),
+            'deps' => $deps,
+            'ver' => is_null($ver) ? oes_get_version() : $ver,
+            'media' => $media,
+            'admin' => $admin
+        ];
+    }
 }
 
 
@@ -143,7 +145,7 @@ function oes_add_script_admin(
 
 
 /**
- * Add project script to be registered.
+ * Add application script to be registered.
  *
  * @param string $handle A string containing the name of the script.
  * @param string $src A string containing the full url of the script. If false, script is alias.
@@ -153,6 +155,27 @@ function oes_add_script_admin(
  * @param bool $admin Optional boolean identifying if style is enqueued only for admin.
  * @return void
  */
+function oes_add_application_script(
+    string $handle,
+    string $src,
+    array  $depends = [],
+           $ver = false,
+    bool   $in_footer = true,
+    bool   $admin = false): void
+{
+    if(defined('OES_BASENAME_APPLICATION')) {
+        global $oes_assets;
+        $oes_assets['scripts'][$handle] = [
+            'handle' => $handle,
+            'src' => plugins_url(OES_BASENAME_APPLICATION . $src),
+            'depends' => $depends,
+            'ver' => $ver,
+            'in_footer' => $in_footer,
+            'admin' => $admin
+        ];
+    }
+}
+
 function oes_add_project_script(
     string $handle,
     string $src,
@@ -161,17 +184,9 @@ function oes_add_project_script(
     bool   $in_footer = true,
     bool   $admin = false): void
 {
-    global $oes_assets;
-    $oes_assets['scripts'][$handle] = [
-        'handle' => $handle,
-        'src' => plugins_url(OES_BASENAME_PROJECT . $src),
-        'depends' => $depends,
-        'ver' => $ver,
-        'in_footer' => $in_footer,
-        'admin' => $admin
-    ];
+    _deprecated_function(__FUNCTION__, '3.0.0', 'oes_add_application_script');
+    oes_add_application_script($handle, $src, $depends, $ver, $in_footer, $admin);
 }
-
 
 /**
  * Register all scripts and styles.
@@ -200,6 +215,8 @@ function oes_register_scripts_and_styles(): void
 
 
 /**
+ * @oesDevelopment these are now all part of editor and iframe ... maybe cleanup
+ *
  * Load js scripts.
  * @return void
  */
@@ -215,4 +232,21 @@ function oes_load_assets(): void
         wp_register_style($style['handle'], $style['src'], $style['deps'], $style['ver'], $style['media']);
         wp_enqueue_style($style['handle']);
     }
+}
+
+
+function oes_load_assets_new(string $hook): void
+{
+
+    if ( 'toplevel_page_oes_settings' !== $hook ) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'oes-dashboard',
+                plugins_url(OES_BASENAME . '/assets/css/dashboard.css'),
+        [],
+        '1.0.0'
+    );
+
 }

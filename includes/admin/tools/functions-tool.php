@@ -1,14 +1,6 @@
 <?php
 
-/**
- * @file
- * @todoReview Review for 2.4.x
- * @oesDevelopment Only register tools if necessary
- */
-
 namespace OES\Admin\Tools;
-
-use function OES\Rights\user_is_oes_admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
@@ -24,11 +16,10 @@ function include_tools(): void
     foreach ([
                  'admin_columns',
                  'admin_container',
-                 'admin_features',
                  'schema',
+                 'schema_display',
+                 'schema_mapping',
                  'schema_oes',
-                 'schema_oes_single',
-                 'schema_oes_archive',
                  'theme_colors',
                  'theme_date',
                  'theme_languages',
@@ -39,23 +30,19 @@ function include_tools(): void
                  'theme_labels_objects',
                  'theme_media',
                  'theme_search',
-                 'project'
+                 'application'
              ] as $setting) {
         oes_include($path . 'config/class-config-' . $setting . '.php');
     }
 
     oes_include($path . 'class-tool-import.php');
-    oes_include($path . 'class-tool-operations.php');
     oes_include($path . 'class-tool-export.php');
 
-    if (function_exists('\OES\Rights\user_is_oes_admin') && user_is_oes_admin()) {
-        oes_include($path . 'config/class-config-admin.php');
+    if (\OES\Rights\user_is_oes_admin()) {
         oes_include($path . 'class-tool-model.php');
         oes_include($path . 'class-tool-factory.php');
         oes_include($path . 'class-tool-batch.php');
     }
-
-    add_action('admin_notices', '\OES\Admin\Tools\admin_notices');
 }
 
 /**
@@ -84,14 +71,15 @@ function display(string $name): void
 }
 
 /**
- * Display a tool.
+ * @deprecated 2.3.0 Use display instead
  *
- * @oesLegacy Renaming for 2.3
+ * Display a tool.
  * @param string $name
  * @return void
  */
 function display_tool(string $name): void
 {
+    _deprecated_function(__FUNCTION__, '2.3.0', 'display()');
     display($name);
 }
 
@@ -103,26 +91,8 @@ function display_tool(string $name): void
 function get_expand_button(): string
 {
     return '<div class="submit" style="float:right;">' .
-        '<a href="javascript:void(0);" id="oes-config-expand-all-button" onClick="oesLabel.toggleAll()" ' .
-        'class="button button-secondary">' .
+        '<a href="#" id="oes-config-expand-all-button" class="button button-secondary">' .
         __('Expand All Rows', 'oes') .
         '</a>' .
         '</div>';
-}
-
-/**
- * Display html quotes warning on settings and label page.
- * @return void
- */
-function admin_notices(): void
-{
-    $screen = get_current_screen();
-
-    if(!$screen){
-        return;
-    }
-
-    if (in_array($screen->id, ['oes-settings_page_oes_settings_schema', 'oes-settings_page_oes_settings_labels']) ){
-        \OES\Admin\display_html_quotes_warning();
-    }
 }

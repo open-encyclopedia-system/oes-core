@@ -1,15 +1,10 @@
 <?php
 
-/**
- * @file
- * @reviewed 2.4.0
- */
-
 namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Module_Page')) :
+if (!class_exists('\OES\Admin\Module_Page')) :
 
     /**
      * Class Module_Page
@@ -31,10 +26,28 @@ if (!class_exists('Module_Page')) :
         public string $name = '';
 
         /**
+         * @var string $title
+         * Human-readable title of the module, shown in the admin page.
+         */
+        public string $title = '';
+
+        /**
+         * @var string $description
+         * Human-readable description of the module, shown in the dashboard admin page.
+         */
+        public string $description = '';
+
+        /**
          * @var string $setting
          * Option key used for storing/retrieving this module's settings.
          */
         public string $setting = '';
+
+        /**
+         * @var bool $admin_page
+         * Whether this module has an admin page in "OES Modules".
+         */
+        public bool $admin_page = true;
 
         /**
          * @var string $parent_slug
@@ -55,6 +68,18 @@ if (!class_exists('Module_Page')) :
         public bool $schema_enabled = true;
 
         /**
+         * @var bool $schema_tabs
+         * Whether this module should add a module tab to the enabled schema.
+         */
+        public bool $schema_tabs = true;
+
+        /**
+         * @var bool $schema_enabled_single
+         * Whether this module adds a button for the single schema.
+         */
+        public bool $schema_enabled_single = true;
+
+        /**
          * @var string $file
          * Optional file path to include as a view or handler for the module’s settings page.
          */
@@ -72,6 +97,9 @@ if (!class_exists('Module_Page')) :
          */
         public array $types = [];
 
+        /** @var array<string, string> Navigation tabs: key => label. */
+        public array $tabs = [];
+
         /**
          * Module_Page constructor.
          *
@@ -82,12 +110,25 @@ if (!class_exists('Module_Page')) :
             $this->set_parameters($args);
 
             add_action('admin_head', [$this, 'help_tab']);
-            add_filter('oes/admin_menu_pages', [$this, 'admin_menu_pages']);
+
+            if($this->admin_page){
+                add_filter('oes/admin_menu_pages', [$this, 'admin_menu_pages']);
+            }
 
             if ($this->schema_enabled) {
-                add_filter('oes/schema_general', [$this, 'schema_enable'], 10, 4);
-                add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
-                add_filter('oes/schema_options_single', [$this, 'schema_options_single'], 10, 4);
+                add_filter('oes/schema_general_integration', [$this, 'schema_enable'], 10, 4);
+
+                if($this->schema_tabs) {
+                    add_filter('oes/schema_tabs', [$this, 'schema_tabs'], 10, 2);
+                }
+            }
+
+            if($this->admin_page){
+                OES()->module_pages[$this->key] = [
+                    'label' => $this->name,
+                    'description' => $this->description,
+                    'link' =>admin_url('admin.php?page=' . $this->setting)
+                ];
             }
         }
 
@@ -99,15 +140,46 @@ if (!class_exists('Module_Page')) :
          */
         public function set_parameters(array $args): void
         {
-            $this->name = $args['name'] ?? 'Name missing';
-            $this->key = $args['key'] ?? strtolower($this->name);
-            $this->setting = $args['setting'] ?? ('oes_' . $this->key);
-            $this->position = $args['position'] ?? 50;
-            $this->schema_enabled = $args['schema_enabled'] ?? true;
-            $this->file = $args['file'] ?? '';
-            $this->components = $args['components'] ?? ['post_types'];
-            $this->types = $args['types'] ?? ['single-article'];
-            $this->parent_slug = $args['parent_slug'] ?? 'oes_settings';
+            $this->name             = $this->param($args, 'name', $this->name ?: 'Name missing');
+            $this->title            = $this->param($args, 'title', $this->title ?: ($this->name ?: 'Title missing'));
+            $this->key              = $this->param($args, 'key', $this->key ?: strtolower($this->name));
+            $this->setting          = $this->param($args, 'setting', $this->setting ?: ('oes_' . $this->key));
+            $this->position         = $this->param($args, 'position', $this->position ?: 50);
+            $this->schema_enabled   = $this->param($args, 'schema_enabled', $this->schema_enabled, true);
+            $this->file             = $this->param($args, 'file', $this->file ?: '');
+            $this->components       = $this->param($args, 'components', $this->components ?: ['post_types']);
+            $this->types            = $this->param($args, 'types', $this->types ?: ['single-article']);
+            $this->parent_slug      = $this->param($args, 'parent_slug', $this->parent_slug ?: 'oes_settings');
+            $this->tabs             = $this->param($args, 'tabs', $this->tabs ?: []);
+
+            $this->description      = $this->get_description($args['description'] ?? '');
+        }
+
+        /**
+         * Set single parameter
+         *
+         * @param array $args
+         * @param string $key
+         * @param $default
+         * @param bool $allowEmpty
+         * @return mixed
+         */
+        private function param(array $args, string $key, $default, bool $allowEmpty = false) {
+            if (array_key_exists($key, $args)) {
+                return ($allowEmpty || !empty($args[$key])) ? $args[$key] : $default;
+            }
+            return $default;
+        }
+
+        /**
+         * Sets description.
+         *
+         * @param string $default
+         * @return string
+         */
+        public function get_description(string $default = ''): string
+        {
+            return $default;
         }
 
         /**
@@ -121,13 +193,14 @@ if (!class_exists('Module_Page')) :
             $args = [
                 'subpage' => true,
                 'page_parameters' => [
-                    'page_title' => $this->name,
-                    'menu_title' => $this->name,
+                    'page_title' => $this->title,
+                    'menu_title' => $this->title,
                     'menu_slug' => $this->setting,
                     'position' => $this->position,
                     'parent_slug' => $this->parent_slug
                 ],
-                'tool' => $this->key
+                'tool' => $this->key,
+                'tabs' => $this->tabs
             ];
 
             if (!empty($this->file)) {
@@ -148,10 +221,10 @@ if (!class_exists('Module_Page')) :
         public function help_tab(): void
         {
             $screen = get_current_screen();
-            $modulePageId = 'oes-settings_page_' . $this->setting;
+            $modulePageId = 'oes_page_' . $this->setting;
 
             if ($screen->id === $modulePageId ||
-                ($screen->id === 'oes-settings_page_oes_settings_schema' && ($_GET['type'] ?? '') === $this->key)) {
+                ($screen->id === 'oes_page_oes_settings_schema' && ($_GET['type'] ?? '') === $this->key)) {
                 $this->set_help_tabs($screen);
             }
         }
@@ -200,20 +273,19 @@ if (!class_exists('Module_Page')) :
             if (in_array($component, $this->components)) {
                 $optionKey = $this->get_option_key($objectKey);
 
-                if (empty($this->types) || in_array($type, $this->types)) {
-                    $info = sprintf(__('Enable the %s configuration for this post type.', 'oes'), $this->name);
-                } else {
-                    $info = sprintf(__('Only recommended for objects of types "%s".', 'oes'), implode('", "', $this->types));
-                }
-
-                $configs[$this->key] = [
-                    'label' => __('Enable ', 'oes') . $this->name,
-                    'info' => $info,
+                $config = [
+                    'label' => $this->name,
                     'type' => 'checkbox',
                     'value' => get_option($optionKey) ?? false,
                     'options' => ['hidden' => true],
                     'option_key' => $optionKey
                 ];
+
+                if (!in_array($type, $this->types ?? [])) {
+                    $config['info'] = sprintf(__('Only recommended for objects of types "%s".', 'oes'), implode('", "', $this->types));
+                }
+
+                $configs[$this->key] = $config;
             }
 
             return $configs;

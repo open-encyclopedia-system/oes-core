@@ -20,11 +20,11 @@ function register_categories(array $categories): array
 {
     return array_merge($categories, [
         [
-            'slug'  => 'oes-schema',
+            'slug' => 'oes-schema',
             'title' => __('OES Schema', 'oes'),
         ],
         [
-            'slug'  => 'oes-filter',
+            'slug' => 'oes-filter',
             'title' => __('OES Filter', 'oes'),
         ],
     ]);
@@ -40,16 +40,20 @@ function register(): void
     $blockDir = __DIR__;
 
     $blocks = [
+        'abstract',
         'archive-count',
         'archive-loop',
+        'archive-toggle-all',
         'author-byline',
         'author-vita',
         'back-to-top',
         'citation',
         'cite-as',
+        'context-link',
         'empty-result',
         'featured-image',
         'featured-post',
+        'field',
         'filter',
         'filter-active',
         'filter-alphabet',
@@ -60,9 +64,10 @@ function register(): void
         'literature',
         'metadata',
         'notes',
-        'panel'         => ['render_callback' => '\OES\Block\render_panel_block'],
-        'panel-image'   => ['render_callback' => '\OES\Block\render_image_panel_block'],
+        'panel' => ['render_callback' => '\OES\Block\render_panel_block'],
+        'panel-image' => ['render_callback' => '\OES\Block\render_image_panel_block'],
         'panel-gallery' => ['render_callback' => '\OES\Block\render_gallery_panel_block'],
+        'post-link',
         'print',
         'print-page-break',
         'search-panel',
@@ -121,13 +126,13 @@ function register_block_styles(): void
 {
     $styles = [
         'oes-default' => __('OES Default', 'oes'),
-        'oes-simple'  => __('OES Simple', 'oes'),
-        'oes-list'    => __('OES List', 'oes'),
+        'oes-simple' => __('OES Simple', 'oes'),
+        'oes-list' => __('OES List', 'oes'),
     ];
 
     foreach ($styles as $name => $label) {
         register_block_style('core/table', [
-            'name'  => $name,
+            'name' => $name,
             'label' => $label,
         ]);
     }
@@ -150,7 +155,7 @@ function render_panel_block(array $attributes, string $content): string
     return '<div class="' . esc_attr($class) . '" id="' . esc_attr($anchor) . '">'
         . oes_get_panel_html($content, [
             'caption' => esc_html($title),
-            'active'  => is_admin() ? true : $expanded,
+            'active' => is_admin() ? true : $expanded,
         ])
         . '</div>';
 }
@@ -187,9 +192,9 @@ function render_image_panel_block(array $attributes): string
         esc_attr($class),
         esc_attr($anchor),
         oes_get_image_panel_html($image, [
-            'caption'     => $panelTitle,
-            'active'      => is_admin() ? true : $expanded,
-            'add_number'  => $addNumber
+            'caption' => $panelTitle,
+            'active' => is_admin() ? true : $expanded,
+            'add_number' => $addNumber
         ])
     );
 }
@@ -218,9 +223,81 @@ function render_gallery_panel_block(array $attributes): string
         esc_attr($class),
         esc_attr($anchor),
         oes_get_gallery_panel_html($figures, [
-            'caption'      => $title,
-            'add_number'   => $number,
-            'is_expanded'  => (bool) $expanded
+            'caption' => $title,
+            'add_number' => $number,
+            'is_expanded' => (bool)$expanded
         ])
     );
+}
+
+/**
+ * Whenever a block that provides `postId` context is about to render, temporarily swap the global $oes_post to match.
+ * Restore it once that block (and all its descendants) are done rendering.
+ */
+function render_block_context($context, $parsed_block)
+{
+    if (oes_block_provides_post_type($parsed_block['blockName'] ?? null)) {
+
+        $postType = $parsed_block['attrs']['oes_post_type'] ?? null;
+        $postID = $parsed_block['attrs']['oes_post_ID'] ?? null;
+
+        if(empty($postID)) {
+
+            if(empty($postType)) {
+                return $context;
+            }
+
+            global $oes_language;
+            $queryArgs = [
+                'post_type' => $postType,
+                'post_status' => 'publish',
+                'posts_per_page' => 1,
+                'orderby' => 'rand'
+            ];
+
+            $loop = new \WP_Query($queryArgs);
+            while ($loop->have_posts()) {
+                $loop->the_post();
+                $postID = get_post()->ID;
+
+                $postLanguage = oes_get_post_language($postID);
+                if($postLanguage == 'all' || $postLanguage == $oes_language) {
+                    break;
+                }
+            }
+            wp_reset_postdata();
+        }
+
+        if ($postID) {
+            global $oes_post;
+            $GLOBALS['__oes_post_stack'][] = $oes_post;
+            oes_set_post_data($postID);
+        }
+    }
+    return $context;
+}
+
+/**
+ * Restore $oes_block.
+ */
+function render_block($block_content, $parsed_block)
+{
+    if (oes_block_provides_post_type($parsed_block['blockName'] ?? null)) {
+        global $oes_post;
+        $stack = &$GLOBALS['__oes_post_stack'];
+        $oes_post = is_array($stack) ? array_pop($stack) : null;
+    }
+    return $block_content;
+}
+
+/**
+ * True if the given block type declares providesContext for `postType`.
+ */
+function oes_block_provides_post_type(?string $block_name): bool
+{
+    if (!$block_name) {
+        return false;
+    }
+    $block_type = \WP_Block_Type_Registry::get_instance()->get_registered($block_name);
+    return $block_type && !empty($block_type->provides_context['postType']);
 }

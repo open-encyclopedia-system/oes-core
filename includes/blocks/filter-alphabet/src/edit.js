@@ -1,14 +1,34 @@
+import {__} from '@wordpress/i18n';
 import {useBlockProps} from '@wordpress/block-editor';
+import {CheckboxControl} from '@wordpress/components';
+import {getLanguageControls, getDisplayValueFromArray} from '../../blocks';
 
-export default function Edit({attributes}) {
+export default function Edit({attributes, setAttributes, isSelected}) {
 
-    let {className} = attributes;
-    if (className === undefined) className = 'is-style-oes-default';
+    let {includeEmpty, labels} = attributes;
+
+    if (isSelected) {
+        return (
+            <div {...useBlockProps()}>
+                <div className="components-placeholder components-placeholder is-large">
+                    <div className="components-placeholder__label">{__('Alphabet Filter', 'oes')}</div>
+                    <CheckboxControl
+                        label={__('Include characters with no connected content in list.', 'oes')}
+                        checked={includeEmpty}
+                        onChange={(val) => setAttributes({includeEmpty: val})}
+                    />
+                    <div className="oes-block-further-information">{__('You can add a label for ' +
+                        'the ALL filter.', 'oes')}</div>
+                    {getLanguageControls(labels, setAttributes)}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div {...useBlockProps()}>
-            <ul className={className + " oes-alphabet-list oes-horizontal-list"}>
-                <li><a className="oes-filter-abc">All</a></li>
+            <ul className="oes-alphabet-list oes-horizontal-list">
+                <li><a className="oes-filter-abc">{getDisplayValueFromArray(labels, '')}</a></li>
                 <li><a className="oes-filter-abc">A</a></li>
                 <li><a className="oes-filter-abc">B</a></li>
                 <li><span className="inactive">C</span></li>

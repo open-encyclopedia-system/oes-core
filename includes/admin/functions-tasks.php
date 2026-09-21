@@ -98,21 +98,46 @@ function init(): void
             'hierarchical' => true,
             'show_ui' => true,
             'show_admin_column' => true,
-            'show_in_rest' => true
+            'show_in_rest' => true,
+            'public' => false
         ]);
 
         register_post_type(
             'oes_task',
             [
                 'label' => 'Tasks',
+                'labels' => [
+                    'name' => __('OES Tasks', 'oes'),
+                    'singular_name' => __('OES Task', 'oes'),
+                    'search_items' => __('Search Tasks', 'oes'),
+                    'all_items' => __('All Tasks', 'oes'),
+                    'parent_item' => __('Parent Task', 'oes'),
+                    'parent_item_colon' => __('Parent Task:', 'oes'),
+                    'edit_item' => __('Edit Task', 'oes'),
+                    'update_item' => __('Update Task', 'oes'),
+                    'add_new_item' => __('Add New Task', 'oes'),
+                    'new_item_name' => __('New Task Name', 'oes'),
+                    'menu_name' => __('Tasks', 'oes'),
+                ],
                 'description' => 'internal use only',
                 'public' => false,
                 'show_ui' => true,
                 'show_in_menu' => true,
-                'menu_icon' => plugins_url(OES_BASENAME . '/assets/images/oes_cubic_18x18_second.png'),
+                'menu_icon' => oes_get_menu_icon_path('oes'),
                 'hierarchical' => true,
                 'show_in_nav_menus' => false,
-                'menu_position' => 57,
+                'menu_position' => 52,
+                'capabilities' => [
+                    'publish_posts' => 'oes_read',
+                    'edit_posts' => 'oes_read',
+                    'edit_others_posts' => 'oes_read',
+                    'delete_posts' => 'oes_read',
+                    'delete_others_posts' => 'oes_read',
+                    'read_private_posts' => 'oes_read',
+                    'edit_post' => 'oes_read',
+                    'delete_post' => 'oes_read',
+                    'read_post' => 'oes_read',
+                ],
                 'supports' => ['title', 'page-attributes', 'editor', 'comments'],
                 'taxonomies' => ['t_oes_task_components']
             ]

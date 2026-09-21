@@ -1,10 +1,11 @@
 import {__} from '@wordpress/i18n';
 import {useBlockProps} from '@wordpress/block-editor';
+import {CheckboxControl} from '@wordpress/components';
 import {getDisplayValueFromArray, getLanguageControls} from "../../blocks";
 
 export default function Edit({attributes, setAttributes, isSelected}) {
 
-    const {labels} = attributes;
+    const {labels, sorting, orcid} = attributes;
     const bylineBy = getDisplayValueFromArray(labels, '');
 
     if (isSelected) {
@@ -15,6 +16,20 @@ export default function Edit({attributes, setAttributes, isSelected}) {
                     <div className="oes-block-further-information">{__('You can choose the field that will be ' +
                         'displayed as authors of a post ' +
                         'object in the OES schema settings.', 'oes')}</div>
+                    <CheckboxControl
+                        label={__('Sort alphabetically.', 'oes')}
+                        checked={sorting}
+                        onChange={(val) => setAttributes({
+                            sorting: val
+                        })}
+                    />
+                    <CheckboxControl
+                        label={__('Include ORCID information (if available).', 'oes')}
+                        checked={orcid}
+                        onChange={(val) => setAttributes({
+                            orcid: val
+                        })}
+                    />
                     {getLanguageControls(labels, setAttributes)}
                 </div>
             </div>
