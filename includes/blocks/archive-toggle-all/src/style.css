@@ -32,8 +32,8 @@
   outline-offset: 2px;
 }
 
-.oes-excerpt-view-icon,
-.oes-list-view-icon {
+.oes-excerpt-view-icon:after,
+.oes-list-view-icon:after {
   font-family: dashicons;
   display: inline-block;
   line-height: 1;

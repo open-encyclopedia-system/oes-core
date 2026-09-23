@@ -93,6 +93,11 @@ function display_audit(array $args): string {
         $formatInfo = 'Custom format: ' . $formatKey;
     }
 
+    $formatInfoText = $args['format_info'] ?? '';
+    if(!empty($formatInfoText)) {
+        $formatInfo .= ' (' . $formatInfoText . ')';
+    }
+
     $postTypeObject = get_post_type_object($postType);
     $postTypeLabel = $postTypeObject->labels->singular_name ?? $postType;
 
@@ -214,7 +219,14 @@ function display_audit(array $args): string {
 
         foreach ($groupedPosts[$group] as $post) {
             $output .= '<tr>';
-            $output .= '<td>' . esc_html($post->oes_match ?? '') . '</td>';
+
+            if($args['type'] ?? null !== 'url'){
+                $output .= '<td>' . esc_html(rawurldecode($post->oes_match ?? '')) . '</td>';
+            }
+            else {
+                $output .= '<td>' . esc_html($post->oes_match ?? '') . '</td>';
+            }
+
             $output .= '<td>' . oes_get_select_field_value('field_oes_status', $post->ID) . '</td>';
             $output .= sprintf('<td><div class="oes-grey-out"><span>%s</span> | <span>%s</span></div>' .
                 '<div><span><a href="%s">%s</a></span><span> (%s)</span></div></td>',

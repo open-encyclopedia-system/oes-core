@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.0.1 (in development)
+- New parameter for shortcode "oes_audit"
+
 ## 3.0.0 - 2026-09-22
 
 ### Added
