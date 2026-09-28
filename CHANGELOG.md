@@ -8,6 +8,7 @@
 ### Fixed
 - include OES Remarks list in admin pages
 - improve initialization
+- clean up LOD copy to post
 
 ## 3.0.0 - 2026-09-22
 
