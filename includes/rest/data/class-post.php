@@ -294,7 +294,7 @@ if (!class_exists('\OES\Rest\Post')) {
 
             $headline = null;
             $level = null;
-            $id = null;
+            $id = '';
             $text = '';
             $nr = 1;
 
@@ -310,7 +310,7 @@ if (!class_exists('\OES\Rest\Post')) {
                     $headline = $match[3];
                     $text = '';
 
-                    $id = null;
+                    $id = '';
                     if (preg_match('/\bid\s*=\s*["\']([^"\']*)["\']/i', $match[2], $idMatch)) {
                         $id = $idMatch[1];
                     }
