@@ -178,6 +178,7 @@ if (!class_exists('\OES\Rest\Post')) {
             if (empty($this->mapped_types)) {
                 $this->mapped_types = oes_get_all_schema_types();
             }
+
             return $this->mapped_types[$type] ?: 'Thing';
         }
 
@@ -528,6 +529,9 @@ if (!class_exists('\OES\Rest\Post')) {
         {
             $isPost = true;
             if($id){
+                if(!is_int($id)){
+                    return  null;
+                }
                 if(!post_type_exists($type)){
                     $isPost = false;
                 }
@@ -872,7 +876,7 @@ if (!class_exists('\OES\Rest\Post')) {
                 $post = get_post($value);
             }
 
-            if (!$post) {
+            if (!$post || !in_array($post->post_type,  ['page', 'post', 'attachment'])) {
                 return [];
             }
 
