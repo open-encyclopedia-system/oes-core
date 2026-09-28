@@ -1,7 +1,13 @@
 # Changelog
 
 ## 3.0.1 (in development)
+
+### Added
 - New parameter for shortcode "oes_audit"
+
+### Fixed
+- include OES Remarks list in admin pages
+- improve initialization
 
 ## 3.0.0 - 2026-09-22
 

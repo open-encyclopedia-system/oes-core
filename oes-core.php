@@ -51,9 +51,13 @@ if (!function_exists('OES')) {
             $oes->initialize_application($applicationPath);
         }
 
-        if (!$oes->data_model_initialized) {
+        if ($oes->application_initialized && !$oes->data_model_initialized) {
             try {
                 $oes->initialize_data_model();
+
+                if ($args['hide_menu'] ?? true) {
+                    oes_hide_obsolete_menu_structure();
+                }
             } catch (Exception $e) {
                 if (is_admin()) {
                     add_action('admin_notices', function () use ($e) {
@@ -64,10 +68,6 @@ if (!function_exists('OES')) {
                     });
                 }
             }
-        }
-
-        if ($args['hide_menu'] ?? true) {
-            oes_hide_obsolete_menu_structure();
         }
 
         return $oes;
