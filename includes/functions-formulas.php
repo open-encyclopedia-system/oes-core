@@ -172,6 +172,11 @@ function calculate_value(array $parts, int $postID, string $separator = '', bool
     $stringParts = [];
 
     foreach ($parts as $part) {
+
+        if(!is_array($part)) {
+            continue;
+        }
+
         $part = normalize_legacy_part_keys($part);
 
         $prefix = $part['prefix'] ?? '';

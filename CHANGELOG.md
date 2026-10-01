@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.1 (in development)
+## 3.0.1 - 2026-10-01
 
 ### Added
 - New parameter for shortcode "oes_audit"
@@ -10,6 +10,19 @@
 - improve initialization
 - clean up LOD copy to post
 - export with headline first
+- fix calculate_value (make sure only array is passed)
+
+### Added
+- Parameter `format_info` for shortcode `oes_audit` that renders the format for better readability
+
+### Changed
+- Improved application initialization (performance)
+
+### Fixed
+- OES Remarks list was missing from admin pages
+- LOD data does now correctly copy array values to the post
+- Export now places the headline first
+- Error in `calculate_value()` when a non-array value was passed
 
 ## 3.0.0 - 2026-09-22
 
