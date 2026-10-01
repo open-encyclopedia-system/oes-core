@@ -346,9 +346,15 @@ function prepare_lod_field_value(array $fieldObject, $rawValue)
             }
 
             if (is_array($rawValue)) {
-                return implode(', ', array_map(function ($val) {
-                    return is_string($val) ? sanitize_text_field($val) : '';
-                }, $rawValue));
+                $labels = array_map(static function ($val): string {
+                    if (is_array($val)) {
+                        $val = $val['label'] ?? '';
+                    }
+
+                    return is_scalar($val) ? sanitize_text_field((string) $val) : '';
+                }, $rawValue);
+
+                return implode(', ', array_unique(array_filter($labels, 'strlen')));
             }
 
             return '';

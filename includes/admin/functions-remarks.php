@@ -80,7 +80,7 @@ function screen_option(): void
             'default' => 10,
             'option' => 'oes_items_per_page']);
 
-    require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-remarks-list-table.php';
+    require_once OES_CORE_PLUGIN . '/includes/admin/lists/class-remarks_list_table.php';
     global $oesRemarksListTable;
     $oesRemarksListTable = new \Remarks_List_Table([
             'singular' => 'OES remark',

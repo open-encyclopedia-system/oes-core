@@ -22,7 +22,7 @@ class Schema_Display extends Schema
     /** @inheritdoc */
     function empty(): string
     {
-        if($this->public){
+        if ($this->public) {
             return parent::empty();
         }
 
@@ -44,9 +44,9 @@ class Schema_Display extends Schema
      *
      * @return void
      */
-    function set_post_type(): void
+    protected function set_post_type(): void
     {
-        if(!is_post_publicly_viewable($this->object)){
+        if (!$this->temp_check_if_post_type_public($this->object)) {
             $this->public = false;
             return;
         }
@@ -130,7 +130,7 @@ class Schema_Display extends Schema
      *
      * @return void
      */
-    function set_taxonomies(): void
+    protected function set_taxonomies(): void
     {
         global $oes;
         $taxonomyData = $oes->taxonomies[$this->object] ?? [];
@@ -162,6 +162,27 @@ class Schema_Display extends Schema
             ['alphabet' => 'Alphabet'],
             true
         );
+    }
+
+    /**
+     * @oesDevelopment use instead of is_post_type_viewable()
+     *
+     * @param string $post_type
+     * @return bool
+     */
+    protected function temp_check_if_post_type_public(string $post_type): bool
+    {
+        $post_type = get_post_type_object($post_type);
+
+        if (!$post_type) {
+            return false;
+        }
+
+        if (!is_object($post_type)) {
+            return false;
+        }
+
+        return $post_type->public;
     }
 }
 
