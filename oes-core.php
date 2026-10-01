@@ -7,7 +7,7 @@
  * Plugin Name:       OES Core
  * Plugin URI:        https://www.open-encyclopedia-system.org/
  * Description:       A framework for scholarly reference works.
- * Version:           3.0.0
+ * Version:           3.0.1
  * Author:            Maren Welterlich-Strobl, Freie Universität Berlin, FUB-IT, Digitale Forschungsinfrastrukturen
  * Author URI:        https://www.fu-berlin.de/
  * Requires at least: 6.5
@@ -105,7 +105,7 @@ if (!class_exists('OES_Core')) :
     {
 
         /** @var string The version of the OES Core plugin. */
-        public string $version = '3.0.0';
+        public string $version = '3.0.1';
 
         /** @var string The version of the OES database schema. */
         public string $db_version = '2.1';
