@@ -34,7 +34,7 @@ function oes_set_post_data(int $postID = 0, string $postType = ''): void
 
     $consideredPostType = $postType ?: (get_post_type($postID) ?: '');
 
-    $oes_post = class_exists($consideredPostType) ?
+    $oes_post = class_exists($consideredPostType, false) ?
         new $consideredPostType($postID) :
         new OES_Post($postID);
 }
@@ -81,7 +81,7 @@ function oes_set_term_data(int $termID = 0): void
 {
     global $taxonomy, $term, $oes_term;
     if (!$termID || !get_term($termID)) $termID = get_term_by('slug', $term, $taxonomy)->term_id ?? false;
-    $oes_term = class_exists($taxonomy) ?
+    $oes_term = class_exists($taxonomy, false) ?
         new $taxonomy($termID) :
         new OES_Term($termID);
 }
@@ -103,7 +103,7 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
 
     if (empty($class)) {
         $class = $postType . '_Post_Archive';
-        if (!class_exists($class)) {
+        if (!class_exists($class, false)) {
             $class = 'OES_Post_Archive';
         }
     }
@@ -152,7 +152,7 @@ function oes_set_archive_data(string $class = '', array $args = [], bool $setGlo
         }
     }
 
-    $oesArchive = class_exists($class) ? new $class($args) : new OES_Archive($args);
+    $oesArchive = class_exists($class, false) ? new $class($args) : new OES_Archive($args);
 
     if ($setGlobals) {
         global $oes_archive, $oes_archive_data, $oes_filter, $oes_archive_count;
@@ -226,8 +226,7 @@ function oes_prepare_archive_payload($oesArchive): array
         $oesArchive->count
     ) ? $oesArchive->count : false;
 
-    global $oes;
-    if ($oes->legacy) {
+    if (oes_is_legacy()) {
         $data = [
             'archive' => (array)$oesArchive,
             'table-array' => $oesArchive->get_data_as_table(),
@@ -242,95 +241,6 @@ function oes_prepare_archive_payload($oesArchive): array
         $count,
         $data
     ];
-}
-
-/**
- * Get a localized label for a given object, such as a post type or taxonomy.
- *
- * @param string $object The object name (post type or taxonomy).
- * @param string $language Optional. The language code for localization. Default is 'language0'.
- * @return string The localized label or the object name as a fallback.
- */
-function oes_get_object_label(string $object, string $language = ''): string
-{
-    if (empty($language)) {
-        global $oes_language;
-        $language = $oes_language ?? 'language0';
-    }
-
-    if (post_type_exists($object)) {
-        return oes_get_post_type_label($object, $language);
-    }
-
-    if (taxonomy_exists($object)) {
-        return oes_get_taxonomy_label($object, $language);
-    }
-
-    return $object;
-}
-
-/**
- * Get a localized label for a given post type.
- *
- * @param string $postType The post type key.
- * @param string $language Optional. The language key used to retrieve the label. Default is 'language0'.
- * @return string The localized label for the post type, or fallback label if not found.
- */
-function oes_get_post_type_label(string $postType, string $language = ''): string
-{
-    global $oes;
-
-    if (empty($language)) {
-        global $oes_language;
-        $language = $oes_language ?? 'language0';
-    }
-
-    if (!empty($oes->post_types[$postType]['label_translations_plural'][$language])) {
-        return $oes->post_types[$postType]['label_translations_plural'][$language];
-    }
-
-    if (!empty($oes->post_types[$postType]['theme_labels']['archive__header'][$language])) {
-        return $oes->post_types[$postType]['theme_labels']['archive__header'][$language];
-    }
-
-    if (!empty($oes->post_types[$postType]['label'])) {
-        return $oes->post_types[$postType]['label'];
-    }
-
-    $postTypeObject = get_post_type_object($postType);
-    return $postTypeObject->label ?? $postType;
-}
-
-/**
- * Get a localized label for a given taxonomy.
- *
- * @param string $taxonomy The taxonomy key.
- * @param string $language Optional. The language key used to retrieve the label. Default is 'language0'.
- * @return string The localized label for the taxonomy, or fallback label if not found.
- */
-function oes_get_taxonomy_label(string $taxonomy, string $language = ''): string
-{
-    global $oes;
-
-    if (empty($language)) {
-        global $oes_language;
-        $language = $oes_language ?? 'language0';
-    }
-
-    if (!empty($oes->taxonomies[$taxonomy]['label_translations_plural'][$language])) {
-        return $oes->taxonomies[$taxonomy]['label_translations_plural'][$language];
-    }
-
-    if (!empty($oes->taxonomies[$taxonomy]['label_translations'][$language])) {
-        return $oes->taxonomies[$taxonomy]['label_translations'][$language];
-    }
-
-    if (!empty($oes->taxonomies[$taxonomy]['label'])) {
-        return $oes->taxonomies[$taxonomy]['label'];
-    }
-
-    $taxonomyObject = get_taxonomy($taxonomy);
-    return $taxonomyObject->label ?? $taxonomy;
 }
 
 /**
@@ -356,13 +266,11 @@ function oes_get_publisher(): array
  */
 function oes_get_all_schema_types(): array
 {
-    global $oes;
-
     $mappedTypes = array_map(function ($postTypeData) {
         return oes_normalize_schema_type($postTypeData['schema'] ?? '');
-    }, $oes->post_types ?? []);
+    }, oes_get_post_types());
 
-    foreach ($oes->taxonomies ?? [] as $taxonomy => $taxonomyData) {
+    foreach (oes_get_taxonomies() as $taxonomy => $taxonomyData) {
         $mappedTypes[$taxonomy] = oes_normalize_schema_type($taxonomyData['schema'] ?? '');
     }
 

@@ -9,7 +9,7 @@ use DOMNode;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Rest\Post_TEI') && class_exists('\OES\Rest\Post')) {
+if (!class_exists(__NAMESPACE__ . '\Post_TEI', false) && class_exists(__NAMESPACE__ . '\Post', false)) {
 
     class Post_TEI extends \OES\Rest\Post
     {

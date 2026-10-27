@@ -9,7 +9,7 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Page')) :
+if (!class_exists(__NAMESPACE__ . '\Page', false)) :
 
     /**
      * Class Page
@@ -270,9 +270,7 @@ if (!class_exists('Page')) :
             $tab = $_GET['tab'] ?? null;
             $tool = $tab ?? array_key_first($this->tabs);
 
-            global $oes;
-
-            if ($tool && isset($oes->admin_tools[$tool])) {
+            if ($tool && oes_get_tool($tool)) {
                 $this->tool = $tool;
             }
         }

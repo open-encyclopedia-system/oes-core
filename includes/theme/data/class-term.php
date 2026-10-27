@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Term')) {
+if (!class_exists('OES_Term', false)) {
 
     /**
      * Class OES_Term
@@ -27,29 +27,21 @@ if (!class_exists('OES_Term')) {
 
             if ($term = get_term($this->object_ID)) {
 
-                /* get global OES instance parameter */
-                global $oes, $oes_language;
-
-                /* set taxonomy */
                 $this->taxonomy = $term->taxonomy;
 
                 /* set taxonomy label */
                 if ($this->taxonomy)
-                    $this->taxonomy_label = $oes->taxonomies[$this->taxonomy]['label_translations'][$oes_language] ??
-                        ($oes->taxonomies[$this->taxonomy]['label'] ??
-                            (get_taxonomy($this->taxonomy)->labels->singular_name ?? 'Label missing'));
+                    $this->taxonomy_label = oes_get_taxonomy_label($this->taxonomy);
 
                 /* check if term is part of the index */
-                if (!empty($oes->theme_index_pages))
-                    foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
+                    foreach (oes_get_index_pages() as $indexPageKey => $indexPage)
                         if (in_array($this->taxonomy, $indexPage['objects'] ?? []))
                             $this->part_of_index_pages[] = $indexPageKey;
 
                 /* set theme labels */
-                $this->theme_labels = $oes->theme_labels;
-                if (isset($oes->taxonomies[$this->taxonomy]['theme_labels']))
-                    $this->theme_labels = array_merge($this->theme_labels,
-                        $oes->taxonomies[$this->taxonomy]['theme_labels']);
+                $taxonomyThemeLabels = oes_get_taxonomy_param($this->taxonomy, 'theme_labels');
+
+                $this->theme_labels = array_merge(oes_get_theme_labels(), $taxonomyThemeLabels);
             }
         }
 
@@ -146,22 +138,17 @@ if (!class_exists('OES_Term')) {
         /** @inheritdoc */
         public function get_breadcrumbs_html(array $args = []): string
         {
-
-            global $oes;
             $link = '';
             $name = '';
-            if ($taxonomyObject = get_taxonomy($this->taxonomy)) {
-                $name = ($oes->taxonomies[$this->taxonomy]['label_translations_plural'][$this->language] ??
-                    ($oes->taxonomies[$this->taxonomy]['label_translations'][$this->language] ??
-                        ($oes->taxonomies[$this->taxonomy]['label'] ?? $taxonomyObject->label)));
+            if (taxonomy_exists($this->taxonomy)) {
+                $name = oes_get_taxonomy_label($this->taxonomy);
                 $link = (get_site_url() . '/' .
                     (get_taxonomy($this->taxonomy)->rewrite['slug'] ?? $this->taxonomy) . '/');
             }
 
             $header = ((isset($args['header']) && $args['header']) ?
                 ('<div class="oes-breadcrumbs-header">' .
-                    ($oes->taxonomies[$this->taxonomy]['label_translations_plural'][$this->language] ??
-                        ($this->get_theme_label('archive__header', $this->taxonomy_label))) .
+                    oes_get_taxonomy_label($this->taxonomy) .
                     '</div>') :
                 '');
             return '<div class="oes-sidebar-wrapper">' .

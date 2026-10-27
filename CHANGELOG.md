@@ -1,5 +1,21 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- new Export formats: Json-Ld, Dublin Core XML,...
+
+### Changed
+- Refactored `OES_Core` into smaller components, each with a single responsibility
+- `OES()` is now a thin facade that delegates to these components instead of bootstrapping and initializing on first call.
+- Cached the data model built from the config post and ACF field groups, so it no longer rebuilds the same structures on every request.
+- Standardize call to OES(). Remove globals
+- Hiding or showing the WordPress native "comments" and "posts" and adding separators inside the admin menu is now an option in Advanced rather than a function
+
+### Fixed
+- Class guards now use `! class_exists( __NAMESPACE__ . '\ClassName', false )` instead of hardcoded fully qualified names with an early `return`. This avoids autoloader calls during the check and keeps guards correct if a namespace is renamed.
+- Media Label Settings
+- 
 ## 3.0.1 - 2026-10-01
 
 ### Added

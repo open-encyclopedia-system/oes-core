@@ -161,19 +161,13 @@ function render_link_list(array $links, array $args = []): void
  */
 function data_model_meta_box(): void
 {
-    global $oes;
-
-    if (empty($oes)) {
-        return;
-    }
-
     echo '<div class="oes-dashboard-actions">';
 
     echo '<p>';
     printf(
         esc_html__('Your encyclopaedia currently has %1$d post types and %2$d taxonomies.', 'oes'),
-        count($oes->post_types ?? []),
-        count($oes->taxonomies ?? [])
+        count(oes_get_post_types() ?? []),
+        count(oes_get_taxonomies() ?? [])
     );
     echo '</p>';
 
@@ -203,12 +197,6 @@ function data_model_meta_box(): void
  */
 function content_meta_box(): void
 {
-    global $oes;
-
-    if (empty($oes)) {
-        return;
-    }
-
     echo '<p>';
     esc_html_e('Public and indexable now, based on your visibility settings.', 'oes');
     echo '</p>';
@@ -236,7 +224,8 @@ function content_meta_box(): void
 
     foreach ($postTypes as $postType) {
 
-        if (!isset($oes->post_types[$postType->name])) {
+        $config = oes_get_post_type($postType->name);
+        if (empty($config)) {
             continue;
         }
 
@@ -246,7 +235,7 @@ function content_meta_box(): void
             continue;
         }
 
-        $identifier = $oes->post_types[$postType->name]['type'] ?? 'default';
+        $identifier = $config['type'] ?? 'default';
         $class = oes_get_menu_icon_path($identifier);
 
         $list[$identifier][] = sprintf(
@@ -269,7 +258,8 @@ function content_meta_box(): void
 
     foreach ($taxonomies as $taxonomy) {
 
-        if (!isset($oes->taxonomies[$taxonomy->name]) || empty($taxonomy->rewrite['slug'] ?? '')) {
+        $config = oes_get_taxonomy($taxonomy->name);
+        if (empty($config) || empty($taxonomy->rewrite['slug'] ?? '')) {
             continue;
         }
 
@@ -279,7 +269,7 @@ function content_meta_box(): void
             continue;
         }
 
-        $identifier = $oes->taxonomies[$taxonomy->name]['type'] ?? 'default';
+        $identifier = $config['type'] ?? 'default';
         $class = oes_get_menu_icon_path($identifier);
 
         $list[$identifier][] = sprintf(
@@ -339,8 +329,7 @@ function quick_access_meta_box(): void
  */
 function modules_meta_box(): void
 {
-    global $oes;
-    render_link_list($oes->module_pages ?? [], ['sort' => true]);
+    render_link_list(oes_get_modules(), ['sort' => true]);
 }
 
 /**

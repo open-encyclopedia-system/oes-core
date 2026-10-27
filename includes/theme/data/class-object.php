@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Versioning\get_version_field;
 
-if (!class_exists('OES_Object')) {
+if (!class_exists('OES_Object', false)) {
 
     /**
      * Class OES_Object
@@ -72,7 +72,7 @@ if (!class_exists('OES_Object')) {
          */
         public function __construct(int $objectID, string $language = '', array $args = [])
         {
-            $this->block_theme = OES()->block_theme;
+            $this->block_theme = oes_is_block_theme();
             $this->set_object_id($objectID);
             $this->set_skip_parameter($args['skip'] ?? false);
             $this->set_parameters();
@@ -504,12 +504,10 @@ if (!class_exists('OES_Object')) {
                 /* get html representation of connected posts */
                 $html .= $this->get_index_connection_html($tableData, $args);
             } else {
-
-                $oes = OES();
                 $consideredPostTypeDone = [];
+                $indexPages = oes_get_index_pages();
                 foreach ($this->part_of_index_pages as $indexPage)
-                    if (!empty($oes->theme_index_pages[$indexPage]['element']))
-                        foreach ($oes->theme_index_pages[$indexPage]['element'] as $consideredPostType)
+                        foreach ($indexPages[$indexPage]['element'] as $consideredPostType)
                             if (!in_array($consideredPostType, $consideredPostTypeDone)) {
 
                                 /* @oesDevelopment What if multiple post types? */
@@ -517,7 +515,7 @@ if (!class_exists('OES_Object')) {
 
                                 /* assume child relationship if parent post type */
                                 $thisPostRelationship = $postRelationship;
-                                if (empty($postRelationship) && !empty($oes->post_types[$consideredPostType]['version']))
+                                if (empty($postRelationship) && !empty(oes_get_post_type_param($consideredPostType, 'version')))
                                     $thisPostRelationship = 'child_version';
 
                                 /* get table data */
@@ -589,22 +587,14 @@ if (!class_exists('OES_Object')) {
 
                     /* skip if specific language required */
                     if (($args['language'] ?? false) && $args['language'] != 'all') {
-                        $languageFieldKey = OES()->post_types[$connectedPost->post_type]['language'] ?? false;
+                        $languageFieldKey = oes_get_post_type_param($connectedPost->post_type, 'language');
                         if ($languageFieldKey && $languageFieldKey !== 'none') {
 
-                            switch ($args['language']) {
-                                case 'current':
-                                    $languageValue = $this->language;
-                                    break;
-
-                                case 'opposite';
-                                    $languageValue = ($this->language == 'language0') ? 'language1' : 'language0';
-                                    break;
-
-                                default:
-                                    $languageValue = $args['language'];
-                                    break;
-                            }
+                            $languageValue = match ($args['language']) {
+                                'current' => $this->language,
+                                'opposite' => ($this->language == 'language0') ? 'language1' : 'language0',
+                                default => $args['language'],
+                            };
 
                             $languageFieldValue = oes_get_field($languageFieldKey, $connectedPost->ID);
                             if ($languageFieldValue != $languageValue) continue;
@@ -633,7 +623,7 @@ if (!class_exists('OES_Object')) {
 
                 /* check for versioning */
                 $cleanTable = [];
-                if (isset(OES()->post_types[$postType]['parent'])) {
+                if (oes_get_post_type_param($postType, 'parent')) {
 
                     /* remove duplicates from prepared table */
                     foreach ($prepareTable as $row) {
@@ -708,7 +698,7 @@ if (!class_exists('OES_Object')) {
         {
             if ($this->index_display == 'list') {
                 $postType = get_post_type($postID);
-                $oesPost = class_exists($postType) ?
+                $oesPost = class_exists($postType, false) ?
                     new $postType($postID) :
                     new OES_Post($postID, '', ['skip' => true]);
                 return $oesPost->get_archive_data();

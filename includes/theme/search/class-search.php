@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use function OES\Versioning\get_parent_id;
 
-if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
+if (!class_exists('OES_Search', false) && class_exists('OES_Archive', false)) {
 
     /**
      * Class OES_Search
@@ -33,11 +33,12 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         public function set_parameters(array $args = []): void
         {
             global $s;
+            $order = oes_get_search_param('order');
             $this->search_term = $s;
             $this->search_term_original = get_query_var('oes_search_original');
             $this->order_of_post_types = (isset($args['order_of_post_types']) && is_array($args['order_of_post_types'])) ?
                 $args['order_of_post_types'] :
-                ((is_array(OES()->search['order'] ?? false) && OES()->search['order']) ? OES()->search['order'] : []);
+                ((is_array($order) && $order) ? $order : []);
         }
 
         /** @inheritdoc */
@@ -52,9 +53,7 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         {
             if ($this->loop_execute) return;
 
-            /* check for specific post types */
-            global $oes;
-            $this->considered_post_types = $oes->search['redirect_archive'] ?? [];
+            $this->considered_post_types = oes_get_search_param('redirect_archive', []);
 
             $this->loop_results();
             $this->loop_execute = true;
@@ -103,7 +102,7 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
         {
 
             /* prepare table */
-            global $oes, $oes_language;
+            global $oes_language;
             $tableArray = [];
 
             /* get results in current language */
@@ -116,8 +115,8 @@ if (!class_exists('OES_Search') && class_exists('OES_Archive')) {
                     $args);
 
             /* get results in other languages */
-            if (sizeof($oes->languages) > 1)
-                foreach ($oes->languages as $languageKey => $languageData)
+            if (oes_has_multiple_languages())
+                foreach (oes_get_languages() as $languageKey => $languageData)
                     if (isset($this->prepared_posts[$languageKey]) &&
                         $languageKey !== $oes_language &&
                         $languageKey !== 'all') {

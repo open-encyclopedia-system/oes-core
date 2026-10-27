@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
+if (!class_exists(__NAMESPACE__ . '\LOD', false)) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('GND')) {
+if (!class_exists(__NAMESPACE__ . '\GND', false)) {
 
     /**
      * Class GND
@@ -46,6 +46,6 @@ if (!class_exists('GND')) {
         }
     }
 
-    register_tool('\OES\Admin\Tools\GND', 'gnd');
+    oes_add_tool('\OES\Admin\Tools\GND', 'gnd');
 
 }

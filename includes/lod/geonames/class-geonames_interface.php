@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Geonames_Interface')) {
+if (!class_exists(__NAMESPACE__ . '\Geonames_Interface', false)) {
 
     /**
      * Geonames Interface.
@@ -113,5 +113,5 @@ if (!class_exists('Geonames_Interface')) {
         ];
     }
 
-    OES()->apis['geonames'] = new Geonames_Interface('geonames');
+    oes_add_api('\OES\API\Geonames_Interface', 'geonames');
 }

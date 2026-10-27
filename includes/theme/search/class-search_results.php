@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 use function \OES\Versioning\get_parent_id;
 use function \OES\Versioning\get_version_field;
 
-if (!class_exists('OES_Search_Results')) {
+if (!class_exists('OES_Search_Results', false)) {
 
     /**
      * Class OES_Search_Results
@@ -158,13 +158,11 @@ if (!class_exists('OES_Search_Results')) {
         {
             if (empty($this->prepared_IDs) || empty($this->search_term)) return;
 
-            global $oes;
-
             foreach ($this->prepared_IDs as $preparedID) {
                 $post = get_post($preparedID);
                 if (!$post || $post->post_status !== 'publish') continue;
 
-                $searchFields = $oes->search['postmeta_fields'][$post->post_type] ?? [];
+                $searchFields = oes_get_search_param('postmeta_fields')[$post->post_type] ?? [];
                 if (empty($searchFields) || !is_array($searchFields)) continue;
 
                 $titleDisplay = oes_get_display_title_archive($preparedID);
@@ -190,8 +188,8 @@ if (!class_exists('OES_Search_Results')) {
                 if (
                     empty($occurrencesTitle) &&
                     in_array('title', $searchFields, true) &&
-                    ($oes->post_types[$post->post_type]['display_titles']['title_archive_display'] !== 'title') &&
-                    ($oes->post_types[$post->post_type]['display_titles']['title_sorting_display'] !== 'title')
+                    (oes_get_post_type_titles($post->post_type, 'title_archive_display') !== 'title') &&
+                    (oes_get_post_type_titles($post->post_type, 'title_sorting_display') !== 'title')
                 ) {
                     $occSingle = $this->highlight_search_term($post->post_title, $occurrences);
                     if (!empty($occSingle)) {
@@ -207,7 +205,7 @@ if (!class_exists('OES_Search_Results')) {
                     $paragraphs = array_column($occContent, 'paragraph');
                     $contentValue = implode('', $paragraphs);
 
-                    if (!empty($contentValue) && !$oes->block_theme) {
+                    if (!empty($contentValue) && !oes_is_block_theme()) {
                         $contentValue .= sprintf(
                             '<a href="%s" class="oes-dot-dot-dot"></a>',
                             esc_url(get_permalink($preparedID))
@@ -230,7 +228,7 @@ if (!class_exists('OES_Search_Results')) {
                 }
 
                 if ($occurrences > 0) {
-                    $postTypeData = $oes->post_types[$post->post_type] ?? [];
+                    $postTypeData = oes_get_post_type($post->post_type);
                     $postTypeLabel = $postTypeData['label_translations_plural'][$this->language]
                         ?? $postTypeData['label']
                         ?? (get_post_type_object($post->post_type)->labels->singular_name ?? 'Label missing');
@@ -271,9 +269,8 @@ if (!class_exists('OES_Search_Results')) {
 
             // Label filter if any results exist
             if (!empty($this->filter_array['list']['objects']['items'])) {
-                global $oes;
                 $this->filter_array['list']['objects']['label'] =
-                    $oes->search['type_label'][$this->language] ?? __('Type', 'oes');
+                    oes_get_search_param('type_label')[$this->language] ?? __('Type', 'oes');
             }
         }
 
@@ -287,16 +284,15 @@ if (!class_exists('OES_Search_Results')) {
          */
         protected function process_field_occurrences(array $field, string $postType, int &$occurrences): ?array
         {
-            global $oes;
-
             $results = $this->highlight_search_term($field['value'], $occurrences);
             if (!$results) return null;
 
             if (count($results) > 1) {
-                $items = array_map(function ($item) use ($oes, &$occurrences) {
-                    return ($oes->block_theme || in_array($item['position'], ['first', 'single']) ? '' : '<span class="oes-dot-dot-dot"></span>') .
+                $items = array_map(function ($item) use (&$occurrences) {
+                    $isBlockTheme = oes_is_block_theme();
+                    return ($isBlockTheme || in_array($item['position'], ['first', 'single']) ? '' : '<span class="oes-dot-dot-dot"></span>') .
                         $item['paragraph'] .
-                        ($oes->block_theme || in_array($item['position'], ['last', 'single']) ? '' : '<span class="oes-dot-dot-dot"></span>');
+                        ($isBlockTheme || in_array($item['position'], ['last', 'single']) ? '' : '<span class="oes-dot-dot-dot"></span>');
                 }, $results);
 
                 $value = '<ul id="search-results"><li>' . implode('</li><li>', $items) . '</li></ul>';
@@ -304,8 +300,7 @@ if (!class_exists('OES_Search_Results')) {
                 $value = $results[0]['paragraph'];
             }
 
-            $label = $oes->post_types[$postType]['field_options'][$field['key']]['label_translation_' . $this->language]
-                ?? $field['label'];
+            $label = oes_get_post_type_field_label($postType, $field['key'], $this->language, $field['label']);
 
             return ['label' => $label, 'value' => $value, 'key' => $field['key'] ?? 'none'];
         }
@@ -337,7 +332,7 @@ if (!class_exists('OES_Search_Results')) {
 
             $results = [];
 
-            $maxParagraphs = $oes->search['max_preview_paragraphs'] ?? 1;
+            $maxParagraphs = oes_get_search_param('max_preview_paragraphs', 1);
             $processed = 0;
             foreach ($paragraphs as $index => $paragraph) {
 

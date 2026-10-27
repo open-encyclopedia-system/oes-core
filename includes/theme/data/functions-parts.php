@@ -62,7 +62,6 @@ function oes_get_page_title(array $args = []): string
 
     $isLink = $args['is_link'] ?? false;
     $linkObject = '';
-    $title = '';
     $isTaxonomy = false;
 
     if (is_page() || is_attachment()) {
@@ -75,10 +74,7 @@ function oes_get_page_title(array $args = []): string
         }
         else {
 
-            global $oes, $oes_language;
-            $title = ($oes->post_types[$oes_post->post_type]['label_translations'][$oes_language] ??
-                ($oes->post_types[$oes_post->post_type]['theme_labels']['archive__header'][$oes_language] ??
-                    $oes_post->post_type_label));
+            $title = oes_get_post_type_label($oes_post->post_type);
 
             if ($isLink) {
                 $linkObject = $oes_post->post_type;
@@ -87,16 +83,10 @@ function oes_get_page_title(array $args = []): string
 
     } elseif (is_tax() && $oes_term) {
 
-        global $oes, $oes_language;
-
         $isTaxonomy = true;
         $taxonomy = $oes_term->taxonomy;
 
-        if ($taxonomyObject = get_taxonomy($taxonomy)) {
-            $title = ($oes->taxonomies[$taxonomy]['label_translations'][$oes_language] ??
-                ($oes->taxonomies[$taxonomy]['label_translations'][$oes_language] ??
-                    ($oes->taxonomies[$taxonomy]['label'] ?: $taxonomyObject->label)));
-        }
+        $title = oes_get_taxonomy_label($taxonomy);
 
         if ($isLink) {
             $linkObject = $taxonomy;
@@ -197,7 +187,7 @@ function oes_get_archive_loop_html(array $args = []): string
     $class = oes_get_application_class_name('OES_Archive_Loop');
     $class = apply_filters('oes/theme_archive_loop_class', $class);
 
-    if (!class_exists($class)) {
+    if (!class_exists($class, false)) {
         return '';
     }
 
@@ -266,7 +256,7 @@ function oes_get_abstract_html(array $args = []): string
     }
 
     $abstractHTML = '';
-    $postTypeData = OES()->post_types[$oes_post->post_type] ?? [];
+    $postTypeData = oes_get_post_type($oes_post->post_type);
     if (!empty($postTypeData['excerpt'])) {
         $abstractHTML = oes_get_field_display_value($postTypeData['excerpt'], $oes_post->object_ID);
     } elseif (method_exists($oes_post, 'get_abstract_html')) {
@@ -293,7 +283,7 @@ function oes_get_literature_html(array $args = []): string
     }
 
     $literatureHTML = '';
-    $postTypeData = OES()->post_types[$oes_post->post_type] ?? [];
+    $postTypeData = oes_get_post_type($oes_post->post_type);
     if (!empty($postTypeData['literature'])) {
 
         foreach ($postTypeData['literature'] as $literatureField) {
@@ -371,7 +361,7 @@ function oes_get_terms_html(array $args = []): string
     }
 
     $taxonomies = [];
-    $postTypeData = OES()->post_types[$oes_post->post_type] ?? [];
+    $postTypeData = oes_get_post_type($oes_post->post_type);
     if (!empty($postTypeData['terms'])) {
 
         foreach ($postTypeData['terms'] as $taxonomy) {
@@ -473,7 +463,7 @@ function oes_get_featured_image_html(array $args = []): string
         return '';
     }
 
-    $postTypeData = OES()->post_types[$oes_post->post_type] ?? [];
+    $postTypeData = oes_get_post_type($oes_post->post_type);
     if (empty($postTypeData['featured_image']) || $postTypeData['featured_image'] === 'none') {
         return '';
     }
@@ -635,7 +625,7 @@ function oes_get_author_byline_html(array $args = []): string
         return '';
     }
 
-    $authorParam = OES()->post_types[$oes_post->post_type]['authors'] ?? '';
+    $authorParam = oes_get_post_type_param($oes_post->post_type, 'authors');
     if (!empty($authorParam)) {
         $args['authors'] = $authorParam;
     }
@@ -657,7 +647,7 @@ function oes_get_author_vita_html(array $args = []): string
         return '';
     }
 
-    $vitaParam = OES()->post_types[$oes_post->post_type]['vita'] ?? '';
+    $vitaParam = oes_get_post_type_param($oes_post->post_type, 'vita');
 
     if (empty($vitaParam)) {
         return '';
@@ -686,7 +676,7 @@ function oes_get_version_info_html(array $args = []): string
         return '';
     }
 
-    $postTypeData = OES()->post_types[$oes_post->post_type] ?? [];
+    $postTypeData = oes_get_post_type($oes_post->post_type);
     foreach (['pub_date', 'edit_date'] as $param) {
         if (isset($args[$param]) && is_bool($args[$param])) {
             if ($args[$param] && !empty($postTypeData[$param])) {
@@ -753,10 +743,10 @@ function oes_get_index_html(array $args = []): string
 
     $args['style'] = $args['className'] ?? '';
 
-    if ($oes_post && (!empty($oes_post->part_of_index_pages) || is_attachment() || OES()->block_theme)) {
+    if ($oes_post && (!empty($oes_post->part_of_index_pages) || is_attachment() || oes_is_block_theme())) {
         return $oes_post->get_index_connections($args['post_type'] ?? '', $args['relationship'] ?? '', $args);
     }
-    elseif ($oes_term && (!empty($oes_term->part_of_index_pages) || OES()->block_theme)) {
+    elseif ($oes_term && (!empty($oes_term->part_of_index_pages) || oes_is_block_theme())) {
         return $oes_term->get_index_connections($args['post_type'] ?? '', $args['relationship'] ?? '', $args);
     }
     return '';

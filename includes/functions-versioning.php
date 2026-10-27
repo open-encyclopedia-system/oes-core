@@ -15,7 +15,7 @@ use WP_Post;
  */
 function get_version_post_type(string $postType)
 {
-    return OES()->post_types[$postType]['version'] ?? false;
+    return oes_get_post_type_param($postType, 'version', false);
 }
 
 
@@ -27,7 +27,7 @@ function get_version_post_type(string $postType)
  */
 function get_parent_post_type(string $postType)
 {
-    return OES()->post_types[$postType]['parent'] ?? false;
+    return oes_get_post_type_param($postType, 'parent', false);
 }
 
 
@@ -338,7 +338,7 @@ function meta_box_parent_post(WP_Post $post, array $callbackArgs): void
     $translationLanguageLabel = '';
     $translationLanguage = 'language0';
     if ($thisLanguage)
-        foreach (OES()->languages as $key => $language)
+        foreach (oes_get_languages() as $key => $language)
             if ($key !== $thisLanguage) {
                 $translationLanguageLabel = $language['label'];
                 $translationLanguage = $key;

@@ -21,7 +21,7 @@ function get(string $name = ''): string
     // Resolve class name from child theme or fallback
     $class = oes_get_application_class_name('\OES\Icon\Icons');
 
-    if (!class_exists($class)) {
+    if (!class_exists($class, false)) {
         return "<!-- Icon class '{$class}' not found -->";
     }
 

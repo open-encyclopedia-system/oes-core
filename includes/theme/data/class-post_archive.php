@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
+if (!class_exists('OES_Post_Archive', false) && class_exists('OES_Archive', false)) {
 
 
     /**
@@ -35,15 +35,14 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
             if (!empty($postType)) {
 
                 /* check if archive is to be displayed as list (no single view, eg. glossary) */
-                global $oes;
                 $this->post_type = $postType;
-                $this->display_content = (isset($oes->post_types[$postType]['archive_on_single_page']) &&
-                    $oes->post_types[$postType]['archive_on_single_page']);
+                $this->display_content = oes_get_post_type_param($postType, 'archive_on_single_page', false);
 
                 /* check if index */
-                global $oes, $oes_is_index;
-                if (!$oes_is_index && !empty($oes->theme_index_pages)) {
-                    foreach ($oes->theme_index_pages as $indexPageKey => $indexPage)
+                global $oes_is_index;
+                $indexPages = oes_get_index_pages();
+                if (!$oes_is_index && !empty($indexPages)) {
+                    foreach ($indexPages as $indexPageKey => $indexPage)
                         if (in_array($postType, $indexPage['objects'] ?? [])) {
                             $oes_is_index = $indexPageKey;
                             $this->is_index = $indexPageKey;
@@ -60,11 +59,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         /** @inheritdoc */
         public function get_object_label(): string
         {
-            global $oes, $oes_language;
-            if (!empty($this->post_type))
-                return $oes->post_types[$this->post_type]['label_translations_plural'][$oes_language] ??
-                    ($oes->post_types[$this->post_type]['label'] ?? 'Label missing');
-            return '';
+            return oes_get_post_type_label($this->post_type);
         }
 
 
@@ -73,75 +68,71 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
         {
             $postType = $args['post-type-for-filter'] ?? $this->post_type;
 
-            global $oes, $oes_language;
+            if (empty($postType)) {
+                return [];
+            }
+
+            global $oes_language;
             $filterArray = [];
-            if (!empty($postType))
-                foreach ($oes->post_types[$postType]['archive_filter'] ?? [] as $filter) {
 
-                    if ($filter === 'alphabet') $filterArray['alphabet'] = true;
-                    else {
+            foreach (oes_get_post_type_param($postType, 'archive_filter') as $filter) {
 
-                        /* check for further information */
-                        $filterArgs = ['parent' => false];
-                        $filterKey = $filter;
-                        if (str_starts_with($filter, 'parent__')) {
-                            $filterKey = substr($filter, 8);
-                            $filterArgs['parent'] = true;
-                        }
+                if ($filter === 'alphabet') $filterArray['alphabet'] = true;
+                else {
 
-                        if (str_starts_with($filterKey, 'taxonomy__')) {
-                            $filterKey = substr($filterKey, 10);
-                            if (taxonomy_exists($filterKey)) {
-                                $filterArgs['type'] = 'taxonomy';
-                                $this->filter_array['list'][$filterKey]['label'] =
-                                    $oes->taxonomies[$filterKey]['label_translations_plural'][$oes_language] ??
-                                    get_taxonomy($filterKey)->label;
-                            }
-                        } elseif (str_starts_with($filterKey, 'post_type__')) {
-                            $filterKey = substr($filterKey, 11);
-                            if (post_type_exists($filterKey)) {
-                                $filterArgs['type'] = 'post_type';
-                                $this->filter_array['list'][$filterKey]['label'] =
-                                    ($oes->post_types[$filterKey]['label_translations_plural'][$oes_language] ??
-                                        $filterKey);
-                            }
-                        } elseif (str_starts_with($filterKey, 'parent_taxonomy__')) {
-                            $filterKey = substr($filterKey, 17);
-                            if (taxonomy_exists($filterKey)) {
-                                $filterArgs['type'] = 'taxonomy';
-                                $filterArgs['parent'] = true;
-                                $this->filter_array['list'][$filterKey]['label'] =
-                                    $oes->taxonomies[$filterKey]['label_translations_plural'][$oes_language] ??
-                                    get_taxonomy($filterKey)->label;
-                            }
-                        } elseif ($field = oes_get_field_object($filterKey)) {
-                            $filterArgs['type'] = 'field';
-                            $filterArgs['field-type'] = $field['type'] ?? 'Type missing';
-
-                            /* get global configuration for this language */
-                            $fieldConfiguration = [];
-                            if (!empty($this->post_type)) {
-                                if ($filterArgs['parent'] &&
-                                    isset($oes->post_types[$this->post_type]['parent']) &&
-                                    $oes->post_types[$this->post_type]['parent'])
-                                    $fieldConfiguration =
-                                        $oes->post_types[$oes->post_types[$this->post_type]['parent']]['field_options'][$filterKey] ??
-                                        false;
-                                else
-                                    $fieldConfiguration =
-                                        $oes->post_types[$this->post_type]['field_options'][$filterKey] ?? false;
-                            } elseif (!empty($this->taxonomy))
-                                $fieldConfiguration =
-                                    $oes->taxonomy[$this->taxonomy]['field_options'][$filterKey] ?? false;
-
-                            $this->filter_array['list'][$filterKey]['label'] =
-                                $fieldConfiguration['label_translation_' . $oes_language] ??
-                                ($field['label'] ?? $filterKey);
-                        }
-
-                        $filterArray[$filterKey] = $filterArgs;
+                    /* check for further information */
+                    $filterArgs = ['parent' => false];
+                    $filterKey = $filter;
+                    if (str_starts_with($filter, 'parent__')) {
+                        $filterKey = substr($filter, 8);
+                        $filterArgs['parent'] = true;
                     }
+
+                    if (str_starts_with($filterKey, 'taxonomy__')) {
+                        $filterKey = substr($filterKey, 10);
+                        if (taxonomy_exists($filterKey)) {
+                            $filterArgs['type'] = 'taxonomy';
+                            $this->filter_array['list'][$filterKey]['label'] = oes_get_taxonomy_label($filterKey);
+                        }
+                    } elseif (str_starts_with($filterKey, 'post_type__')) {
+                        $filterKey = substr($filterKey, 11);
+                        if (post_type_exists($filterKey)) {
+                            $filterArgs['type'] = 'post_type';
+                            $this->filter_array['list'][$filterKey]['label'] = oes_get_post_type_label($filterKey);
+                        }
+                    } elseif (str_starts_with($filterKey, 'parent_taxonomy__')) {
+                        $filterKey = substr($filterKey, 17);
+                        if (taxonomy_exists($filterKey)) {
+                            $filterArgs['type'] = 'taxonomy';
+                            $filterArgs['parent'] = true;
+                            $this->filter_array['list'][$filterKey]['label'] = oes_get_taxonomy_label($filterKey);
+                        }
+                    } elseif ($field = oes_get_field_object($filterKey)) {
+                        $filterArgs['type'] = 'field';
+                        $filterArgs['field-type'] = $field['type'] ?? 'Type missing';
+
+                        /* get global configuration for this language */
+                        $fieldConfiguration = [];
+                        if (!empty($this->post_type)) {
+
+                            $parentPostType = oes_get_post_type_param($this->post_type, 'parent');
+                            if ($filterArgs['parent'] && $parentPostType) {
+                                $fieldConfiguration = oes_get_post_type_field_config($parentPostType, $filterKey);
+                            } else {
+                                $fieldConfiguration = oes_get_post_type_field_config($this->post_type, $filterKey);
+                            }
+                        } elseif (!empty($this->taxonomy)) {
+                            $fieldConfiguration = oes_get_taxonomy_field_config($this->taxonomy, $filterKey);
+                        }
+
+                        $this->filter_array['list'][$filterKey]['label'] =
+                            $fieldConfiguration['label_translation_' . $oes_language] ??
+                            ($field['label'] ?? $filterKey);
+                    }
+
+                    $filterArray[$filterKey] = $filterArgs;
                 }
+            }
             return $filterArray;
         }
 
@@ -159,8 +150,7 @@ if (!class_exists('OES_Post_Archive') && class_exists('OES_Archive')) {
                         $post = get_post(get_the_ID());
                         $this->loop_results_post($post);
                     }
-            }
-            elseif (post_type_exists($this->post_type)) {
+            } elseif (post_type_exists($this->post_type)) {
 
                 /* query posts */
                 $posts = new WP_Query(array_merge([

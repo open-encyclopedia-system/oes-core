@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Template_Redirect')):
+if (!class_exists('OES_Template_Redirect', false)):
 
     /**
      * Handles data preparation and customization of the template redirect phase in WordPress.
@@ -59,9 +59,9 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function set_language(): void
         {
-            global $oes, $oes_language, $oes_language_switched;
+            global $oes_language, $oes_language_switched;
 
-            if (count($oes->languages) < 2) {
+            if (!oes_has_multiple_languages()) {
                 $oes_language = 'language0';
             } else {
                 if ($oes_language_switched) {
@@ -100,9 +100,9 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function prepare_single(): void
         {
-            global $oes, $post;
+            global $post;
 
-            if ($oes->post_types[$post->post_type]['archive_on_single_page'] ?? false) {
+            if (oes_get_post_type_param($post->post_type, 'archive_on_single_page')) {
                 $url = get_post_type_archive_link($post->post_type) . '#' . $post->post_type . '-' . $post->ID;
                 oes_redirect($url);
             } else {
@@ -117,16 +117,16 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function prepare_tax(): void
         {
-            global $taxonomy, $term, $oes;
+            global $taxonomy, $term;
 
+            $redirect = oes_get_taxonomy_param($taxonomy, 'redirect', 'none');
             if (
                 $taxonomy &&
-                ($oes->taxonomies[$taxonomy]['redirect'] ?? false) &&
-                ($oes->taxonomies[$taxonomy]['redirect'] !== 'none') &&
+                ($redirect !== 'none') &&
                 !isset($_GET['oesf_' . $taxonomy]) &&
                 $termObject = get_term_by('slug', $term, $taxonomy)
             ) {
-                $url = get_post_type_archive_link($oes->taxonomies[$taxonomy]['redirect']) .
+                $url = get_post_type_archive_link($redirect) .
                     '?oesf_' . $taxonomy . '=' . $termObject->term_id;
                 oes_redirect($url);
             } else {
@@ -159,9 +159,9 @@ if (!class_exists('OES_Template_Redirect')):
             $oes_archive_count = $oes_search->count;
 
             if (!empty($oes_search->search_term)) {
-                global $oes, $oes_archive_data, $oes_filter, $oes_archive;
+                global $oes_archive_data, $oes_filter, $oes_archive;
 
-                if ($oes->block_theme) {
+                if (oes_is_block_theme()) {
                     $oes_search->get_results();
                     $oes_archive_count = $oes_search->count;
                     $oes_filter = $oes_search->filter_array;
@@ -180,9 +180,7 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function prepare_data_other(): void
         {
-            global $oes;
-
-            foreach ($oes->theme_index_pages as $indexPageKey => $indexPage) {
+            foreach (oes_get_index_pages() as $indexPageKey => $indexPage) {
                 if ($this->get_current_url() === get_site_url() . '/' . ($indexPage['slug'] ?? 'index') . '/') {
                     $this->prepare_index($indexPageKey);
                 }
@@ -200,18 +198,18 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function prepare_index(string $indexPageKey): void
         {
-            global $oes, $oes_is_index, $oes_is_index_page;
+            global $oes_is_index, $oes_is_index_page;
 
-            if ($oes->theme_index_pages[$indexPageKey]['slug'] !== 'hidden') {
+            if (oes_get_index_page($indexPageKey)['slug'] !== 'hidden') {
                 $oes_is_index = $indexPageKey;
                 $oes_is_index_page = true;
 
                 $archiveClass = $indexPageKey . '_Index_Archive';
-                if (!class_exists($archiveClass)) {
+                if (!class_exists($archiveClass, false)) {
                     $archiveClass = 'OES_Index_Archive';
                 }
 
-                $this->call_set_archive_data($archiveClass);
+                $this->call_set_archive_data($archiveClass, false);
 
                 do_action('oes/redirect_template', 'prepare_index');
             }
@@ -224,9 +222,9 @@ if (!class_exists('OES_Template_Redirect')):
          */
         protected function prepare_taxonomies(): void
         {
-            global $oes, $oes_taxonomy;
+            global $oes_taxonomy;
 
-            foreach ($oes->taxonomies as $taxonomyKey => $singleTaxonomy) {
+            foreach (oes_get_taxonomies() as $taxonomyKey => $singleTaxonomy) {
                 $taxonomyObject = get_taxonomy($taxonomyKey);
 
                 $expectedSlug = $taxonomyObject->rewrite['slug'] ?? $taxonomyKey;
@@ -236,7 +234,7 @@ if (!class_exists('OES_Template_Redirect')):
                     $this->get_current_url() === $expectedUrl &&
                     !is_page($expectedSlug)
                 ) {
-                    foreach ($oes->theme_index_pages as $indexPageKey => $indexPage) {
+                    foreach (oes_get_index_pages() as $indexPageKey => $indexPage) {
                         if (in_array($taxonomyKey, $indexPage['objects'] ?? [])) {
                             global $oes_is_index;
                             $oes_is_index = $indexPageKey;
@@ -246,10 +244,10 @@ if (!class_exists('OES_Template_Redirect')):
                     $oes_taxonomy = $taxonomyKey;
                     $archiveClass = $taxonomyKey . '_Taxonomy_Archive';
 
-                    if (!class_exists($archiveClass)) {
+                    if (!class_exists($archiveClass, false)) {
                         $archiveClass = $taxonomyKey . '_Archive';
                     }
-                    if (!class_exists($archiveClass)) {
+                    if (!class_exists($archiveClass, false)) {
                         $archiveClass = 'OES_Taxonomy_Archive';
                     }
 

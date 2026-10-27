@@ -72,9 +72,7 @@ function register_oes_objects(bool $factoryMode = false): void
 
         add_action('admin_notices', function () {
 
-            global $oes;
-
-            if ($oes->application_initialized) {
+            if (oes_application_initialized()) {
                 echo '<div class="notice notice-warning"><p>' .
                         __('There is no OES data model registered. Navigate to ', 'oes') .
                         oes_get_html_anchor('"OES Tools" / "Data Model" / "Config"',
@@ -102,13 +100,13 @@ function register_oes_objects(bool $factoryMode = false): void
 
         /* general config */
         if ($post->post_name == 'oes_config')
-            OES()->set_general_parameters(json_decode($post->post_content, true) ?? [], $post->ID);
+            oes_set_general_parameters(json_decode($post->post_content, true) ?? [], $post->ID);
 
         /* media field group */
         if ($post->post_name == 'media') {
 
             $oesArgs = json_decode($post->post_excerpt, true) ?? [];
-            if (!empty($oesArgs)) OES()->set_media_parameters($oesArgs, $post->ID);
+            if (!empty($oesArgs)) oes_add_media_data($oesArgs, $post->ID);
             register_local_field_group($post->ID, 'media', $factoryMode);
 
         } /* taxonomy */
@@ -126,7 +124,7 @@ function register_oes_objects(bool $factoryMode = false): void
                 /* make sure label exists */
                 if (empty($oesArgs['label'] ?? [])) $oesArgs['label'] = $argsAll['labels']['menu_name'] ?? $taxonomyKey;
 
-                if (!empty($oesArgs)) OES()->set_taxonomy_parameters($taxonomyKey, $oesArgs);
+                if (!empty($oesArgs)) oes_set_taxonomy($taxonomyKey, $oesArgs);
                 register_local_field_group($post->ID, $taxonomyKey, $factoryMode);
             }
 
@@ -155,7 +153,7 @@ function register_oes_objects(bool $factoryMode = false): void
             if ($factoryMode || register_post_type_and_evaluate($postTypeKey, $registerArgs)) {
 
                 $oesArgs = json_decode($post->post_excerpt, true) ?? [];
-                if (!empty($oesArgs)) OES()->set_post_type_parameters($postTypeKey, $oesArgs, $registerArgs);
+                if (!empty($oesArgs)) oes_set_post_type($postTypeKey, $oesArgs, $registerArgs);
                 register_local_field_group($post->ID, $postTypeKey, $factoryMode);
             }
         }
@@ -503,28 +501,41 @@ function register_taxonomy_and_evaluate(string $taxonomyKey, array $objectType =
  */
 function register_local_field_group($postID, string $objectKey, bool $factoryMode = false): void
 {
-    /* loop through child posts */
-    $oes = OES();
     $isTaxonomy = str_starts_with($objectKey, 't_');
-    foreach (get_children(['post_parent' => $postID, 'post_type' => 'oes_object']) as $childPost)
-        if ($acfGroup = json_decode($childPost->post_content, true) ?? []) {
+    $posts = get_children(['post_parent' => $postID, 'post_type' => 'oes_object']);
 
-            if (!$factoryMode || str_ends_with($childPost->post_name, 'language'))
-                if (!acf_add_local_field_group($acfGroup))
-                    oes_write_log(
-                            sprintf(__('Error while adding acf local field group for %s.', 'oes'),
-                                    $childPost->ID));
+    foreach ($posts as $childPost) {
+        $acfGroup = json_decode($childPost->post_content, true) ?? [];
 
-
-            /* store additional parameter for fields in cache */
-            if ($objectKey == 'media') $oes->set_media_field_options($acfGroup['fields'] ?? []);
-            else
-                $oes->set_field_options(
-                        ($isTaxonomy ? 'taxonomies' : 'post_types'),
-                        $objectKey,
-                        $acfGroup['fields'] ?? [],
-                        $childPost->ID);
+        if(!$acfGroup) {
+            continue;
         }
+
+        $languageGroup = str_ends_with($childPost->post_name, 'language');
+
+        if (!$factoryMode || $languageGroup) {
+            if (!acf_add_local_field_group($acfGroup)) {
+                oes_write_log(
+                        sprintf(__('Error while adding acf local field group for %s.', 'oes'),
+                                $childPost->ID));
+            }
+        }
+
+        if($languageGroup) {
+            continue;
+        }
+
+        if ($objectKey == 'media') {
+            oes_add_media_field_data($acfGroup['fields'] ?? [], $childPost->ID);
+        }
+        else {
+            oes_add_field_data(
+                    ($isTaxonomy ? 'taxonomies' : 'post_types'),
+                    $objectKey,
+                    $acfGroup['fields'] ?? [],
+                    $childPost->ID);
+        }
+    }
 }
 
 
@@ -652,7 +663,7 @@ function validate_post_type_oes_args(array $oesArgs = []): array
     $oesArgs = array_merge(get_post_type_oes_args_defaults(), $oesArgs);
 
     /* add translation labels */
-    foreach (OES()->languages as $languageKey => $language)
+    foreach (oes_get_languages() as $languageKey => $language)
         if (isset($data['label_translation_' . $languageKey]))
             $oesArgs['label_translation_' . $languageKey] = $data['label_translation_' . $languageKey] ?? '';
 
@@ -868,7 +879,7 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
     if (empty($fieldGroup)) return [];
 
     /* loop through fields and check for language dependencies and labels, if more than one language */
-    $languages = OES()->languages;
+    $languages = oes_get_languages();
     $languageFieldGroup = [];
     $specificFields = [];
 
@@ -1022,29 +1033,26 @@ function validate_acf_field_group(string $objectKey, array $fieldGroup, string $
     $languageDependentFields = [];
 
     foreach ($languageFieldGroup as $languageKey => $fields) {
-        if (isset(OES()->post_types[$objectKey])) $languageDependentFields = array_merge(['0_1' => [
+        $languageDependentFields = array_merge(['0_1' => [
                 'name' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
                 'key' => 'field_' . $objectKey . '__label_tab_' . $languageKey,
                 'type' => 'tab',
                 'label' => $languages[$languageKey]['label'] ?? $languageKey,
                 'placement' => 'left'
         ]], $fields);
-        else $languageDependentFields = $fields;
         $languageFieldGroupTitles[] = $languages[$languageKey]['label'] ?? $languageKey;
     }
 
-    if (isset(OES()->post_types[$objectKey])) {
-        $languageDependentFields = array_merge(['0_0' => [
-                'name' => 'field_language_group_message',
-                'key' => 'field_language_group_message',
-                'type' => 'message',
-                'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
-                'label' => ''
-        ]], $languageDependentFields);
-    }
+    $languageDependentFields = array_merge(['0_0' => [
+            'name' => 'field_language_group_message',
+            'key' => 'field_language_group_message',
+            'type' => 'message',
+            'message' => __('The following fields allow you to translate specified fields for other languages.', 'oes'),
+            'label' => ''
+    ]], $languageDependentFields);
 
     $languageFieldGroupArgs = [
-            'key' => $fieldGroup['key'] . '_language_labels',
+            'key' => $fieldGroup['key'] . '_language',
             'title' => $fieldGroup['title'] . ' (' . implode(', ', $languageFieldGroupTitles) . ')',
             'location' => $fieldGroup['location'],
             'fields' => $languageDependentFields
@@ -1107,7 +1115,7 @@ function insert_data_model_as_an_oes_objects(array $dataModel = []): void
 
     /* loop through post types, taxonomies and field groups */
     unset($dataModel['oes_config']);
-    foreach ($dataModel as $key => $oesObject)
+    foreach ($dataModel as $key => $oesObject) {
         if ($key == 'media') insert_media_as_an_oes_object($oesObject);
         else {
 
@@ -1123,6 +1131,7 @@ function insert_data_model_as_an_oes_objects(array $dataModel = []): void
                 insert_post_type_as_an_oes_object($oesObject, $key);
             }
         }
+    }
 }
 
 
@@ -1144,7 +1153,7 @@ function insert_general_config_as_an_oes_object(array $args = []): void
 
 
     $configPostID = insert_oes_object_post('oes_config', 'OES Config', $generalConfig);
-    if ($configPostID) OES()->set_general_parameters($generalConfig, $configPostID);
+    if ($configPostID) oes_set_general_parameters($generalConfig, $configPostID);
 }
 
 
@@ -1595,12 +1604,11 @@ function hook_fields_to_page(array $fieldTypes = []): void
  */
 function add_fields_to_page(array $fieldTypes = []): void
 {
-    $oes = OES();
     $fields = [];
 
     $languages = array_map(function ($language) {
         return $language['label'];
-    }, $oes->languages ?? []);
+    }, oes_get_languages());
     $multilingual = count($languages) > 1;
 
     if ($multilingual) {
@@ -1630,7 +1638,7 @@ function add_fields_to_page(array $fieldTypes = []): void
         }
     }
 
-    if (!$oes->block_theme && (empty($fieldTypes) || in_array('toc', $fieldTypes))) {
+    if (!oes_is_block_theme() && (empty($fieldTypes) || in_array('toc', $fieldTypes))) {
         $fields[] = [
                 'key' => 'field_oes_page_include_toc',
                 'label' => 'Include Table of Content',
@@ -1675,9 +1683,8 @@ function term_add_fields_for_multilingualism(WP_Term $tag): void
     // Check for existing taxonomy meta for the term you're editing
     $metaData = get_term_meta($tag->term_id);
 
-    global $oes;
-    if (sizeof($oes->languages) > 1):
-        foreach ($oes->languages as $languageKey => $languageData):
+    if (oes_has_multiple_languages()):
+        foreach (oes_get_languages() as $languageKey => $languageData):
             if ($languageKey !== 'language0'):
 
                 ?>
@@ -1761,7 +1768,6 @@ function set_default_options(): void
  */
 function get_schema_links(): array
 {
-    global $oes;
     $schemaLinks = [
             'global' => [
             'label' => __('Global', 'oes'),
@@ -1770,7 +1776,7 @@ function get_schema_links(): array
     ]];
 
     foreach (['post_types', 'taxonomies'] as $component) {
-        foreach ($oes->$component as $objectKey => $objectData) {
+        foreach (call_user_func('oes_get_' . $component) as $objectKey => $objectData) {
             $type = $objectData['schema'] ?? 'none';
             $objectLabel = $objectData['label'] ?? $objectKey;
 

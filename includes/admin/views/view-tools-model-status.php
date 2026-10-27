@@ -1,7 +1,6 @@
 <?php
-global $oes;
 
-if (empty($oes->post_types) && empty($oes->taxonomies)) : ?>
+if (empty(oes_get_post_types()) && empty(oes_get_taxonomies())) : ?>
     <div><?php echo esc_html__(
             'There is no data registered. Try to reload the data model by using the tool in the next tab ("OES Tools" / "Data Model" / "Config"), use "Reload from Plugin Config".',
             'oes'
@@ -74,7 +73,7 @@ function oes_render_object_rows(array $objects): void
 }
 
 echo '<h2>' . __('Post Types', 'oes') . '</h2>';
-oes_render_object_rows($oes->post_types);
+oes_render_object_rows(oes_get_post_types());
 
 echo '<h2>' . __('Taxonomies', 'oes') . '</h2>';
-oes_render_object_rows($oes->taxonomies);
+oes_render_object_rows(oes_get_taxonomies());

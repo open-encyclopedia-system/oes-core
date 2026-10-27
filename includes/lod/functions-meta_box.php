@@ -11,11 +11,10 @@ namespace OES\API;
  */
 function lod_add_meta_box(string $post_type, $post = null): void
 {
-    $oes = OES();
     if (
-            empty($oes->apis) ||
-            empty($oes->post_types[$post_type]) ||
+            empty(oes_get_apis()) ||
             oes_check_if_gutenberg($post_type) ||
+            !oes_has_post_type($post_type) ||
             !function_exists(__NAMESPACE__ . '\\lod_meta_box')
     ) {
         return;

@@ -1,210 +1,204 @@
 <?php
 
-/**
- * @file
- * @reviewed 3.0.0
- */
-
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
+if (!class_exists(__NAMESPACE__ . '\Config', false)) oes_include('admin/tools/config/class-config.php');
 
-if (class_exists('Admin_Container')) exit;
+if (!class_exists(__NAMESPACE__ . '\Admin_Container', false)) :
 
-/**
- * Class Admin_Container
- *
- * Implement the config tool for admin menu configurations.
- */
-class Admin_Container extends Config
-{
-
-    /** @inheritdoc */
-    public bool $empty_allowed = true;
-
-    /** @inheritdoc */
-    public bool $empty_input = true;
-
-    /** @inheritdoc */
-    function additional_html(): string
+    /**
+     * Class Admin_Container
+     *
+     * Implement the config tool for admin menu configurations.
+     */
+    class Admin_Container extends Config
     {
-        return '<div>' .
-            '<input type="submit" name="add_new_container" id="add_new_container" ' .
-            'class="button button-secondary button-large" ' .
-            'value="' . __('Add New Container', 'oes') . '">' .
-            '</div>';
-    }
 
-    /** @inheritdoc */
-    function set_table_data_for_display()
-    {
-        global $oes;
+        /** @inheritdoc */
+        public bool $empty_allowed = true;
 
-        $containers = $oes->admin_pages['container'] ?? [];
-        if(empty($containers)) {
-            return;
+        /** @inheritdoc */
+        public bool $empty_input = true;
+
+        /** @inheritdoc */
+        function additional_html(): string
+        {
+            return '<div>' .
+                '<input type="submit" name="add_new_container" id="add_new_container" ' .
+                'class="button button-secondary button-large" ' .
+                'value="' . __('Add New Container', 'oes') . '">' .
+                '</div>';
         }
 
-        $formTableIndex = 1;
+        /** @inheritdoc */
+        function set_table_data_for_display(): void
+        {
+            $containers = oes_get_containers();
+            if (empty($containers)) {
+                return;
+            }
 
-        $objectOptions = ['none' => '-'];
-        foreach ($oes->post_types as $key => $postType) {
-            $objectOptions[$key] = $postType['label'];
-        }
-        foreach ($oes->taxonomies as $key => $taxonomy) {
-            $objectOptions[$key] = $taxonomy['label'];
-        }
+            $formTableIndex = 1;
 
-        foreach ($containers as $containerKey => $container) {
+            $objectOptions = ['none' => '-'];
+            foreach (oes_get_post_types() as $key => $postType) {
+                $objectOptions[$key] = $postType['label'];
+            }
+            foreach (oes_get_taxonomies() as $key => $taxonomy) {
+                $objectOptions[$key] = $taxonomy['label'];
+            }
 
-            $containerName = $container['page_parameters']['menu_title']
-                ?? __('Recently worked on', 'oes');
+            foreach ($containers as $containerKey => $container) {
 
-            $prefix = sprintf(
-                'oes_config[container][%s]',
-                esc_attr($containerKey)
-            );
+                $containerName = $container['page_parameters']['menu_title']
+                    ?? __('Recently worked on', 'oes');
 
-            $containerHidden = !empty($container['generated']) || !empty($container['hide']);
-
-            $deleteLink = '';
-
-            if (!$containerHidden) {
-
-                $deleteLink = sprintf(
-                    '<a href="#" class="oes-table-delete oes-highlighted button" data-table-id="%s">%s</a>',
-                    esc_attr($formTableIndex),
-                    esc_html__('Delete This Container', 'oes')
+                $prefix = sprintf(
+                    'oes_config[container][%s]',
+                    esc_attr($containerKey)
                 );
 
-                $formTableIndex++;
-            }
+                $containerHidden = !empty($container['generated']) || !empty($container['hide']);
 
-            $args = [];
-            if ($deleteLink) {
-                $args['p'] = $deleteLink;
-            }
+                $deleteLink = '';
 
-            $this->add_table_header($containerName, 'tag', $args);
+                if (!$containerHidden) {
 
-            $this->add_table_row(
-                [
-                    'title' => __('Name', 'oes'),
-                    'key' => $prefix . '[page_parameters][menu_title]',
-                    'value' => $containerName
-                ]
-            );
+                    $deleteLink = sprintf(
+                        '<a href="#" class="oes-table-delete oes-highlighted button" data-table-id="%s">%s</a>',
+                        esc_attr($formTableIndex),
+                        esc_html__('Delete This Container', 'oes')
+                    );
 
-            $this->add_table_row(
-                [
-                    'title' => __('Position', 'oes'),
-                    'key' => $prefix . '[page_parameters][position]',
-                    'value' => $container['page_parameters']['position'] ?? 20,
-                    'type' => 'number',
-                    'args' => [
-                        'min' => 1,
-                        'max' => 101
-                    ]
-                ]
-            );
+                    $formTableIndex++;
+                }
 
-            $this->add_table_row(
-                [
-                    'title' => __('Icon', 'oes'),
-                    'key' => $prefix . '[page_parameters][icon_url]',
-                    'value' => $container['page_parameters']['icon_url'] ?? 'container'
-                ]
-            );
+                $args = [];
+                if ($deleteLink) {
+                    $args['p'] = $deleteLink;
+                }
 
-            $this->add_table_row(
-                [
-                    'title' => __('Elements', 'oes'),
-                    'key' => $prefix . '[page_parameters][subpages]',
-                    'value' => $container['page_parameters']['subpages'] ?? [],
-                    'type' => 'select',
-                    'args' => [
-                        'options' => $objectOptions,
-                        'multiple' => true,
-                        'reorder' => true,
-                        'hidden' => true
-                    ]
-                ]
-            );
+                $this->add_table_header($containerName, 'tag', $args);
 
-            $this->add_table_row(
-                [
-                    'title' => __('Info Page Elements', 'oes'),
-                    'key' => $prefix . '[info_page][elements]',
-                    'value' => $container['info_page']['elements'] ?? [],
-                    'type' => 'select',
-                    'args' => [
-                        'options' => $objectOptions,
-                        'multiple' => true,
-                        'reorder' => true,
-                        'hidden' => true
-                    ]
-                ]
-            );
-
-            $this->add_table_row(
-                [
-                    'title' => __('Info Page Text', 'oes'),
-                    'key' => $prefix . '[info_page][label]',
-                    'value' => $container['info_page']['label'] ?? 'Title missing'
-                ]
-            );
-
-
-            if ($containerHidden) {
                 $this->add_table_row(
                     [
-                        'title' => __('Hide', 'oes'),
-                        'key' => $prefix . '[hide]',
-                        'value' => $container['hide'] ?? false,
-                        'type' => 'checkbox',
+                        'title' => __('Name', 'oes'),
+                        'key' => $prefix . '[page_parameters][menu_title]',
+                        'value' => $containerName
+                    ]
+                );
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Position', 'oes'),
+                        'key' => $prefix . '[page_parameters][position]',
+                        'value' => $container['page_parameters']['position'] ?? 20,
+                        'type' => 'number',
                         'args' => [
+                            'min' => 1,
+                            'max' => 101
+                        ]
+                    ]
+                );
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Icon', 'oes'),
+                        'key' => $prefix . '[page_parameters][icon_url]',
+                        'value' => $container['page_parameters']['icon_url'] ?? 'container'
+                    ]
+                );
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Elements', 'oes'),
+                        'key' => $prefix . '[page_parameters][subpages]',
+                        'value' => $container['page_parameters']['subpages'] ?? [],
+                        'type' => 'select',
+                        'args' => [
+                            'options' => $objectOptions,
+                            'multiple' => true,
+                            'reorder' => true,
                             'hidden' => true
                         ]
                     ]
                 );
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Info Page Elements', 'oes'),
+                        'key' => $prefix . '[info_page][elements]',
+                        'value' => $container['info_page']['elements'] ?? [],
+                        'type' => 'select',
+                        'args' => [
+                            'options' => $objectOptions,
+                            'multiple' => true,
+                            'reorder' => true,
+                            'hidden' => true
+                        ]
+                    ]
+                );
+
+                $this->add_table_row(
+                    [
+                        'title' => __('Info Page Text', 'oes'),
+                        'key' => $prefix . '[info_page][label]',
+                        'value' => $container['info_page']['label'] ?? 'Title missing'
+                    ]
+                );
+
+
+                if ($containerHidden) {
+                    $this->add_table_row(
+                        [
+                            'title' => __('Hide', 'oes'),
+                            'key' => $prefix . '[hide]',
+                            'value' => $container['hide'] ?? false,
+                            'type' => 'checkbox',
+                            'args' => [
+                                'hidden' => true
+                            ]
+                        ]
+                    );
+                }
             }
+        }
+
+        /** @inheritdoc */
+        function get_modified_post_data(array $data): array
+        {
+            if ($data['add_new_container'] ?? false) {
+                $data['oes_config']['container'][] = [
+                    'page_parameters' => [
+                        'menu_title' => 'New Container Title',
+                        'position' => 20,
+                        'icon_url' => 'container'
+                    ],
+                    'subpages' => [],
+                    'info_page' => [
+                        'elements' => [],
+                        'label' => 'Recently worked on'
+                    ]
+                ];
+            } elseif ($data['oes_hidden'] && (empty($data['oes_config']['container']))) {
+                $data['oes_config']['container'] = [];
+            }
+
+            foreach ($data['oes_config']['container'] as $key => $container) {
+                if (isset($container['hide'])) {
+                    $data['oes_config']['container'][$key]['hide'] = (
+                    $container['hide'] == 'hidden' ?
+                        false :
+                        $container['hide']);
+                }
+            }
+
+            return $data;
         }
     }
 
-    /** @inheritdoc */
-    function get_modified_post_data(array $data): array
-    {
-        if ($data['add_new_container'] ?? false) {
-            $data['oes_config']['container'][] = [
-                'page_parameters' => [
-                    'menu_title' => 'New Container Title',
-                    'position' => 20,
-                    'icon_url' => 'container'
-                ],
-                'subpages' => [],
-                'info_page' => [
-                    'elements' => [],
-                    'label' => 'Recently worked on'
-                ]
-            ];
-        } elseif ($data['oes_hidden'] && (empty($data['oes_config']['container']))) {
-            $data['oes_config']['container'] = [];
-        }
+    oes_add_tool(__NAMESPACE__ . '\Admin_Container', 'admin-container');
 
-        foreach ($data['oes_config']['container'] as $key => $container) {
-            if (isset($container['hide'])) {
-                $data['oes_config']['container'][$key]['hide'] = (
-                $container['hide'] == 'hidden' ?
-                    false :
-                    $container['hide']);
-            }
-        }
-
-        return $data;
-    }
-}
-
-// initialize
-register_tool('\OES\Admin\Tools\Admin_Container', 'admin-container');
+endif;

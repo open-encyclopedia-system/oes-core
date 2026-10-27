@@ -4,7 +4,7 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Admin\Module_Page')) :
+if (!class_exists(__NAMESPACE__ . '\Module_Page', false)) :
 
     /**
      * Class Module_Page
@@ -124,11 +124,11 @@ if (!class_exists('\OES\Admin\Module_Page')) :
             }
 
             if($this->admin_page){
-                OES()->module_pages[$this->key] = [
+                oes_add_module($this->key, [
                     'label' => $this->name,
                     'description' => $this->description,
                     'link' =>admin_url('admin.php?page=' . $this->setting)
-                ];
+                ]);
             }
         }
 

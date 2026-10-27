@@ -9,9 +9,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
+if (!class_exists(__NAMESPACE__ . '\Config', false)) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('LOD')) {
+if (!class_exists(__NAMESPACE__ . '\LOD', false)) {
 
     /**
      * Class LOD
@@ -36,11 +36,11 @@ if (!class_exists('LOD')) {
         /** @inheritdoc */
         function set_table_data_for_display()
         {
-            global $oes;
-
             $prefixOption = 'oes_api-' . $this->api_key;
 
-            if (isset($oes->apis[$this->api_key]) && $oes->apis[$this->api_key]->credentials) {
+            $api = oes_get_api($this->api_key);
+
+            if ($api && $api->credentials) {
 
                 $this->add_table_row(
                     [
@@ -75,7 +75,7 @@ if (!class_exists('LOD')) {
             if($popup){
 
                 $apiInterface = '\\OES\\API\\' . $this->api_key . '_Interface';
-                $properties = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
+                $properties = (class_exists($apiInterface, false) ? $apiInterface::PROPERTIES : []);
 
                 $options = [];
                 foreach($properties as $propertyKey => $propertyData){

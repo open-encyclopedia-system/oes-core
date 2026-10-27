@@ -90,6 +90,8 @@ function admin_functions(): void
 
     if (is_admin()) {
         add_action('admin_head', '\OES\Admin\set_page_icon');
+        add_action('admin_menu', '\OES\Admin\hide_menu');
+        add_action('admin_init', '\OES\Admin\add_separators');
         add_filter('admin_body_class', '\OES\Admin\set_oes_body_class');
         add_filter('plugin_action_links_' . OES_CORE_PLUGIN_BASENAME, '\OES\Admin\plugin_action_links');
     }
@@ -564,10 +566,10 @@ function search(): void
 function export(): void
 {
     include_once __DIR__ . '/rest/class-export.php';
-
     include_once __DIR__ . '/rest/register.php';
 
     include_once __DIR__ . '/rest/data/class-post.php';
+    include_once __DIR__ . '/rest/data/class-post_dc.php';
     include_once __DIR__ . '/rest/data/class-post_jsonld.php';
     include_once __DIR__ . '/rest/data/class-post_txt.php';
     include_once __DIR__ . '/rest/data/class-post_tei.php';

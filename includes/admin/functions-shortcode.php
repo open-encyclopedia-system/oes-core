@@ -75,7 +75,7 @@ function display_stored_shortcodes(string $prefix, array $parameters = []): void
 
     /* get stored shortcodes for post types (archive shortcodes) */
     $storedShortcodes = [];
-    foreach (OES()->post_types as $postTypeKey => $postTypeData) {
+    foreach (oes_get_post_types() as $postTypeKey => $postTypeData) {
         $option = get_option($optionName . '-' . $postTypeKey);
         if (!empty($option))
             if ($optionDecoded = json_decode($option, true)) {

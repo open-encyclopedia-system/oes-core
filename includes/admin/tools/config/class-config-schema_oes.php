@@ -4,187 +4,189 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
-if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
+if (!class_exists(__NAMESPACE__ . '\Config', false)) oes_include('admin/tools/config/class-config.php');
+if (!class_exists(__NAMESPACE__ . '\Schema', false)) oes_include('admin/tools/config/class-config-schema.php');
 
-if (class_exists('Schema_OES')) exit;
+if (!class_exists(__NAMESPACE__ . '\Schema_OES', false)) {
 
-/**
- * Class Schema_OES
- *
- * Implement the config tool for admin configurations.
- */
-class Schema_OES extends Schema
-{
-
-    /** @inheritdoc */
-    function set_table_data_for_display(): void
+    /**
+     * Class Schema_OES
+     *
+     * Implement the config tool for admin configurations.
+     */
+    class Schema_OES extends Schema
     {
-        global $oes;
 
-        $objects = $oes->{$this->component} ?? [];
-        $configs = [];
+        /** @inheritdoc */
+        function set_table_data_for_display(): void
+        {
+            $configs = [];
+            $objects = [];
 
-        if ($this->object == 'global') {
-            $this->prepare_global_options($configs);
+            if ($this->object == 'global') {
+                $this->prepare_global_options($configs);
+            }
+
+            if ($this->component == 'post_types') {
+                $objects = oes_get_post_types();
+                $this->prepare_post_type_options($objects, $configs);
+            }
+            elseif($this->component == 'taxonomies') {
+                $objects = oes_get_taxonomies();
+            }
+
+            $this->add_config_rows($configs);
+
+            if ($this->object != 'global') {
+
+                $this->add_table_header(__('Enable Integration Tabs', 'oes'), 'tag');
+
+                $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
+            }
         }
 
-        if ($this->component == 'post_types') {
-            $this->prepare_post_type_options($objects, $configs);
-        }
+        protected function prepare_global_options(array &$configs): void
+        {
+            $value = oes_get_publisher();
 
-        $this->add_config_rows($configs);
-
-        if ($this->object != 'global') {
-
-            $this->add_table_header(__('Enable Integration Tabs', 'oes'), 'tag');
-
-            $this->add_config_rows($this->prepare_integration_options($objects), 'integration');
-        }
-    }
-
-    protected function prepare_global_options(array &$configs): void
-    {
-        $value = oes_get_publisher();
-
-        $configs['publisher_type'] = [
-            'option_key' => ['oes_publisher', 'type'],
-            'label' => __('Format', 'oes'),
-            'type' => 'select',
-            'options' => ['options' => \OES\Model\get_schema_org_types()],
-            'value' => $value['type'] ?? 'Organization'
-        ];
-
-        $configs['publisher_name'] = [
-            'option_key' => ['oes_publisher', 'name'],
-            'label' => __('Name', 'oes'),
-            'type' => 'text',
-            'value' => $value['name'] ?? '',
-        ];
-
-        $configs['publisher_url'] = [
-            'option_key' => ['oes_publisher', 'url'],
-            'label' => __('URL', 'oes'),
-            'type' => 'text',
-            'value' => $value['url'] ?? '',
-        ];
-
-        $configs['publisher_description'] = [
-            'option_key' => ['oes_publisher', 'description'],
-            'label' => __('Description', 'oes'),
-            'type' => 'text',
-            'value' => $value['description'] ?? '',
-        ];
-    }
-
-    protected function prepare_post_type_options(array $objects, array &$configs): void
-    {
-        $objectData = $objects[$this->object] ?? [];
-
-        $versionLabel = '';
-        $versionKey = false;
-        if ($objectData['type'] == 'single-article') {
-            $versionKey = 'parent';
-            $versionLabel = __('Versioning, Parent Object', 'oes');
-        }
-
-        if (isset($objectData['version']) && !empty($objectData['version'])) {
-            $versionKey = 'version';
-            $versionLabel = __('Versioning, Version Object', 'oes');
-        }
-
-        if ($versionKey) {
-            $objectsSelect['none'] = '-';
-            foreach ($objects ?? [] as $postTypeKey => $postTypeData)
-                if ($postTypeKey !== $this->object)
-                    $objectsSelect[$postTypeKey] = $postTypeData['label'] ?? $postTypeKey;
-            $configs[$versionKey] = [
-                'label' => $versionLabel,
+            $configs['publisher_type'] = [
+                'option_key' => ['oes_publisher', 'type'],
+                'label' => __('Format', 'oes'),
                 'type' => 'select',
-                'options' => ['options' => $objectsSelect],
-                'value' => $objectData[$versionKey] ?? 'none'
+                'options' => ['options' => \OES\Model\get_schema_org_types()],
+                'value' => $value['type'] ?? 'Organization'
+            ];
+
+            $configs['publisher_name'] = [
+                'option_key' => ['oes_publisher', 'name'],
+                'label' => __('Name', 'oes'),
+                'type' => 'text',
+                'value' => $value['name'] ?? '',
+            ];
+
+            $configs['publisher_url'] = [
+                'option_key' => ['oes_publisher', 'url'],
+                'label' => __('URL', 'oes'),
+                'type' => 'text',
+                'value' => $value['url'] ?? '',
+            ];
+
+            $configs['publisher_description'] = [
+                'option_key' => ['oes_publisher', 'description'],
+                'label' => __('Description', 'oes'),
+                'type' => 'text',
+                'value' => $value['description'] ?? '',
             ];
         }
-    }
 
-    protected function prepare_integration_options(array $objects): array
-    {
-        $configs['lod'] = [
-            'label' => __('Linked Open Data', 'oes'),
-            'type' => 'checkbox',
-            'value' => $objects['lod'] ?? false,
-            'options' => ['hidden' => true]
-        ];
+        protected function prepare_post_type_options(array $objects, array &$configs): void
+        {
+            $objectData = $objects[$this->object] ?? [];
 
-        return $configs;
-    }
-
-    protected function resolve_option_key(string $key, array $option): string
-    {
-        $param = $option['option_key'] ?? null;
-
-        if (is_array($param) && !empty($param)) {
-            $param = array_map('sanitize_key', array_filter($param, fn($v) => $v !== '' && $v !== null));
-            if (!empty($param)) {
-                return 'oes_option[' . implode('][', $param) . ']';
+            $versionLabel = '';
+            $versionKey = false;
+            if ($objectData['type'] == 'single-article') {
+                $versionKey = 'parent';
+                $versionLabel = __('Versioning, Parent Object', 'oes');
             }
-        } elseif (is_string($param) && $param !== '') {
-            return 'oes_option[' . sanitize_key($param) . ']';
+
+            if (isset($objectData['version']) && !empty($objectData['version'])) {
+                $versionKey = 'version';
+                $versionLabel = __('Versioning, Version Object', 'oes');
+            }
+
+            if ($versionKey) {
+                $objectsSelect['none'] = '-';
+                foreach ($objects ?? [] as $postTypeKey => $postTypeData)
+                    if ($postTypeKey !== $this->object)
+                        $objectsSelect[$postTypeKey] = $postTypeData['label'] ?? $postTypeKey;
+                $configs[$versionKey] = [
+                    'label' => $versionLabel,
+                    'type' => 'select',
+                    'options' => ['options' => $objectsSelect],
+                    'value' => $objectData[$versionKey] ?? 'none'
+                ];
+            }
         }
 
-        return $this->component . '[' . $this->object . '][oes_args][' . $key . ']';
-    }
+        protected function prepare_integration_options(array $objects): array
+        {
+            $configs['lod'] = [
+                'label' => __('Linked Open Data', 'oes'),
+                'type' => 'checkbox',
+                'value' => $objects[$this->object]['lod'] ?? false,
+                'options' => ['hidden' => true]
+            ];
 
-    protected function add_config_rows(array $configs, string $filterKey = ''): void
-    {
-        $configs = apply_filters('oes/schema_general' . (empty($filterKey) ? '' : ('_' . $filterKey)),
-            $configs,
-            $this->object,
-            $this->oes_type,
-            $this->component,
-            $this->schema_type,
-        );
+            return $configs;
+        }
 
-        foreach ($configs as $key => $option) {
+        protected function resolve_option_key(string $key, array $option): string
+        {
+            $param = $option['option_key'] ?? null;
 
-            $optionKey = $this->resolve_option_key($key, $option);
+            if (is_array($param) && !empty($param)) {
+                $param = array_map('sanitize_key', array_filter($param, fn($v) => $v !== '' && $v !== null));
+                if (!empty($param)) {
+                    return 'oes_option[' . implode('][', $param) . ']';
+                }
+            } elseif (is_string($param) && $param !== '') {
+                return 'oes_option[' . sanitize_key($param) . ']';
+            }
 
-            $this->add_table_row(
-                [
-                    'title' => ($option['label'] ?? $optionKey),
-                    'key' => $optionKey,
-                    'value' => $option['value'] ?? '',
-                    'type' => $option['type'] ?? 'select',
-                    'args' => $option['options'] ?? []
-                ],
-                [
-                    'subtitle' => ($option['info'] ?? '')
-                ]
+            return $this->component . '[' . $this->object . '][oes_args][' . $key . ']';
+        }
+
+        protected function add_config_rows(array $configs, string $filterKey = ''): void
+        {
+            $configs = apply_filters('oes/schema_general' . (empty($filterKey) ? '' : ('_' . $filterKey)),
+                $configs,
+                $this->object,
+                $this->oes_type,
+                $this->component,
+                $this->schema_type,
             );
+
+            foreach ($configs as $key => $option) {
+
+                $optionKey = $this->resolve_option_key($key, $option);
+
+                $this->add_table_row(
+                    [
+                        'title' => ($option['label'] ?? $optionKey),
+                        'key' => $optionKey,
+                        'value' => $option['value'] ?? '',
+                        'type' => $option['type'] ?? 'select',
+                        'args' => $option['options'] ?? []
+                    ],
+                    [
+                        'subtitle' => ($option['info'] ?? '')
+                    ]
+                );
+            }
+        }
+
+        /** @inheritdoc */
+        function admin_post_tool_action(): void
+        {
+            if ($_POST[$this->component] ?? false) {
+                parent::admin_post_tool_action();
+            }
+            foreach ($_POST['oes_option'] ?? [] as $option => $value) {
+                if ($value === 'hidden') {
+                    $value = false;
+                } elseif ($value === 'on') {
+                    $value = true;
+                }
+
+                if (!oes_option_exists($option)) {
+                    add_option($option, $value);
+                } else {
+                    update_option($option, $value);
+                }
+            }
         }
     }
 
-    /** @inheritdoc */
-    function admin_post_tool_action(): void
-    {
-        if ($_POST[$this->component] ?? false) {
-            parent::admin_post_tool_action();
-        }
-        foreach ($_POST['oes_option'] ?? [] as $option => $value) {
-            if ($value === 'hidden') {
-                $value = false;
-            } elseif ($value === 'on') {
-                $value = true;
-            }
-
-            if (!oes_option_exists($option)) {
-                add_option($option, $value);
-            } else {
-                update_option($option, $value);
-            }
-        }
-    }
+    oes_add_tool(__NAMESPACE__ . '\Schema_OES', 'schema-oes');
 }
-
-// initialize
-register_tool('\OES\Admin\Tools\Schema_OES', 'schema-oes');

@@ -148,7 +148,6 @@ class Cache_List_Table extends OES_List_Table
     /** @inheritdoc */
     protected function get_data(): array
     {
-        global $oes;
         $data = [];
 
         global $wpdb;
@@ -171,13 +170,19 @@ class Cache_List_Table extends OES_List_Table
                 $languageKey = $row['cache_language'] ?? false;
                 $type = $row['cache_type'] ?? false;
 
-                $label =
-                    $oes->theme_index_pages[$objectType]['label']['language0'] ??
-                    $oes->taxonomies[$objectType]['label'] ??
-                    $oes->post_types[$objectType]['label'] ??
-                    __('Unknown Post Type', 'oes');
+                $label = null;
 
-                $language = $oes->languages[$languageKey ?? 'none']['label'] ?? ($languageKey ?? '-');
+                foreach (['oes_get_index_page', 'oes_get_post_type', 'oes_get_taxonomy'] as $getter) {
+                    $object = $getter($objectType);
+                    if ($object) {
+                        $label = $object['label']['language0'] ?? $objectType;
+                        break;
+                    }
+                }
+
+                $label = $label ?: __('Unknown Post Type', 'oes');
+
+                $language = oes_get_language($languageKey ?? 'none')['label'] ?? ($languageKey ?? '-');
 
                 $data[$name] = [
                     'id' => $name,

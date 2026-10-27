@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('GND_Interface')) {
+if (!class_exists(__NAMESPACE__ . '\GND_Interface', false)) {
 
     /**
      * GND Interface
@@ -319,5 +319,5 @@ if (!class_exists('GND_Interface')) {
         ];
     }
 
-    OES()->apis['gnd'] = new GND_Interface('gnd');
+    oes_add_api('\OES\API\GND_Interface', 'gnd');
 }

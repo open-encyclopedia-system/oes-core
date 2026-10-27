@@ -413,9 +413,7 @@ function oes_page_oes_settings_search_help_tabs($screen): void
  */
 function oes_page_oes_settings_theme_help_tabs($screen): void
 {
-    global $oes;
-
-    if($oes->block_theme){
+    if(oes_is_block_theme()){
         return;
     }
 
@@ -469,11 +467,11 @@ function oes_page_oes_settings_advanced_help_tabs($screen): void
     ]);
 
     $screen->add_help_tab([
-        'id' => 'oes_writing_container',
-        'title' => 'Container',
+        'id' => 'oes_writing_containers',
+        'title' => 'Containers',
         'content' => '<p>' .
-            __('The OES feature Container allows you to organize admin menu items into a new top menu with sub ' .
-                'menu items and to display currently worked on post objects. The container have to be initialized ' .
+            __('The OES feature Containers allows you to organize admin menu items into a new top menu with sub ' .
+                'menu items and to display currently worked on post objects. The containers have to be initialized ' .
                 'inside your OES application plugin to be available for configuration, see user manual for more information.', 'oes') .
             '<ul>' .
             '<li><b>Name</b>: ' . __('Name of the container as displayed in menu', 'oes') . '</li>' .

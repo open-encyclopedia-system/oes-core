@@ -21,20 +21,14 @@ use function OES\Versioning\get_parent_id;
  */
 function add_post_column(array $columns): array
 {
-    $oes = OES();
     global $post_type, $taxonomy;
 
     $screen = get_current_screen();
     $isTaxonomy = !empty($screen->taxonomy);
     $objectKey = $isTaxonomy ? $taxonomy : $post_type;
-    $configType = $isTaxonomy ? 'taxonomies' : 'post_types';
 
-    if (!isset($oes->{$configType}[$objectKey])) {
-        return $columns;
-    }
-
-    $adminColumns = $oes->{$configType}[$objectKey]['admin_columns'] ?? [];
-    $fieldOptions = $oes->{$configType}[$objectKey]['field_options'] ?? [];
+    $adminColumns = oes_get_object_param($objectKey, 'admin_columns', $isTaxonomy);
+    $fieldOptions = oes_get_object_param($objectKey, 'field_options', $isTaxonomy);
 
     $newColumns = [];
 
@@ -75,8 +69,8 @@ function add_post_column(array $columns): array
                     $newColumns[$columnKey] = $fieldOptions[$columnKey]['label'] ?? $columnKey;
                 } else {
                     // Post type context
-                    if ($taxonomyObj = get_taxonomy($columnKey)) {
-                        $newColumns[$columnKey] = $oes->taxonomies[$columnKey]['label'] ?? $taxonomyObj->label;
+                    if (taxonomy_exists($columnKey)) {
+                        $newColumns[$columnKey] = oes_get_taxonomy_label($columnKey);
                     } elseif (str_starts_with($columnKey, 'taxonomy-')) {
                         $newColumns[$columnKey] = $columns[$columnKey] ?? $columnKey;
                     } else {
@@ -297,13 +291,10 @@ function format_acf_field_value(array $fieldObject, $value, string $column, $obj
 function make_columns_sortable(array $columns): array
 {
     global $post_type, $taxonomy;
-    $oes = OES();
 
     $isTaxonomy = !empty(get_current_screen()->taxonomy);
 
-    $config = $isTaxonomy
-        ? $oes->taxonomies[$taxonomy] ?? null
-        : $oes->post_types[$post_type] ?? null;
+    $config = $isTaxonomy ? oes_get_taxonomy($taxonomy) : oes_get_post_type($post_type);
 
     if (!$config || empty($config['admin_columns'])) return $columns;
 
@@ -343,16 +334,18 @@ function columns_filter_dropdown(string $post_type): void
 {
     if (!is_admin()) return;
 
-    $oes = OES();
+    $config = oes_get_post_type($post_type);
 
-    if (empty($oes->post_types[$post_type]['admin_columns'])) return;
+    if(empty($config)){
+        return;
+    }
 
-    foreach ($oes->post_types[$post_type]['admin_columns'] as $columnKey) {
+    foreach ($config['admin_columns'] as $columnKey) {
         if (in_array($columnKey, ['cb', 'title', 'init', 'date', 'date_modified', 'parent'])) {
             continue;
         }
 
-        $fieldObject = $oes->post_types[$post_type]['field_options'][$columnKey] ?? null;
+        $fieldObject = $config['field_options'][$columnKey] ?? null;
         if (!$fieldObject || in_array($fieldObject['type'], ['link', 'relationship', 'text', 'textarea'])) {
             continue;
         }
@@ -468,17 +461,15 @@ function columns_pre_get_posts(WP_Query $query): void
         return;
     }
 
-    $oes = OES();
-
     // Get post type from query vars (fallback to empty string if not set)
     $post_type = $query->get('post_type') ?? '';
+    $adminColumns = oes_get_post_type_param($post_type, 'admin_columns');
 
     // Bail if no post type or no config for this post type
-    if (empty($post_type) || !isset($oes->post_types[$post_type]['admin_columns'])) {
+    if (empty($post_type) || empty($adminColumns)) {
         return;
     }
 
-    $adminColumns = $oes->post_types[$post_type]['admin_columns'];
     $orderby = $query->get('orderby');
 
     $metaQuery = [];

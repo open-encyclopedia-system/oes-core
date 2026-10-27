@@ -5,7 +5,7 @@ namespace OES\Navigation;
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 
-if (!class_exists('Language_Switch')) {
+if (!class_exists(__NAMESPACE__ . '\Language_Switch', false)) {
 
     /**
      * Class Language_Switch
@@ -52,9 +52,9 @@ if (!class_exists('Language_Switch')) {
         public function set_parameters(array $args): void
         {
             /* prepare languages */
-            global $oes_language, $oes;
+            global $oes_language;
             $this->language = $oes_language ?? 'language0';
-            foreach ($oes->languages as $languageKey => $languageData) {
+            foreach (oes_get_languages() as $languageKey => $languageData) {
                 if ($languageKey !== $this->language) {
                     $this->links[$languageKey] = [
                         'text' => $languageData['abb'] ?? $languageData['label'],
@@ -206,22 +206,25 @@ if (!class_exists('Language_Switch')) {
         public function links_for_data_other(): void
         {
             /* check if index page */
-            if ($this->current_url === get_site_url() . '/' . ($oes->theme_index['slug'] ?? 'index') . '/')
+
+            //TODO what is theme_index? theme_index_page?
+            global $oes_index;
+            $slug = oes_get_index_page($oes_index ?? '')['slug'] == 'index'; //$oes->theme_index['slug'] ?? 'index'
+            if ($this->current_url === get_site_url() . '/' . $slug . '/')
                 $this->links_for_index();
 
             /* check if oes page in different language */
-            global $oes;
-            foreach ($oes->languages as $languageData) {
+            $languages = oes_get_languages();
+            foreach ($languages as $languageData) {
 
                 /* check if index page in different language */
-                if ($this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' .
-                    ($oes->theme_index['slug'] ?? 'index') . '/')
+                if ($this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' . $slug . '/')
                     $this->links_for_index();
             }
 
             /* check if page is archive in different language */
-            foreach ($oes->post_types as $postType => $ignore)
-                foreach ($oes->languages as $languageData)
+            foreach (oes_get_post_types() as $postType => $ignore)
+                foreach ($languages as $languageData)
                     if ($this->current_url === get_site_url() . '/' . strtolower($languageData['abb']) . '/' .
                         (get_post_type_object($postType)->rewrite['slug'] ?? $postType) . '/') {
                         $this->links_for_archive();

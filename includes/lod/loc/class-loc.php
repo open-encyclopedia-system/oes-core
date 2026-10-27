@@ -9,9 +9,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
+if (!class_exists(__NAMESPACE__ . '\LOD', false)) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('LoC')) {
+if (!class_exists(__NAMESPACE__ . '\LoC', false)) {
 
     /**
      * Class LoC
@@ -40,5 +40,5 @@ if (!class_exists('LoC')) {
         }
     }
 
-    register_tool('\OES\Admin\Tools\LoC', 'loc');
+    oes_add_tool('\OES\Admin\Tools\LoC', 'loc');
 }

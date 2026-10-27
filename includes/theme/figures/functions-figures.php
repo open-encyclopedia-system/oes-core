@@ -76,9 +76,9 @@ function oes_get_image_field($image, string $option = 'title'): string
     if (is_int($image)) $image = acf_get_attachment($image);
     if (!is_array($image)) return '';
 
-    global $oes, $oes_language;
+    global $oes_language;
     $fieldValue = '';
-    if ($titleField = $oes->media_groups[$option] ?? false) {
+    if ($titleField = oes_get_media_param($option)) {
 
         /* check if image attribute or image field */
         if (isset($image[$titleField])) $fieldValue = (($titleField === 'date' && !empty($image['date'] ?? '')) ?
@@ -87,7 +87,7 @@ function oes_get_image_field($image, string $option = 'title'): string
         else {
 
             /* modify field key */
-            if ($oes_language !== 'language0' && isset($oes->media_groups['fields'][$titleField . '_' . $oes_language]))
+            if ($oes_language !== 'language0' && isset(oes_get_media_param('fields')[$titleField . '_' . $oes_language]))
                 $titleField = $titleField . '_' . $oes_language;
             $fieldValue = oes_get_field_display_value($titleField, $image['ID']);
         }
@@ -113,7 +113,7 @@ function oes_get_image_figcaption($image): string
         $figcaption = '<div class="oes-modal-figcaption">' . $title . '</div>';
     if($credit = oes_get_image_field($image, 'credit_label')) {
         $creditPrefix = '';
-        if($creditPrefixItem = (OES()->media_groups['credit_text'] ?? false)) {
+        if($creditPrefixItem = oes_get_media_param('credit_text')) {
             $creditPrefixText = oes_get_language_label_from_string($creditPrefixItem);
             if(!empty($creditPrefixText))
                 $creditPrefix = '<span class="oes-modal-figcaption-credit-prefix">' . $creditPrefixText . '</span>';
@@ -137,15 +137,15 @@ function oes_get_image_table_data($image): array
     if (is_int($image)) $image = acf_get_attachment($image);
     if (!is_array($image)) return [];
 
-    global $oes, $oes_language;
+    global $oes_language;
     $table = [];
-    foreach ($oes->media_groups['show_in_panel'] ?? [] as $fieldKey) {
+    foreach (oes_get_media_param('show_in_panel') as $fieldKey) {
 
         /* check if image attribute or image field */
         if (isset($image[$fieldKey])) {
 
             /* get label */
-            $label = $oes->media_groups['image'][$fieldKey][$oes_language] ?? '';
+            $label = oes_get_media_param('image')[$fieldKey][$oes_language] ?? '';
             if (empty($label))
                 $label = [
                     'title' => 'Title',
@@ -161,12 +161,12 @@ function oes_get_image_table_data($image): array
         } else {
 
             /* modify field key */
-            if ($oes_language !== 'language0' && isset($oes->media_groups['fields'][$fieldKey . '_' . $oes_language]))
+            if ($oes_language !== 'language0' && isset(oes_get_media_param('fields')[$fieldKey . '_' . $oes_language]))
                 $fieldKey = $fieldKey . '_' . $oes_language;
 
             $fieldObject = oes_get_field_object($fieldKey);
             $label = $fieldObject['label_translation_' . $oes_language] ?? ($fieldObject['label'] ?? $fieldKey);
-            foreach ($oes->media_groups['fields'] ?? [] as $mediaField)
+            foreach (oes_get_media_param('fields') as $mediaField)
                 if (isset($mediaField[$oes_language]) &&
                     isset($mediaField['key']) &&
                     $mediaField['key'] === $fieldKey)

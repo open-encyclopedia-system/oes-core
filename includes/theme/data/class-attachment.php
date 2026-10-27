@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Attachment')) {
+if (!class_exists('OES_Attachment', false)) {
 
     /**
      * Class OES_Attachment
@@ -36,7 +36,7 @@ if (!class_exists('OES_Attachment')) {
         /** @inheritdoc */
         public function set_title(): void
         {
-            $titleOption = OES()->media_groups['title'] ?? 'title';
+            $titleOption = oes_get_media_param('title', 'title');
             $this->title = match ($titleOption) {
                 'title' => get_the_title($this->object_ID),
                 'caption' => wp_get_attachment_caption($this->object_ID),

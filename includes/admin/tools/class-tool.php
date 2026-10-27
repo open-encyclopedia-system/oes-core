@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * @reviewed 3.0.0
- */
-
 namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -12,7 +7,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 use function OES\Admin\add_oes_notice_after_refresh;
 use function OES\Admin\get_admin_note_html;
 
-if (!class_exists('\OES\Admin\Tools\Tool')) {
+if (!class_exists(__NAMESPACE__ . '\Tool', false)) {
 
     /**
      * Class Tool
@@ -119,6 +114,7 @@ if (!class_exists('\OES\Admin\Tools\Tool')) {
             $this->additional_parameters($args);
             $this->validate_parameters();
             $this->register_hooks();
+            $this->register_additional_hooks();
         }
 
         /**
@@ -139,9 +135,9 @@ if (!class_exists('\OES\Admin\Tools\Tool')) {
         protected function register_hooks(): void
         {
             if (!empty($this->ajax_action)) {
-                add_action('wp_ajax_' . $this->ajax_action, [$this, 'handle_ajax']);
+                add_action("wp_ajax_$this->ajax_action", [$this, 'handle_ajax']);
             } elseif ($this->add_action) {
-                add_action("admin_post_{$this->action}", [$this, 'admin_post']);
+                add_action("admin_post_$this->action", [$this, 'admin_post']);
             }
 
             add_action('admin_notices', [$this, 'display_messages'], 10);
@@ -150,6 +146,15 @@ if (!class_exists('\OES\Admin\Tools\Tool')) {
             if (!empty($this->postbox['name'])) {
                 $this->initialize_postbox();
             }
+        }
+
+        /**
+         * Registers additional hooks (actions) for the tool.
+         *
+         * @return void
+         */
+        protected function register_additional_hooks(): void {
+
         }
 
         /**
@@ -216,6 +221,8 @@ if (!class_exists('\OES\Admin\Tools\Tool')) {
          */
         public function display(): void
         {
+            $this->prepare_form_attributes();
+            $this->prepare_form();
             $redirect = urlencode($_SERVER['REQUEST_URI']);
             ?>
             <form action="<?php echo esc_url($this->form_action); ?>"
@@ -230,6 +237,24 @@ if (!class_exists('\OES\Admin\Tools\Tool')) {
                 ?>
             </form>
             <?php
+        }
+
+        /**
+         * Prepares the form before it is rendered.
+         *
+         * @return void
+         */
+        protected function prepare_form(): void
+        {
+        }
+
+        /**
+         * Prepares the form's attributes before it is rendered.
+         *
+         * @return void
+         */
+        protected function prepare_form_attributes(): void
+        {
         }
 
         /**

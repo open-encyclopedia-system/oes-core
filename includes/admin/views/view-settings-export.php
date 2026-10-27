@@ -28,6 +28,19 @@
             </li>
 
             <li>
+                <strong>DC (Dublin Core) XML</strong> <?php
+                esc_html_e(' provides a deliberately minimal, metadata-only description of an object, ' .
+                        'covering core elements ' .
+                        'in the OAI-PMH-compatible “oai_dc” format. It does not contain the text itself ' .
+                        'but points to it through a persistent identifier such as a URL or DOI. Its simplicity has ' .
+                        'made it a common baseline for repositories, library catalogues, and aggregators, allowing ' .
+                        'the article to be discovered, harvested, and cited by systems that know nothing of its ' .
+                        'internal structure. ' .
+                        'More information available at', 'oes'
+                ); ?> <a href="https://www.dublincore.org/" target="_blank">https://www.dublincore.org/</a>.
+            </li>
+
+            <li>
                 <strong>JSON-LD (JSON Linked Data)</strong> <?php
                 esc_html_e('serves an orthogonal, interoperability-oriented function: it expresses ' .
                         'the data\'s content as structured, machine-readable data using shared ' .
@@ -130,9 +143,10 @@
             ?></p>
 
         <ul class="oes-list-disc">
-            <li><?php echo esc_url($url . '/v1/export/tei/1234'); ?></li>
-            <li><?php echo esc_url($url . '/v1/export/json/1234'); ?></li>
-            <li><?php echo esc_url($url . '/v1/export/text/1234'); ?></li>
+            <li><?php echo esc_url($url . '/wp-json/oes/v1/tei/1234'); ?></li>
+            <li><?php echo esc_url($url . '/wp-json/oes/v1/dc/1234'); ?></li>
+            <li><?php echo esc_url($url . '/wp-json/oes/v1/json/1234'); ?></li>
+            <li><?php echo esc_url($url . '/wp-json/oes/v1/text/1234'); ?></li>
         </ul>
 
         <p><?php
@@ -142,7 +156,7 @@
         </p>
 
         <ul class="oes-list-disc">
-            <li><?php echo esc_url($url . '/v1/export/raw/1234'); ?></li>
+            <li><?php echo esc_url($url . '/wp-json/oes/v1/raw/1234'); ?></li>
         </ul>
 
         <h2><?php esc_html_e('Open Questions (in development)', 'oes'); ?></h2>

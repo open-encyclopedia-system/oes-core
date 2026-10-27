@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOC_Interface')) {
+if (!class_exists(__NAMESPACE__ . '\LOC_Interface', false)) {
 
     /**
      * LOC Interface
@@ -30,5 +30,5 @@ if (!class_exists('LOC_Interface')) {
         ];
     }
 
-    OES()->apis['loc'] = new LOC_Interface('loc');
+    oes_add_api('\OES\API\LOC_Interface', 'loc');
 }

@@ -9,15 +9,13 @@ if (!defined('ABSPATH')) {
  */
 function oes_dashboard_hero_badges(): array
 {
-    global $oes;
-
     $badges = [];
 
     $badges[] = [
-            'text' => sprintf('%s (V%s)', __('OES Core', 'oes'), $oes->version),
+            'text' => sprintf('%s (V%s)', __('OES Core', 'oes'), oes_get_version()),
     ];
 
-    if (empty($oes->application_initialized)) {
+    if (!oes_application_initialized()) {
         $badges[] = [
                 'text' => __('Application not initialized', 'oes'),
                 'variant' => 'warning',

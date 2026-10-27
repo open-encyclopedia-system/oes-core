@@ -134,9 +134,8 @@ function render_menu_meta_box(): void
 
     /* add index pages */
     $objectID = 2;
-    $oes = OES();
-    if (!empty($oes->theme_index_pages))
-        foreach ($oes->theme_index_pages as $indexKey => $indexPage)
+    $indexPages = oes_get_index_pages();
+        foreach ($indexPages as $indexKey => $indexPage)
             $menuItems[] = (object)[
                 'ID' => ++$objectID,
                 'db_id' => 0,

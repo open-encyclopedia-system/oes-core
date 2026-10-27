@@ -139,7 +139,6 @@ class OES_List_Table extends WP_List_Table
             return [];
         }
 
-        global $oes;
         $data = [];
         foreach ($posts as $singlePost) {
 
@@ -149,7 +148,7 @@ class OES_List_Table extends WP_List_Table
                 'author' => get_the_author_meta('display_name', $singlePost->post_author),
                 'status' => $singlePost->post_status,
                 'updated' => $singlePost->post_modified,
-                'label' => $oes->post_types[$singlePost->post_type]['label'] ?? $singlePost->post_type,
+                'label' => oes_get_post_type_param($singlePost->post_type, 'label', $singlePost->post_type),
                 'post_type' => $singlePost->post_type,
                 'oes_status' => oes_get_select_field_value('field_oes_status', $postID),
                 'edit' => get_edit_post_link($postID),
@@ -300,10 +299,8 @@ class OES_List_Table extends WP_List_Table
      */
     protected function display_post_type_filter(): void
     {
-        global $oes;
-
         $options = ['all' => __('All Post Types', 'oes')];
-        foreach ($oes->post_types as $singlePostType => $singlePostTypeData) {
+        foreach (oes_get_post_types() as $singlePostType => $singlePostTypeData) {
             $options[$singlePostType] = $singlePostTypeData['label'] ?? $singlePostType;
         }
 

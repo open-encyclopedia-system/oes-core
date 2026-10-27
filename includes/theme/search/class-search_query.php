@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Search_Query')) {
+if (!class_exists('OES_Search_Query', false)) {
 
     /**
      * Class OES_Search_Query
@@ -69,9 +69,9 @@ if (!class_exists('OES_Search_Query')) {
         {
             if ($this->should_return_early()) return $join;
 
-            global $wpdb, $oes;
+            global $wpdb;
 
-            if (!empty($oes->search['postmeta_fields'])) {
+            if (!empty(oes_get_search_param('postmeta_fields'))) {
                 $join .= " LEFT JOIN {$wpdb->postmeta} ON ({$wpdb->posts}.ID = {$wpdb->postmeta}.post_id) ";
             }
 
@@ -94,7 +94,7 @@ if (!class_exists('OES_Search_Query')) {
          * 1. Apostrophe normalization – converts various apostrophe-like characters
          *    (e.g., `´`, `‘`, `’`, `‛`) into wildcards to improve search matching.
          * 2. Optional meta field searching – allows searching in additional postmeta
-         *    fields defined in $oes->search['postmeta_fields'].
+         *    fields.
          *
          * The method modifies the search to match partial terms using SQL LIKE,
          * automatically adding wildcards (%) if the search term contains apostrophes.
@@ -142,15 +142,13 @@ if (!class_exists('OES_Search_Query')) {
             }
 
             $metaKeys = [];
-            if (!empty($oes->search['postmeta_fields'])) {
-                foreach ($oes->search['postmeta_fields'] as $fields) {
+                foreach (oes_get_search_param('postmeta_fields', []) as $fields) {
                     foreach ((array)$fields as $field) {
                         if (!in_array($field, ['title', 'content', 'excerpt'], true)) {
                             $metaKeys[] = "'" . esc_sql($field) . "'";
                         }
                     }
                 }
-            }
 
             $metaSql = '';
             if ($metaKeys) {

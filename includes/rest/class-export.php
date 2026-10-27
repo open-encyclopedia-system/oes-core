@@ -4,7 +4,7 @@ namespace OES\Rest;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Rest\Export')) {
+if (!class_exists(__NAMESPACE__ . '\Export', false)) {
 
     /**
      * Class Export
@@ -30,10 +30,15 @@ if (!class_exists('\OES\Rest\Export')) {
             //Empty on design since OES 3.0.0
         }
 
+        public function export_array(): array
+        {
+            return $this->data ?? [];
+        }
+
         public function export_json(): void
         {
             if (!isset($this->data)) {
-                error_log('No data available');
+                oes_write_log('No data available');
                 return;
             }
 
@@ -45,7 +50,7 @@ if (!class_exists('\OES\Rest\Export')) {
         public function export_txt(): void
         {
             if (!isset($this->data)) {
-                error_log('No data available');
+                oes_write_log('No data available');
                 return;
             }
 
@@ -57,13 +62,27 @@ if (!class_exists('\OES\Rest\Export')) {
         /**
          * @throws \DOMException
          */
-        public function export_tei(int $postID): void
+        public function export_xml(int $postID): void
         {
             $preparedPost = $this->get_prepared_post($postID);
 
             if($preparedPost) {
                 $preparedPost->echo_dom();
             }
+        }
+
+        public function get_xml_array(int $postID): array
+        {
+            $preparedPost = $this->get_prepared_post($postID);
+
+            if($preparedPost) {
+                return [
+                    'schema' => $preparedPost->get_schema_paths(),
+                    'data' => $preparedPost->get_oai_dc_data()
+                ];
+            }
+
+            return [];
         }
 
         public function prepare_post_data(int $postID): void
@@ -76,7 +95,6 @@ if (!class_exists('\OES\Rest\Export')) {
         {
             $class = $this->get_class_name();
             return $class ? new $class($postID) : null;
-
         }
 
         protected function get_class_name(): ?string
@@ -85,8 +103,8 @@ if (!class_exists('\OES\Rest\Export')) {
                 ? '\OES\Rest\Post'
                 : '\OES\Rest\Post_' . $this->mode;
 
-            if(!class_exists($class)) {
-                error_log("Unknown export mode: {$this->mode}");
+            if(!class_exists($class, false)) {
+                oes_write_log("Unknown export mode: {$this->mode}");
                 return null;
             }
 

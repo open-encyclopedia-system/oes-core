@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
 use OES\Versioning as Versioning;
 
-if (!class_exists('OES_Archive')) {
+if (!class_exists('OES_Archive', false)) {
 
 
     /**
@@ -126,10 +126,10 @@ if (!class_exists('OES_Archive')) {
                 return;
             }
 
-            global $oes, $oes_is_index, $oes_language;
+            global $oes_language;
 
             $pageTitle = (
-                $oes->theme_index_pages[$oes_is_index]['label'][$oes_language]
+                oes_get_index_page()['label'][$oes_language]
                 ?? __('Index', 'oes')
             );
 
@@ -149,11 +149,11 @@ if (!class_exists('OES_Archive')) {
          */
         protected function is_index_archive(): bool
         {
-            global $oes, $oes_is_index;
+            global $oes_is_index;
 
             return (
                 !empty($oes_is_index) &&
-                ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '')
+                (oes_get_index_pages()['slug'] ?? '')
                 !== 'hidden'
             );
         }
@@ -898,7 +898,7 @@ if (!class_exists('OES_Archive')) {
 
                     $taxonomy = $termWP->taxonomy ?? null;
 
-                    $term = ($taxonomy && class_exists($taxonomy))
+                    $term = ($taxonomy && class_exists($taxonomy, false))
                         ? new $taxonomy($termID)
                         : new OES_Term($termID);
 
@@ -950,7 +950,7 @@ if (!class_exists('OES_Archive')) {
 
                 if ($archiveData) {
 
-                    $versionPost = class_exists($versionPostType)
+                    $versionPost = class_exists($versionPostType, false)
                         ? new $versionPostType($versionID, '', ['skip' => true])
                         : new OES_Post($versionID, '', ['skip' => true]);
 
@@ -963,7 +963,7 @@ if (!class_exists('OES_Archive')) {
 
                 if ($archiveData) {
 
-                    $versionPost = ($postType && class_exists($postType))
+                    $versionPost = ($postType && class_exists($postType, false))
                         ? new $postType($postID, '', ['skip' => true])
                         : new OES_Post($postID, '', ['skip' => true]);
 

@@ -101,15 +101,13 @@ function oes_update_post_meta($postID, string $fieldName, $value = '', string $d
  */
 function oes_get_display_title($object = false, array $args = [], string $option = ''): string
 {
-    global $oes, $oes_language;
-    $language = !empty($args['language'] ?? '') ? $args['language'] : $oes_language;
-    if(empty($language)) $language = 'language0';
+    $language = oes_normalize_language($args['language'] ?? '');
     $option = empty($option) ? ($args['option'] ?? 'title_display') : $option;
 
     /* check if post or term */
     if ($object instanceof WP_Term) {
 
-        $titleOption = $oes->taxonomies[$object->taxonomy]['display_titles'][$option] ?? false;
+        $titleOption = oes_get_taxonomy_titles($object->taxonomy, $option);
 
         $title = null;
         if (!$titleOption || $titleOption === 'wp-title') {
@@ -126,8 +124,8 @@ function oes_get_display_title($object = false, array $args = [], string $option
             /* modify option if language dependent */
             if (!empty($language) &&
                 $language !== 'language0' &&
-                isset($oes->taxonomies[$object->taxonomy]['field_options'][$titleOption . '_language1'])) {
-                $titleOption = $titleOption . '_language1';
+                    oes_get_taxonomy_field_config($object->taxonomy, $titleOption . '_' . $language)) {
+                $titleOption = $titleOption . '_' . $language;
             }
 
             $title = oes_get_field($titleOption, $object->taxonomy . '_' . $object->term_id);
@@ -141,12 +139,13 @@ function oes_get_display_title($object = false, array $args = [], string $option
 
         /* check if option is set */
         $postType = get_post_type($object);
-        $titleOption = $oes->post_types[$postType]['display_titles'][$option] ?? false;
+        $postTypeData = oes_get_post_type($postType);
+        $titleOption = $postTypeData['display_titles'][$option] ?? false;
 
         /* modify option if language dependent */
         if (!empty($language) && $language !== 'language0' &&
-            isset($oes->post_types[$postType]['field_options'][$titleOption]['language_dependent']) &&
-            $oes->post_types[$postType]['field_options'][$titleOption]['language_dependent'] &&
+            isset($postTypeData['field_options'][$titleOption]['language_dependent']) &&
+            $postTypeData['field_options'][$titleOption]['language_dependent'] &&
             oes_get_field($titleOption . '_' . $language, $object))
             $titleOption = $titleOption . '_' . $language;
 
@@ -158,8 +157,8 @@ function oes_get_display_title($object = false, array $args = [], string $option
         if($option === 'title_sorting_display' &&
             $titleOption !== 'wp-title' &&
             $titleOption !== 'default' &&
-            isset($oes->post_types[$postType]['field_options'][$titleOption]) &&
-            $oes->post_types[$postType]['field_options'][$titleOption]['type'] === 'date_picker'){
+            isset($postTypeData['field_options'][$titleOption]) &&
+            $postTypeData['field_options'][$titleOption]['type'] === 'date_picker'){
             $title = (string)(-(int)$title);
         }
 
@@ -670,29 +669,6 @@ function get_connected_terms_as_list(int $postID, string $taxonomy, array $args 
         (empty($termArray) ? '' : implode($args['separator'], $termArray));
 }
 
-
-/**
- * Get the label of a taxonomy as set in the global configuration options.
- *
- * @param string $taxonomy The taxonomy as string.
- * @param string $language The language. Default is 'english'.
- * @return false|mixed|string Returns the taxonomy label as set in the global configuration options.
- */
-function get_taxonomy_label(string $taxonomy, string $language = 'language0')
-{
-    /* skip if invalid taxonomy */
-    $taxonomyObject = get_taxonomy($taxonomy);
-    if (!$taxonomyObject) return false;
-
-    /* get label from global configuration */
-    $oes = OES();
-    $label = $oes->taxonomies[$taxonomy]['taxonomy_options']['label_translation_' . $language] ?? '';
-
-    /* return configuration label or taxonomy label if not found */
-    return empty($label) ? $taxonomyObject->label : $label;
-}
-
-
 /**
  * Add a single page. Display warning if the page already exists but is not published.
  *
@@ -744,16 +720,15 @@ function oes_get_page_ID_from_GUID(string $guid): ?string
  */
 function oes_get_post_language($postID, $postType = null): string
 {
-    $oes = OES();
     if(!$postType) {
         $postType = get_post_type($postID);
     }
 
     /* return early if only one language or empty post type */
-    if (sizeof($oes->languages) < 2 || empty($postType)) return 'language0';
+    if (!oes_has_multiple_languages() || empty($postType)) return 'language0';
 
     /* check if language is defined by schema */
-    $schemaLanguage = $oes->post_types[$postType]['language'] ?? '';
+    $schemaLanguage = oes_get_post_type_param($postType, 'language', '');
     if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
         if (str_starts_with($schemaLanguage, 'parent__')) {
             $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($postID)) ?? 'language0';
@@ -789,9 +764,8 @@ function oes_set_post_language($postID, string $language = 'language0'): bool
  */
 function oes_get_post_language_label($postID)
 {
-    $oes = OES();
     $languageKey = oes_get_post_language($postID);
-    return $languageKey ? $oes->languages[$languageKey]['label'] : false;
+    return oes_get_language_param($languageKey, 'label', false);
 }
 
 

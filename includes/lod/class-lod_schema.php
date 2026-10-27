@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
+if (!class_exists(__NAMESPACE__ . '\Schema', false)) oes_include('admin/tools/config/class-config-schema.php');
 
-if (!class_exists('LOD_Schema')) {
+if (!class_exists(__NAMESPACE__ . '\LOD_Schema', false)) {
 
     /**
      * Class LOD_Schema
@@ -46,23 +46,23 @@ if (!class_exists('LOD_Schema')) {
         /** @inheritdoc */
         function set_table_data_for_display()
         {
-            global $oes;
+            $api = oes_get_api($this->api_key);
 
-            if (!isset($oes->apis[$this->api_key])) {
+            if (is_null($api)) {
                 return;
             }
 
-            if (empty($oes->apis[$this->api_key]->config_options['properties']['options'] ?? [])) {
+            if (empty($api->config_options['properties']['options'] ?? [])) {
                 return;
             }
 
-            $postTypeData = $oes->post_types[$this->object] ?? [];
+            $postTypeData = oes_get_post_type($this->object);
 
             if (!isset($postTypeData['lod'])) {
                 return;
             }
 
-            $option = $oes->apis[$this->api_key]->config_options['properties'];
+            $option = $api->config_options['properties'];
 
             foreach ($postTypeData['field_options'] as $fieldKey => $field) {
 

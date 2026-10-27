@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Page')) {
+if (!class_exists('OES_Page', false)) {
 
     /**
      * Class OES_Page
@@ -38,20 +38,19 @@ if (!class_exists('OES_Page')) {
             }
 
             /* set theme labels */
-            $this->theme_labels = OES()->theme_labels;
+            $this->theme_labels = oes_get_theme_labels();
         }
 
 
         /** @inheritdoc */
         public function get_language(): string
         {
-            global $oes, $oes_language;
+            global $oes_language;
 
-            /* return early if only one language or empty post type */
-            if (sizeof($oes->languages) < 2 || empty($this->post_type)) return 'language0';
+            if (!oes_has_multiple_languages() || empty($this->post_type)) return 'language0';
 
             /* check if language is defined by schema */
-            $schemaLanguage = $oes->post_types[$this->post_type]['language'] ?? '';
+            $schemaLanguage = oes_get_post_type_param($this->post_type, 'language');
             if (!empty($schemaLanguage) && $schemaLanguage != 'none') {
                 if (str_starts_with($schemaLanguage, 'parent__'))
                     $language = oes_get_field(substr($schemaLanguage, 8), oes_get_parent_id($this->object_ID)) ?? 'language0';

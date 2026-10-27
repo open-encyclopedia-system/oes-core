@@ -35,12 +35,6 @@ function main_page(): void
 function get_manual_string(): string
 {
     $title = __('Guidelines', 'oes');
-
-    global $oes;
-    if(!$oes->application_initialized){
-        return $title;
-    }
-
     $name = oes_get_application_name(null, false);
 
     return strtoupper(str_replace('-', ' ', $name)) . ' ' . $title;

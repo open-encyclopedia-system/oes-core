@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Admin\Tools\Config')) oes_include('admin/tools/config/class-config.php');
+if (!class_exists('\OES\Admin\Tools\Config', false)) oes_include('admin/tools/config/class-config.php');
 
-if (!class_exists('Shortcode')) :
+if (!class_exists(__NAMESPACE__ . '\Shortcode', false)) :
 
     /**
      * Class Shortcode
@@ -16,37 +16,39 @@ if (!class_exists('Shortcode')) :
     class Shortcode extends \OES\Admin\Tools\Config
     {
         /** @var string Option prefix used for shortcode options. */
-        public string $option_prefix = '';
+        protected string $option_prefix = '';
 
         /** @var string Prefix used for shortcode names. */
-        public string $shortcode_prefix = '';
+        protected string $shortcode_prefix = '';
 
         /** @var array Parameters available for the shortcode. */
-        public array $shortcode_parameters = [];
+        protected array $shortcode_parameters = [];
 
         /** @var string Currently selected option name. */
-        public string $selected_option = '';
+        protected string $selected_option = '';
 
         /** @var int|bool Selected option index or false if none selected. */
-        public $selected_nr = 0;
+        protected $selected_nr = 0;
 
         /** @var array Additional submit buttons to display in the form. Format: [key => label] */
-        public array $additional_submits = [];
-
+        protected array $additional_submits = [];
 
         /** @inheritdoc */
-        public function initialize_parameters($args = []): void
+        protected function register_additional_hooks(): void
         {
             add_action('admin_enqueue_scripts', [$this, 'add_page_scripts']);
+        }
 
+        /** @inheritdoc */
+        protected function prepare_form(): void
+        {
             $this->form_action = admin_url('admin-post.php');
             $this->selected_option = sanitize_text_field($_GET['selected'] ?? '');
             $this->selected_nr = isset($_GET['nr']) ? (int) $_GET['nr'] : false;
         }
 
-
         /** @inheritdoc */
-        public function information_html(): string
+        protected function information_html(): string
         {
             if (empty($this->selected_option)) {
                 return '';
@@ -64,7 +66,7 @@ if (!class_exists('Shortcode')) :
 
 
         /** @inheritdoc */
-        public function submit_html(): string
+        protected function submit_html(): string
         {
             $html = '<div class="oes-shortcode-buttons"><p>';
 
@@ -137,7 +139,7 @@ if (!class_exists('Shortcode')) :
          *
          * @return string HTML for additional submit buttons.
          */
-        public function additional_submits(): string
+        protected function additional_submits(): string
         {
             $html = '';
             foreach ($this->additional_submits as $key => $label) {
@@ -153,7 +155,7 @@ if (!class_exists('Shortcode')) :
          *
          * @return mixed The stored shortcode data for the selected option and index.
          */
-        public function get_current_selected_option_value(): mixed
+        protected function get_current_selected_option_value(): mixed
         {
             return \OES\Shortcode\get_shortcode_option($this->selected_option, $this->selected_nr);
         }

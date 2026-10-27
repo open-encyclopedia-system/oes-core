@@ -1,10 +1,13 @@
 <?php
-global $oes;
 
 $object = $_GET['object'] ?? false;
 $type = $_GET['type'] ?? false;
 $component = $_GET['component'] ?? false;
-$oesType = $oes->$component[$object]['type'] ?? 'other';
+$oesType = 'other';
+
+if($component){
+    $oesType = oes_get_component_param($component, $object, 'type', 'other');
+}
 
 ?>
 <div class="wrap">
@@ -54,8 +57,8 @@ $oesType = $oes->$component[$object]['type'] ?? 'other';
                                 'display' => __('Display', 'oes'),
                         ];
 
-                        if ($oes->post_types[$object]['lod'] ?? false) {
-                            foreach ($oes->apis as $apiKey => $api) {
+                        if (oes_get_post_type_param($object, 'lod')) {
+                            foreach (oes_get_apis() as $apiKey => $api) {
                                 if (!empty($api->config_options['properties']['options'])) {
                                     $tabs[$apiKey] = $api->label;
                                 }

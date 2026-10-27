@@ -58,9 +58,8 @@ function show_language_box(): void
     if (is_user_logged_in() &&
         (get_user_meta(get_current_user_id(), 'oes_show_language_box', true) === '1')) {
 
-        global $oes, $oes_language;
         printf('<div class="oes-language-box oes-info-box no-print"><img src="%s" alt="Language Icon"/>%s</div>',
             esc_url(plugins_url(OES_BASENAME . '/assets/images/oes_cubic_18x18.png')),
-            esc_html($oes->languages[$oes_language]['label'] ?? $oes_language));
+            esc_html(oes_get_language()['label'] ?? __('Unknown language', 'oes')));
     }
 }

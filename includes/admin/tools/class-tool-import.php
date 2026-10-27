@@ -10,7 +10,7 @@ use WP_Term;
 use function OES\Admin\Operations\insert_operation;
 use function OES\Admin\Operations\get_max_temp;
 
-if (!class_exists('Import')) :
+if (!class_exists(__NAMESPACE__ . '\Import', false)) :
 
     /**
      * Class Import
@@ -858,7 +858,6 @@ if (!class_exists('Import')) :
         }
     }
 
-    // initialize
-    register_tool('\OES\Admin\Tools\Import', 'import');
+    oes_add_tool(__NAMESPACE__ . '\Import', 'import');
 
 endif;

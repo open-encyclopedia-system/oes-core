@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!class_exists('Operation')) :
+if (!class_exists(__NAMESPACE__ . '\Operation', false)) :
 
     /**
      * Class Operation

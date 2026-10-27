@@ -435,11 +435,10 @@ function oes_convert_date_to_formatted_string(
         $timestamp = strtotime(str_replace('/', '-', $date));
 
         /* Usually php intl is installed and included as extension. If not, use deprecated function strftotime. */
-        if (class_exists('IntlDateFormatter')) {
+        if (class_exists('IntlDateFormatter', false)) {
 
             if (empty($locale)) {
-                global $oes_language;
-                $locale = $args['date-locale'] ?? (OES()->languages[$oes_language ?? 'language0']['locale'] ?? 'en_BE');
+                $locale = $args['date-locale'] ?? oes_get_language_param('', 'locale',  'en_BE');
             }
 
             if ($dateType < 0) $dateType = get_option('oes_admin-date_format') ?? 1;

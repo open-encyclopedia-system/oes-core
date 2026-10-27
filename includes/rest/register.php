@@ -45,6 +45,18 @@ function apis(): void
         }
     ]);
 
+    register_rest_route('oes/v1', '/export/dc/(?P<id>\d+)', [
+        'methods' => 'GET',
+        'permission_callback' => '__return_true',
+        'callback' => function ($request) {
+
+            $exporter = new \OES\Rest\Export('dc');
+            $exporter->export_xml($request['id']);
+
+            exit;
+        }
+    ]);
+
     register_rest_route('oes/v1', '/export/txt/(?P<id>\d+)', [
         'methods' => 'GET',
         'permission_callback' => '__return_true',
@@ -64,7 +76,7 @@ function apis(): void
         'callback' => function ($request) {
 
             $exporter = new \OES\Rest\Export('tei');
-            $exporter->export_tei($request['id']);
+            $exporter->export_xml($request['id']);
             exit;
         }
     ]);
@@ -117,7 +129,6 @@ function apis(): void
 
 function serve_vocab(\WP_REST_Request $request)
 {
-
     $path = OES_CORE_PLUGIN . '/includes/rest/vocab.jsonld';
     $vocab = json_decode(file_get_contents($path), true);
 
@@ -161,8 +172,7 @@ function lod(): void
         'methods' => 'GET',
         'callback' => function () {
 
-            $oes = OES();
-            $apis = $oes->apis ?? [];
+            $apis = oes_get_apis();
 
             $data = [];
 

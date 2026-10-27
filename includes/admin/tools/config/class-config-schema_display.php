@@ -4,187 +4,183 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Config')) oes_include('admin/tools/config/class-config.php');
-if (!class_exists('Schema')) oes_include('admin/tools/config/class-config-schema.php');
+if (!class_exists(__NAMESPACE__ . '\Config', false)) oes_include('admin/tools/config/class-config.php');
+if (!class_exists(__NAMESPACE__ . '\Schema', false)) oes_include('admin/tools/config/class-config-schema.php');
 
-if (class_exists('Schema_Display')) exit;
-
-/**
- * Class Schema_Display
- *
- * Implement the config tool for admin configurations.
- */
-class Schema_Display extends Schema
-{
-
-    protected bool $public = true;
-
-    /** @inheritdoc */
-    function empty(): string
-    {
-        if ($this->public) {
-            return parent::empty();
-        }
-
-        return __('Post type is not configured to be displayed publicly.', 'oes');
-    }
-
-    /** @inheritdoc */
-    function set_table_data_for_display(): void
-    {
-        if ($this->component == 'post_types') {
-            $this->set_post_type();
-        } elseif ($this->component == 'taxonomies') {
-            $this->set_taxonomies();
-        }
-    }
+if (!class_exists(__NAMESPACE__ . '\Schema_Display', false)) {
 
     /**
-     * Set post type options.
+     * Class Schema_Display
      *
-     * @return void
+     * Implement the config tool for admin configurations.
      */
-    protected function set_post_type(): void
+    class Schema_Display extends Schema
     {
-        if (!$this->temp_check_if_post_type_public($this->object)) {
-            $this->public = false;
-            return;
+
+        protected bool $public = true;
+
+        /** @inheritdoc */
+        function empty(): string
+        {
+            if ($this->public) {
+                return parent::empty();
+            }
+
+            return __('Post type is not configured to be displayed publicly.', 'oes');
         }
 
-        global $oes;
-        $postTypeData = $oes->post_types[$this->object] ?? [];
+        /** @inheritdoc */
+        function set_table_data_for_display(): void
+        {
+            if ($this->component == 'post_types') {
+                $this->set_post_type();
+            } elseif ($this->component == 'taxonomies') {
+                $this->set_taxonomies();
+            }
+        }
 
-        // get options
-        $selects = oes_get_object_select_options($this->object);
-        $titleOptions = $selects['title'] ?? [];
-        $options = $selects['all'] ?? [];
+        /**
+         * Set post type options.
+         *
+         * @return void
+         */
+        protected function set_post_type(): void
+        {
+            if (!$this->temp_check_if_post_type_public($this->object)) {
+                $this->public = false;
+                return;
+            }
 
-        $keyPrefix = 'post_types[' . $this->object . '][oes_args]';
+            $postTypeData = oes_get_post_type($this->object);
+            $selects = oes_get_object_select_options($this->object);
+            $titleOptions = $selects['title'] ?? [];
+            $options = $selects['all'] ?? [];
 
-        $this->add_table_row(
-            [
-                'title' => __('Template', 'oes'),
-                'key' => $keyPrefix . '[type]',
-                'value' => $postTypeData['type'] ?? 'index',
-                'type' => 'select',
-                'args' => ['options' => \OES\Model\get_oes_types()]
-            ]
-        );
+            $keyPrefix = 'post_types[' . $this->object . '][oes_args]';
 
-        $this->add_table_header(__('Single', 'oes'), 'tag');
-
-        $this->render_select_row(
-            __('Metadata', 'oes'),
-            $keyPrefix . '[metadata]',
-            $postTypeData['metadata'] ?? [],
-            $options,
-            true);
-
-        $this->add_table_header(__('Archive', 'oes'), 'tag');
-
-        $this->render_select_row(
-            __('Title for list display', 'oes'),
-            $keyPrefix . '[display_titles][title_archive_display]',
-            $postTypeData['display_titles']['title_archive_display'] ?? 'wp-title',
-            $titleOptions
-        );
-
-        $this->render_select_row(
-            __('Sorting title for list display', 'oes'),
-            $keyPrefix . '[display_titles][title_sorting_display]',
-            $postTypeData['display_titles']['title_sorting_display'] ?? 'wp-title',
-            $titleOptions
-        );
-
-        $this->add_table_row(
-            [
-                'title' => __('Display archive as single page list', 'oes'),
-                'key' => $keyPrefix . '[archive_on_single_page]',
-                'value' => $postTypeData['archive_on_single_page'] ?? false,
-                'type' => 'checkbox',
-                'args' => [
-                    'hidden' => true
+            $this->add_table_row(
+                [
+                    'title' => __('Template', 'oes'),
+                    'key' => $keyPrefix . '[type]',
+                    'value' => $postTypeData['type'] ?? 'index',
+                    'type' => 'select',
+                    'args' => ['options' => \OES\Model\get_oes_types()]
                 ]
-            ]
-        );
+            );
 
-        $this->render_select_row(
-            __('Archive Data', 'oes'),
-            $keyPrefix . '[archive]',
-            $postTypeData['archive'] ?? [],
-            $options,
-            true
-        );
+            $this->add_table_header(__('Single', 'oes'), 'tag');
 
-        $this->render_select_row(
-            __('Archive Filter', 'oes'),
-            $keyPrefix . '[archive_filter]',
-            $postTypeData['archive_filter'] ?? [],
-            array_merge(['alphabet' => 'Alphabet'], $options),
-            true
-        );
-    }
+            $this->render_select_row(
+                __('Metadata', 'oes'),
+                $keyPrefix . '[metadata]',
+                $postTypeData['metadata'] ?? [],
+                $options,
+                true);
 
-    /**
-     * Set taxonomy options.
-     *
-     * @return void
-     */
-    protected function set_taxonomies(): void
-    {
-        global $oes;
-        $taxonomyData = $oes->taxonomies[$this->object] ?? [];
+            $this->add_table_header(__('Archive', 'oes'), 'tag');
 
-        $selects = oes_get_object_select_options($this->object, false, ['title' => true]);
-        $titleOptions = $selects['title'] ?? [];
+            $this->render_select_row(
+                __('Title for list display', 'oes'),
+                $keyPrefix . '[display_titles][title_archive_display]',
+                $postTypeData['display_titles']['title_archive_display'] ?? 'wp-title',
+                $titleOptions
+            );
 
-        $keyPrefix = 'taxonomies[' . $this->object . '][oes_args]';
+            $this->render_select_row(
+                __('Sorting title for list display', 'oes'),
+                $keyPrefix . '[display_titles][title_sorting_display]',
+                $postTypeData['display_titles']['title_sorting_display'] ?? 'wp-title',
+                $titleOptions
+            );
 
-        $this->render_select_row(
-            __('Title for list display', 'oes'),
-            $keyPrefix . '[display_titles][title_archive_display]',
-            $taxonomyData['display_titles']['title_archive_display'] ?? 'wp-title',
-            $titleOptions
-        );
+            $this->add_table_row(
+                [
+                    'title' => __('Display archive as single page list', 'oes'),
+                    'key' => $keyPrefix . '[archive_on_single_page]',
+                    'value' => $postTypeData['archive_on_single_page'] ?? false,
+                    'type' => 'checkbox',
+                    'args' => [
+                        'hidden' => true
+                    ]
+                ]
+            );
 
-        $this->render_select_row(
-            __('Sorting title for list display', 'oes'),
-            $keyPrefix . '[display_titles][title_sorting_display]',
-            $taxonomyData['display_titles']['title_sorting_display'] ?? 'wp-title',
-            $titleOptions
-        );
+            $this->render_select_row(
+                __('Archive Data', 'oes'),
+                $keyPrefix . '[archive]',
+                $postTypeData['archive'] ?? [],
+                $options,
+                true
+            );
 
-        //@oesDevelopment Add more filter options.
-        $this->render_select_row(
-            __('Archive Filter', 'oes'),
-            $keyPrefix . '[archive_filter]',
-            $taxonomyData['archive_filter'] ?? [],
-            ['alphabet' => 'Alphabet'],
-            true
-        );
-    }
-
-    /**
-     * @oesDevelopment use instead of is_post_type_viewable()
-     *
-     * @param string $post_type
-     * @return bool
-     */
-    protected function temp_check_if_post_type_public(string $post_type): bool
-    {
-        $post_type = get_post_type_object($post_type);
-
-        if (!$post_type) {
-            return false;
+            $this->render_select_row(
+                __('Archive Filter', 'oes'),
+                $keyPrefix . '[archive_filter]',
+                $postTypeData['archive_filter'] ?? [],
+                array_merge(['alphabet' => 'Alphabet'], $options),
+                true
+            );
         }
 
-        if (!is_object($post_type)) {
-            return false;
+        /**
+         * Set taxonomy options.
+         *
+         * @return void
+         */
+        protected function set_taxonomies(): void
+        {
+            $taxonomyData = oes_get_taxonomy($this->object);
+
+            $selects = oes_get_object_select_options($this->object, false, ['title' => true]);
+            $titleOptions = $selects['title'] ?? [];
+
+            $keyPrefix = 'taxonomies[' . $this->object . '][oes_args]';
+
+            $this->render_select_row(
+                __('Title for list display', 'oes'),
+                $keyPrefix . '[display_titles][title_archive_display]',
+                $taxonomyData['display_titles']['title_archive_display'] ?? 'wp-title',
+                $titleOptions
+            );
+
+            $this->render_select_row(
+                __('Sorting title for list display', 'oes'),
+                $keyPrefix . '[display_titles][title_sorting_display]',
+                $taxonomyData['display_titles']['title_sorting_display'] ?? 'wp-title',
+                $titleOptions
+            );
+
+            //@oesDevelopment Add more filter options.
+            $this->render_select_row(
+                __('Archive Filter', 'oes'),
+                $keyPrefix . '[archive_filter]',
+                $taxonomyData['archive_filter'] ?? [],
+                ['alphabet' => 'Alphabet'],
+                true
+            );
         }
 
-        return $post_type->public;
+        /**
+         * @oesDevelopment use instead of is_post_type_viewable()
+         *
+         * @param string $post_type
+         * @return bool
+         */
+        protected function temp_check_if_post_type_public(string $post_type): bool
+        {
+            $post_type = get_post_type_object($post_type);
+
+            if (!$post_type) {
+                return false;
+            }
+
+            if (!is_object($post_type)) {
+                return false;
+            }
+
+            return $post_type->public;
+        }
     }
+
+    oes_add_tool(__NAMESPACE__ . '\Schema_Display', 'schema-display');
 }
-
-// initialize
-register_tool('\OES\Admin\Tools\Schema_Display', 'schema-display');

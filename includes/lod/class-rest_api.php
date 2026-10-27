@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Rest_API')) {
+if (!class_exists(__NAMESPACE__ . '\Rest_API', false)) {
 
     /**
      * Rest API
@@ -235,7 +235,7 @@ if (!class_exists('Rest_API')) {
             }
 
             $apiInterface = '\\OES\\API\\' . $this->identifier . '_Interface';
-            $properties = (class_exists($apiInterface) ? $apiInterface::PROPERTIES : []);
+            $properties = (class_exists($apiInterface, false) ? $apiInterface::PROPERTIES : []);
             $lang = $this->get_entry_language();
 
             $transformedData = [];

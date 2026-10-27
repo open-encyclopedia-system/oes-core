@@ -51,15 +51,14 @@ class Manager {
             return;
         }
 
-        global $oes;
         $postType = $post->post_type;
 
-        if (!isset($oes->post_types[$postType])) {
+        if (!oes_has_post_type($postType)) {
             return;
         }
 
         $class = $postType . '_Post_Archive';
-        if (!class_exists($class)) {
+        if (!class_exists($class, false)) {
             $class = 'OES_Post_Archive';
         }
 
@@ -94,13 +93,12 @@ class Manager {
             }
         }
 
-        global $oes;
-        if (!isset($oes->taxonomies[$term->taxonomy])) {
+        if (!oes_has_taxonomy($term->taxonomy)) {
             return;
         }
 
         $class = $term->taxonomy . '_Taxonomy_Archive';
-        if (!class_exists($class)) {
+        if (!class_exists($class, false)) {
             $class = 'OES_Taxonomy_Archive';
         }
 
@@ -121,10 +119,8 @@ class Manager {
         string $postLanguage = 'all'
     ): void {
 
-        global $oes;
-
         $languages = $postLanguage === 'all'
-            ? array_keys($oes->languages)
+            ? array_keys(oes_get_languages())
             : [$postLanguage];
 
         $keys = array_map(
@@ -138,15 +134,15 @@ class Manager {
             $this->delete($key);
         }
 
-        foreach ($oes->theme_index_pages as $indexKey => $indexData) {
+        foreach (oes_get_index_pages() as $indexKey => $indexData) {
             if (in_array($objectKey, $indexData['objects'] ?? [])) {
 
                 $archiveClass = $indexKey . '_Index_Archive';
-                if (!class_exists($archiveClass)) $archiveClass = 'OES_Index_Archive';
+                if (!class_exists($archiveClass, false)) $archiveClass = 'OES_Index_Archive';
 
                 $keys = array_map(
                     static fn(string $language): string => 'oes_cache-' . $indexKey . '-' . sanitize_key($archiveClass) . '-' . sanitize_key($language),
-                    array_keys($oes->languages)
+                    array_keys(oes_get_languages())
                 );
 
                 $keys = $this->modify_cache_keys($keys, ['index' => $indexKey, 'class' => $archiveClass]);

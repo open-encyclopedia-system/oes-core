@@ -9,9 +9,9 @@ namespace OES\Admin;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Page')) oes_include('admin/pages/class-page.php');
+if (!class_exists(__NAMESPACE__ . '\Page', false)) oes_include('admin/pages/class-page.php');
 
-if (!class_exists('Container')) :
+if (!class_exists(__NAMESPACE__ . '\Container', false)) :
 
     /**
      * Class Container
@@ -83,10 +83,7 @@ if (!class_exists('Container')) :
          */
         protected function get_elements(): array
         {
-            global $oes;
-
-            // Check if key is post type
-            $postType = $oes->post_types[$this->key] ?? false;
+            $postType = oes_get_post_type($this->key) ?? false;
             if (!$postType) {
                 return [];
             }
@@ -322,8 +319,6 @@ if (!class_exists('Container')) :
          */
         protected function render_post_type_summary($postType, array $additionalArgs = []): array
         {
-            global $oes;
-
             $headerParts = [];
             $bodyParts = [];
 
@@ -340,7 +335,7 @@ if (!class_exists('Container')) :
             $posts = $this->modify_posts($queriedPosts, $postType->name, $additionalArgs);
 
             $button = '';
-            if (empty($oes->post_types[$postType->name]['parent'])) {
+            if (!oes_get_post_type_param($postType->name, 'parent')) {
                 $button = oes_get_html_anchor(
                     esc_html($postType->labels->add_new),
                     esc_url('post-new.php?post_type=' . $postType->name),

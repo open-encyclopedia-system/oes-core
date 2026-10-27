@@ -155,3 +155,61 @@ function toggle_feature(): void
 
     exit;
 }
+
+/**
+ * Hides default WordPress admin menu pages that are not enabled in the OES configuration.
+ *
+ * @return void
+ */function hide_menu(): void
+{
+    $config = oes_get_admin_param('include_menu');
+
+    if(!in_array('comments', $config)){
+        remove_menu_page('edit-comments.php'); // Comments7
+    }
+
+    if(!in_array('posts', $config)){
+        remove_menu_page('edit.php'); // Posts7
+    }
+}
+
+/**
+ * Adds menu separators to the WordPress admin menu at the configured positions.
+ *
+ * Reads the `separators` admin parameter (a list of menu positions) and inserts a
+ * separator item at each one. If a position is already occupied, a fractional key
+ * is used (e.g. `"20.1"`), with extra `1` characters appended until the key is free,
+ * so existing menu items are never overwritten. The menu is re-sorted by key afterwards.
+ *
+ * @global array $menu The global WordPress admin menu array.
+ *
+ * @return void
+ */
+function add_separators(): void
+{
+    global $menu;
+
+    $config = oes_get_admin_param('separators');
+    if (!is_array($config) || !is_array($menu)) {
+        return;
+    }
+
+    foreach ($config as $position) {
+        $position = (int) $position;
+
+        $key = isset($menu[$position]) ? "$position.1" : $position;
+        while (isset($menu[$key])) {
+            $key .= '1';
+        }
+
+        $menu[$key] = [
+            '',
+            'read',
+            "separator-oes-$position",
+            '',
+            'wp-menu-separator',
+        ];
+    }
+
+    ksort($menu);
+}

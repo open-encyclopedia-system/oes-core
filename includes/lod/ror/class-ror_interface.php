@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('ROR_Interface')) {
+if (!class_exists(__NAMESPACE__ . '\ROR_Interface', false)) {
 
     /**
      * ROR Interface
@@ -90,5 +90,5 @@ if (!class_exists('ROR_Interface')) {
 
     }
 
-    OES()->apis['ror'] = new ROR_Interface('ror');
+    oes_add_api('\OES\API\ROR_Interface', 'ror');
 }

@@ -7,7 +7,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Panel')) {
+if (!class_exists('OES_Panel', false)) {
 
     /**
      * Class OES_Panel

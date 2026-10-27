@@ -440,8 +440,7 @@ function oes_get_object_select_options(
 ): array {
     if (empty($object)) return [];
 
-    $oes        = OES();
-    $objectData = $isPostType ? ($oes->post_types[$object] ?? []) : ($oes->taxonomies[$object] ?? []);
+    $objectData = $isPostType ? oes_get_post_type($object) : oes_get_taxonomy($object);
     if (empty($objectData)) return [];
 
     $allFields = oes_get_all_object_fields($object, $fieldTypes, true);
@@ -485,7 +484,7 @@ function oes_get_object_select_options(
                 if (is_string($checkForPostTypes)) $checkForPostTypes = [$checkForPostTypes];
                 foreach ($checkForPostTypes as $singlePostType) {
                     $postTypesRelationshipsOptions['post_type__' . $singlePostType] =
-                        __('Post Type: ', 'oes') . ($oes->post_types[$singlePostType]['label'] ?? $singlePostType);
+                        __('Post Type: ', 'oes') . oes_get_post_type_param($singlePostType, 'label', $singlePostType);
                 }
             }
         }
@@ -497,7 +496,7 @@ function oes_get_object_select_options(
     if ($isPostType && (!$args || ($args['taxonomies'] ?? false))) {
         foreach (get_post_type_object($object)->taxonomies ?? [] as $taxonomy) {
             $taxonomyOptions['taxonomy__' . $taxonomy] =
-                __('Taxonomy: ', 'oes') . ($oes->taxonomies[$taxonomy]['label'] ?? $taxonomy);
+                __('Taxonomy: ', 'oes') . (oes_get_taxonomy($taxonomy)['label'] ?? $taxonomy);
         }
         $addSection('taxonomies', $taxonomyOptions);
     }
@@ -509,7 +508,7 @@ function oes_get_object_select_options(
 
     if ($isPostType && !empty($objectData['parent'])) {
         if (!$args || ($args['parent'] ?? false)) {
-            foreach ($oes->post_types[$objectData['parent']]['field_options'] ?? [] as $parentFieldKey => $parentField) {
+            foreach (oes_get_post_type_param($objectData['parent'], 'field_options', []) as $parentFieldKey => $parentField) {
                 if (!isset($parentField['type'])) continue;
                 if (in_array($parentField['type'], $excludedParentTypes)) continue;
                 if (!empty($fieldTypes) && !in_array($parentField['type'], $fieldTypes)) continue;
@@ -523,7 +522,7 @@ function oes_get_object_select_options(
         if (!$args || ($args['parent-taxonomies'] ?? false)) {
             foreach (get_post_type_object($objectData['parent'])->taxonomies ?? [] as $taxonomy) {
                 $parentTaxonomyOptions['parent_taxonomy__' . $taxonomy] =
-                    __('Parent Taxonomy: ', 'oes') . ($oes->taxonomies[$taxonomy]['label'] ?? $taxonomy);
+                    __('Parent Taxonomy: ', 'oes') . (oes_get_taxonomy($taxonomy)['label'] ?? $taxonomy);
             }
             $addSection('parent-taxonomies', $parentTaxonomyOptions);
         }

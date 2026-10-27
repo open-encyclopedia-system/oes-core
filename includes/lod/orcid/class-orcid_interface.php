@@ -4,7 +4,7 @@ namespace OES\API;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('ORCID_Interface')) {
+if (!class_exists(__NAMESPACE__ . '\ORCID_Interface', false)) {
 
     /**
      * ORCID Interface
@@ -50,5 +50,5 @@ if (!class_exists('ORCID_Interface')) {
         ];
     }
 
-    OES()->apis['orcid'] = new ORCID_Interface('orcid');
+    oes_add_api('\OES\API\ORCID_Interface', 'orcid');
 }

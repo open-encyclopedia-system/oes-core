@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Taxonomy')) {
+if (!class_exists('OES_Taxonomy', false)) {
 
     /**
      * @deprecated 3.0.0 Use OES_Term instead.

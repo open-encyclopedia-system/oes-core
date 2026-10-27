@@ -24,7 +24,7 @@ function calculate_post_args_from_formula($postID): void
     $currentPostType = get_post_type($postID);
     $args = [];
 
-    $postData = OES()->post_types[$currentPostType] ?? [];
+    $postData = oes_get_post_type($currentPostType);
 
     $patternTitle = $postData['pattern_title'] ?? null;
 
@@ -133,7 +133,7 @@ function calculate_field_value_from_formula($value, $postID, array $field, bool 
         return $value;
     }
 
-    $pattern = OES()->post_types[get_post_type($postID)]['field_options'][$field['key']]['pattern'] ?? [];
+    $pattern = oes_get_post_type(get_post_type($postID))['field_options'][$field['key']]['pattern'] ?? [];
 
     if(!$pattern) {
         return $value;

@@ -4,7 +4,7 @@ namespace OES\Rest;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Rest\Post_JSONLD') && class_exists('\OES\Rest\Post')) {
+if (!class_exists(__NAMESPACE__ . '\Post_JSONLD', false) && class_exists(__NAMESPACE__ . '\Post', false)) {
 
     /**
      * Exports a post as JSON-LD (https://json-ld.org/), using schema.org as the primary vocabulary and a custom

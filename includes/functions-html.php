@@ -404,7 +404,7 @@ function oes_get_featured_post_html($featuredPost = false, array $args = []): st
 
         /* get rendered html representation */
         $postType = $featuredPost->post_type;
-        $featuredPost = class_exists($postType) ? new $postType($featuredPost->ID) : new OES_Post($featuredPost->ID);
+        $featuredPost = class_exists($postType, false) ? new $postType($featuredPost->ID) : new OES_Post($featuredPost->ID);
 
         if (method_exists($featuredPost, 'get_html_featured_post'))
             $content = $featuredPost->get_html_featured_post([

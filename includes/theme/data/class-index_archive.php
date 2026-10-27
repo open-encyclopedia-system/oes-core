@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
+if (!class_exists('OES_Index_Archive', false) && class_exists('OES_Archive', false)) {
 
 
     /**
@@ -29,11 +29,11 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
         /** @inheritdoc */
         public function set_parameters(array $args = []): void
         {
-            global $oes, $oes_is_index;
+            global $oes_is_index;
 
             /* set index key and objects */
             $this->index_key = $oes_is_index;
-            $objects = $oes->theme_index_pages[$this->index_key]['objects'] ?? [];
+            $objects = oes_get_index_page($this->index_key)['objects'] ?? [];
             $this->is_index = $this->index_key;
 
 
@@ -59,13 +59,12 @@ if (!class_exists('OES_Index_Archive') && class_exists('OES_Archive')) {
         {
             /* prepare filter (add alphabet filter) */
             $filter = [];
-            global $oes, $oes_is_index, $oes_is_index_page;
+            global $oes_is_index, $oes_is_index_page;
+
+            $config = oes_get_index_page($oes_is_index)['archive_filter'] ?? [];
             if ($oes_is_index &&
                 $oes_is_index_page &&
-                in_array('alphabet',
-                    is_array($oes->theme_index_pages[$oes_is_index]['archive_filter']) ?
-                    $oes->theme_index_pages[$oes_is_index]['archive_filter'] :
-                    []))
+                in_array('alphabet', $config))
                 $filter = ['alphabet' => true];
             return $filter;
         }

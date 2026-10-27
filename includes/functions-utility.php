@@ -30,7 +30,7 @@ function oes_include(string $file, string $root = '', bool $includes = true): vo
     if (file_exists($path)) {
         include_once($path);
     } else {
-        error_log("oes_include: File not found - $path");
+        oes_write_log("oes_include: File not found - $path");
     }
 }
 
@@ -139,17 +139,6 @@ function oes_normalize_path_for_localhost(string $path = '', bool $strip = true)
     _deprecated_function(__FUNCTION__, '3.0.0', 'oes_strip_path_prefix()');
     return $strip ? oes_strip_path_prefix($path) : oes_normalize_path($path);
 }
-
-/**
- * Get the OES plugin version.
- *
- * @return string|null Returns the OES plugin version or null if not available.
- */
-function oes_get_version(): ?string
-{
-    return OES()->get_version();
-}
-
 
 /**
  * Includes a view file from the admin views directory.
@@ -278,25 +267,13 @@ function oes_hide_update_notification_filter(): object
     return (object)['last_checked' => time(), 'version_checked' => $wp_version];
 }
 
-
 /**
  * Hide obsolete WordPress menu structure.
  */
 function oes_hide_obsolete_menu_structure(): void
 {
-    add_action('admin_menu', 'oes_hide_obsolete_menu_structure_filter');
+    _deprecated_function(__FUNCTION__, '3.1.0', 'Use admin settings instead.');
 }
-
-
-/**
- * Hide obsolete WordPress menu structure.
- */
-function oes_hide_obsolete_menu_structure_filter(): void
-{
-    remove_menu_page('edit.php'); // Posts7
-    remove_menu_page('edit-comments.php'); // Comments7
-}
-
 
 /**
  * Add a field group to the page object containing the language field.
@@ -308,7 +285,6 @@ function oes_add_fields_to_page(array $fieldTypes = []): void
 {
     \OES\Model\hook_fields_to_page($fieldTypes);
 }
-
 
 /**
  * Get OES custom icon path for the menu icon.
@@ -493,7 +469,7 @@ function oes_get_application_class_name(string $defaultClass, string $cleanedCla
     $consideredClass = (empty($cleanedClass) ? $defaultClass : $cleanedClass);
     $cleanSuffix =  str_replace(['OES\\', 'OES', '\\'], ['', '', '_'], $consideredClass);
     $className = $base . $cleanSuffix;
-    return class_exists($className) ? $className : $defaultClass;
+    return class_exists($className, false) ? $className : $defaultClass;
 }
 
 /**

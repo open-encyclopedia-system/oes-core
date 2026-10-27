@@ -4,7 +4,7 @@ namespace OES\Rest;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Rest\Post_TXT') && class_exists('\OES\Rest\Post')) {
+if (!class_exists(__NAMESPACE__ . '\Post_TXT', false) && class_exists(__NAMESPACE__ . '\Post', false)) {
 
     /**
      * Plain-text (.txt) export variant of \OES\Rest\Post.

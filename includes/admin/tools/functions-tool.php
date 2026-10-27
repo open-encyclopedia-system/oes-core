@@ -16,6 +16,7 @@ function include_tools(): void
     foreach ([
                  'admin_columns',
                  'admin_container',
+                 'admin_menu',
                  'schema',
                  'schema_display',
                  'schema_mapping',
@@ -50,12 +51,11 @@ function include_tools(): void
  *
  * @param string $class The tool class name.
  * @param string $name The tool name.
- * @return mixed Returns the registered instance of the Tool class.
  */
-function register_tool(string $class, string $name = '', array $args = [])
+function register_tool(string $class, string $name = '', array $args = []): void
 {
-    $instance = empty($args) ? new $class($name) : new $class($name, $args);
-    return OES()->admin_tools[$instance->name] = $instance;
+    _deprecated_function(__FUNCTION__, '3.1.0', 'oes_add_tool');
+    oes_add_tool($class, $name, $args);
 }
 
 /**
@@ -66,8 +66,10 @@ function register_tool(string $class, string $name = '', array $args = [])
  */
 function display(string $name): void
 {
-    $oes = OES();
-    if (isset($oes->admin_tools[$name])) $oes->admin_tools[$name]->display();
+    $tool = oes_get_tool($name);
+    if ($tool) {
+        $tool->display();
+    }
 }
 
 /**
@@ -86,7 +88,7 @@ function display_tool(string $name): void
 /**
  * Get the expand button.
  *
- * @return string The html representation of the expand button.
+ * @return string The HTML representation of the expand button.
  */
 function get_expand_button(): string
 {

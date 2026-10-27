@@ -210,6 +210,9 @@ function oes_language_label_html($args): string
  */
 function oes_language_switch_html($args): string
 {
+    if(oes_is_theme_editor()){
+        return '';
+    }
     $languageSwitch = oes_get_language_switch();
     return $languageSwitch ? $languageSwitch->html($args['className'] ?? 'is-style-oes-default') : '';
 }
@@ -226,7 +229,7 @@ function oes_get_language_switch()
     if (empty($oes_language_switch)) {
         $name = oes_get_application_name();
         $languageSwitchClass = $name . '_Language_Switch';
-        $oes_language_switch = class_exists($languageSwitchClass) ?
+        $oes_language_switch = class_exists($languageSwitchClass, false) ?
             new $languageSwitchClass() :
             new \OES\Navigation\Language_Switch();
     }
@@ -448,9 +451,8 @@ function oes_redirect(string $location, bool $safe = false, int $status = 302): 
 function oes_set_language_cookie(): void
 {
     if (isset($_GET['oes-language-switch']) || !isset($_COOKIE['oes_language'])) {
-        global $oes;
         $newValue = $_GET['oes-language-switch'] ?? 'language0';
-        if (isset($oes->languages[$newValue]))
+        if (oes_get_language($newValue))
             if (setcookie('oes_language', $newValue, time() + (30 * DAY_IN_SECONDS), '/')) {
                 global $oes_language_switched;
                 $oes_language_switched = $newValue;
@@ -531,4 +533,19 @@ function oes_document_title(string $title): string
     }
 
     return wp_strip_all_tags($title);
+}
+
+/**
+ * Determine whether the current request originates from the block editor.
+ *
+ * Note: this only detects editor-initiated REST requests. It returns false
+ * on the frontend and in regular admin page loads.
+ *
+ * @return bool True if the current request is a block editor REST request,
+ *              false otherwise.
+ */
+function oes_is_theme_editor(): bool
+{
+    return defined( 'REST_REQUEST' ) && REST_REQUEST
+            && isset( $_GET['context'] ) && 'edit' === $_GET['context'];
 }

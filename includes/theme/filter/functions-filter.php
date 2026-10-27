@@ -139,12 +139,11 @@ function oes_post_type_filter_html(): string
  */
 function oes_index_filter_html(array $args = []): string
 {
-    global $oes, $oes_language, $oes_is_index;
+    global $oes_language;
 
-    if (
-        !$oes_is_index ||
-        ($oes->theme_index_pages[$oes_is_index]['slug'] ?? '') == 'hidden' ||
-        empty($oes->theme_index_pages[$oes_is_index]['objects'] ?? [])
+    $config = oes_get_index_page();
+    if (($config['slug'] ?? '') == 'hidden' ||
+        empty($config['objects'] ?? [])
     ) {
         return '';
     }
@@ -154,23 +153,21 @@ function oes_index_filter_html(array $args = []): string
     if ($args['include_all'] ?? true) {
         $listItems[] = oes_get_html_anchor(
             oes_get_label('archive__filter__all_button', 'All'),
-            home_url(($oes->theme_index_pages[$oes_is_index]['slug'] ?? 'index') . '/'),
+            home_url(($config['slug'] ?? 'index') . '/'),
             false,
             'oes-index-archive-filter-all oes-index-filter-anchor'
         );
     }
 
 
-    $objects = apply_filters('oes/template_redirect_index_additional_objects', $oes->theme_index_pages[$oes_is_index]['objects']);
+    $objects = apply_filters('oes/template_redirect_index_additional_objects', $config['objects'] ?? []);
 
     foreach ($objects as $object) {
         $link = $name = false;
 
         if ($postTypeObject = get_post_type_object($object)) {
-            $name = $oes->post_types[$object]['label_translations_plural'][$oes_language]
-                ?? $oes->post_types[$object]['theme_labels']['archive__header'][$oes_language]
-                ?? $oes->post_types[$object]['label']
-                ?? $postTypeObject->label;
+
+            $name = oes_get_post_type_label($object, $oes_language, $postTypeObject->label);
 
             if (empty($name)) {
                 $name = $postTypeObject->label;
@@ -178,10 +175,7 @@ function oes_index_filter_html(array $args = []): string
             $link = home_url(($postTypeObject->rewrite['slug'] ?? $object) . '/');
 
         } elseif ($taxonomyObject = get_taxonomy($object)) {
-            $name = $oes->taxonomies[$object]['label_translations_plural'][$oes_language]
-                ?? $oes->taxonomies[$object]['label_translations'][$oes_language]
-                ?? $oes->taxonomies[$object]['label']
-                ?? $taxonomyObject->label;
+            $name = oes_get_taxonomy_label($object);
 
             if (empty($name)) {
                 $name = $taxonomyObject->label;
@@ -250,7 +244,7 @@ function oes_active_filter_html($args): string
  */
 function oes_archive_count_html($args = []): string
 {
-    global $oes, $post_type, $oes_is_index, $oes_language, $oes_archive_count, $oes_is_search;
+    global $post_type, $oes_is_index, $oes_language, $oes_archive_count, $oes_is_search;
 
     /* return early if empty count */
     if (!$oes_archive_count) return '';
@@ -267,10 +261,8 @@ function oes_archive_count_html($args = []): string
         $labelSingular = oes_get_label('archive__entry', 'Entry');
         $labelPlural = oes_get_label('archive__entries', 'Entries');
     } else {
-        $labelSingular = $oes->post_types[$post_type]['theme_labels']['archive__entry'][$oes_language] ??
-            (oes_get_label('archive__entry', 'Entry'));
-        $labelPlural = $oes->post_types[$post_type]['theme_labels']['archive__entries'][$oes_language] ??
-            (oes_get_label('archive__entries', 'Entries'));
+        $labelSingular = oes_get_post_type_theme_label($post_type, 'archive__entry', oes_get_label('archive__entry', 'Entry'), $oes_language);
+        $labelPlural = oes_get_post_type_theme_label($post_type, 'archive__entries', oes_get_label('archive__entries', 'Entries'), $oes_language);
     }
 
     return sprintf('<div class="oes-subheader-count">' .

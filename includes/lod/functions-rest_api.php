@@ -36,9 +36,7 @@ function lod_admin_scripts(): void
  */
 function lod_scripts(): void
 {
-    global $oes, $oes_language;
-
-    $dateLocale = $oes->languages[$oes_language]['locale'] ?? 'en_BE';
+    $dateLocale = oes_get_language()['locale'] ?? 'en_BE';
 
     wp_register_script('oes-lod',
         plugins_url(OES_BASENAME . '/includes/lod/assets/lod-frontend' . oes_minify() . '.js'),
@@ -75,7 +73,7 @@ function lod_initialize(): void
     include_once __DIR__ . '/class-lod_config.php';
     include_once __DIR__ . '/class-lod_schema.php';
 
-    foreach (OES()->apis ?? [] as $apiKey => $apiData) {
+    foreach (oes_get_apis() as $apiKey => $apiData) {
 
         $pathPrefix = __DIR__ . '/' . strtolower($apiKey) . '/';
         $files = [
@@ -98,7 +96,7 @@ function lod_initialize(): void
             if (file_exists($schemaPath)) {
                 include_once $schemaPath;
             } else {
-                \OES\Admin\Tools\register_tool('\OES\Admin\Tools\LOD_Schema', "schema-$apiKey", ['api_key' => $apiKey]);
+                oes_add_tool('\OES\Admin\Tools\LOD_Schema', "schema-$apiKey", ['api_key' => $apiKey]);
             }
         }
     }
@@ -125,14 +123,13 @@ function rest_lod_search($request)
     }
 
     $apiClass = "\\OES\\API\\{$apiKey}_API";
-    $api = class_exists($apiClass) ? new $apiClass() : new Rest_API();
+    $api = class_exists($apiClass, false) ? new $apiClass() : new Rest_API();
     $responseData = $api->get_data($params);
 
     $copyOptionsArray = [];
-    $oes = OES();
     $postType = $params['post_type'] ?? null;
-    $lodOptions = $oes->post_types[$postType]['lod'] ?? [];
-    $fieldOptions = $oes->post_types[$postType]['field_options'] ?? [];
+    $lodOptions = oes_get_post_type_param($postType, 'lod');
+    $fieldOptions = oes_get_post_type_param($postType, 'field_options');
 
     if ($lodOptions) {
         foreach ($fieldOptions as $fieldKey => $fieldParams) {
@@ -227,7 +224,7 @@ function rest_copy_to_post($request)
 
     $timestampField = false;
 
-    $fieldOptions = OES()->post_types[$currentPost->post_type]['field_options'] ?? [];
+    $fieldOptions = oes_get_post_type_param($currentPost->post_type, 'field_options');
 
     if (!$fieldOptions) {
         return true;
@@ -482,13 +479,13 @@ function lod_box(): void
         wp_send_json_error('Missing parameters.');
     }
 
-    if (!isset(OES()->apis[$apiKey])) {
+    if (!oes_get_api($apiKey)) {
         wp_send_json_error('Unknown API.');
     }
 
     $apiClass = "\\OES\\API\\{$apiKey}_API";
 
-    if (!class_exists($apiClass)) {
+    if (!class_exists($apiClass, false)) {
         wp_send_json_error('API class not found.');
     }
 
@@ -504,7 +501,7 @@ function lod_box(): void
 
     $displayClass = "\\OES\\API\\{$apiKey}_Display_Helper";
     $displayArgs = ['date_locale' => $dateLocale, 'identifier' => $apiKey];
-    $displayHelper = class_exists($displayClass) ? new $displayClass($displayArgs) : new Display_Helper($displayArgs);
+    $displayHelper = class_exists($displayClass, false) ? new $displayClass($displayArgs) : new Display_Helper($displayArgs);
 
     $html = $displayHelper->html($firstEntry);
 
@@ -526,8 +523,7 @@ function lod_register_rest_routes(): void
         'methods' => 'GET',
         'callback' => function () {
 
-            $oes = OES();
-            $apis = $oes->apis ?? [];
+            $apis = oes_get_apis();
 
             $data = [];
 

@@ -12,7 +12,7 @@ use function OES\Model\import_model_from_json;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('Model')) :
+if (!class_exists(__NAMESPACE__ . '\Model', false)) :
 
     /**
      * Class Model
@@ -23,13 +23,13 @@ if (!class_exists('Model')) :
     {
 
         /** @inheritdoc */
-        function initialize_parameters(array $args = []): void
+        protected function prepare_form(): void
         {
             $this->form_action = admin_url('admin-post.php');
         }
 
         /** @inheritdoc */
-        function html(): void
+        protected function html(): void
         {
             ?>
             <div class="oes-configuration-header">
@@ -53,7 +53,7 @@ if (!class_exists('Model')) :
         }
 
         /** @inheritdoc */
-        function admin_post_tool_action(): void
+        protected function admin_post_tool_action(): void
         {
             if (isset($_POST['import_json'])) {
                 import_model_from_json();
@@ -64,7 +64,6 @@ if (!class_exists('Model')) :
         }
     }
 
-    // initialize
-    register_tool('\OES\Admin\Tools\Model', 'model');
+    oes_add_tool(__NAMESPACE__ . '\Model', 'model');
 
 endif;

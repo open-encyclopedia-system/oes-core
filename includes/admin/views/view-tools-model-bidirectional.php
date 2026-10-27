@@ -1,7 +1,6 @@
 <?php
-global $oes;
 
-if (empty($oes->post_types) && empty($oes->taxonomies)) : ?>
+if (empty(oes_get_post_types()) && empty(oes_get_taxonomies())) : ?>
     <div>
         <?php echo esc_html__(
             'There is no data registered. Try to reload the data model by using the tool in the next tab ("OES Tools" / "Data Model" / "Config"), use "Reload from Plugin Config".',
@@ -12,14 +11,14 @@ if (empty($oes->post_types) && empty($oes->taxonomies)) : ?>
     return;
 endif;
 
-function oes_get_target_post_type_label($targetKey, $fieldPostTypes, $oes)
+function oes_get_target_post_type_label($targetKey, $fieldPostTypes)
 {
     $targetPostType = '';
 
     // Check if field exists in related post type
     foreach ($fieldPostTypes as $pt) {
-        if (!empty($oes->post_types[$pt]['field_options'][$targetKey])) {
-            $targetPostType = esc_html($oes->post_types[$pt]['label'] ?? $pt);
+        if (!empty(oes_get_post_type_param($pt, 'field_options', $targetKey))) {
+            $targetPostType = esc_html(oes_get_post_type_param($pt, 'label', $pt));
         }
     }
 
@@ -31,7 +30,7 @@ function oes_get_target_post_type_label($targetKey, $fieldPostTypes, $oes)
             if (!empty($fieldObj['parent']) && ($group = get_post($fieldObj['parent']))) {
                 $locations = maybe_unserialize($group->post_content);
                 foreach ($locations['location'][0] ?? [] as $rule) {
-                    $postTypeLabels[] = esc_html($oes->post_types[$rule['value']]['label'] ?? $rule['value']);
+                    $postTypeLabels[] = esc_html(oes_get_post_type_param($rule['value'], 'label', $rule['value']));
                 }
             }
             $targetPostType = implode(', ', $postTypeLabels)
@@ -59,7 +58,7 @@ function oes_render_target_field($fieldKey, $targetKey, $fieldPostTypes)
         '<div><code class="oes-object-identifier">' . esc_html($targetKey) . '</code></div></div>';
 }
 
-foreach ($oes->post_types as $postTypeKey => $postType) {
+foreach (oes_get_post_types() as $postTypeKey => $postType) {
 
     $fields = oes_get_all_object_fields($postTypeKey);
 

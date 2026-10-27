@@ -12,7 +12,7 @@ use function OES\Versioning\get_version_field;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('\OES\Rest\Post')) {
+if (!class_exists(__NAMESPACE__ . '\Post', false)) {
 
     /**
      * Builds a JSON/schema.org-flavoured export representation of a WP_Post.
@@ -33,6 +33,9 @@ if (!class_exists('\OES\Rest\Post')) {
 
         /** @var string OES language code for this export (e.g. 'language0'). */
         protected string $oes_language = 'language0';
+
+        /** @var bool Include post content in export. */
+        protected bool $include_content = true;
 
         /** @var int Running counter for footnote/endnote markers. */
         protected int $notes_count = 1;
@@ -193,7 +196,9 @@ if (!class_exists('\OES\Rest\Post')) {
             $this->prepare_post_info();
             $this->prepare_schema();
             $this->prepare_terms();
-            $this->prepare_post_content();
+            if($this->include_content) {
+                $this->prepare_post_content();
+            }
             $this->prepare_versions();
         }
 
@@ -655,9 +660,7 @@ if (!class_exists('\OES\Rest\Post')) {
 
         protected function prepare_schema(): void
         {
-            global $oes;
-
-            $postTypeData = $oes->post_types[$this->post->post_type] ?? null;
+            $postTypeData = oes_get_post_type($this->post->post_type);
 
             if(empty($postTypeData)) {
                 return;
@@ -876,7 +879,7 @@ if (!class_exists('\OES\Rest\Post')) {
                 $post = get_post($value);
             }
 
-            if (!$post || !in_array($post->post_type,  ['page', 'post', 'attachment'])) {
+            if (!$post) { //todo || !in_array($post->post_type,  ['page', 'post', 'attachment'])
                 return [];
             }
 
@@ -930,8 +933,7 @@ if (!class_exists('\OES\Rest\Post')) {
 
         protected function map_post_object_additional_event(WP_Post $post, array $additional = []): array
         {
-            global $oes;
-            $postTypeData = $oes->post_types[$post->post_type] ?? null;
+            $postTypeData = oes_get_post_type($post->post_type);
 
             if(empty($postTypeData)) {
                 return [];
@@ -1058,8 +1060,7 @@ if (!class_exists('\OES\Rest\Post')) {
          */
         protected function format_language(string $language): string
         {
-            global $oes;
-            return $oes->languages[$language]['locale'] ?? '';
+            return oes_get_language($language)['locale'] ?? '';
         }
 
         /**

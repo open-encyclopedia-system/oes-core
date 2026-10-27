@@ -5,7 +5,7 @@ namespace OES\Admin\Health;
 if (!defined('ABSPATH')) exit;
 
 
-if (!class_exists('\OES\Admin\Health\Site_Health')) {
+if (!class_exists(__NAMESPACE__ . '\Site_Health', false)) {
 
     /**
      * The OES Site Health class responsible for populating OES debug information in WordPress Site Health.
@@ -51,7 +51,7 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
          * @param array $data An array of site health information to update.
          * @return boolean
          */
-        public function update_site_health(array $data = array()): bool
+        public function update_site_health(array $data = []): bool
         {
             return update_option($this->option_name, wp_json_encode($data), false);
         }
@@ -133,11 +133,9 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
              * Constants
              * */
 
-            $oes = OES();
-
             $fields['version'] = [
                 'label' => __('Plugin Version', 'oes'),
-                'value' => $oes->version
+                'value' => oes_get_version(),
             ];
 
             $name = oes_get_application_name(null, false);
@@ -157,8 +155,6 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
         public function get_environment_values(&$fields, bool $extended = false): void
         {
             global $wpdb;
-            $oes = OES();
-
             $fields['wp_version'] = [
                 'label' => __('WordPress Version', 'oes'),
                 'value' => get_bloginfo('version'),
@@ -176,7 +172,7 @@ if (!class_exists('\OES\Admin\Health\Site_Health')) {
 
             $fields['acf_pro'] = [
                 'label' => __('ACF Pro', 'oes'),
-                'value' => $oes->acf_pro ? self::ENABLED : self::DISABLED,
+                'value' => oes_is_acf_pro() ? self::ENABLED : self::DISABLED,
             ];
 
             $fields['site_url'] = [

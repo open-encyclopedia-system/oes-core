@@ -10,17 +10,17 @@ if (!defined('ABSPATH')) exit; // Exit if accessed directly
  */
 function initialize_container_pages(): void
 {
-    global $oes;
+    $containers = oes_get_containers();
 
-    foreach ($oes->post_types ?? [] as $postTypeKey => $postType) {
+    foreach (oes_get_post_types() ?? [] as $postTypeKey => $postType) {
         $parent = $postType['parent'] ?? '';
 
-        if ($parent && $parent !== 'none' && !isset($oes->admin_pages['container'][$postTypeKey])) {
-            $oes->admin_pages['container'][$postTypeKey] = prepare_container_page_args($postTypeKey);
+        if ($parent && $parent !== 'none' && !isset($containers[$postTypeKey])) {
+            oes_add_container($postTypeKey, prepare_container_page_args($postTypeKey));
         }
     }
 
-    foreach ($oes->admin_pages['container'] ?? [] as $key => $page) {
+    foreach ($containers as $key => $page) {
         if (!is_array($page) || ($page['hide'] ?? false)) {
             continue;
         }
@@ -40,7 +40,7 @@ function create_container(string $key, array $args = []): void
 {
     $args['key'] = $key;
     $class = $key . '_Container';
-    class_exists($class) ? new $class($args) : new Container($args);
+    class_exists($class, false) ? new $class($args) : new Container($args);
 }
 
 /**
@@ -51,7 +51,7 @@ function create_container(string $key, array $args = []): void
  */
 function prepare_container_page_args(string $postTypeKey = ''): array
 {
-    $postType = OES()->post_types[$postTypeKey] ?? null;
+    $postType = oes_get_post_type($postTypeKey);
     if (!$postType) {
         return [];
     }
@@ -101,7 +101,7 @@ function add_page_scripts(string $hook): void
     wp_localize_script(
         'oes-admin_page',
         'oesLanguages',
-        OES()->languages ?? []
+        oes_get_languages() ?? []
     );
     wp_enqueue_script('oes-admin_page');
 
@@ -127,8 +127,6 @@ function add_page_scripts(string $hook): void
  */
 function initialize_admin_menu_pages(): void
 {
-    global $oes;
-
     $adminMenuPages = [
         '000_editor_tools' => ['separator' => true, 'position' => 49.9],
         '000_settings'     => ['separator' => true, 'position' => 54.9],
@@ -202,20 +200,21 @@ function initialize_admin_menu_pages(): void
                 'title' => __('Advanced', 'oes'),
                 'tabs' => [
                     'admin-columns'   => __('Columns', 'oes'),
-                    'admin-container' => __('Container', 'oes')
+                    'admin-container' => __('Containers', 'oes'),
+                    'admin-menu' => __('Menu', 'oes'),
                 ]
             ];
         }
 
         $lodTabs = array_map(function ($apiData) {
             return $apiData->label;
-        }, $oes->apis ?? []);
+        }, oes_get_apis());
         $settingsSubpages['oes_settings_lod'] = [
             'title' => __('Linked Open Data', 'oes'),
             'tabs'       => $lodTabs
         ];
 
-        if (!$oes->block_theme) {
+        if (!oes_is_block_theme()) {
             $settingsSubpages['oes_settings_theme'] = [
                 'title' => __('Theme', 'oes'),
                 'tabs' => [

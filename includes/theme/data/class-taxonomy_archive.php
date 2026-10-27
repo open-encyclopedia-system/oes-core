@@ -2,7 +2,7 @@
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
+if (!class_exists('OES_Taxonomy_Archive', false) && class_exists('OES_Archive', false)) {
 
 
     /**
@@ -59,14 +59,14 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
          */
         protected function check_if_index(): void {
 
-            global $oes, $oes_is_index;
+            global $oes_is_index;
 
             if ($oes_is_index) {
                 $this->is_index = $oes_is_index;
                 return;
             }
 
-            foreach ($oes->theme_index_pages ?? [] as $indexPageKey => $indexPage) {
+            foreach (oes_get_index_pages() as $indexPageKey => $indexPage) {
                 if (in_array($this->taxonomy, $indexPage['objects'] ?? [])) {
                     $this->is_index = $oes_is_index = $indexPageKey;
                     return;
@@ -83,10 +83,8 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
                 return [];
             }
 
-            global $oes;
-
             $filterArray = [];
-            foreach ($oes->taxonomies[$taxonomy]['archive_filter'] ?? [] as $filter) {
+            foreach (oes_get_taxonomy_param($taxonomy, 'archive_filter') as $filter) {
                 if ($filter === 'alphabet') {
                     $filterArray['alphabet'] = true;
                 }
@@ -102,9 +100,7 @@ if (!class_exists('OES_Taxonomy_Archive') && class_exists('OES_Archive')) {
                 return '';
             }
 
-            global $oes, $oes_language;
-            return $oes->taxonomies[$this->taxonomy]['label_translations_plural'][$oes_language] ??
-                ($oes->taxonomies[$this->taxonomy]['label'] ?? 'Label missing');
+            return oes_get_taxonomy_label($this->taxonomy);
         }
 
         /** @inheritdoc */

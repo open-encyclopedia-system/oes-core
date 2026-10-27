@@ -4,9 +4,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
+if (!class_exists(__NAMESPACE__ . '\LOD', false)) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('ORCID')) {
+if (!class_exists(__NAMESPACE__ . '\ORCID', false)) {
 
     /**
      * Class ORCID
@@ -44,5 +44,5 @@ if (!class_exists('ORCID')) {
         }
     }
 
-    register_tool('\OES\Admin\Tools\ORCID', 'orcid');
+    oes_add_tool('\OES\Admin\Tools\ORCID', 'orcid');
 }

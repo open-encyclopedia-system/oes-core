@@ -9,9 +9,9 @@ namespace OES\Admin\Tools;
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
-if (!class_exists('LOD')) oes_include('lod/class-lod_config.php');
+if (!class_exists(__NAMESPACE__ . '\LOD', false)) oes_include('lod/class-lod_config.php');
 
-if (!class_exists('Geonames')) {
+if (!class_exists(__NAMESPACE__ . '\Geonames', false)) {
 
     /**
      * Class Geonames
@@ -60,5 +60,5 @@ if (!class_exists('Geonames')) {
         }
     }
 
-    register_tool('\OES\Admin\Tools\Geonames', 'geonames');
+    oes_add_tool('\OES\Admin\Tools\Geonames', 'geonames');
 }

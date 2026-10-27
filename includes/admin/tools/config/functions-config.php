@@ -179,14 +179,16 @@ function update_field_group_config_post(int $postID, array $updateValues = []): 
  */
 function update_general_config_post(array $updateValues = []): string {
 
-    global $oes;
-    if (!isset($oes->config_post)) return __('No config post found', 'oes');
+    $postID = oes_get_config_post();
+    if (!$postID) {
+        return __('No config post found', 'oes');
+    }
 
     $updateValues = wp_unslash($updateValues);
 
     $mergeCallback = function($current, $new) {
         foreach ($new as $key => $value) {
-            if (in_array($key, ['theme_labels', 'media'])) {
+            if (in_array($key, ['theme_labels', 'media', 'admin_pages'])) {
                 $current[$key] = array_replace_recursive($current[$key] ?? [], $value);
             } else {
                 $current[$key] = normalize_option_value($value, $current[$key] ?? '');
@@ -195,7 +197,7 @@ function update_general_config_post(array $updateValues = []): string {
         return $current;
     };
 
-    return update_config_post_field(intval($oes->config_post), $updateValues, 'post_content', $mergeCallback);
+    return update_config_post_field(intval($postID), $updateValues, 'post_content', $mergeCallback);
 }
 
 /**
@@ -207,8 +209,8 @@ function update_general_config_post(array $updateValues = []): string {
  */
 function update_media_config_post(array $updateValues = []): string {
 
-    global $oes;
-    if (!isset($oes->media_groups['post_ID'])) return __('No media post found', 'oes');
+    $mediaPostID = oes_get_media_param('post_ID');
+    if (!$mediaPostID) return __('No media post found', 'oes');
 
     $updateValues = wp_unslash($updateValues);
 
@@ -219,5 +221,5 @@ function update_media_config_post(array $updateValues = []): string {
         return $current;
     };
 
-    return update_config_post_field($oes->media_groups['post_ID'], $updateValues, 'post_excerpt', $mergeCallback);
+    return update_config_post_field($mediaPostID, $updateValues, 'post_excerpt', $mergeCallback);
 }
