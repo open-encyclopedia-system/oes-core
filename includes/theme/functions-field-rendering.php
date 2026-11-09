@@ -18,6 +18,7 @@ function render(array $args): string
     $values = [];
     $fields = explode(';', $args['field']);
     $excludeValue = $args['exclude_value'] ?? null;
+    $language = empty($oes_language) ? 'language0' : $oes_language;
 
     foreach ($fields as $field) {
 
@@ -53,10 +54,10 @@ function render(array $args): string
         return '';
     }
 
-    $header = build_header($args, $oes_language, $oes_post, $oes_term);
+    $header = build_header($args, $language, $oes_post, $oes_term);
 
-    $prefix = $args['prefix'][$oes_language]
-        ?? $args['prefix_' . $oes_language]
+    $prefix = $args['prefix'][$language]
+        ?? $args['prefix_' . $language]
         ?? ($args['prefix'] ?? '');
 
     $class = $args['class'] ?? '';
